@@ -376,14 +376,26 @@ impl fmt::Display for StreamFormat {
                     _ => None,
                 };
                 match size {
-                    Some((bits, true)) => write!(formatter, ", {bits}-bit float"),
+                    Some((bits, true)) => write!(formatter, ", {bits}-bit float")?,
                     Some((bits, false))
                         if aaf.bit_depth != 0 && u32::from(aaf.bit_depth) < bits =>
                     {
-                        write!(formatter, ", {bits}-bit ({} used)", aaf.bit_depth)
+                        write!(formatter, ", {bits}-bit ({} used)", aaf.bit_depth)?
                     }
-                    Some((bits, false)) => write!(formatter, ", {bits}-bit"),
-                    None => write!(formatter, ", sample format {}", aaf.sample_format),
+                    Some((bits, false)) => write!(formatter, ", {bits}-bit")?,
+                    None => write!(formatter, ", sample format {}", aaf.sample_format)?,
+                }
+                // Milan's formats send a frame each class A interval, 8000
+                // a second; one with clearly fewer, as class B's 4000, says
+                // how many samples a frame holds.
+                match self.sample_rate() {
+                    Some(rate)
+                        if aaf.samples_per_frame > 0
+                            && rate / u32::from(aaf.samples_per_frame) < 6000 =>
+                    {
+                        write!(formatter, ", {} samples a frame", aaf.samples_per_frame)
+                    }
+                    _ => Ok(()),
                 }
             }
             FormatKind::Iec61883_6(iec) => {
@@ -505,6 +517,11 @@ mod tests {
         assert_eq!((aaf.channels, aaf.samples_per_frame), (8, 6));
         assert_eq!(format.sample_rate(), Some(48_000));
         assert_eq!(format.to_string(), "AAF 48 kHz, 8 ch, 32-bit (24 used)");
+        // A frame each class B interval, twice the samples, says so.
+        assert_eq!(
+            StreamFormat(0x0205_0220_0200_c000).to_string(),
+            "AAF 48 kHz, 8 ch, 32-bit, 12 samples a frame"
+        );
         assert_eq!(
             StreamFormat(0x0209_0218_0201_8000).to_string(),
             "AAF 192 kHz, 8 ch, 32-bit (24 used)"

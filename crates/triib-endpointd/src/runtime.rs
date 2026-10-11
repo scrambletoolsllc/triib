@@ -111,13 +111,18 @@ enum Input {
 /// The rates this computer's endpoints offer: those class A's 8000
 /// frames a second divide.
 const RATES: [u32; 3] = [48_000, 96_000, 192_000];
+/// Frames a second: one each class A interval, as Milan's formats send,
+/// or one each class B interval, as a stream across a Wi-Fi hop sends at
+/// half the frames.
+const CLASS_A_FRAMES: u32 = 8000;
+const CLASS_B_FRAMES: u32 = 4000;
 
 /// The most octets an AVTPDU takes in one Ethernet frame.
 const MOST_PDU: usize = 1500;
 
-/// AAF at `rate`, a class A frame's samples each, 32-bit, in `bits` of
+/// AAF at `rate`, sent `frames` times a second, 32-bit, in `bits` of
 /// them.
-fn aaf(rate: u32, channels: u16, bits: u8) -> StreamFormat {
+fn aaf(rate: u32, channels: u16, bits: u8, frames: u32) -> StreamFormat {
     let nsr: u64 = match rate {
         96_000 => 0x07,
         192_000 => 0x09,
@@ -129,7 +134,7 @@ fn aaf(rate: u32, channels: u16, bits: u8) -> StreamFormat {
             | (0x02 << 40)
             | (u64::from(bits) << 32)
             | (u64::from(channels & 0x3ff) << 22)
-            | (u64::from(rate / 8000) << 12),
+            | (u64::from(rate / frames) << 12),
     )
 }
 
@@ -147,33 +152,62 @@ fn am824(rate: u32, channels: u16) -> StreamFormat {
 
 /// The formats offered for `channels`: each packing at every rate where
 /// all of them fit one Ethernet frame, so a change of rate finds the
-/// same packing there.
-fn offered_formats(channels: u16) -> Vec<StreamFormat> {
-    RATES
+/// same packing there. Milan's, a frame each class A interval, come
+/// first; AAF a frame each class B interval follows, at half the frames,
+/// where it fits, and comes first for a class B talker, whose default it
+/// is.
+fn offered_formats(channels: u16, class_b: bool) -> Vec<StreamFormat> {
+    let fits = |formats: &[StreamFormat]| {
+        formats.iter().all(|format| {
+            triib_stream::media::Media::of(*format)
+                .is_some_and(|media| media.pdu_length() <= MOST_PDU)
+        })
+    };
+    let milan: Vec<StreamFormat> = RATES
         .iter()
         .map(|rate| {
             [
-                aaf(*rate, channels, 32),
-                aaf(*rate, channels, 24),
+                aaf(*rate, channels, 32, CLASS_A_FRAMES),
+                aaf(*rate, channels, 24, CLASS_A_FRAMES),
                 am824(*rate, channels),
             ]
         })
-        .filter(|formats| {
-            formats.iter().all(|format| {
-                triib_stream::media::Media::of(*format)
-                    .is_some_and(|media| media.pdu_length() <= MOST_PDU)
-            })
-        })
+        .filter(|formats| fits(formats))
         .flatten()
-        .collect()
+        .collect();
+    let wireless: Vec<StreamFormat> = RATES
+        .iter()
+        .map(|rate| {
+            [
+                aaf(*rate, channels, 32, CLASS_B_FRAMES),
+                aaf(*rate, channels, 24, CLASS_B_FRAMES),
+            ]
+        })
+        .filter(|formats| fits(formats))
+        .flatten()
+        .collect();
+    if class_b {
+        [wireless, milan].concat()
+    } else {
+        [milan, wireless].concat()
+    }
 }
 
 /// Whether two formats pack samples alike, whatever their channels.
 fn same_packing(one: StreamFormat, other: StreamFormat) -> bool {
     match (one.kind(), other.kind()) {
         (FormatKind::Aaf(one), FormatKind::Aaf(other)) => {
-            (one.nsr, one.sample_format, one.bit_depth)
-                == (other.nsr, other.sample_format, other.bit_depth)
+            (
+                one.nsr,
+                one.sample_format,
+                one.bit_depth,
+                one.samples_per_frame,
+            ) == (
+                other.nsr,
+                other.sample_format,
+                other.bit_depth,
+                other.samples_per_frame,
+            )
         }
         (FormatKind::Iec61883_6(one), FormatKind::Iec61883_6(other)) => {
             (one.packing, one.sfc) == (other.packing, other.sfc)
@@ -232,7 +266,8 @@ impl Endpoint {
         // As many as six samples of each fit in one Ethernet frame, at
         // 48 kHz; fewer offer the higher rates too.
         let channels = config.channels.clamp(1, 60);
-        let formats = offered_formats(channels);
+        let talker = config.kind == Kind::Talker;
+        let formats = offered_formats(channels, talker && config.class == SrClass::B);
         // The format chosen last, with the channels there are now.
         let current_format = config
             .stream_format()
@@ -249,7 +284,6 @@ impl Endpoint {
             .collect();
         sampling_rates.dedup();
         let current_sampling_rate = current_format.sample_rate().unwrap_or(48_000);
-        let talker = config.kind == Kind::Talker;
         let stream = StreamModel {
             name: config.name.clone(),
             current_format,
@@ -2882,33 +2916,76 @@ mod tests {
 
     #[test]
     fn the_formats_are_the_bench_ones() {
-        assert_eq!(aaf(48_000, 8, 32), StreamFormat(0x0205_0220_0200_6000));
-        assert_eq!(aaf(48_000, 8, 24), StreamFormat(0x0205_0218_0200_6000));
-        assert_eq!(aaf(96_000, 8, 32), StreamFormat(0x0207_0220_0200_c000));
+        let milan = |rate, channels, bits| aaf(rate, channels, bits, CLASS_A_FRAMES);
+        assert_eq!(milan(48_000, 8, 32), StreamFormat(0x0205_0220_0200_6000));
+        assert_eq!(milan(48_000, 8, 24), StreamFormat(0x0205_0218_0200_6000));
+        assert_eq!(milan(96_000, 8, 32), StreamFormat(0x0207_0220_0200_c000));
         assert_eq!(am824(48_000, 8), StreamFormat(0x00a0_0208_4000_0800));
         assert_eq!(am824(96_000, 8), StreamFormat(0x00a0_0408_4000_0800));
+        // A frame each class B interval: 12 samples at 48 kHz.
+        let wireless = aaf(48_000, 8, 32, CLASS_B_FRAMES);
+        assert_eq!(wireless, StreamFormat(0x0205_0220_0200_c000));
+        let media = triib_stream::media::Media::of(wireless).unwrap();
+        assert_eq!(media.interval_nanos(), CLASS_B_INTERVAL);
         // A format chosen for eight channels carries over to two.
         assert!(same_packing(am824(48_000, 2), am824(48_000, 8)));
-        assert!(same_packing(aaf(48_000, 2, 24), aaf(48_000, 8, 24)));
-        assert!(!same_packing(aaf(48_000, 2, 32), aaf(48_000, 2, 24)));
-        assert!(!same_packing(aaf(48_000, 8, 32), am824(48_000, 8)));
-        assert!(!same_packing(aaf(48_000, 8, 32), aaf(96_000, 8, 32)));
+        assert!(same_packing(milan(48_000, 2, 24), milan(48_000, 8, 24)));
+        assert!(!same_packing(milan(48_000, 2, 32), milan(48_000, 2, 24)));
+        assert!(!same_packing(milan(48_000, 8, 32), am824(48_000, 8)));
+        assert!(!same_packing(milan(48_000, 8, 32), milan(96_000, 8, 32)));
+        // Nor does one frame rate pass for the other.
+        assert!(!same_packing(milan(48_000, 8, 32), wireless));
+    }
+
+    /// The rates `formats` offer at `frames` a second, in order.
+    fn rates_at(formats: &[StreamFormat], frames: u32) -> Vec<u32> {
+        let mut rates: Vec<u32> = formats
+            .iter()
+            .filter(|format| {
+                let Some(rate) = format.sample_rate() else {
+                    return false;
+                };
+                match format.kind() {
+                    FormatKind::Aaf(aaf) => u32::from(aaf.samples_per_frame) * frames == rate,
+                    _ => frames == CLASS_A_FRAMES,
+                }
+            })
+            .filter_map(|format| format.sample_rate())
+            .collect();
+        rates.dedup();
+        rates
     }
 
     /// Eight channels go at every rate, 16 to 96 kHz, and 60 only at
-    /// 48 kHz, each rate with all three packings.
+    /// 48 kHz, each rate with all three packings; a frame each class B
+    /// interval holds twice the samples, so fewer channels fit.
     #[test]
     fn more_channels_take_fewer_rates() {
-        let rates = |channels| {
-            let formats = offered_formats(channels);
-            assert_eq!(formats.len() % 3, 0);
-            let mut rates: Vec<u32> = formats.iter().filter_map(|f| f.sample_rate()).collect();
-            rates.dedup();
-            rates
-        };
+        let rates = |channels| rates_at(&offered_formats(channels, false), CLASS_A_FRAMES);
         assert_eq!(rates(8), [48_000, 96_000, 192_000]);
         assert_eq!(rates(16), [48_000, 96_000]);
         assert_eq!(rates(60), [48_000]);
+        let wireless = |channels| rates_at(&offered_formats(channels, false), CLASS_B_FRAMES);
+        assert_eq!(wireless(8), [48_000, 96_000]);
+        assert_eq!(wireless(60), Vec::<u32>::new());
+    }
+
+    /// A class B talker offers its own formats first, so a frame each
+    /// class B interval is its default; others offer Milan's first.
+    #[test]
+    fn a_class_b_talker_defaults_to_half_the_frames() {
+        assert_eq!(
+            offered_formats(8, true)[0],
+            aaf(48_000, 8, 32, CLASS_B_FRAMES)
+        );
+        assert_eq!(
+            offered_formats(8, false)[0],
+            aaf(48_000, 8, 32, CLASS_A_FRAMES)
+        );
+        assert_eq!(
+            offered_formats(8, true).len(),
+            offered_formats(8, false).len()
+        );
     }
 
     /// Every declaration goes out again from LeaveAllTime to half as much
