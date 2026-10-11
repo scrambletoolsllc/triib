@@ -83,9 +83,10 @@ commands:
                                      then the streams it declares over CVU
                                      SRP, heard for the seconds given
   wireless-config <interface> <entity-id> <avb-interface> <on|off>
-                                     allow or disallow Class A toward an
-                                     access point's wireless port, the AVB
-                                     Wireless bench-test opt-in
+                                     allow or keep off Class A toward an
+                                     access point's wireless port, which
+                                     it admits only where it delivers at
+                                     least 12000 frames a second
                                      (SET_WIRELESS_CONFIG)
   wireless <interface> <entity-id>   print what each of an entity's
                                      interfaces reports of AVB Wireless: its

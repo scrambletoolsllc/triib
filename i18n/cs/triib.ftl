@@ -679,7 +679,7 @@ wireless-frame-use = { $budget ->
 }
 wireless-stream-frames = Rámce streamů
 wireless-frames-of = do stanic: { $readdressed }, bez listeneru: { $unmapped }, zahozeno: { $dropped }, od stanic: { $restored }
-wireless-class-a-allowed = Povoleno, pro laboratorní testy
+wireless-class-a-allowed = Povoleno
 wireless-class-a-not-allowed = Nepovoleno
 wireless-alarm-not-locked = Čas Wi-Fi není synchronizován s přístupovým bodem
 wireless-alarm-holdover = Čas Wi-Fi v režimu holdover, synchronizace s přístupovým bodem ztracena

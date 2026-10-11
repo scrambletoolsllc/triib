@@ -677,7 +677,7 @@ wireless-frame-use = { $budget ->
 }
 wireless-stream-frames = Кадры потоков
 wireless-frames-of = станциям: { $readdressed }, без Listener: { $unmapped }, отброшено: { $dropped }, от станций: { $restored }
-wireless-class-a-allowed = Разрешён, для стендовых испытаний
+wireless-class-a-allowed = Разрешён
 wireless-class-a-not-allowed = Не разрешён
 wireless-alarm-not-locked = Нет захвата синхронизации времени Wi-Fi от точки доступа
 wireless-alarm-holdover = Время Wi-Fi в режиме удержания, синхронизация от точки доступа потеряна

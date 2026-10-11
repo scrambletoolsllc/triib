@@ -678,7 +678,7 @@ wireless-frame-use = { $budget ->
 }
 wireless-stream-frames = Ramki strumieni
 wireless-frames-of = do stacji: { $readdressed }, bez listenera: { $unmapped }, odrzucone: { $dropped }, od stacji: { $restored }
-wireless-class-a-allowed = Dozwolona, do testów laboratoryjnych
+wireless-class-a-allowed = Dozwolona
 wireless-class-a-not-allowed = Niedozwolona
 wireless-alarm-not-locked = Czas Wi-Fi nie jest zsynchronizowany z punktem dostępowym
 wireless-alarm-holdover = Czas Wi-Fi w trybie holdover, utracono synchronizację z punktem dostępowym

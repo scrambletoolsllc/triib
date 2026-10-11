@@ -353,8 +353,10 @@ in the access point's beacons, and streamed unicast on the air.
   it holds, the access point a station follows (BSSID and gPTP port
   identity), and on an access point its stream translation counters,
   the listeners it cannot serve and its stations, with an unsolicited
-  response on change. SET_WIRELESS_CONFIG only sets the Class A bench
-  opt-in.
+  response on change. Admission toward the hop counts frames against a
+  budget, Class B the hop's own class with formats at 4000 frames a
+  second, and Class A only on an access point that delivers 12000;
+  SET_WIRELESS_CONFIG only allows Class A or keeps it off.
 - **The ESP:** the station answers the status query, flashed and
   checked. The bridge runs no ATDECC entity, as AVB switches mostly do,
   so it does not answer; the profile asks it only of access points that

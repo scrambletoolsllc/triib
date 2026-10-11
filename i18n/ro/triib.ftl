@@ -675,7 +675,7 @@ wireless-frame-use = { $budget ->
 }
 wireless-stream-frames = Cadre de flux
 wireless-frames-of = către stații: { $readdressed }, fără listener: { $unmapped }, aruncate: { $dropped }, de la stații: { $restored }
-wireless-class-a-allowed = Permisă, pentru teste de laborator
+wireless-class-a-allowed = Permisă
 wireless-class-a-not-allowed = Nepermisă
 wireless-alarm-not-locked = Timpul Wi-Fi nu este calat pe punctul de acces
 wireless-alarm-holdover = Timpul Wi-Fi în holdover, calarea pe punctul de acces s-a pierdut

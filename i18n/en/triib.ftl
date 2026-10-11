@@ -789,7 +789,7 @@ wireless-stream-frames = Stream frames
 # What the access point did with stream frames: sent to each station on
 # its own, found no listener for, dropped, and gave back their address.
 wireless-frames-of = { $readdressed } to stations, { $unmapped } without a listener, { $dropped } dropped, { $restored } from stations
-wireless-class-a-allowed = Allowed, for bench tests
+wireless-class-a-allowed = Allowed
 wireless-class-a-not-allowed = Not allowed
 # Alarms.
 wireless-alarm-not-locked = Wi-Fi time not locked to the access point

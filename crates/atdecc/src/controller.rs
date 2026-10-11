@@ -2546,9 +2546,9 @@ impl Controller {
         command
     }
 
-    /// Allows or disallows an access point admitting Class A toward its
-    /// wireless port, the AVB Wireless bench-test opt-in
-    /// (SET_WIRELESS_CONFIG, AVB Wireless profile 5.2).
+    /// Allows an access point to admit Class A toward its wireless port,
+    /// where it delivers 12000 frames a second, or keeps Class A off the hop
+    /// (SET_WIRELESS_CONFIG, AVB Wireless profile 4 and 5.2).
     pub fn set_wireless_config(
         &mut self,
         now: Instant,
