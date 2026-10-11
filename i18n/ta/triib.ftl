@@ -602,6 +602,8 @@ wireless-station-count = { $count ->
 }
 wireless-no-ftm = FTM இல்லாமல்
 wireless-unserved = சேவை பெறாத Listeners
+wireless-frame-budget = Frame budget
+wireless-frame-use = ஒரு வினாடிக்கு { $budget }-இல் { $used } frames
 wireless-stream-frames = Stream frames
 wireless-frames-of = { $readdressed } stations-க்கு, { $unmapped } Listener இல்லாமல், { $dropped } கைவிடப்பட்டன, { $restored } stations-இலிருந்து
 wireless-class-a-allowed = அனுமதிக்கப்பட்டது, bench tests-க்காக

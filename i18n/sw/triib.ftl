@@ -611,6 +611,8 @@ wireless-station-count = { $count ->
 }
 wireless-no-ftm = bila FTM
 wireless-unserved = Listener zisizohudumiwa
+wireless-frame-budget = Bajeti ya fremu
+wireless-frame-use = fremu { $used } kati ya { $budget } kwa sekunde
 wireless-stream-frames = Fremu za mtiririko
 wireless-frames-of = { $readdressed } kwa station, { $unmapped } bila listener, { $dropped } zimetupwa, { $restored } kutoka kwa station
 wireless-class-a-allowed = Inaruhusiwa, kwa majaribio ya maabara

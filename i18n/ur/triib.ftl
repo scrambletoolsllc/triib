@@ -602,6 +602,8 @@ wireless-station-count = { $count ->
 }
 wireless-no-ftm = FTM کے بغیر
 wireless-unserved = سروس سے محروم Listener
+wireless-frame-budget = فریم بجٹ
+wireless-frame-use = فی سیکنڈ { $budget } میں سے { $used } فریمز
 wireless-stream-frames = اسٹریم فریمز
 wireless-frames-of = { $readdressed } اسٹیشنز کو، { $unmapped } بغیر Listener، { $dropped } ڈراپ ہوئے، { $restored } اسٹیشنز سے
 wireless-class-a-allowed = اجازت ہے، بینچ ٹیسٹس کے لیے

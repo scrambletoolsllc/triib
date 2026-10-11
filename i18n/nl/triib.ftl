@@ -612,6 +612,8 @@ wireless-station-count = { $count ->
 }
 wireless-no-ftm = zonder FTM
 wireless-unserved = Niet-bediende listeners
+wireless-frame-budget = Framebudget
+wireless-frame-use = { $used } van { $budget } frames per seconde
 wireless-stream-frames = Streamframes
 wireless-frames-of = { $readdressed } naar stations, { $unmapped } zonder listener, { $dropped } verworpen, { $restored } van stations
 wireless-class-a-allowed = Toegestaan, voor testopstellingen

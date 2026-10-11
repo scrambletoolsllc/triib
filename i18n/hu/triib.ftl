@@ -604,6 +604,8 @@ wireless-station-count = { $count ->
 }
 wireless-no-ftm = FTM nélkül
 wireless-unserved = Kiszolgálatlan listenerek
+wireless-frame-budget = Keretbüdzsé
+wireless-frame-use = { $used } / { $budget } keret másodpercenként
 wireless-stream-frames = Streamkeretek
 wireless-frames-of = { $readdressed } állomásokhoz, { $unmapped } listener nélkül, { $dropped } eldobva, { $restored } állomásoktól
 wireless-class-a-allowed = Engedélyezve, laboratóriumi tesztekhez

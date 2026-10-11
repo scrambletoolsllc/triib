@@ -628,6 +628,8 @@ wireless-station-count = { $count ->
 }
 wireless-no-ftm = ilman FTM:ää
 wireless-unserved = Palvelemattomat listenerit
+wireless-frame-budget = Kehysbudjetti
+wireless-frame-use = { $used } / { $budget } kehystä sekunnissa
 wireless-stream-frames = Striimikehykset
 wireless-frames-of = { $readdressed } asemille, { $unmapped } ilman listeneriä, { $dropped } hylätty, { $restored } asemilta
 wireless-class-a-allowed = Sallittu, laboratoriotesteihin

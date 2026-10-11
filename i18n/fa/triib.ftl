@@ -602,6 +602,8 @@ wireless-station-count = { $count ->
 }
 wireless-no-ftm = بدون FTM
 wireless-unserved = Listenerهای بدون سرویس
+wireless-frame-budget = بودجه فریم
+wireless-frame-use = { $used } از { $budget } فریم در ثانیه
 wireless-stream-frames = فریم‌های جریان
 wireless-frames-of = { $readdressed } به ایستگاه‌ها، { $unmapped } بدون Listener، { $dropped } دورریخته‌شده، { $restored } از ایستگاه‌ها
 wireless-class-a-allowed = مجاز، برای آزمایش‌های آزمایشگاهی

@@ -612,6 +612,8 @@ wireless-station-count = { $count ->
 }
 wireless-no-ftm = uten FTM
 wireless-unserved = Ikke-betjente listenere
+wireless-frame-budget = Rammebudsjett
+wireless-frame-use = { $used } av { $budget } rammer per sekund
 wireless-stream-frames = Stream-rammer
 wireless-frames-of = { $readdressed } til stasjoner, { $unmapped } uten listener, { $dropped } forkastet, { $restored } fra stasjoner
 wireless-class-a-allowed = Tillatt, for labtesting

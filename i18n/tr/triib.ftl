@@ -604,6 +604,8 @@ wireless-station-count = { $count ->
 }
 wireless-no-ftm = FTM desteksiz
 wireless-unserved = Hizmet verilmeyen listener'lar
+wireless-frame-budget = Çerçeve bütçesi
+wireless-frame-use = saniyede { $used } / { $budget } çerçeve
 wireless-stream-frames = Akış çerçeveleri
 wireless-frames-of = { $readdressed } istasyonlara, { $unmapped } listener'sız, { $dropped } düşürüldü, { $restored } istasyonlardan
 wireless-class-a-allowed = İzin veriliyor, laboratuvar testleri için

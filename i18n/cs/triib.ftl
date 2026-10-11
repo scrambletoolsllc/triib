@@ -670,6 +670,13 @@ wireless-station-count = { $count ->
 }
 wireless-no-ftm = bez FTM
 wireless-unserved = Neobsloužené listenery
+wireless-frame-budget = Rozpočet rámců
+wireless-frame-use = { $budget ->
+    [one] { $used } z { $budget } rámce za sekundu
+    [few] { $used } z { $budget } rámců za sekundu
+    [many] { $used } z { $budget } rámce za sekundu
+   *[other] { $used } z { $budget } rámců za sekundu
+}
 wireless-stream-frames = Rámce streamů
 wireless-frames-of = do stanic: { $readdressed }, bez listeneru: { $unmapped }, zahozeno: { $dropped }, od stanic: { $restored }
 wireless-class-a-allowed = Povoleno, pro laboratorní testy

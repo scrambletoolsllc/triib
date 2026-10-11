@@ -635,6 +635,8 @@ wireless-station-count = { $count ->
 }
 wireless-no-ftm = ללא FTM
 wireless-unserved = Listener ללא שירות
+wireless-frame-budget = תקציב מסגרות
+wireless-frame-use = { $used } מתוך { $budget } מסגרות בשנייה
 wireless-stream-frames = מסגרות זרם
 wireless-frames-of = { $readdressed } לתחנות, { $unmapped } ללא Listener, { $dropped } נזרקו, { $restored } מתחנות
 wireless-class-a-allowed = מותר, לבדיקות מעבדה

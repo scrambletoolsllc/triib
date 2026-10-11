@@ -651,6 +651,8 @@ wireless-station-count = { $count ->
 }
 wireless-no-ftm = sin FTM
 wireless-unserved = Listeners no atendidos
+wireless-frame-budget = Presupuesto de tramas
+wireless-frame-use = { $used } de { $budget } tramas por segundo
 wireless-stream-frames = Tramas de flujo
 wireless-frames-of = { $readdressed } a estaciones, { $unmapped } sin listener, { $dropped } descartadas, { $restored } desde estaciones
 wireless-class-a-allowed = Permitida, para pruebas de laboratorio

@@ -726,6 +726,8 @@ wireless-station-count = { $count ->
 }
 wireless-no-ftm = بلا FTM
 wireless-unserved = Listener بلا خدمة
+wireless-frame-budget = ميزانية الإطارات
+wireless-frame-use = الإطارات في الثانية: { $used } من { $budget }
 wireless-stream-frames = إطارات التدفقات
 wireless-frames-of = { $readdressed } إلى المحطات، { $unmapped } بلا Listener، { $dropped } أُسقطت، { $restored } من المحطات
 wireless-class-a-allowed = مسموح، لاختبارات المختبر

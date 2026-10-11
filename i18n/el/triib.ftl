@@ -625,6 +625,8 @@ wireless-station-count = { $count ->
 }
 wireless-no-ftm = χωρίς FTM
 wireless-unserved = Μη εξυπηρετούμενοι Listener
+wireless-frame-budget = Προϋπολογισμός πλαισίων
+wireless-frame-use = { $used } από { $budget } πλαίσια ανά δευτερόλεπτο
 wireless-stream-frames = Πλαίσια ροών
 wireless-frames-of = { $readdressed } προς σταθμούς, { $unmapped } χωρίς Listener, { $dropped } απορρίφθηκαν, { $restored } από σταθμούς
 wireless-class-a-allowed = Επιτρέπεται, για εργαστηριακές δοκιμές

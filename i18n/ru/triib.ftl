@@ -668,6 +668,13 @@ wireless-station-count = { $count ->
 }
 wireless-no-ftm = без FTM
 wireless-unserved = Listener без обслуживания
+wireless-frame-budget = Бюджет кадров
+wireless-frame-use = { $budget ->
+    [one] { $used } из { $budget } кадра в секунду
+    [few] { $used } из { $budget } кадров в секунду
+    [many] { $used } из { $budget } кадров в секунду
+   *[other] { $used } из { $budget } кадра в секунду
+}
 wireless-stream-frames = Кадры потоков
 wireless-frames-of = станциям: { $readdressed }, без Listener: { $unmapped }, отброшено: { $dropped }, от станций: { $restored }
 wireless-class-a-allowed = Разрешён, для стендовых испытаний

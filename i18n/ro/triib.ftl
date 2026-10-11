@@ -667,6 +667,12 @@ wireless-station-count = { $count ->
 }
 wireless-no-ftm = fără FTM
 wireless-unserved = Listenere neservite
+wireless-frame-budget = Buget de cadre
+wireless-frame-use = { $budget ->
+    [one] { $used } din { $budget } cadru pe secundă
+    [few] { $used } din { $budget } cadre pe secundă
+   *[other] { $used } din { $budget } de cadre pe secundă
+}
 wireless-stream-frames = Cadre de flux
 wireless-frames-of = către stații: { $readdressed }, fără listener: { $unmapped }, aruncate: { $dropped }, de la stații: { $restored }
 wireless-class-a-allowed = Permisă, pentru teste de laborator
