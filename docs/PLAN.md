@@ -371,9 +371,9 @@ in the access point's beacons, and streamed unicast on the air.
   `triib-cli wireless` and `wireless-config`.
 - **Checked** against the ESP station: `triib-cli wireless` reads and
   decodes its answer, which is now a test, and its path places it
-  under the bridge as its access point. To do: its unsolicited
-  responses reaching triib, which they will once it locks, out of FTM's
-  too-close range of the access point.
+  under the bridge as its access point. Its unsolicited responses reach
+  triib within about a second of each change as it locks and unlocks in
+  Mode B, and a query the Wi-Fi hop loses is asked again.
 - Not in P3.1: this computer as a wireless station, which needs its Wi-Fi
   card's own PTP clock and timing support; a later phase.
 
