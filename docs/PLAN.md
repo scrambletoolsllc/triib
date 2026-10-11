@@ -355,8 +355,13 @@ in the access point's beacons, and streamed unicast on the air.
   the listeners it cannot serve and its stations, with an unsolicited
   response on change. SET_WIRELESS_CONFIG only sets the Class A bench
   opt-in.
-- **The ESP:** the beacon element's new identifier, and answering the
-  status query.
+- **The ESP:** the station answers the status query, flashed and
+  checked. The bridge runs no ATDECC entity, as AVB switches mostly do,
+  so it does not answer; the profile asks it only of access points that
+  run one, and triib places stations from their own reports. To do: the
+  beacon element's new identifier in Mode B, which still sends and
+  parses the earlier `8C:1F:64` type `0x00` element, and the access
+  point keeping the element's grandmaster fields current (§2.4.1).
 - **triib, as a controller:** done. atdecc asks each AVB interface once
   an entity is read and the wireless ones every 5 s, and follows
   unsolicited responses. The inspector's Wireless section, an entity
@@ -364,8 +369,11 @@ in the access point's beacons, and streamed unicast on the air.
   with its hop dotted and in sync while locked, alarms for a station not
   locked and listeners an access point cannot serve, the log, and
   `triib-cli wireless` and `wireless-config`.
-- To do: check it against the ESP wireless station and access point once
-  they answer the query.
+- **Checked** against the ESP station: `triib-cli wireless` reads and
+  decodes its answer, which is now a test, and its path places it
+  under the bridge as its access point. To do: its unsolicited
+  responses reaching triib, which they will once it locks, out of FTM's
+  too-close range of the access point.
 - Not in P3.1: this computer as a wireless station, which needs its Wi-Fi
   card's own PTP clock and timing support; a later phase.
 
