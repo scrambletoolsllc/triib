@@ -875,6 +875,12 @@ fn wireless(interface: &str, entity: EntityId) -> std::io::Result<()> {
                 status.downlink_dropped,
                 status.uplink_restored
             );
+            if status.frame_budget > 0 {
+                println!(
+                    "      frames a second {} of a budget of {}",
+                    status.frames_committed, status.frame_budget
+                );
+            }
             for station in &wireless.stations {
                 let rssi = station
                     .signal()

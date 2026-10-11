@@ -1913,6 +1913,8 @@ fn wireless_station() -> Wireless {
             downlink_unmapped: 0,
             downlink_dropped: 0,
             uplink_restored: 0,
+            frame_budget: 0,
+            frames_committed: 0,
             station_count: 0,
         },
         stations: Vec::new(),

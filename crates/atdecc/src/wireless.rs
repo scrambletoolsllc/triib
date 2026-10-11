@@ -223,13 +223,20 @@ pub struct WirelessStatus {
     pub downlink_unmapped: u32,
     pub downlink_dropped: u32,
     pub uplink_restored: u32,
+    /// An access point's frame budget for its wireless port, in frames a
+    /// second (profile 4); 0 on a station.
+    pub frame_budget: u32,
+    /// The frames a second of the streams an access point sends on its
+    /// wireless port, each listener station's copy counted; 0 on a
+    /// station.
+    pub frames_committed: u32,
     /// The station entries in the response, on an access point.
     pub station_count: u16,
 }
 
 impl WirelessStatus {
     /// The response's octets after the command_type, before the stations.
-    pub const LEN: usize = 68;
+    pub const LEN: usize = 76;
 
     /// Decodes the data after the command_type of a response.
     pub fn decode(data: &[u8]) -> Result<Self, DecodeError> {
@@ -269,7 +276,9 @@ impl WirelessStatus {
             downlink_unmapped: read_u32(data, 54),
             downlink_dropped: read_u32(data, 58),
             uplink_restored: read_u32(data, 62),
-            station_count: read_u16(data, 66),
+            frame_budget: read_u32(data, 66),
+            frames_committed: read_u32(data, 70),
+            station_count: read_u16(data, 74),
         })
     }
 
@@ -304,7 +313,9 @@ impl WirelessStatus {
         out[54..58].copy_from_slice(&self.downlink_unmapped.to_be_bytes());
         out[58..62].copy_from_slice(&self.downlink_dropped.to_be_bytes());
         out[62..66].copy_from_slice(&self.uplink_restored.to_be_bytes());
-        out[66..68].copy_from_slice(&self.station_count.to_be_bytes());
+        out[66..70].copy_from_slice(&self.frame_budget.to_be_bytes());
+        out[70..74].copy_from_slice(&self.frames_committed.to_be_bytes());
+        out[74..76].copy_from_slice(&self.station_count.to_be_bytes());
         out
     }
 
@@ -422,6 +433,8 @@ mod tests {
             downlink_unmapped: 0,
             downlink_dropped: 0,
             uplink_restored: 0,
+            frame_budget: 0,
+            frames_committed: 0,
             station_count: 0,
         }
     }
@@ -461,9 +474,15 @@ mod tests {
             flags: WirelessFlags::ACCESS_POINT,
             rssi: 0x7f,
             listeners_unserved: 1,
+            frame_budget: 6500,
+            frames_committed: 4000,
             station_count: 2,
             ..station()
         };
+        let bytes = status.to_bytes();
+        assert_eq!(read_u32(&bytes, at(68)), 6500, "frame_budget");
+        assert_eq!(read_u32(&bytes, at(72)), 4000, "frames_committed");
+        assert_eq!(read_u16(&bytes, at(76)), 2, "station_count");
         let first = Station {
             mac: MacAddress([0xfc, 0x01, 0x2c, 0xfd, 0x80, 0x00]),
             rssi: -48,
@@ -493,21 +512,28 @@ mod tests {
     }
 
     /// An ESP32 Wi-Fi station's answer, Mode A over FTM, unlocked, its FTM
-    /// failing as it sits too close to the access point.
+    /// failing as it sits too close to the access point, as the draft
+    /// before the frame budget fields had it; with them, 0 on a station,
+    /// it decodes the same.
     #[test]
     fn decodes_an_esp_stations_answer() {
-        const ANSWER: [u8; 70] = [
+        const EARLIER: [u8; 70] = [
             0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x06, 0x00, 0x14, 0x04, 0xc8, 0x00, 0x00,
             0x00, 0x01, 0xff, 0x00, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x08, 0xff, 0xff, 0x00, 0x00, 0xd8, 0x85, 0xac, 0xfa, 0x2c, 0x59,
             0x80, 0xf1, 0xb2, 0xff, 0xfe, 0xd2, 0xca, 0xa9, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         ];
+        // The earlier layout is too short for this one.
+        assert!(WirelessStatus::decode(&EARLIER[2..]).is_err());
+        let mut answer = EARLIER[..68].to_vec();
+        answer.extend_from_slice(&[0; 8]);
+        answer.extend_from_slice(&EARLIER[68..]);
         assert_eq!(
-            read_u16(&ANSWER, 0),
+            read_u16(&answer, 0),
             WirelessCommandType::GET_WIRELESS_STATUS.0
         );
-        let status = WirelessStatus::decode(&ANSWER[2..]).unwrap();
+        let status = WirelessStatus::decode(&answer[2..]).unwrap();
         assert_eq!(status.interface, 0);
         assert!(!status.access_point());
         assert!(!status.flags.contains(WirelessFlags::LOCKED));
@@ -539,8 +565,9 @@ mod tests {
         assert_eq!(status.ap_clock, ClockIdentity(0x80f1_b2ff_fed2_caa9));
         assert_eq!(status.ap_port, 2);
         assert_eq!(status.station_count, 0);
-        assert_eq!(status.stations(&ANSWER[2..]).count(), 0);
-        assert_eq!(status.to_bytes(), ANSWER[2..]);
+        assert_eq!((status.frame_budget, status.frames_committed), (0, 0));
+        assert_eq!(status.stations(&answer[2..]).count(), 0);
+        assert_eq!(status.to_bytes(), answer[2..]);
     }
 
     #[test]

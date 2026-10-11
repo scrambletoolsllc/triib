@@ -779,6 +779,8 @@ pub(crate) fn test_station(ap_clock: ClockIdentity, flags: WirelessFlags) -> Wir
         downlink_unmapped: 0,
         downlink_dropped: 0,
         uplink_restored: 0,
+        frame_budget: 0,
+        frames_committed: 0,
         station_count: 0,
     }
 }

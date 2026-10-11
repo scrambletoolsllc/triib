@@ -781,6 +781,10 @@ wireless-station-count = { $count ->
 wireless-no-ftm = without FTM
 # Listeners the access point does not serve, past its unicast limit.
 wireless-unserved = Listeners not served
+# The frames a second the access point can send on Wi-Fi, and how many its
+# streams take, each listener's own copy counted.
+wireless-frame-budget = Frame budget
+wireless-frame-use = { $used } of { $budget } frames a second
 wireless-stream-frames = Stream frames
 # What the access point did with stream frames: sent to each station on
 # its own, found no listener for, dropped, and gave back their address.

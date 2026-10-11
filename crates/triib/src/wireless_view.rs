@@ -236,6 +236,19 @@ fn access_point<'a>(triib: &Triib, wireless: &Wireless, items: &mut Vec<Element<
         }))
     };
     items.push(property(&fl!("wireless-stations"), stations, false));
+    // How much of what it can send on its wireless port its streams take,
+    // each listener station's copy counted.
+    if status.frame_budget > 0 {
+        items.push(property(
+            &fl!("wireless-frame-budget"),
+            fl!(
+                "wireless-frame-use",
+                used = status.frames_committed,
+                budget = status.frame_budget
+            ),
+            status.frames_committed > status.frame_budget,
+        ));
+    }
     if let Some(unserved) = status.unserved() {
         items.push(property(
             &fl!("wireless-unserved"),
