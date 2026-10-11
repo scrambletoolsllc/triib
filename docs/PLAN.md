@@ -19,7 +19,8 @@ prev's look, widgets and window layout through scramble-ui.
   on Apple Silicon; the website is triib.run.
 - Next: P3.1, the AVB Wireless profile and triib's view of wireless
   endpoints and bridges; then P4, whether Windows and then macOS can run
-  talkers and listeners of their own.
+  talkers and listeners of their own, and this computer's entities with
+  several streams.
 - Waiting on others: the linuxptp organization TLV tables, the atlantic
   driver's time stamps, and native speakers' review of the translations.
 
@@ -48,7 +49,7 @@ dependency.
 | Design | Material 3 Expressive, with Omarchy's or the system's accent, from `scramble-ui`, the crate prev and triib share |
 | License | MIT OR Apache-2.0 (see Licensing) |
 | Devices | Milan entities first class; plain 1722.1 entities get what they offer |
-| Virtual endpoints | One ATDECC entity per talker or listener |
+| Virtual endpoints | One ATDECC entity per talker or listener; from P4 also entities with several stream inputs and outputs, beside them |
 | Controller entity | triib advertises itself as a controller (valid time 62 s, entity model ID `0x8c1f6436c0000001` under the Scramble Tools MA-S `8C-1F-64-36-C`), answers CONTROLLER_AVAILABLE, and registers for unsolicited notifications from each entity it reads |
 | ATDECC | Our own Rust stack, controller and entity roles, in the reusable `atdecc` crate, see below |
 | PTP | linuxptp's ptp4l on Linux, in gPTP or the AVB Lite PTP profile, run by triib's systemd units; the daemon reads it through its read-only socket. Our own engine (`avb-ptp`) only where P4 shows a platform needs one |
@@ -368,7 +369,7 @@ in the access point's beacons, and streamed unicast on the air.
 - Not in P3.1: this computer as a wireless station, which needs its Wi-Fi
   card's own PTP clock and timing support; a later phase.
 
-### P4: virtual endpoints on Windows, then macOS
+### P4: virtual endpoints on Windows, then macOS, and entities with several streams
 
 - **Windows.** Windows reports no time stamps on the Intel I226-V and the
   Realtek RTL8111 here (`GetInterfaceSupportedTimestampCapabilities`
@@ -385,6 +386,63 @@ in the access point's beacons, and streamed unicast on the air.
 - **macOS.** Whether user space can read the system's gPTP time and its
   relation to the card, or get hardware time stamps at all; if not, the
   system's own AVB audio device, controlled by triib like any entity.
+
+#### This computer's entities with several streams
+
+Beside today's endpoints, one stream each, this computer runs entities
+with several stream inputs and outputs on one audio unit and clock
+domain, as hardware presents itself: this computer as one device for a
+DAW, say 8 in and 8 out at 48 kHz, with a single talker at 96 kHz or a
+test tone beside it. Both kinds share the interface, the daemon and its
+budgets: 240 instances, 75% of the link, and the real-time threads.
+
+- **The entity.** One Milan entity: its streams at the audio unit's one
+  sampling rate, each with its own format and channels; the clock
+  sources its internal clock and each stream input. The entity role
+  models this already: `EndpointModel` takes any number of inputs and
+  outputs, with a cluster for each channel and a fixed audio map for
+  each stream. Its stream IDs come from its instance and each output's
+  index, as today's do.
+- **endpoints.toml.** An entry gains `inputs` and `outputs`, 0 and 1 for
+  a talker and 1 and 0 for a listener when not given, so today's files
+  read as before; `kind = "device"` takes both, with one `source` for
+  all its outputs and one `sink` for all its inputs. Stream k carries
+  the device's channels from k × its channels on, in order.
+- **Entity model IDs.** One for each shape, as the descriptors change
+  with the counts: `0x8C1F6436C001` and then the inputs and the outputs,
+  each an octet, such as `0x8C1F6436C0010808` for 8 in and 8 out, so
+  entities of one shape share one cached model. Channel counts that
+  differ change the configuration's descriptor counts, which the cache
+  compares, so it reads such a model again rather than mixing them up.
+- **The daemon.** One pacing thread sends every output's frame in turn
+  each class interval, and one takes every input's, so an entity takes
+  two real-time threads whatever its streams, against RealtimeKit's 25
+  for a user; today's endpoints take one each. One audio stream each
+  way: the talker side reads the device's channels and splits them into
+  streams, the listener side merges its streams into the device's
+  channels, each way with one drift estimate against the device's clock.
+  Stream inputs from talkers on other media clocks each keep their own
+  presentation times and drift correction; the clock source says which
+  the domain follows.
+- **Reservations.** As now, stream by stream: a Talker Advertise for each
+  output and a Listener declaration for each input, through the port's
+  one MSRP participant; addresses from the daemon's one MAAP range; in
+  AVB Lite, CVU SRP and the unicast fan-out for each stream.
+- **The app.** A third button in the Entities view's bar adds one,
+  asking for its inputs and outputs. The inspector gives its audio in
+  and out, the shared sampling rate and each stream's channels; the
+  matrix shows its streams as it shows a hardware entity's; presets keep
+  it. Changing its counts gives it another model, so it departs and
+  advertises again, which controllers read as a new model.
+- **Steps.** The daemon's endpoint from one talker or listener to any
+  number of each, with today's endpoints as the case of one; then the
+  file and the model IDs; then the app. Checked by binding several of
+  its streams from Hive and from the Mac mini, with today's endpoints
+  running beside it.
+- **Open.** Controllers changing its channel mapping (Milan's dynamic
+  mappings, ADD_AUDIO_MAPPINGS and REMOVE_AUDIO_MAPPINGS); a CRF stream
+  input as the domain's clock source; streams at other sampling rates,
+  which stay entities of their own.
 
 ### Later
 
