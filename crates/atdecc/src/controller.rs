@@ -87,6 +87,11 @@ const OWN_TYPES: [DescriptorType; 4] = [
     DescriptorType::CLOCK_SOURCE,
 ];
 
+/// Unanswered AVB Wireless status queries before an entity is taken not
+/// to answer them: a Wi-Fi hop loses frames, and a bridge under load can
+/// stall for seconds, so one silence is not an answer.
+const WIRELESS_MISSES: u8 = 3;
+
 /// The most values one GET_DYNAMIC_INFO asks for.
 const MAX_DYNAMIC_QUERIES: usize = 16;
 
@@ -2914,11 +2919,19 @@ impl Controller {
             {
                 model.lite_supported = Some(false);
             }
+            // An entity that does not answer is asked again at the next
+            // poll, and taken not to answer only after a few silences.
             if let Request::GetWirelessStatus { .. } = inflight.request
                 && let Some(model) = self.models.get_mut(&inflight.entity_id)
                 && model.wireless_supported.is_none()
             {
-                model.wireless_supported = Some(false);
+                model.wireless_misses += 1;
+                if model.wireless_misses >= WIRELESS_MISSES {
+                    model.wireless_supported = Some(false);
+                } else if !self.config.wireless_poll.is_zero() {
+                    self.next_wireless_poll
+                        .get_or_insert(now + self.config.wireless_poll);
+                }
             }
             if let Request::GetDynamicInfo { queries, count } = inflight.request {
                 self.dynamic_info_answered(
@@ -2998,7 +3011,7 @@ impl Controller {
         if self.next_wireless_poll.is_none_or(|next| next > now) {
             return;
         }
-        let asked: Vec<(EntityId, u16)> = self
+        let mut asked: Vec<(EntityId, u16)> = self
             .models
             .iter()
             .flat_map(|(&entity_id, model)| {
@@ -3007,7 +3020,22 @@ impl Controller {
                     .map(move |(interface, _)| (entity_id, interface))
             })
             .collect();
-        // The timer stops once no interface is wireless.
+        // Entities whose queries went unanswered are asked again, every
+        // AVB interface, until they answer or have missed too often.
+        asked.extend(
+            self.models
+                .iter()
+                .filter(|(_, model)| {
+                    model.wireless_supported.is_none() && model.wireless_misses > 0
+                })
+                .flat_map(|(&entity_id, model)| {
+                    model
+                        .descriptors(DescriptorType::AVB_INTERFACE)
+                        .map(move |(interface, _)| (entity_id, interface))
+                }),
+        );
+        // The timer stops once no interface is wireless or waits for an
+        // answer.
         self.next_wireless_poll = (!asked.is_empty()).then(|| now + self.config.wireless_poll);
         for (entity_id, interface) in asked {
             self.queue_query(entity_id, Request::GetWirelessStatus { interface });

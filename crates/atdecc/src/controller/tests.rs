@@ -100,6 +100,9 @@ struct FakeEntity {
     /// What it reports of its wireless interface, when it has AVB
     /// Wireless; its other interfaces are wired.
     wireless: Option<Wireless>,
+    /// AVB Wireless status queries it leaves unanswered before it answers,
+    /// as over a Wi-Fi hop that loses them.
+    wireless_silent: u8,
 }
 
 fn descriptor(descriptor_type: DescriptorType, index: u16, length: usize) -> Vec<u8> {
@@ -232,6 +235,7 @@ impl FakeEntity {
             tx_disconnects: Vec::new(),
             lite: None,
             wireless: None,
+            wireless_silent: 0,
         }
     }
 
@@ -642,6 +646,10 @@ impl FakeEntity {
             return Some(out[..length].to_vec());
         }
         if let Ok(asked) = WirelessMessage::from_pdu(&command) {
+            if self.wireless_silent > 0 {
+                self.wireless_silent -= 1;
+                return None;
+            }
             return Some(self.respond_wireless(&command, &asked));
         }
         let asked = crate::mvu::MvuMessage::from_pdu(&command).ok()?;
@@ -1980,6 +1988,55 @@ fn entities_without_wireless_are_asked_once() {
     assert!(model.wireless(0).is_none());
     // Nothing to poll: the entity's advertisement expiry comes first.
     assert_eq!(controller.poll_timeout(), Some(at(20)));
+}
+
+/// A station whose answers the Wi-Fi hop loses at first is asked again at
+/// the next poll, and followed once it answers.
+#[test]
+fn unanswered_wireless_queries_are_asked_again() {
+    let mut controller = controller();
+    let mut entity = FakeEntity::new();
+    entity.wireless = Some(wireless_station());
+    // Its first query and the retry go unanswered.
+    entity.wireless_silent = 2;
+    controller.handle_adpdu(at(0), TALKER_MAC, &aem_available(1));
+    controller.pump(at(0));
+    let mut now = at(0);
+    for _ in 0..40 {
+        exchange(&mut controller, &mut entity, now);
+        let Some(next) = controller.poll_timeout().filter(|next| *next <= at(12)) else {
+            break;
+        };
+        now = next;
+        controller.handle_timeout(now);
+    }
+    let model = controller.model(TALKER).unwrap();
+    assert_eq!(model.wireless_supported, Some(true));
+    assert_eq!(model.wireless(0), Some(&wireless_station()));
+}
+
+/// An entity that never answers the query is given up after a few polls.
+#[test]
+fn silent_entities_are_given_up_on() {
+    let mut controller = controller();
+    let mut entity = FakeEntity::new();
+    entity.wireless = Some(wireless_station());
+    entity.wireless_silent = u8::MAX;
+    controller.handle_adpdu(at(0), TALKER_MAC, &aem_available(1));
+    controller.pump(at(0));
+    let mut now = at(0);
+    for _ in 0..200 {
+        exchange(&mut controller, &mut entity, now);
+        let Some(next) = controller.poll_timeout().filter(|next| *next <= at(19)) else {
+            break;
+        };
+        now = next;
+        controller.handle_timeout(now);
+    }
+    assert_eq!(
+        controller.model(TALKER).unwrap().wireless_supported,
+        Some(false)
+    );
 }
 
 #[test]

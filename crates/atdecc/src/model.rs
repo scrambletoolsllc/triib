@@ -135,6 +135,9 @@ pub struct EntityModel {
     /// Whether it answers the AVB Wireless status query; `None` until
     /// asked.
     pub wireless_supported: Option<bool>,
+    /// Status queries in a row that went unanswered, while it is not
+    /// known whether it answers.
+    pub(crate) wireless_misses: u8,
     wireless: BTreeMap<u16, Wireless>,
     /// The streams it declares over CVU SRP, by stream ID, with when each
     /// was last heard.
