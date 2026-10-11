@@ -1367,14 +1367,14 @@ fn set(interface: &str, entity: EntityId, change: Change) -> std::io::Result<()>
                 }
             }
             Change::Connect { input, .. } | Change::Disconnect { input } => {
-                match model
-                    .binding(input)
-                    .and_then(|binding| binding.talker_stream())
-                {
-                    Some((talker, output)) => {
+                // A command no one answered leaves the binding unknown,
+                // which is not the same as unbound.
+                match model.binding(input).map(|binding| binding.talker_stream()) {
+                    Some(Some((talker, output))) => {
                         println!("input {input} now bound to {talker} output {output}")
                     }
-                    None => println!("input {input} now not bound"),
+                    Some(None) => println!("input {input} now not bound"),
+                    None => println!("input {input}: binding not known"),
                 }
             }
             Change::Transit { output, .. } => match model.max_transit_time(output) {
