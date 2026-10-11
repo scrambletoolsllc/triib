@@ -39,6 +39,9 @@ pub struct StreamModel {
     pub current_format: StreamFormat,
     /// Its channels, each an audio cluster.
     pub channels: u16,
+    /// Sent in SR class B rather than A, as a stream crossing a Wi-Fi hop
+    /// must be (AVB Wireless profile, 4).
+    pub class_b: bool,
 }
 
 /// What a talker or listener entity is.
@@ -259,7 +262,11 @@ impl EndpointModel {
                 let input = descriptor_type == DescriptorType::STREAM_INPUT;
                 let streams = if input { &self.inputs } else { &self.outputs };
                 let stream = streams.get(usize::from(index))?;
-                let mut flags = StreamFlags::CLASS_A;
+                let mut flags = if stream.class_b {
+                    StreamFlags::CLASS_B
+                } else {
+                    StreamFlags::CLASS_A
+                };
                 if input {
                     flags |= StreamFlags::CLOCK_SYNC_SOURCE;
                 }

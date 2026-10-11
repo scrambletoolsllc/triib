@@ -2,8 +2,8 @@
 //! MRP runs per port, not per entity, so the endpoints share one MSRP and
 //! one MVRP participant: two participants on one point-to-point port do
 //! not hear each other's Leave, and one withdrawing VLAN 2 would take it
-//! from the bridge while the other still needs it. VLAN 2 and the class A
-//! domain are declared once for the port; each talker's stream and each
+//! from the bridge while the other still needs it. VLAN 2 and the SR class
+//! domains are declared once for the port; each talker's stream and each
 //! listener's declaration is an attribute of its own.
 
 use std::time::Duration;
@@ -18,35 +18,41 @@ pub const VLAN: u16 = 2;
 pub struct Port {
     pub msrp: Participant,
     pub mvrp: Participant,
+    /// The SR classes the endpoints take part in: class A always, class B
+    /// too where a talker sends in it.
+    domains: Vec<Domain>,
 }
 
 impl Port {
-    pub fn new(seed: u64) -> Self {
+    pub fn new(seed: u64, class_b: bool) -> Self {
+        let mut domains = vec![Domain::CLASS_A];
+        if class_b {
+            domains.push(Domain::CLASS_B);
+        }
         Self {
             msrp: Participant::new(msrp::FORMAT, Duration::ZERO, seed),
             mvrp: Participant::new(mvrp::FORMAT, Duration::ZERO, seed ^ 0x5555),
+            domains,
         }
     }
 
-    /// Declares what every endpoint takes part in: class A on VLAN 2.
+    /// Declares what every endpoint takes part in: VLAN 2 and its SR
+    /// classes.
     pub fn join(&mut self, since: Duration) {
         self.mvrp.declare(since, mvrp::VID, mvrp::value(VLAN), None);
-        self.msrp.declare(
-            since,
-            msrp::attribute::DOMAIN,
-            Domain::CLASS_A.value(),
-            None,
-        );
+        for domain in &self.domains {
+            self.msrp
+                .declare(since, msrp::attribute::DOMAIN, domain.value(), None);
+        }
     }
 
-    /// Withdraws class A on VLAN 2, as the port leaves AVB for AVB Lite:
-    /// the one time the endpoints no longer need them.
+    /// Withdraws VLAN 2 and the SR classes, as the port leaves AVB for AVB
+    /// Lite: the one time the endpoints no longer need them.
     pub fn leave(&mut self, since: Duration) {
-        self.msrp.withdraw(
-            since,
-            msrp::attribute::DOMAIN,
-            &Domain::CLASS_A.value()[..1],
-        );
+        for domain in &self.domains {
+            self.msrp
+                .withdraw(since, msrp::attribute::DOMAIN, &domain.value()[..1]);
+        }
         self.mvrp.withdraw(since, mvrp::VID, &mvrp::value(VLAN));
     }
 
@@ -124,7 +130,7 @@ mod tests {
     /// are past their New phase, as a running talker's are: MRP drops a
     /// declaration still new without a Leave.
     fn two_talkers() -> Port {
-        let mut port = Port::new(7);
+        let mut port = Port::new(7, false);
         port.join(Duration::ZERO);
         for stream in [ONE, TWO] {
             port.msrp.declare(
@@ -178,7 +184,7 @@ mod tests {
         assert!(withdrawn(&msrp, msrp::attribute::DOMAIN).is_empty());
         assert!(withdrawn(&mvrp, mvrp::VID).is_empty());
 
-        let mut new = Port::new(8);
+        let mut new = Port::new(8, false);
         new.join(Duration::ZERO);
         let (_, mvrp) = sent(&mut new, Duration::ZERO, Duration::from_millis(500));
         assert!(mvrp.iter().any(|value| {
@@ -186,6 +192,26 @@ mod tests {
                 && value.value == mvrp::value(VLAN)
                 && value.event.declares()
         }));
+    }
+
+    /// A port with a class B talker declares class B's domain beside
+    /// class A's.
+    #[test]
+    fn a_class_b_talker_adds_its_domain() {
+        let mut port = Port::new(9, true);
+        port.join(Duration::ZERO);
+        let (msrp, _) = sent(&mut port, Duration::ZERO, Duration::from_millis(500));
+        let mut classes: Vec<u8> = msrp
+            .iter()
+            .filter(|value| value.attribute_type == msrp::attribute::DOMAIN)
+            .map(|value| value.value[0])
+            .collect();
+        classes.sort_unstable();
+        classes.dedup();
+        assert_eq!(
+            classes,
+            [Domain::CLASS_B.class_id, Domain::CLASS_A.class_id]
+        );
     }
 
     #[test]

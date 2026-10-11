@@ -117,6 +117,13 @@ impl Domain {
         vlan_id: 2,
     };
 
+    /// Class B on its default priority and VLAN.
+    pub const CLASS_B: Domain = Domain {
+        class_id: 5,
+        priority: 2,
+        vlan_id: 2,
+    };
+
     pub fn value(&self) -> Vec<u8> {
         let vlan = self.vlan_id.to_be_bytes();
         Vec::from([self.class_id, self.priority, vlan[0], vlan[1]])

@@ -742,6 +742,7 @@ mod tests {
                 first_channel: 0,
                 format: None,
                 bound: None,
+                class: Default::default(),
             },
             EndpointConfig {
                 kind: Kind::Listener,
@@ -754,6 +755,7 @@ mod tests {
                 format: Some("0x00a0020840000800".to_owned()),
                 // Bound to the talker above, on the computer it was saved on.
                 bound: Some("0xf0a731ff00f40f14:0".to_owned()),
+                class: Default::default(),
             },
         ]
     }

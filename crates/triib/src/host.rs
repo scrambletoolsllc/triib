@@ -79,6 +79,7 @@ pub fn add(interface: &str, kind: Kind, name: String) -> Result<(), String> {
         first_channel: 0,
         format: None,
         bound: None,
+        class: Default::default(),
     });
     save(&path, &config)
 }

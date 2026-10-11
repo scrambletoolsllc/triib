@@ -52,6 +52,23 @@ pub enum LiteChoice {
     On,
 }
 
+/// The SR class a talker sends its stream in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum SrClass {
+    /// 8000 frames a second's reservation on priority 3, 2 ms.
+    #[default]
+    A,
+    /// 4000 a second's reservation on priority 2, 12 ms, as a stream to a
+    /// Wi-Fi station must be (AVB Wireless profile, 4).
+    B,
+}
+
+impl SrClass {
+    fn is_a(&self) -> bool {
+        *self == SrClass::A
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Kind {
@@ -88,6 +105,9 @@ pub struct EndpointConfig {
     /// `<entity ID>:<output>`, bound again when it starts.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bound: Option<String>,
+    /// A talker's SR class, `"A"` when left out.
+    #[serde(default, skip_serializing_if = "SrClass::is_a")]
+    pub class: SrClass,
 }
 
 /// A binding as `bound` keeps it.

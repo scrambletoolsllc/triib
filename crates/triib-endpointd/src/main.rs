@@ -36,6 +36,7 @@ fn first_config() -> Config {
         first_channel: 0,
         format: None,
         bound: None,
+        class: Default::default(),
     };
     Config {
         interface,

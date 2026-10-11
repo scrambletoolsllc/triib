@@ -53,6 +53,9 @@ const PROBE_RETRY: Duration = Duration::from_secs(4);
 const LOCK_TIME: Duration = Duration::from_secs(60);
 /// The default max transit time of a class A stream.
 const MAX_TRANSIT_TIME: u32 = 2_000_000;
+/// A class B stream output's max transit time when none is set, in
+/// nanoseconds, room for a Wi-Fi hop.
+const MAX_TRANSIT_TIME_CLASS_B: u32 = 12_000_000;
 /// The registered controllers an entity keeps (Milan 1.3, 5.4.2.20).
 const MOST_REGISTERED: usize = 16;
 /// The Milan specification this entity implements.
@@ -180,7 +183,19 @@ struct Output {
     destination: MacAddress,
     reservation: OutputReservation,
     max_transit_time: u32,
+    class_b: bool,
     counters: [u32; 32],
+}
+
+impl Output {
+    /// The max transit time when none is set, by the stream's class.
+    fn default_transit(&self) -> u32 {
+        if self.class_b {
+            MAX_TRANSIT_TIME_CLASS_B
+        } else {
+            MAX_TRANSIT_TIME
+        }
+    }
 }
 
 /// An entity this one has heard advertise.
@@ -240,11 +255,16 @@ impl Entity {
             .outputs
             .iter()
             .zip(outputs)
-            .map(|(_, &(stream_id, destination))| Output {
+            .map(|(stream, &(stream_id, destination))| Output {
                 stream_id,
                 destination,
                 reservation: OutputReservation::default(),
-                max_transit_time: MAX_TRANSIT_TIME,
+                max_transit_time: if stream.class_b {
+                    MAX_TRANSIT_TIME_CLASS_B
+                } else {
+                    MAX_TRANSIT_TIME
+                },
+                class_b: stream.class_b,
                 counters: [0; 32],
             })
             .collect();
@@ -1211,7 +1231,7 @@ impl Entity {
                     }
                     // Zero asks for the default.
                     let wanted = match read_u64(payload, 4) {
-                        0 => MAX_TRANSIT_TIME,
+                        0 => output.default_transit(),
                         nanoseconds => u32::try_from(nanoseconds).unwrap_or(u32::MAX),
                     };
                     if wanted != output.max_transit_time {
@@ -1406,6 +1426,9 @@ impl Entity {
                 flags |= StreamInfoFlags::STREAM_ID_VALID | StreamInfoFlags::STREAM_VLAN_ID_VALID;
                 if destination != UNADDRESSED {
                     flags |= StreamInfoFlags::STREAM_DEST_MAC_VALID;
+                }
+                if output.class_b {
+                    flags |= StreamInfoFlags::CLASS_B;
                 }
                 if output.reservation.registering {
                     flags_ex |= 1;

@@ -29,6 +29,7 @@ fn stream(name: &str) -> StreamModel {
         formats: vec![AAF_48K_8CH],
         current_format: AAF_48K_8CH,
         channels: 8,
+        class_b: false,
     }
 }
 

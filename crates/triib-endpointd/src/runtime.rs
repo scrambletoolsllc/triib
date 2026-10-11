@@ -29,7 +29,7 @@ use avb_net::stream::FrameSender;
 use triib_stream::audio::{Sink, Source};
 use triib_stream::{Listener, ListenerConfig, MediaClock, Talker, TalkerConfig};
 
-use crate::config::{Config, EndpointConfig, Kind, LiteChoice, binding_text};
+use crate::config::{Config, EndpointConfig, Kind, LiteChoice, SrClass, binding_text};
 use crate::gptp;
 use crate::lite::{self, Declared, Fallback, Ptp4l};
 use crate::port::{Port, VLAN};
@@ -41,6 +41,10 @@ const TALKER_MODEL: EntityModelId = EntityModelId(0x8c1f_6436_c000_0002);
 const LISTENER_MODEL: EntityModelId = EntityModelId(0x8c1f_6436_c000_0003);
 /// Class A's priority; its VLAN is the port's.
 const PRIORITY: u8 = 3;
+/// Class B's priority.
+const CLASS_B_PRIORITY: u8 = 2;
+/// Class B's interval, which a reservation counts its frames over.
+const CLASS_B_INTERVAL: u64 = 250_000;
 /// How long after the last MRP from another participant on the port it
 /// is still reported.
 const FOREIGN_MRP_QUIET: Duration = Duration::from_secs(30);
@@ -245,13 +249,14 @@ impl Endpoint {
             .collect();
         sampling_rates.dedup();
         let current_sampling_rate = current_format.sample_rate().unwrap_or(48_000);
+        let talker = config.kind == Kind::Talker;
         let stream = StreamModel {
             name: config.name.clone(),
             current_format,
             formats,
             channels,
+            class_b: talker && config.class == SrClass::B,
         };
-        let talker = config.kind == Kind::Talker;
         let model = EndpointModel {
             entity_id: entity_id(mac, instance),
             entity_model_id: if talker { TALKER_MODEL } else { LISTENER_MODEL },
@@ -586,7 +591,13 @@ impl Runtime {
             msrp,
             mvrp,
             endpoints,
-            port: Port::new(seed),
+            port: Port::new(
+                seed,
+                config
+                    .endpoints
+                    .iter()
+                    .any(|endpoint| endpoint.kind == Kind::Talker && endpoint.class == SrClass::B),
+            ),
             foreign_mrp: None,
             maap,
             tagged: FrameSender::open(&interface)?,
@@ -1117,6 +1128,18 @@ impl Runtime {
         handed
     }
 
+    /// The priority a talker endpoint's frames go out on: AVB Lite's, else
+    /// its SR class's.
+    fn priority(&self, index: usize) -> u8 {
+        if self.lite.is_some() {
+            LITE_PRIORITY
+        } else if self.endpoints[index].config.class == SrClass::B {
+            CLASS_B_PRIORITY
+        } else {
+            PRIORITY
+        }
+    }
+
     /// The Talker Advertise for a talker endpoint's stream, from its
     /// current format.
     fn declaration(&self, index: usize) -> Option<TalkerDeclaration> {
@@ -1133,12 +1156,14 @@ impl Runtime {
                 VLAN
             },
             max_frame_size: media.pdu_length() as u16,
-            max_interval_frames: 1,
-            priority: if self.lite.is_some() {
-                LITE_PRIORITY
+            // A class B interval holds as many of the stream's frames as
+            // go out in 250 µs, two at 6 samples a frame and 48 kHz.
+            max_interval_frames: if endpoint.config.class == SrClass::B {
+                (CLASS_B_INTERVAL / media.interval_nanos().max(1)).max(1) as u16
             } else {
-                PRIORITY
+                1
             },
+            priority: self.priority(index),
             rank: true,
             accumulated_latency: TALKER_LATENCY,
             failure: None,
@@ -1413,7 +1438,7 @@ impl Runtime {
                 vec![destination]
             },
             vlan_id: if lite { self.media_vlan() } else { VLAN },
-            priority: if lite { LITE_PRIORITY } else { PRIORITY },
+            priority: self.priority(index),
             format: stream.current_format,
             max_transit_time: Duration::from_nanos(u64::from(transit)),
             source: endpoint.config.source(),
