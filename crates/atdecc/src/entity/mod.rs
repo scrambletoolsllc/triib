@@ -517,12 +517,17 @@ impl Entity {
     }
 
     fn capabilities(&self) -> EntityCapabilities {
-        EntityCapabilities::AEM_SUPPORTED
+        let capabilities = EntityCapabilities::AEM_SUPPORTED
             | EntityCapabilities::VENDOR_UNIQUE_SUPPORTED
             | EntityCapabilities::CLASS_A_SUPPORTED
             | EntityCapabilities::GPTP_SUPPORTED
             | EntityCapabilities::AEM_IDENTIFY_CONTROL_INDEX_VALID
-            | EntityCapabilities::AEM_INTERFACE_INDEX_VALID
+            | EntityCapabilities::AEM_INTERFACE_INDEX_VALID;
+        if self.outputs.iter().any(|output| output.class_b) {
+            capabilities | EntityCapabilities::CLASS_B_SUPPORTED
+        } else {
+            capabilities
+        }
     }
 
     fn talker_capabilities(&self) -> TalkerCapabilities {
