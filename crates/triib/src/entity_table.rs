@@ -445,13 +445,7 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
     // languages.
     let top = scramble_ui::row![name_header, line(headings_height), rest_header];
     let bottom = scramble_ui::row![name_body, line(Fill), rest_body];
-    let view = container(scramble_ui::column![top, bottom].height(Fill))
-        .padding([0.0, TABLE_MARGIN])
-        .padding(iced::Padding {
-            top: TABLE_MARGIN,
-            bottom: TABLE_MARGIN,
-            ..iced::Padding::new(0.0)
-        });
+    let view = container(scramble_ui::column![top, bottom].height(Fill)).padding(TABLE_MARGIN);
     // A press on the table is the table's; one on the space around it
     // clears the selection.
     mouse_area(view).on_press(Message::SelectionCleared).into()
