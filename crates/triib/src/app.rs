@@ -413,6 +413,13 @@ impl Triib {
         crate::host::status_of(self.endpoints.as_ref(), entity_id).is_some()
     }
 
+    /// The icon of one of this computer's endpoints, telling a talker,
+    /// a listener and a device apart; `None` for others' entities.
+    pub fn host_icon(&self, entity_id: EntityId) -> Option<scramble_ui::icon::Icon> {
+        crate::host::status_of(self.endpoints.as_ref(), entity_id)
+            .map(|endpoint| crate::host_view::icon(endpoint.kind))
+    }
+
     /// Goes on with a preset recalled while this computer's endpoints
     /// start again, once they are back or have taken too long.
     fn go_on_recalling(&mut self) -> Task<Message> {

@@ -47,7 +47,7 @@ pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
         None
     };
     let add = |kind, label: String| {
-        button::with_icon(Kind::Tonal, Icon::Add, label)
+        button::with_icon(Kind::Tonal, icon(kind), label)
             .size(Size::ExtraSmall)
             .on_press_maybe(able.then_some(Message::HostAdded(kind)))
     };
@@ -83,6 +83,16 @@ pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
         .padding([8, 16])
         .into(),
     )
+}
+
+/// The icon of this computer's talkers, listeners and devices: output's,
+/// input's, and the computer's.
+pub fn icon(kind: EndpointKind) -> Icon {
+    match kind {
+        EndpointKind::Talker => Icon::Output,
+        EndpointKind::Listener => Icon::Input,
+        EndpointKind::Device => Icon::Computer,
+    }
 }
 
 /// The channel counts the inspector offers; six samples of each fit in a

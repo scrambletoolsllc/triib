@@ -301,11 +301,9 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
                         Kind::Row,
                         scramble_ui::row![
                             icon::icon(
-                                if triib.is_host(entity_id) {
-                                    Icon::Computer
-                                } else {
-                                    describe::glyph(&row.entity.adp)
-                                },
+                                triib
+                                    .host_icon(entity_id)
+                                    .unwrap_or_else(|| describe::glyph(&row.entity.adp)),
                                 20
                             ),
                             styled(name, Type::BodyMedium).wrapping(Wrapping::None),
