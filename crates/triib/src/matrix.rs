@@ -9,12 +9,14 @@ use atdecc::model::EntityModel;
 use atdecc::stream_format::{Fit, fit};
 use atdecc::{DescriptorType, DiscoveredEntity, EntityId, StreamFormat};
 use iced::widget::text::Wrapping;
-use iced::widget::{container, mouse_area};
-use iced::{Center, Color, Element, Fill, Length, Theme};
+use iced::widget::{container, mouse_area, pin, space, stack};
+use iced::{Center, Color, Element, Fill, Length, Rectangle, Theme};
 use scramble_ui::button::{self, Kind, Size};
 use scramble_ui::component;
+use scramble_ui::dropdown::{self, Entry};
 use scramble_ui::font::{Type, styled};
 use scramble_ui::icon::{self, Icon};
+use scramble_ui::popover::popover;
 use scramble_ui::{Scheme, faded, shape, style};
 use scramble_ui::{column, dir, row};
 
@@ -126,6 +128,15 @@ pub enum Cell {
         /// What clicking does.
         action: Option<Action>,
     },
+}
+
+/// A matrix cell's menu of the formats both its ends take.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct FormatMenu {
+    pub talker: (EntityId, u16),
+    pub listener: (EntityId, u16),
+    /// The cell, from the matrix's top left corner.
+    pub cell: Rectangle,
 }
 
 /// Everything the matrix widget draws.
@@ -249,7 +260,7 @@ fn view_at(triib: &Triib, height: f32) -> Element<'_, Message> {
             // A press on the matrix's lines is the matrix's; one on the
             // space around them clears the selection.
             mouse_area(
-                container(grid::matrix(grid, triib.hover))
+                container(with_format_menu(triib, grid::matrix(grid, triib.hover)))
                     .center_x(Fill)
                     .height(if cramped {
                         Length::Fixed(grid::LEAST_HEIGHT)
@@ -561,14 +572,181 @@ fn assess(triib: &Triib, output: &Stream<'_>, input: &Stream<'_>) -> (State, Opt
         Action::Disconnect { listener: pending } if pending == listener => Some(bound_here),
         _ => None,
     });
+    let chained = triib.waiting(|action| *action == Action::Connect { talker, listener });
     match pending {
         Some(true) => (State::Working, None),
+        // Its formats are changing before it connects.
+        None if chained => (State::Working, None),
         // Another change to this input is on its way.
         Some(false) => (state, None),
         None if bound_here => (state, Some(Action::Disconnect { listener })),
         None if fits == Fit::Incompatible => (state, None),
         None => (state, Some(Action::Connect { talker, listener })),
     }
+}
+
+/// The matrix with the format menu over the cell it was opened from,
+/// while it is open.
+fn with_format_menu<'a>(
+    triib: &'a Triib,
+    matrix: impl Into<Element<'a, Message>>,
+) -> Element<'a, Message> {
+    let matrix = matrix.into();
+    let Some(menu) = triib.format_menu else {
+        return matrix;
+    };
+    let entries = format_entries(triib, menu);
+    if entries.is_empty() {
+        return matrix;
+    }
+    let anchor = space().width(menu.cell.width).height(menu.cell.height);
+    let surface = dropdown::surface(entries, 0.0);
+    let opened = popover(anchor, Some(surface), Message::MatrixFormatsClosed).close_on_choice();
+    stack![matrix, pin(opened).x(menu.cell.x).y(menu.cell.y)].into()
+}
+
+/// The format menu's entries: the talker's format, which only the input
+/// changes to, then the other formats both take, which both change to,
+/// each connecting once the formats are set; then connecting as they are.
+fn format_entries(triib: &Triib, menu: FormatMenu) -> Vec<Entry<Message>> {
+    let FormatMenu {
+        talker, listener, ..
+    } = menu;
+    let stream = |(entity, index): (EntityId, u16), input: bool| {
+        triib
+            .models
+            .get(&entity)?
+            .streams(input)
+            .find(|stream| stream.index == index)
+            .map(|stream| (stream.current_format, stream.formats().collect::<Vec<_>>()))
+    };
+    let (Some((sent, mut sendable)), Some((set, takes))) =
+        (stream(talker, false), stream(listener, true))
+    else {
+        return Vec::new();
+    };
+    // The talker's own format first, then its others at the same rate:
+    // another rate is a change of the entities' sampling rate, which can
+    // be refused or move every stream they have.
+    sendable.retain(|format| *format != sent && format.sample_rate() == sent.sample_rate());
+    sendable.insert(0, sent);
+    // Each format the output can send, with what the input is set to for
+    // it: as it is when it takes it already, else the same format where
+    // it lists it, else the one it lists that takes it.
+    let shared = sendable.into_iter().filter_map(|format| {
+        if format.suits(set) {
+            return Some((format, set));
+        }
+        takes
+            .iter()
+            .copied()
+            .find(|taken| *taken == format)
+            .or_else(|| takes.iter().copied().find(|taken| format.suits(*taken)))
+            .map(|taken| (format, taken))
+    });
+    // A talker already streaming to another listener keeps its format.
+    let busy = streams_elsewhere(triib, talker, listener);
+    let change = |entity: EntityId, descriptor_type: DescriptorType, index: u16, format| {
+        Action::SetStreamFormat {
+            entity,
+            descriptor_type,
+            index,
+            format,
+        }
+    };
+    let connect = Action::Connect { talker, listener };
+    let mut entries = Vec::new();
+    let mut both = false;
+    let mut held = false;
+    for (format, taken) in shared {
+        let mut steps = Vec::new();
+        if format == sent {
+            entries.push(Entry::heading(fl!("matrix-format-input")));
+        } else if busy {
+            held = true;
+            continue;
+        } else {
+            if !both {
+                entries.push(Entry::heading(fl!("matrix-format-both")));
+                both = true;
+            }
+            steps.push(change(
+                talker.0,
+                DescriptorType::STREAM_OUTPUT,
+                talker.1,
+                format,
+            ));
+        }
+        if taken != set {
+            steps.push(change(
+                listener.0,
+                DescriptorType::STREAM_INPUT,
+                listener.1,
+                taken,
+            ));
+        }
+        steps.push(connect);
+        entries.push(Entry::item(format.to_string(), Message::ActInTurn(steps)));
+    }
+    if held {
+        entries.push(Entry::note(fl!("matrix-format-talker-busy")));
+    }
+    entries.push(Entry::divider());
+    entries.push(Entry::item(
+        fl!("matrix-format-anyway"),
+        Message::Act(connect),
+    ));
+    entries
+}
+
+/// The format menu of the first cell whose input must change, as a click
+/// on it opens it, for pictures.
+#[cfg(test)]
+pub(crate) fn first_format_menu(triib: &Triib) -> Option<FormatMenu> {
+    let talkers = groups(triib, Side::Talker);
+    let listeners = groups(triib, Side::Listener);
+    let built = grid(triib, &talkers, &listeners);
+    let columns = built.columns.len();
+    built
+        .cells
+        .iter()
+        .enumerate()
+        .find_map(|(at, cell)| match *cell {
+            Cell::Stream {
+                state: State::Change,
+                action: Some(Action::Connect { talker, listener }),
+            } => Some(FormatMenu {
+                talker,
+                listener,
+                cell: Rectangle {
+                    x: (at % columns) as f32 * grid::CELL,
+                    y: grid::HEADER + (at / columns) as f32 * grid::CELL,
+                    width: grid::CELL,
+                    height: grid::CELL,
+                },
+            }),
+            _ => None,
+        })
+}
+
+/// Whether the talker's output streams to a listener other than
+/// `listener`, as its bindings or its own count tell.
+fn streams_elsewhere(triib: &Triib, talker: (EntityId, u16), listener: (EntityId, u16)) -> bool {
+    let bound = triib.models.iter().any(|(entity, model)| {
+        model.streams(true).any(|input| {
+            (*entity, input.index) != listener
+                && model
+                    .binding(input.index)
+                    .and_then(|binding| binding.talker_stream())
+                    == Some(talker)
+        })
+    });
+    let counted = triib
+        .models
+        .get(&talker.0)
+        .and_then(|model| model.tx_state(talker.1))
+        .is_some_and(|state| state.connection_count > 0);
+    bound || counted
 }
 
 /// A column's or row's line found among the talkers or listeners.
@@ -863,6 +1041,80 @@ mod tests {
             }
         }
         assert!(own > 0, "each entity meets its own streams");
+    }
+
+    /// A cell whose input must change first offers the talker's format,
+    /// which only the input changes to, other formats both take, then
+    /// connecting as they are; a choice changes formats before connecting.
+    #[test]
+    fn a_cell_whose_input_must_change_offers_formats() {
+        let (entities, models) = crate::view::tests::bench();
+        let interface = avb_net::Interface {
+            name: "enp6s0".to_owned(),
+            mac: avb_net::MacAddress([0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b]),
+            up: true,
+            speed: None,
+            physical: true,
+            wireless: false,
+            hardware_clock: None,
+        };
+        let triib = Triib::sample(Settings::default(), interface, entities, models);
+        let talkers = groups(&triib, Side::Talker);
+        let listeners = groups(&triib, Side::Listener);
+        let built = grid(&triib, &talkers, &listeners);
+        let (talker, listener) = built
+            .cells
+            .iter()
+            .find_map(|cell| match *cell {
+                Cell::Stream {
+                    state: State::Change,
+                    action: Some(Action::Connect { talker, listener }),
+                } => Some((talker, listener)),
+                _ => None,
+            })
+            .expect("the bench has a cell whose input must change");
+        let entries = format_entries(
+            &triib,
+            FormatMenu {
+                talker,
+                listener,
+                cell: Rectangle::default(),
+            },
+        );
+        let connect = Action::Connect { talker, listener };
+        assert!(matches!(&entries[0], Entry::Heading(_)));
+        let Entry::Item {
+            message: Message::ActInTurn(steps),
+            ..
+        } = &entries[1]
+        else {
+            panic!("the talker's format comes first");
+        };
+        assert!(matches!(
+            steps[0],
+            Action::SetStreamFormat { entity, descriptor_type: DescriptorType::STREAM_INPUT, index, .. }
+                if (entity, index) == listener
+        ));
+        assert_eq!(steps.last(), Some(&connect));
+        assert!(matches!(
+            entries.last(),
+            Some(Entry::Item { message: Message::Act(action), .. }) if *action == connect
+        ));
+        // Any other format changes the talker first.
+        for entry in &entries[2..] {
+            if let Entry::Item {
+                message: Message::ActInTurn(steps),
+                ..
+            } = entry
+            {
+                assert!(matches!(
+                    steps[0],
+                    Action::SetStreamFormat { entity, descriptor_type: DescriptorType::STREAM_OUTPUT, index, .. }
+                        if (entity, index) == talker
+                ));
+                assert_eq!(steps.last(), Some(&connect));
+            }
+        }
     }
 
     #[test]

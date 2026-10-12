@@ -4,6 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
+use atdecc::controller::Outcome;
 use atdecc::descriptor::DescriptorType;
 use atdecc::model::EntityModel;
 use atdecc::{DiscoveredEntity, EntityId};
@@ -16,7 +17,7 @@ use crate::External;
 use crate::controls_view::ControlDrag;
 use crate::entity_table::Column;
 use crate::log_view::{Log, LogMessage};
-use crate::matrix::{Hover, Side};
+use crate::matrix::{FormatMenu, Hover, Side};
 use crate::netmap::{Focus, NodeKey};
 use crate::network::{Action, Failure, Name, NameTarget, Neighbor, Network, Report, ReportKind};
 use crate::presets::Preset;
@@ -66,6 +67,12 @@ pub struct Triib {
     pub selected: Option<EntityId>,
     /// Actions sent to the network and not finished yet.
     pub pending: Vec<Action>,
+    /// Steps that wait for one before them: the action on its way, and
+    /// what follows it once it succeeds.
+    pub chains: Vec<(Action, Vec<Action>)>,
+    /// The formats a talker's output and a listener's input could share,
+    /// offered from the matrix cell clicked.
+    pub format_menu: Option<FormatMenu>,
     /// What happened to the last action that did not succeed.
     pub notice: Option<String>,
     /// Talkers and listeners the matrix shows as one column or row.
@@ -181,6 +188,9 @@ pub enum Message {
     /// Several actions, sent in order, such as removing a channel's mapping
     /// before mapping it anew.
     ActInOrder(Vec<Action>),
+    /// Several actions, each sent once the one before it succeeds, such as
+    /// changing formats before connecting.
+    ActInTurn(Vec<Action>),
     DismissNotice,
     MatrixStreams(Streams),
     /// Show another field in the entity list's column at this place, or
@@ -200,6 +210,9 @@ pub enum Message {
     MatrixConnectableOnlyToggled,
     MatrixCollapseToggled(Side, EntityId),
     MatrixHovered(Hover),
+    /// Offer the formats both ends of a matrix cell take.
+    MatrixFormatsOpened(FormatMenu),
+    MatrixFormatsClosed,
     NetworkShows(NetworkShows),
     OverflowToggled,
     NetworkListToggled,
@@ -269,6 +282,8 @@ impl Triib {
             models,
             selected: None,
             pending: Vec::new(),
+            chains: Vec::new(),
+            format_menu: None,
             notice: None,
             collapsed: BTreeSet::new(),
             hover: Hover::default(),
@@ -319,6 +334,8 @@ impl Triib {
             models: BTreeMap::new(),
             selected: None,
             pending: Vec::new(),
+            chains: Vec::new(),
+            format_menu: None,
             notice: None,
             collapsed: BTreeSet::new(),
             hover: Hover::default(),
@@ -584,6 +601,10 @@ impl Triib {
                     }
                 }
             }
+            Message::ActInTurn(actions) => {
+                self.notice = None;
+                self.act_in_turn(actions);
+            }
             Message::DismissNotice => self.notice = None,
             Message::EntityColumn(index, field) => {
                 let columns = &mut self.settings.entity_columns;
@@ -648,6 +669,8 @@ impl Triib {
                 }
             }
             Message::MatrixHovered(hover) => self.hover = hover,
+            Message::MatrixFormatsOpened(menu) => self.format_menu = Some(menu),
+            Message::MatrixFormatsClosed => self.format_menu = None,
             Message::NetworkShows(shows) => {
                 self.settings.network_shows = shows;
                 self.save_settings();
@@ -964,6 +987,13 @@ impl Triib {
                     self.pending.remove(position);
                 }
                 self.notice = crate::describe::outcome(self, action, outcome);
+                // The steps after it go on only once it is done.
+                if let Some(position) = self.chains.iter().position(|(head, _)| *head == action) {
+                    let (_, rest) = self.chains.remove(position);
+                    if outcome == Outcome::Done {
+                        self.act_in_turn(rest);
+                    }
+                }
             }
         }
     }
@@ -1049,6 +1079,28 @@ impl Triib {
     /// Whether a change to `entity` is on its way, by what it changes.
     pub fn changing(&self, wanted: impl Fn(&Action) -> bool) -> Option<&Action> {
         self.pending.iter().rev().find(|action| wanted(action))
+    }
+
+    /// Sends the first of `actions`, keeping the rest to send once it
+    /// succeeds.
+    fn act_in_turn(&mut self, mut actions: Vec<Action>) {
+        let Some(network) = &self.network else {
+            return;
+        };
+        if actions.is_empty() {
+            return;
+        }
+        let first = actions.remove(0);
+        self.pending.push(first);
+        network.act(first);
+        if !actions.is_empty() {
+            self.chains.push((first, actions));
+        }
+    }
+
+    /// Whether `action` waits in a chain for a step before it.
+    pub fn waiting(&self, wanted: impl Fn(&Action) -> bool) -> bool {
+        self.chains.iter().any(|(_, rest)| rest.iter().any(&wanted))
     }
 
     pub fn stream_name(

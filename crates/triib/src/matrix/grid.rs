@@ -26,14 +26,15 @@ use scramble_ui::font::{ICONS, ICONS_FILLED, TEXT};
 use scramble_ui::icon::Icon;
 use scramble_ui::{Scheme, blend, faded};
 
-use super::{Cell, Grid, Hover, Line, Side};
+use super::{Cell, FormatMenu, Grid, Hover, Line, Side, State};
 use crate::app::Message;
+use crate::network::Action;
 use crate::text::{Fitted, fit, measure};
 
 /// A cell's width and height.
-const CELL: f32 = 40.0;
+pub(super) const CELL: f32 = 40.0;
 /// Height of the slanted column headings.
-const HEADER: f32 = 176.0;
+pub(super) const HEADER: f32 = 176.0;
 /// The least height the grid takes: its headings and two rows.
 pub const LEAST_HEIGHT: f32 = HEADER + 2.0 * CELL;
 /// Width of the row headings.
@@ -321,10 +322,24 @@ impl Matrix {
         }
     }
 
-    /// What pressing on `target` does.
-    fn press(&self, target: Target) -> Option<Message> {
+    /// What pressing on `target` does, with the cells scrolled by `offset`.
+    fn press(&self, target: Target, offset: Vector) -> Option<Message> {
         match target {
             Target::Cell(row, column) => match self.grid.cell(row, column) {
+                // Formats to choose from before connecting.
+                Cell::Stream {
+                    state: State::Change,
+                    action: Some(Action::Connect { talker, listener }),
+                } => Some(Message::MatrixFormatsOpened(FormatMenu {
+                    talker,
+                    listener,
+                    cell: Rectangle {
+                        x: column as f32 * CELL - offset.x,
+                        y: HEADER + row as f32 * CELL - offset.y,
+                        width: CELL,
+                        height: CELL,
+                    },
+                })),
                 Cell::Stream {
                     action: Some(action),
                     ..
@@ -468,7 +483,7 @@ impl Widget<Message, Theme, iced::Renderer> for Matrix {
                     } else if target != Target::Nothing {
                         // Every press on the matrix's lines is its own, done
                         // or not; one on its empty corners passes through.
-                        if let Some(message) = self.press(target) {
+                        if let Some(message) = self.press(target, offset) {
                             shell.publish(message);
                         }
                         shell.capture_event();
@@ -525,7 +540,7 @@ impl Widget<Message, Theme, iced::Renderer> for Matrix {
         let parts = Parts::new(&self.grid, bounds.size());
         match self.target(&parts, parts.drawn(state.offset), point) {
             Target::Scrollbar { .. } => mouse::Interaction::Grab,
-            target if self.press(target).is_some() => mouse::Interaction::Pointer,
+            target if self.press(target, Vector::ZERO).is_some() => mouse::Interaction::Pointer,
             _ => mouse::Interaction::default(),
         }
     }

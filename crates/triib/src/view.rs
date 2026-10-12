@@ -2013,6 +2013,7 @@ pub(crate) mod tests {
             ("inspector-phone", View::Matrix, true, phone),
             ("matrix-desktop", View::Matrix, true, desktop),
             ("matrix-hover-own", View::Matrix, false, desktop),
+            ("matrix-formats", View::Matrix, false, desktop),
             ("entities-desktop", View::Entities, false, desktop),
             (
                 "entities-wide",
@@ -2208,6 +2209,14 @@ pub(crate) mod tests {
                     column: Some(crate::matrix::Line::Stream(MAC_MINI, 0)),
                     row: Some(crate::matrix::Line::Stream(MAC_MINI, 0)),
                 };
+            }
+            if suffix.contains("formats") {
+                // The menu a cell whose input must change opens.
+                triib.format_menu = crate::matrix::first_format_menu(&triib);
+                assert!(
+                    triib.format_menu.is_some(),
+                    "a cell whose input must change"
+                );
             }
             if suffix.starts_with("settings") {
                 triib.settings_open = true;

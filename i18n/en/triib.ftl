@@ -526,7 +526,14 @@ matrix-bound-failed = Bound, but the talker's reservation failed: { $reason }. C
 # "48k 8ch".
 matrix-bound-formats-differ = Bound, but the formats differ: the talker sends { $sent }, the input is set to { $set }. Click to disconnect.
 matrix-formats-match = Formats match ({ $format }). Click to connect.
-matrix-format-must-change = The input takes { $sent } but is set to { $set }, so it may not play until its format changes. Click to connect anyway.
+matrix-format-must-change = The input takes { $sent } but is set to { $set }, so it may not play until its format changes. Click to choose a format.
+# The menu a click on such a cell opens: the talker's format, which only
+# the input changes to, then other formats both ends take, which both
+# change to, each connecting once set; then connecting as they are.
+matrix-format-input = Change the input to
+matrix-format-both = Change both to
+matrix-format-talker-busy = The talker streams to other listeners, so its format stays.
+matrix-format-anyway = Connect without changing formats
 matrix-incompatible = The input does not take { $sent }. It is set to { $set }.
 # An entity's row or column folded into one cell.
 matrix-group-none = Not connected. Expand to connect streams one by one.
