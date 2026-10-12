@@ -7,7 +7,7 @@
 //! domain. Each stream has a stream port of its own on the audio unit,
 //! with an audio cluster of one channel for each of the stream's channels
 //! and a static map between them. The clock sources are the internal
-//! clock, then each stream input.
+//! clock, then each stream input where the model offers them.
 
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -66,6 +66,10 @@ pub struct EndpointModel {
     /// The clock domain's current clock source: 0 the internal clock,
     /// then the stream inputs.
     pub clock_source: u16,
+    /// Whether the stream inputs are clock sources too, beside the
+    /// internal clock: only for an entity that can follow one's media
+    /// clock.
+    pub input_clock_sources: bool,
 }
 
 /// Fixed-size AEM text: UTF-8, zero padded, cut at a character boundary.
@@ -166,8 +170,13 @@ impl EndpointModel {
         ports
     }
 
-    fn clock_sources(&self) -> u16 {
-        1 + self.inputs.len() as u16
+    /// How many clock sources the clock domain has.
+    pub(crate) fn clock_sources(&self) -> u16 {
+        if self.input_clock_sources {
+            1 + self.inputs.len() as u16
+        } else {
+            1
+        }
     }
 
     /// The descriptor types the configuration counts, with how many of
@@ -267,7 +276,7 @@ impl EndpointModel {
                 } else {
                     StreamFlags::CLASS_A
                 };
-                if input {
+                if input && self.input_clock_sources {
                     flags |= StreamFlags::CLOCK_SYNC_SOURCE;
                 }
                 writer

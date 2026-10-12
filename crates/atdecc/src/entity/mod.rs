@@ -1156,7 +1156,7 @@ impl Entity {
                 answer.resize(8, 0);
                 if command.command_type == AemCommandType::SET_CLOCK_SOURCE {
                     let source = read_u16(payload, 4);
-                    if source > self.model.inputs.len() as u16 {
+                    if source >= self.model.clock_sources() {
                         return (AemStatus::BAD_ARGUMENTS, answer, false);
                     }
                     if source != self.model.clock_source {

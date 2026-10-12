@@ -59,6 +59,7 @@ fn model(entity_id: EntityId, name: &str, talker: bool) -> EndpointModel {
             vec![stream("Host in")]
         },
         clock_source: 0,
+        input_clock_sources: true,
     }
 }
 

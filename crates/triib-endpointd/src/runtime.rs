@@ -45,10 +45,13 @@ use crate::status::{DaemonStatus, EndpointStatus, StreamStatus, status_path};
 
 /// Entity model IDs under Scramble Tools' MA-S `8C-1F-64-36-C`.
 const TALKER_MODEL: EntityModelId = EntityModelId(0x8c1f_6436_c000_0002);
-const LISTENER_MODEL: EntityModelId = EntityModelId(0x8c1f_6436_c000_0003);
-/// The entity models of every other shape: this, then the inputs and the
-/// outputs, an octet each.
+/// A listener's model since its input stopped being a clock source; it
+/// was `0x8c1f_6436_c000_0003` before.
+const LISTENER_MODEL: EntityModelId = EntityModelId(0x8c1f_6436_c000_0004);
+/// The entity models of devices: this, and a hash of their streams.
 const DEVICE_MODELS: u64 = 0x8c1f_6436_c001_0000;
+/// The revision of every device's model, in its hash.
+const MODEL_REVISION: u8 = 1;
 /// Class A's priority; its VLAN is the port's.
 const PRIORITY: u8 = 3;
 /// Class B's priority.
@@ -317,6 +320,9 @@ fn model_id(kind: Kind, outputs: &[StreamModel], inputs: &[StreamModel]) -> Enti
                     hash = (hash ^ u32::from(*byte)).wrapping_mul(0x0100_0193);
                 }
             };
+            // The model's revision, for what the streams leave the same:
+            // 1 since the inputs stopped being clock sources.
+            take(&[MODEL_REVISION]);
             for (way, streams) in [(0u8, outputs), (1, inputs)] {
                 for stream in streams {
                     take(&[way]);
@@ -428,6 +434,10 @@ impl Endpoint {
             outputs,
             inputs,
             clock_source: 0,
+            // The streams run on gPTP time whatever a controller chooses,
+            // so the internal clock is the only source until an input's
+            // media clock can be followed.
+            input_clock_sources: false,
         };
         // A talker's streams have no destination until MAAP gives them
         // one.
@@ -3572,5 +3582,14 @@ mod tests {
         let listener = endpoint(Kind::Listener, Vec::new());
         assert_eq!(listener.entity.model().entity_model_id, LISTENER_MODEL);
         assert!(listener.outputs.is_empty());
+        // Its input is no clock source: the internal clock is the only
+        // one, as the streams run on gPTP time whatever is chosen.
+        assert!(
+            listener
+                .entity
+                .model()
+                .descriptor_counts()
+                .contains(&(atdecc::DescriptorType::CLOCK_SOURCE, 1))
+        );
     }
 }
