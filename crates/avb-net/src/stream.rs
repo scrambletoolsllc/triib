@@ -63,6 +63,18 @@ impl FrameReceiver {
     ) -> io::Result<Option<usize>> {
         self.inner.receive(buffer, timeout)
     }
+
+    /// Waits up to `timeout` (forever when `None`) for a frame at any of
+    /// `receivers`, giving the places of those that have one: one thread
+    /// taking several streams.
+    pub fn ready(
+        receivers: &[&FrameReceiver],
+        timeout: Option<Duration>,
+    ) -> io::Result<Vec<usize>> {
+        let inner: Vec<&platform::FrameReceiver> =
+            receivers.iter().map(|receiver| &receiver.inner).collect();
+        platform::FrameReceiver::ready(&inner, timeout)
+    }
 }
 
 /// Where an AVTP frame's payload starts: after the header, and the VLAN
@@ -286,6 +298,44 @@ mod platform {
             }
             Ok(Some(received as usize))
         }
+
+        pub fn ready(receivers: &[&Self], timeout: Option<Duration>) -> io::Result<Vec<usize>> {
+            let milliseconds = match timeout {
+                Some(timeout) => {
+                    timeout.as_nanos().div_ceil(1_000_000).min(i32::MAX as u128) as i32
+                }
+                None => -1,
+            };
+            let mut polls: Vec<libc::pollfd> = receivers
+                .iter()
+                .map(|receiver| libc::pollfd {
+                    fd: receiver.fd.as_raw_fd(),
+                    events: libc::POLLIN,
+                    revents: 0,
+                })
+                .collect();
+            // SAFETY: `polls` holds valid pollfds and lives through the call.
+            let ready = unsafe {
+                libc::poll(
+                    polls.as_mut_ptr(),
+                    polls.len() as libc::nfds_t,
+                    milliseconds,
+                )
+            };
+            if ready < 0 {
+                let error = io::Error::last_os_error();
+                return match error.kind() {
+                    io::ErrorKind::Interrupted => Ok(Vec::new()),
+                    _ => Err(error),
+                };
+            }
+            Ok(polls
+                .iter()
+                .enumerate()
+                .filter(|(_, poll)| poll.revents & libc::POLLIN != 0)
+                .map(|(place, _)| place)
+                .collect())
+        }
     }
 }
 
@@ -331,6 +381,10 @@ mod platform {
             _buffer: &mut [u8],
             _timeout: Option<Duration>,
         ) -> io::Result<Option<usize>> {
+            Err(unsupported())
+        }
+
+        pub fn ready(_receivers: &[&Self], _timeout: Option<Duration>) -> io::Result<Vec<usize>> {
             Err(unsupported())
         }
     }

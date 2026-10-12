@@ -28,7 +28,8 @@ use avb_net::Socket;
 use avb_net::stream::FrameSender;
 use triib_stream::audio::{Sink, Source};
 use triib_stream::{
-    GroupConfig, GroupStream, GroupTalker, Listener, ListenerConfig, MediaClock, TalkerGroup,
+    GroupConfig, GroupListener, GroupStream, GroupTalker, ListenerConfig, ListenerGroup,
+    MediaClock, TalkerGroup,
 };
 
 use triib_pipewire::{DeviceSpec, VirtualAudio, VirtualDevice};
@@ -268,7 +269,8 @@ struct OutputState {
 /// What runs for one of an endpoint's stream inputs.
 #[derive(Default)]
 struct InputState {
-    listener: Option<Listener>,
+    /// Its stream in the endpoint's listening group, while it listens.
+    listener: Option<GroupListener>,
     /// The virtual audio device apps record it from, where it has one.
     device: Option<VirtualDevice>,
     /// The stream its Listener declaration names, while it declares one.
@@ -290,9 +292,10 @@ struct Endpoint {
     streams: Vec<StreamConfig>,
     out_streams: Vec<usize>,
     in_streams: Vec<usize>,
-    /// The thread every output sends from, while one does: its streams
-    /// hold it.
+    /// The thread every output sends from, and the one every input takes
+    /// its stream on, while one does: their streams hold them.
     group: Weak<TalkerGroup>,
+    listening: Weak<ListenerGroup>,
     outputs: Vec<OutputState>,
     inputs: Vec<InputState>,
     /// Its place in the configuration's list.
@@ -440,6 +443,7 @@ impl Endpoint {
             out_streams,
             in_streams,
             group: Weak::new(),
+            listening: Weak::new(),
             place: 0,
         }
     }
@@ -1766,6 +1770,9 @@ impl Runtime {
     }
 
     fn start_talker(&mut self, out: Out) {
+        // What it sent before stops first: its place in the group is the
+        // new stream's, which dropping the old one later would stop.
+        self.output_mut(out).talker = None;
         let endpoint = &self.endpoints[out.0];
         let Some((stream_id, destination)) = endpoint.entity.output_stream(out.1) else {
             return;
@@ -1947,6 +1954,8 @@ impl Runtime {
         stream: atdecc::entity::ProbedStream,
         destinations: Vec<MacAddress>,
     ) {
+        // What it took before stops first, as for a talker.
+        self.input_mut(input).listener = None;
         let endpoint = &self.endpoints[input.0];
         let Some(model) = endpoint.entity.model().inputs.get(usize::from(input.1)) else {
             return;
@@ -1962,16 +1971,29 @@ impl Runtime {
                 None => endpoint.in_config(input.1).sink(),
             },
         };
-        let started = Listener::start(config.clone(), self.clock.clone()).or_else(|error| {
-            if config.sink == Sink::Discard {
-                return Err(error);
-            }
-            log(format!("{name}: {error}, playing nowhere"));
-            let discarding = ListenerConfig {
-                sink: Sink::Discard,
-                ..config
-            };
-            Listener::start(discarding, self.clock.clone())
+        // Every input takes its stream on the endpoint's one listening
+        // thread, which the first to listen starts.
+        let places = endpoint.inputs.len();
+        let group = match endpoint.listening.upgrade() {
+            Some(group) => Ok(group),
+            None => ListenerGroup::start(places, self.clock.clone()).map(Arc::new),
+        };
+        // An audio device that isn't there, as on another computer than
+        // the one its name came from, leaves the stream playing nowhere.
+        let started = group.and_then(|group| {
+            self.endpoints[input.0].listening = Arc::downgrade(&group);
+            let place = usize::from(input.1);
+            GroupListener::start(&group, place, config.clone()).or_else(|error| {
+                if config.sink == Sink::Discard {
+                    return Err(error);
+                }
+                log(format!("{name}: {error}, playing nowhere"));
+                let discarding = ListenerConfig {
+                    sink: Sink::Discard,
+                    ..config
+                };
+                GroupListener::start(&group, place, discarding)
+            })
         });
         match started {
             Ok(listener) => {

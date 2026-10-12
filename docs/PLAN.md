@@ -464,8 +464,11 @@ budgets: 240 instances, 75% of the link, and the real-time threads.
   source. Checked on the bench: a tone played into one device's output
   came out of another's input at its level, clean, the drift settled
   within 40 s.
-- **Still to do:** inputs on one thread, as each still has its own; the
-  website guide, at the next release.
+- **Inputs** take their streams on the entity's one thread too, waiting
+  on all their sockets at once, each with its own sink and counters;
+  checked with two inputs taking two tones at once, each its own, on one
+  thread beside one for the outputs.
+- **Still to do:** the website guide, at the next release.
 - **Open.** Controllers changing its channel mapping (Milan's dynamic
   mappings, ADD_AUDIO_MAPPINGS and REMOVE_AUDIO_MAPPINGS); a CRF stream
   input as the domain's clock source; streams at other sampling rates,

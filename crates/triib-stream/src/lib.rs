@@ -20,7 +20,7 @@ pub mod realtime;
 pub mod talker;
 
 pub use clock::MediaClock;
-pub use listener::{Listener, ListenerConfig, ListenerStats};
+pub use listener::{GroupListener, Listener, ListenerConfig, ListenerGroup, ListenerStats};
 pub use talker::{
     GroupConfig, GroupStream, GroupTalker, Talker, TalkerConfig, TalkerGroup, TalkerStats,
 };
