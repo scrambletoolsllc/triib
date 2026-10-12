@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use crate::config::Kind;
+use crate::config::{Direction, Kind};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DaemonStatus {
@@ -41,14 +41,22 @@ pub struct EndpointStatus {
     /// Its stream's channels.
     #[serde(default = "eight")]
     pub channels: u16,
-    /// A device's sink, as endpoints.toml says it; its source is `audio`.
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub sink: String,
-    /// How many stream outputs and inputs it has.
-    #[serde(default)]
-    pub outputs: u16,
-    #[serde(default)]
-    pub inputs: u16,
+    /// A device's streams, in order.
+    #[serde(rename = "stream", default, skip_serializing_if = "Vec::is_empty")]
+    pub streams: Vec<StreamStatus>,
+}
+
+/// One of a device's streams.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StreamStatus {
+    pub direction: Direction,
+    pub name: String,
+    pub channels: u16,
+    /// Where its audio comes from or goes, as endpoints.toml says it:
+    /// "virtual" for its own virtual audio device.
+    pub audio: String,
+    /// What it is doing: streaming, waiting, listening, bound or unbound.
+    pub state: String,
 }
 
 fn eight() -> u16 {

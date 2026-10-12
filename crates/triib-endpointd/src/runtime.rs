@@ -31,12 +31,16 @@ use triib_stream::{
     GroupConfig, GroupStream, GroupTalker, Listener, ListenerConfig, MediaClock, TalkerGroup,
 };
 
-use crate::config::{Config, EndpointConfig, Kind, LiteChoice, SrClass, binding_text};
+use triib_pipewire::{DeviceSpec, VirtualAudio, VirtualDevice};
+
+use crate::config::{
+    Config, Direction, EndpointConfig, Kind, LiteChoice, SrClass, StreamConfig, binding_text,
+};
 use crate::gptp;
 use crate::lite::{self, Declared, Fallback, Ptp4l};
 use crate::port::{Port, VLAN};
 use crate::profile::{self, Profile};
-use crate::status::{DaemonStatus, EndpointStatus, status_path};
+use crate::status::{DaemonStatus, EndpointStatus, StreamStatus, status_path};
 
 /// Entity model IDs under Scramble Tools' MA-S `8C-1F-64-36-C`.
 const TALKER_MODEL: EntityModelId = EntityModelId(0x8c1f_6436_c000_0002);
@@ -246,6 +250,8 @@ struct In(usize, u16);
 struct OutputState {
     /// Its stream in the endpoint's group, while it sends.
     talker: Option<GroupTalker>,
+    /// The virtual audio device apps play into for it, where it has one.
+    device: Option<VirtualDevice>,
     /// When a talker whose stream changed declares it again.
     redeclare_at: Option<Duration>,
     /// When it last withdrew its declaration.
@@ -263,6 +269,8 @@ struct OutputState {
 #[derive(Default)]
 struct InputState {
     listener: Option<Listener>,
+    /// The virtual audio device apps record it from, where it has one.
+    device: Option<VirtualDevice>,
     /// The stream its Listener declaration names, while it declares one.
     declared: Option<Vec<u8>>,
     /// The stream its listener's thread takes.
@@ -277,8 +285,13 @@ struct InputState {
 struct Endpoint {
     config: EndpointConfig,
     entity: Entity,
-    /// The thread and audio input every output sends from, while one
-    /// does: its streams hold it.
+    /// Its streams as configured, and where each output's and input's is
+    /// among them.
+    streams: Vec<StreamConfig>,
+    out_streams: Vec<usize>,
+    in_streams: Vec<usize>,
+    /// The thread every output sends from, while one does: its streams
+    /// hold it.
     group: Weak<TalkerGroup>,
     outputs: Vec<OutputState>,
     inputs: Vec<InputState>,
@@ -286,15 +299,33 @@ struct Endpoint {
     place: usize,
 }
 
-/// The entity model of an endpoint with `inputs` and `outputs`: a talker's
-/// and a listener's of one stream as before, else one for each shape.
-fn model_id(inputs: u16, outputs: u16) -> EntityModelId {
-    match (inputs, outputs) {
-        (0, 1) => TALKER_MODEL,
-        (1, 0) => LISTENER_MODEL,
-        _ => EntityModelId(
-            DEVICE_MODELS | (u64::from(inputs.min(255)) << 8) | u64::from(outputs.min(255)),
-        ),
+/// The entity model of a talker or listener of one stream, as before; of
+/// a device, one for its streams' every static detail, as controllers
+/// keep a model's descriptors by its ID: FNV-1a of each stream's way,
+/// channels and formats, in the low 24 bits.
+fn model_id(kind: Kind, outputs: &[StreamModel], inputs: &[StreamModel]) -> EntityModelId {
+    match kind {
+        Kind::Talker => TALKER_MODEL,
+        Kind::Listener => LISTENER_MODEL,
+        Kind::Device => {
+            let mut hash: u32 = 0x811c_9dc5;
+            let mut take = |bytes: &[u8]| {
+                for byte in bytes {
+                    hash = (hash ^ u32::from(*byte)).wrapping_mul(0x0100_0193);
+                }
+            };
+            for (way, streams) in [(0u8, outputs), (1, inputs)] {
+                for stream in streams {
+                    take(&[way]);
+                    take(&stream.channels.to_be_bytes());
+                    take(&[u8::from(stream.class_b)]);
+                    for format in &stream.formats {
+                        take(&format.0.to_be_bytes());
+                    }
+                }
+            }
+            EntityModelId(DEVICE_MODELS | u64::from(hash & 0x00ff_ffff))
+        }
     }
 }
 
@@ -306,19 +337,28 @@ impl Endpoint {
         interface: &str,
         clock: ClockIdentity,
     ) -> Self {
-        // As many as six samples of each fit in one Ethernet frame, at
-        // 48 kHz; fewer offer the higher rates too.
-        let channels = config.channels.clamp(1, 60);
-        let (output_count, input_count) = (config.output_count(), config.input_count());
-        let several = output_count + input_count > 1;
-        let class_b = config.class == SrClass::B;
-        // Stream k of a direction, the outputs first: its name, and the
-        // format chosen last, with the channels there are now.
-        let stream = |input: bool, index: u16| {
-            let formats = offered_formats(channels, !input && class_b);
-            let place = if input { output_count + index } else { index };
-            let current_format = config
-                .stream_format_at(place)
+        let streams = config.stream_configs();
+        let place_of = |direction| {
+            streams
+                .iter()
+                .enumerate()
+                .filter(|(_, stream)| stream.direction == direction)
+                .map(|(place, _)| place)
+                .collect::<Vec<usize>>()
+        };
+        let (out_streams, in_streams) = (place_of(Direction::Out), place_of(Direction::In));
+        // Stream k of a direction: its name, and the format chosen last,
+        // with the channels it has now.
+        let model = |direction: Direction, index: usize, place: usize| {
+            let stream = &streams[place];
+            let output = direction == Direction::Out;
+            // As many as six samples of each fit in one Ethernet frame,
+            // at 48 kHz; fewer offer the higher rates too.
+            let channels = stream.channels.clamp(1, 60);
+            let class_b = output && stream.class == SrClass::B;
+            let formats = offered_formats(channels, class_b);
+            let current_format = stream
+                .stream_format()
                 .and_then(|wanted| {
                     formats
                         .iter()
@@ -327,21 +367,28 @@ impl Endpoint {
                 })
                 .unwrap_or(formats[0]);
             StreamModel {
-                name: if several {
-                    format!("{} {}", if input { "In" } else { "Out" }, index + 1)
+                name: if !stream.name.is_empty() {
+                    stream.name.clone()
                 } else {
-                    config.name.clone()
+                    format!("{} {}", if output { "Out" } else { "In" }, index + 1)
                 },
                 current_format,
                 formats,
                 channels,
-                class_b: !input && class_b,
+                class_b,
             }
         };
-        let outputs: Vec<StreamModel> = (0..output_count)
-            .map(|index| stream(false, index))
+        let outputs: Vec<StreamModel> = out_streams
+            .iter()
+            .enumerate()
+            .map(|(index, place)| model(Direction::Out, index, *place))
             .collect();
-        let inputs: Vec<StreamModel> = (0..input_count).map(|index| stream(true, index)).collect();
+        let inputs: Vec<StreamModel> = in_streams
+            .iter()
+            .enumerate()
+            .map(|(index, place)| model(Direction::In, index, *place))
+            .collect();
+        // The streams share the audio unit's rate: the first one's.
         let first = outputs.iter().chain(&inputs).next();
         let mut sampling_rates: Vec<u32> = first
             .map(|stream| {
@@ -358,14 +405,14 @@ impl Endpoint {
             .unwrap_or(48_000);
         let model = EndpointModel {
             entity_id: entity_id(mac, instance),
-            entity_model_id: model_id(input_count, output_count),
+            entity_model_id: model_id(config.kind, &outputs, &inputs),
             entity_name: config.name.clone(),
             group_name: String::new(),
             vendor_name: "Scramble Tools".into(),
-            model_name: match (input_count, output_count) {
-                (0, _) => "triib talker",
-                (_, 0) => "triib listener",
-                _ => "triib device",
+            model_name: match config.kind {
+                Kind::Talker => "triib talker",
+                Kind::Listener => "triib listener",
+                Kind::Device => "triib device",
             }
             .into(),
             firmware_version: env!("CARGO_PKG_VERSION").into(),
@@ -381,31 +428,111 @@ impl Endpoint {
         };
         // A talker's streams have no destination until MAAP gives them
         // one.
-        let streams: Vec<(StreamId, MacAddress)> = (0..output_count)
+        let addressed: Vec<(StreamId, MacAddress)> = (0..out_streams.len() as u16)
             .map(|index| (output_stream(mac, instance, index), UNADDRESSED))
             .collect();
         Endpoint {
             config,
-            entity: Entity::new(model, &streams),
+            entity: Entity::new(model, &addressed),
+            outputs: out_streams.iter().map(|_| OutputState::default()).collect(),
+            inputs: in_streams.iter().map(|_| InputState::default()).collect(),
+            streams,
+            out_streams,
+            in_streams,
             group: Weak::new(),
-            outputs: (0..output_count).map(|_| OutputState::default()).collect(),
-            inputs: (0..input_count).map(|_| InputState::default()).collect(),
             place: 0,
         }
     }
 
-    /// The name its log lines give a stream: the entity's own where it has
-    /// one stream, else the entity's and the stream's.
+    /// An output's stream as configured.
+    fn out_config(&self, index: u16) -> &StreamConfig {
+        &self.streams[self.out_streams[usize::from(index)]]
+    }
+
+    /// An input's stream as configured.
+    fn in_config(&self, index: u16) -> &StreamConfig {
+        &self.streams[self.in_streams[usize::from(index)]]
+    }
+
+    /// The name its log lines give a stream: a talker's or listener's own,
+    /// else the device's and the stream's.
     fn stream_name(&self, input: bool, index: u16) -> String {
-        if !self.config.several() {
+        if self.config.kind != Kind::Device {
             return self.config.name.clone();
         }
+        let streams = &self.entity.model();
+        let stream = if input {
+            streams.inputs.get(usize::from(index))
+        } else {
+            streams.outputs.get(usize::from(index))
+        };
         format!(
-            "{} {} {}",
+            "{} {}",
             self.config.name,
-            if input { "in" } else { "out" },
-            index + 1
+            stream.map_or("", |stream| stream.name.as_str())
         )
+    }
+
+    /// The virtual devices its streams use, made anew for the entity's
+    /// sampling rate now; none where `audio` cannot make them.
+    fn make_devices(&mut self, audio: Option<&VirtualAudio>) {
+        let Some(audio) = audio else {
+            return;
+        };
+        let model = self.entity.model();
+        let rate = model.current_sampling_rate;
+        let entity = model.entity_id.0;
+        let name = |input: bool, index: usize| {
+            let streams = if input { &model.inputs } else { &model.outputs };
+            let stream = &streams[index];
+            (
+                format!(
+                    "triib-{entity:016x}-{}-{}",
+                    if input { "in" } else { "out" },
+                    index + 1
+                ),
+                format!("{} {}", model.entity_name, stream.name),
+                stream.channels,
+            )
+        };
+        let made = |input: bool, index: usize| {
+            let (node, description, channels) = name(input, index);
+            match audio.add(DeviceSpec {
+                name: node,
+                description: description.clone(),
+                channels,
+                rate,
+                playback: !input,
+            }) {
+                Ok(device) => Some(device),
+                Err(error) => {
+                    log(format!("{description}: no virtual audio device: {error}"));
+                    None
+                }
+            }
+        };
+        let outputs: Vec<Option<VirtualDevice>> = (0..self.outputs.len())
+            .map(|index| {
+                self.streams[self.out_streams[index]]
+                    .is_virtual()
+                    .then(|| made(false, index))
+                    .flatten()
+            })
+            .collect();
+        let inputs: Vec<Option<VirtualDevice>> = (0..self.inputs.len())
+            .map(|index| {
+                self.streams[self.in_streams[index]]
+                    .is_virtual()
+                    .then(|| made(true, index))
+                    .flatten()
+            })
+            .collect();
+        for (state, device) in self.outputs.iter_mut().zip(outputs) {
+            state.device = device;
+        }
+        for (state, device) in self.inputs.iter_mut().zip(inputs) {
+            state.device = device;
+        }
     }
 }
 
@@ -417,6 +544,9 @@ pub struct Runtime {
     msrp: Arc<Socket>,
     mvrp: Arc<Socket>,
     endpoints: Vec<Endpoint>,
+    /// The virtual audio devices of the streams that have them, while any
+    /// do.
+    audio: Option<VirtualAudio>,
     /// The port's one MSRP and one MVRP participant, for every endpoint.
     port: Port,
     /// When MRP from this computer's address that this daemon did not send
@@ -680,6 +810,25 @@ impl Runtime {
             .iter()
             .map(|endpoint| endpoint.outputs.len())
             .sum();
+        // PipeWire, for the streams with virtual audio devices.
+        let mut endpoints = endpoints;
+        let wanted = endpoints
+            .iter()
+            .any(|endpoint| endpoint.streams.iter().any(StreamConfig::is_virtual));
+        let audio = if wanted {
+            match VirtualAudio::start() {
+                Ok(audio) => Some(audio),
+                Err(error) => {
+                    log(format!("no virtual audio devices: {error}"));
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        for endpoint in &mut endpoints {
+            endpoint.make_devices(audio.as_ref());
+        }
         let maap = (talkers > 0).then(|| Maap::new(mac, talkers as u16));
         let fallback = Fallback::new(
             own_clock.0,
@@ -695,6 +844,7 @@ impl Runtime {
             msrp,
             mvrp,
             endpoints,
+            audio,
             port: Port::new(seed),
             foreign_mrp: None,
             maap,
@@ -750,7 +900,7 @@ impl Runtime {
             endpoint.entity.start(now);
             // Inputs bind again to what they were bound to.
             for input in 0..endpoint.inputs.len() as u16 {
-                if let Some((talker, output)) = endpoint.config.input_bound_to(input) {
+                if let Some((talker, output)) = endpoint.in_config(input).bound_to() {
                     endpoint.entity.restore_binding(
                         now,
                         input,
@@ -763,7 +913,7 @@ impl Runtime {
                     );
                 }
             }
-            let streams = if endpoint.config.several() {
+            let streams = if endpoint.config.kind == Kind::Device {
                 format!(
                     ", {} out and {} in",
                     endpoint.outputs.len(),
@@ -838,51 +988,40 @@ impl Runtime {
         let endpoint = &self.endpoints[index];
         let model = endpoint.entity.model();
         let name = model.entity_name.clone();
-        let mut formats: Vec<String> = model
-            .outputs
-            .iter()
-            .chain(&model.inputs)
-            .map(|stream| format!("{:#018x}", stream.current_format.0))
-            .collect();
-        let mut bindings: Vec<String> = (0..model.inputs.len() as u16)
-            .map(|input| {
-                endpoint
-                    .entity
-                    .input_binding(input)
-                    .map(|binding| binding_text(binding.talker, binding.talker_unique_id))
-                    .unwrap_or_default()
-            })
-            .collect();
-        if bindings.iter().all(String::is_empty) {
-            bindings.clear();
+        // Each stream's format and binding, in the configured streams'
+        // order.
+        let mut streams = endpoint.streams.clone();
+        for (at, place) in endpoint.out_streams.iter().enumerate() {
+            streams[*place].format = model
+                .outputs
+                .get(at)
+                .map(|stream| format!("{:#018x}", stream.current_format.0));
         }
-        // One stream keeps its settings in `format` and `bound`, as
-        // before; more keep them in `formats` and `bindings`.
-        let (format, bound) = if endpoint.config.several() {
-            (None, None)
-        } else {
-            let format = formats.pop();
-            let bound = bindings.pop();
-            formats.clear();
-            bindings.clear();
-            (format, bound)
-        };
+        for (at, place) in endpoint.in_streams.iter().enumerate() {
+            streams[*place].format = model
+                .inputs
+                .get(at)
+                .map(|stream| format!("{:#018x}", stream.current_format.0));
+            streams[*place].bound = endpoint
+                .entity
+                .input_binding(at as u16)
+                .map(|binding| binding_text(binding.talker, binding.talker_unique_id));
+        }
+        let device = endpoint.config.kind == Kind::Device;
         let instance = endpoint.config.instance_at(endpoint.place);
         let place = endpoint.place;
+        // A talker or listener keeps its stream's in `format` and `bound`,
+        // as before; a device in its streams.
         let keep = |entry: &mut EndpointConfig| {
-            let same = (
-                &entry.name,
-                &entry.format,
-                &entry.bound,
-                &entry.formats,
-                &entry.bindings,
-            ) == (&name, &format, &bound, &formats, &bindings);
+            let before = entry.clone();
             entry.name.clone_from(&name);
-            entry.format.clone_from(&format);
-            entry.bound.clone_from(&bound);
-            entry.formats.clone_from(&formats);
-            entry.bindings.clone_from(&bindings);
-            !same
+            if device {
+                entry.streams.clone_from(&streams);
+            } else if let Some(stream) = streams.first() {
+                entry.format.clone_from(&stream.format);
+                entry.bound.clone_from(&stream.bound);
+            }
+            *entry != before
         };
         let Some(entry) = self.config.endpoints.get_mut(place) else {
             return;
@@ -979,10 +1118,6 @@ impl Runtime {
                         Kind::Talker | Kind::Device => source(),
                         Kind::Listener => sink(),
                     },
-                    sink: match endpoint.config.kind {
-                        Kind::Device => sink(),
-                        _ => String::new(),
-                    },
                     channels: endpoint
                         .entity
                         .model()
@@ -991,8 +1126,11 @@ impl Runtime {
                         .chain(&endpoint.entity.model().inputs)
                         .next()
                         .map_or(0, |stream| stream.channels),
-                    outputs: endpoint.outputs.len() as u16,
-                    inputs: endpoint.inputs.len() as u16,
+                    streams: if endpoint.config.kind == Kind::Device {
+                        stream_statuses(endpoint)
+                    } else {
+                        Vec::new()
+                    },
                     state: if streaming {
                         "streaming"
                     } else if listening {
@@ -1639,7 +1777,10 @@ impl Runtime {
         let lite = self.lite.is_some();
         let name = self.out_name(out);
         let format = stream.current_format;
-        let channels = stream.channels;
+        let source = match &self.output(out).device {
+            Some(device) => Source::Shared(device.shared()),
+            None => endpoint.out_config(out.1).source(),
+        };
         let Some(rate) = triib_stream::media::Media::of(format).map(|media| media.sample_rate())
         else {
             log(format!(
@@ -1658,43 +1799,39 @@ impl Runtime {
             priority: self.priority(out),
             format,
             max_transit_time: Duration::from_nanos(u64::from(transit)),
-            first_channel: out.1 * channels,
+            source,
         };
-        // Every output sends from the endpoint's one group, its source's
-        // channels the outputs' in order; one at another rate, as the
-        // entity's moved, starts a new group.
+        // Every output sends from the endpoint's one group; one at another
+        // rate, as the entity's moved, starts a new group.
         let group = match endpoint.group.upgrade() {
             Some(group) if group.rate() == rate => Ok(group),
-            _ => {
-                let config = GroupConfig {
+            _ => TalkerGroup::start(
+                GroupConfig {
                     interface: self.interface.clone(),
                     mac: self.mac,
-                    source: endpoint.config.source_at(0, channels),
-                    channels: channels * endpoint.outputs.len() as u16,
                     rate,
-                };
-                let places = endpoint.outputs.len();
-                // An audio device that isn't there, as on another computer
-                // than the one its name came from, leaves the streams
-                // running silent.
-                TalkerGroup::start(config.clone(), places, self.clock.clone())
-                    .or_else(|error| {
-                        if config.source == Source::Silence {
-                            return Err(error);
-                        }
-                        log(format!("{name}: {error}, sending silence"));
-                        let silent = GroupConfig {
-                            source: Source::Silence,
-                            ..config
-                        };
-                        TalkerGroup::start(silent, places, self.clock.clone())
-                    })
-                    .map(Arc::new)
-            }
+                },
+                endpoint.outputs.len(),
+                self.clock.clone(),
+            )
+            .map(Arc::new),
         };
+        // An audio device that isn't there, as on another computer than
+        // the one its name came from, leaves the stream running silent.
         let started = group.and_then(|group| {
             self.endpoints[out.0].group = Arc::downgrade(&group);
-            GroupTalker::start(&group, usize::from(out.1), wanted)
+            let place = usize::from(out.1);
+            GroupTalker::start(&group, place, wanted.clone()).or_else(|error| {
+                if wanted.source == Source::Silence {
+                    return Err(error);
+                }
+                log(format!("{name}: {error}, sending silence"));
+                let silent = GroupStream {
+                    source: Source::Silence,
+                    ..wanted
+                };
+                GroupTalker::start(&group, place, silent)
+            })
         });
         match started {
             Ok(talker) => self.output_mut(out).talker = Some(talker),
@@ -1820,7 +1957,10 @@ impl Runtime {
             stream_id: stream.stream_id.0,
             destinations,
             format: model.current_format,
-            sink: endpoint.config.sink_at(input.1, model.channels),
+            sink: match &self.input(input).device {
+                Some(device) => Sink::Shared(device.shared()),
+                None => endpoint.in_config(input.1).sink(),
+            },
         };
         let started = Listener::start(config.clone(), self.clock.clone()).or_else(|error| {
             if config.sink == Sink::Discard {
@@ -1947,7 +2087,22 @@ impl Runtime {
                     self.start_talker(out);
                 }
             }
-            EntityEvent::SamplingRateChanged(rate) => log(format!("{name}: sampling rate {rate}")),
+            EntityEvent::SamplingRateChanged(rate) => {
+                log(format!("{name}: sampling rate {rate}"));
+                // The virtual devices run at the entity's rate: made
+                // anew, and the streams on them start again.
+                self.endpoints[index].make_devices(self.audio.as_ref());
+                for at in 0..self.endpoints[index].outputs.len() as u16 {
+                    if self.output_mut(Out(index, at)).talker.take().is_some() {
+                        self.start_talker(Out(index, at));
+                    }
+                }
+                for at in 0..self.endpoints[index].inputs.len() as u16 {
+                    if self.input_mut(In(index, at)).listener.take().is_some() {
+                        self.update_listener(In(index, at));
+                    }
+                }
+            }
             EntityEvent::ClockSourceChanged(source) => {
                 log(format!("{name}: clock source {source}"))
             }
@@ -3116,6 +3271,51 @@ impl Runtime {
     }
 }
 
+/// What each of a device's streams is doing, in the configured order.
+fn stream_statuses(endpoint: &Endpoint) -> Vec<StreamStatus> {
+    let model = endpoint.entity.model();
+    endpoint
+        .streams
+        .iter()
+        .enumerate()
+        .map(|(place, stream)| {
+            let output = endpoint.out_streams.iter().position(|at| *at == place);
+            let input = endpoint.in_streams.iter().position(|at| *at == place);
+            let (name, state) = match (output, input) {
+                (Some(at), _) => (
+                    model.outputs.get(at).map(|stream| stream.name.clone()),
+                    if endpoint.outputs[at].talker.is_some() {
+                        "streaming"
+                    } else {
+                        "waiting"
+                    },
+                ),
+                (_, Some(at)) => (
+                    model.inputs.get(at).map(|stream| stream.name.clone()),
+                    if endpoint.inputs[at].listener.is_some() {
+                        "listening"
+                    } else if endpoint.entity.input_binding(at as u16).is_some() {
+                        "bound"
+                    } else {
+                        "unbound"
+                    },
+                ),
+                _ => (None, "waiting"),
+            };
+            StreamStatus {
+                direction: stream.direction,
+                name: name.unwrap_or_default(),
+                channels: stream.channels,
+                audio: stream
+                    .audio
+                    .clone()
+                    .unwrap_or_else(|| crate::config::VIRTUAL.into()),
+                state: state.into(),
+            }
+        })
+        .collect()
+}
+
 fn is_talker(attribute_type: u8) -> bool {
     matches!(
         attribute_type,
@@ -3252,7 +3452,7 @@ mod tests {
         assert_eq!(output_stream(mac, 2, 0), StreamId(0xf0a7_31f4_0f14_0200));
     }
 
-    fn endpoint(kind: Kind, outputs: Option<u16>, inputs: Option<u16>) -> Endpoint {
+    fn endpoint(kind: Kind, streams: Vec<StreamConfig>) -> Endpoint {
         let config = EndpointConfig {
             kind,
             instance: Some(4),
@@ -3264,23 +3464,37 @@ mod tests {
             format: None,
             bound: None,
             class: SrClass::A,
-            outputs,
-            inputs,
-            formats: Vec::new(),
-            bindings: Vec::new(),
+            streams,
         };
         let mac = MacAddress([0xf0, 0xa7, 0x31, 0xf4, 0x0f, 0x14]);
         Endpoint::new(config, 4, mac, "enp2s0", ClockIdentity(1))
     }
 
-    /// A device has its streams each way on one entity: a model of its
-    /// own shape, streams named by number, an output's stream ID from its
-    /// index, and each stream's channels further along the audio device.
+    fn stream(direction: Direction, channels: u16) -> StreamConfig {
+        StreamConfig {
+            channels,
+            ..StreamConfig::new(direction)
+        }
+    }
+
+    /// A device has its streams in the order listed, each with its own
+    /// channels: streams named by number where they have no name, an
+    /// output's stream ID from its index among the outputs, and a model of
+    /// its own for its streams.
     #[test]
-    fn a_device_has_several_streams_each_way() {
-        let device = endpoint(Kind::Device, Some(3), Some(2));
+    fn a_device_has_streams_of_its_own() {
+        let device = endpoint(
+            Kind::Device,
+            vec![
+                stream(Direction::Out, 8),
+                stream(Direction::In, 2),
+                StreamConfig {
+                    name: "Mix".into(),
+                    ..stream(Direction::Out, 2)
+                },
+            ],
+        );
         let model = device.entity.model();
-        assert_eq!(model.entity_model_id, EntityModelId(0x8c1f_6436_c001_0203));
         assert_eq!(model.model_name, "triib device");
         let names: Vec<&str> = model
             .outputs
@@ -3288,40 +3502,53 @@ mod tests {
             .chain(&model.inputs)
             .map(|stream| stream.name.as_str())
             .collect();
-        assert_eq!(names, ["Out 1", "Out 2", "Out 3", "In 1", "In 2"]);
-        assert_eq!((device.outputs.len(), device.inputs.len()), (3, 2));
+        assert_eq!(names, ["Out 1", "Mix", "In 1"]);
+        let channels: Vec<u16> = model.outputs.iter().map(|stream| stream.channels).collect();
+        assert_eq!(channels, [8, 2]);
+        assert_eq!((device.outputs.len(), device.inputs.len()), (2, 1));
+        assert_eq!(device.out_config(1).name, "Mix");
         assert_eq!(
-            device.entity.output_stream(2).map(|(stream, _)| stream),
-            Some(StreamId(0xf0a7_31f4_0f14_0402))
+            device.entity.output_stream(1).map(|(stream, _)| stream),
+            Some(StreamId(0xf0a7_31f4_0f14_0401))
         );
-        assert_eq!(
-            device.config.source_at(2, 8),
-            Source::Tone {
-                hertz: 1000.0,
-                level: 0.1
-            }
+        assert_eq!(device.stream_name(false, 1), "Studio Mix");
+        // Its model is its streams': other channels, another model; the
+        // same streams, the same.
+        let id = model.entity_model_id;
+        assert_eq!(id.0 >> 24, DEVICE_MODELS >> 24);
+        let other = endpoint(
+            Kind::Device,
+            vec![stream(Direction::Out, 8), stream(Direction::In, 8)],
         );
-        let device = endpoint(Kind::Device, None, None);
-        assert_eq!((device.outputs.len(), device.inputs.len()), (1, 1));
-        assert_eq!(device.stream_name(true, 0), "Studio in 1");
+        assert_ne!(other.entity.model().entity_model_id, id);
+        let again = endpoint(
+            Kind::Device,
+            vec![
+                stream(Direction::Out, 8),
+                stream(Direction::In, 2),
+                stream(Direction::Out, 2),
+            ],
+        );
+        assert_eq!(again.entity.model().entity_model_id, id);
     }
 
     /// One talker or listener stays as it was: its model, and its stream
     /// named as the entity is.
     #[test]
     fn one_stream_endpoints_keep_their_models() {
-        let talker = endpoint(Kind::Talker, None, None);
+        let talker = endpoint(Kind::Talker, Vec::new());
         assert_eq!(talker.entity.model().entity_model_id, TALKER_MODEL);
         assert_eq!(talker.entity.model().outputs[0].name, "Studio");
         assert_eq!(talker.stream_name(false, 0), "Studio");
-        let listener = endpoint(Kind::Listener, None, None);
+        assert_eq!(
+            talker.out_config(0).source(),
+            Source::Tone {
+                hertz: 1000.0,
+                level: 0.1
+            }
+        );
+        let listener = endpoint(Kind::Listener, Vec::new());
         assert_eq!(listener.entity.model().entity_model_id, LISTENER_MODEL);
         assert!(listener.outputs.is_empty());
-        // A talker given two outputs is a shape of its own.
-        let talker = endpoint(Kind::Talker, Some(2), None);
-        assert_eq!(
-            talker.entity.model().entity_model_id,
-            EntityModelId(0x8c1f_6436_c001_0002)
-        );
     }
 }

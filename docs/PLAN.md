@@ -449,16 +449,23 @@ budgets: 240 instances, 75% of the link, and the real-time threads.
   file and the model IDs; then the app. Checked by binding several of
   its streams from Hive and from the Mac mini, with today's endpoints
   running beside it.
-- **Done so far:** the daemon runs endpoints of any number of outputs
-  and inputs, state and reservations stream by stream; `endpoints.toml`
-  takes `inputs`, `outputs` and `kind = "device"`, keeping a stream's
-  format and binding in `formats` and `bindings` where there are
-  several; the model IDs by shape; and the app's Add device, with its
-  audio both ways and its stream counts in the inspector. Checked on the
-  bench: a device of 2 out and 2 in streamed to a listener of ours and
-  to the Mac mini, and its input took a talker of ours. Each stream
-  still has its own pacing thread and its own audio stream; one of each
-  for every way, with one drift estimate, comes next.
+- **As built, revised:** a device lists its streams, `[[endpoint.stream]]`
+  in `endpoints.toml`, each with its way, name, channels and audio, and
+  its format, binding and class as controllers set them. Each stream's
+  audio is by default its own virtual audio device on PipeWire, a
+  playback device apps play into for an output and a recording device
+  apps record from for an input, named for the device and the stream;
+  or a test tone, silence or one of the computer's devices. The app adds
+  a device with a stream each way and its inspector adds, removes and
+  sets up each stream. Its model ID comes from its streams' static
+  details, as controllers keep a model's descriptors by ID. Every
+  output sends from the entity's one thread, its samples counted on one
+  clock, so the outputs present together; each stream reads its own
+  source. Checked on the bench: a tone played into one device's output
+  came out of another's input at its level, clean, the drift settled
+  within 40 s.
+- **Still to do:** inputs on one thread, as each still has its own; the
+  website guide, at the next release.
 - **Open.** Controllers changing its channel mapping (Milan's dynamic
   mappings, ADD_AUDIO_MAPPINGS and REMOVE_AUDIO_MAPPINGS); a CRF stream
   input as the domain's clock source; streams at other sampling rates,

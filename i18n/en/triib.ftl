@@ -941,8 +941,12 @@ host-unbound = Not bound
 host-audio-from = Audio from
 host-audio-to = Audio to
 host-channels = Channels
-# A device's channels in each of its streams.
-host-channels-each = Channels in each stream
+# One of a device's streams with an audio device of its own on this
+# computer, which apps play into or record from.
+host-virtual-device = Virtual device
+host-add-output-stream = Add output stream
+host-add-input-stream = Add input stream
+host-remove-stream = Remove stream
 host-silence = Silence
 host-tone = Test tone
 host-nowhere = Nowhere

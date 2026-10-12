@@ -4,9 +4,9 @@
 #
 #   scripts/cross-setup.sh riscv64
 #
-# Installs the GCC cross compiler and the target's ALSA library through
-# Debian multiarch from Ubuntu's ports archive, and QEMU to run the
-# result. In GitHub Actions it also sets the variables cargo and
+# Installs the GCC cross compiler and the target's ALSA and PipeWire
+# libraries through Debian multiarch from Ubuntu's ports archive, clang
+# for PipeWire's bindings, and QEMU to run the result. In GitHub Actions it also sets the variables cargo and
 # pkg-config need; elsewhere it prints them.
 set -euo pipefail
 
@@ -33,7 +33,8 @@ sudo dpkg --add-architecture "$debarch"
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
   pkg-config desktop-file-utils file qemu-user-static \
-  gcc-$triple libc6-dev-$debarch-cross libasound2-dev:$debarch
+  gcc-$triple libc6-dev-$debarch-cross libasound2-dev:$debarch \
+  libpipewire-0.3-dev:$debarch libclang-dev
 
 upper=$(echo "$target" | tr a-z- A-Z_)
 lower=${target//-/_}
@@ -43,6 +44,8 @@ vars=(
   "AR_$lower=$triple-ar"
   "PKG_CONFIG_ALLOW_CROSS=1"
   "PKG_CONFIG_LIBDIR=/usr/lib/$triple/pkgconfig:/usr/share/pkgconfig"
+  # PipeWire's bindings, made by clang for the target from its headers.
+  "BINDGEN_EXTRA_CLANG_ARGS_$lower=--sysroot=/usr/$triple -I/usr/include/$triple"
 )
 for var in "${vars[@]}"; do
   if [ -n "${GITHUB_ENV:-}" ]; then

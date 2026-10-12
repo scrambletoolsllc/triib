@@ -74,11 +74,96 @@ impl SrClass {
 pub enum Kind {
     Talker,
     Listener,
-    /// This computer as one device with stream outputs and inputs, as
-    /// hardware presents itself: its outputs send its source's channels
-    /// and its inputs play to its sink.
+    /// This computer as one device with any number of stream outputs and
+    /// inputs, as hardware presents itself, each set up on its own.
     Device,
 }
+
+/// Which way a device's stream goes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Direction {
+    Out,
+    In,
+}
+
+/// One of a device's streams.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StreamConfig {
+    pub direction: Direction,
+    /// Its name, "Out 1", "In 1" and on when empty.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub name: String,
+    #[serde(default = "eight")]
+    pub channels: u16,
+    /// Where its audio comes from or goes: "virtual", its own virtual
+    /// audio device, when left out; "silence" or "tone" for an output,
+    /// "discard" for an input; "default"; or a device's name.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub audio: Option<String>,
+    /// The device channel its first channel comes from or goes to, where
+    /// its audio is a device.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub first_channel: u16,
+    /// The stream format a controller last chose, in hex.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub format: Option<String>,
+    /// For an input, the talker's stream output it is bound to, as
+    /// `bound` keeps it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bound: Option<String>,
+    /// An output's SR class, `"A"` when left out.
+    #[serde(default, skip_serializing_if = "SrClass::is_a")]
+    pub class: SrClass,
+}
+
+fn is_zero(value: &u16) -> bool {
+    *value == 0
+}
+
+impl StreamConfig {
+    /// A new stream of `direction`, with its own virtual audio device.
+    pub fn new(direction: Direction) -> Self {
+        StreamConfig {
+            direction,
+            name: String::new(),
+            channels: 8,
+            audio: None,
+            first_channel: 0,
+            format: None,
+            bound: None,
+            class: SrClass::A,
+        }
+    }
+
+    /// The stream format a controller last chose.
+    pub fn stream_format(&self) -> Option<StreamFormat> {
+        parse_format(self.format.as_deref()?)
+    }
+
+    /// The talker and stream output it is bound to.
+    pub fn bound_to(&self) -> Option<(EntityId, u16)> {
+        parse_binding(self.bound.as_deref()?)
+    }
+
+    /// Whether its audio is its own virtual device.
+    pub fn is_virtual(&self) -> bool {
+        self.audio.as_deref().is_none_or(|audio| audio == VIRTUAL)
+    }
+
+    /// Where an output's audio comes from, but for a virtual device.
+    pub fn source(&self) -> Source {
+        source_of(self.audio.as_deref(), self.first_channel)
+    }
+
+    /// Where an input's audio goes, but for a virtual device.
+    pub fn sink(&self) -> Sink {
+        sink_of(self.audio.as_deref(), self.first_channel)
+    }
+}
+
+/// The audio of a stream's own virtual device.
+pub const VIRTUAL: &str = "virtual";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EndpointConfig {
@@ -112,22 +197,10 @@ pub struct EndpointConfig {
     /// A talker's SR class, `"A"` when left out.
     #[serde(default, skip_serializing_if = "SrClass::is_a")]
     pub class: SrClass,
-    /// How many stream outputs and inputs it has, each of `channels`:
-    /// when left out, one output for a talker, one input for a listener,
-    /// and one of each for a device.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub outputs: Option<u16>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub inputs: Option<u16>,
-    /// With more than one stream, the format a controller last chose for
-    /// each, outputs then inputs, in hex, empty for the first offered; one
-    /// stream keeps its in `format`.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub formats: Vec<String>,
-    /// With more than one stream, what each input is bound to, as `bound`
-    /// keeps it, empty for none; one input keeps its in `bound`.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub bindings: Vec<String>,
+    /// A device's streams, in order; one output and one input, each with
+    /// its own virtual audio device, when there are none.
+    #[serde(rename = "stream", default, skip_serializing_if = "Vec::is_empty")]
+    pub streams: Vec<StreamConfig>,
 }
 
 /// A binding as `bound` keeps it.
@@ -140,7 +213,7 @@ fn eight() -> u16 {
 }
 
 /// The most streams each way: the outputs' stream IDs take an octet.
-pub const MOST_STREAMS: u16 = 64;
+pub const MOST_STREAMS: usize = 64;
 
 fn parse_binding(text: &str) -> Option<(EntityId, u16)> {
     let (talker, output) = text.rsplit_once(':')?;
@@ -154,60 +227,58 @@ fn parse_format(text: &str) -> Option<StreamFormat> {
 }
 
 impl EndpointConfig {
-    /// How many stream outputs it has.
-    pub fn output_count(&self) -> u16 {
-        let default = u16::from(matches!(self.kind, Kind::Talker | Kind::Device));
-        match self.kind {
-            Kind::Listener => 0,
-            _ => self.outputs.unwrap_or(default).min(MOST_STREAMS),
-        }
+    /// Its streams: a talker's one output and a listener's one input from
+    /// their own settings, a device's as listed, no more than the most
+    /// each way.
+    pub fn stream_configs(&self) -> Vec<StreamConfig> {
+        let streams = match self.kind {
+            Kind::Talker => vec![StreamConfig {
+                name: self.name.clone(),
+                channels: self.channels,
+                audio: Some(self.source.clone().unwrap_or_else(|| "silence".into())),
+                first_channel: self.first_channel,
+                format: self.format.clone(),
+                class: self.class,
+                ..StreamConfig::new(Direction::Out)
+            }],
+            Kind::Listener => vec![StreamConfig {
+                name: self.name.clone(),
+                channels: self.channels,
+                audio: Some(self.sink.clone().unwrap_or_else(|| "discard".into())),
+                first_channel: self.first_channel,
+                format: self.format.clone(),
+                bound: self.bound.clone(),
+                ..StreamConfig::new(Direction::In)
+            }],
+            Kind::Device if self.streams.is_empty() => vec![
+                StreamConfig::new(Direction::Out),
+                StreamConfig::new(Direction::In),
+            ],
+            Kind::Device => self.streams.clone(),
+        };
+        let (mut outputs, mut inputs) = (0, 0);
+        streams
+            .into_iter()
+            .filter(|stream| {
+                let count = match stream.direction {
+                    Direction::Out => &mut outputs,
+                    Direction::In => &mut inputs,
+                };
+                *count += 1;
+                *count <= MOST_STREAMS
+            })
+            .collect()
     }
 
-    /// How many stream inputs it has.
-    pub fn input_count(&self) -> u16 {
-        let default = u16::from(matches!(self.kind, Kind::Listener | Kind::Device));
-        match self.kind {
-            Kind::Talker => 0,
-            _ => self.inputs.unwrap_or(default).min(MOST_STREAMS),
-        }
-    }
-
-    /// Whether it has more than one stream, so that `formats` and
-    /// `bindings` keep its streams' settings.
-    pub fn several(&self) -> bool {
-        self.output_count() + self.input_count() > 1
-    }
-
-    /// The talker and stream output input 0 is bound to.
+    /// The talker and stream output a talker's or listener's input is
+    /// bound to.
     pub fn bound_to(&self) -> Option<(EntityId, u16)> {
-        self.input_bound_to(0)
-    }
-
-    /// The talker and stream output an input is bound to.
-    pub fn input_bound_to(&self, input: u16) -> Option<(EntityId, u16)> {
-        if self.several() {
-            return parse_binding(self.bindings.get(usize::from(input))?);
-        }
-        if input > 0 {
-            return None;
-        }
         parse_binding(self.bound.as_deref()?)
     }
 
-    /// The stream format a controller last chose, for its first stream.
+    /// The stream format a controller last chose for a talker's or
+    /// listener's stream.
     pub fn stream_format(&self) -> Option<StreamFormat> {
-        self.stream_format_at(0)
-    }
-
-    /// The stream format a controller last chose for a stream, counting
-    /// the outputs then the inputs.
-    pub fn stream_format_at(&self, stream: u16) -> Option<StreamFormat> {
-        if self.several() {
-            return parse_format(self.formats.get(usize::from(stream))?);
-        }
-        if stream > 0 {
-            return None;
-        }
         parse_format(self.format.as_deref()?)
     }
 
@@ -217,52 +288,46 @@ impl EndpointConfig {
         self.instance.unwrap_or(place as u8).min(239)
     }
 
-    /// Where its first output's audio comes from.
     pub fn source(&self) -> Source {
-        self.source_at(0, self.channels)
+        source_of(self.source.as_deref(), self.first_channel)
     }
 
-    /// Where output `output`'s audio comes from: output k takes the
-    /// device's channels from k × `channels` on.
-    pub fn source_at(&self, output: u16, channels: u16) -> Source {
-        let first_channel = self.first_channel + output * channels;
-        match self.source.as_deref() {
-            None | Some("silence") => Source::Silence,
-            Some("tone") => Source::Tone {
-                hertz: 1000.0,
-                level: 0.1,
-            },
-            Some("default") => Source::Device {
-                name: None,
-                first_channel,
-            },
-            Some(name) => Source::Device {
-                name: Some(name.to_owned()),
-                first_channel,
-            },
-        }
-    }
-
-    /// Where its first input's audio goes.
     pub fn sink(&self) -> Sink {
-        self.sink_at(0, self.channels)
+        sink_of(self.sink.as_deref(), self.first_channel)
     }
+}
 
-    /// Where input `input`'s audio goes: input k plays on the device's
-    /// channels from k × `channels` on.
-    pub fn sink_at(&self, input: u16, channels: u16) -> Sink {
-        let first_channel = self.first_channel + input * channels;
-        match self.sink.as_deref() {
-            None | Some("discard") => Sink::Discard,
-            Some("default") => Sink::Device {
-                name: None,
-                first_channel,
-            },
-            Some(name) => Sink::Device {
-                name: Some(name.to_owned()),
-                first_channel,
-            },
-        }
+/// A source as endpoints.toml names it.
+fn source_of(audio: Option<&str>, first_channel: u16) -> Source {
+    match audio {
+        None | Some("silence" | VIRTUAL) => Source::Silence,
+        Some("tone") => Source::Tone {
+            hertz: 1000.0,
+            level: 0.1,
+        },
+        Some("default") => Source::Device {
+            name: None,
+            first_channel,
+        },
+        Some(name) => Source::Device {
+            name: Some(name.to_owned()),
+            first_channel,
+        },
+    }
+}
+
+/// A sink as endpoints.toml names it.
+fn sink_of(audio: Option<&str>, first_channel: u16) -> Sink {
+    match audio {
+        None | Some("discard" | VIRTUAL) => Sink::Discard,
+        Some("default") => Sink::Device {
+            name: None,
+            first_channel,
+        },
+        Some(name) => Sink::Device {
+            name: Some(name.to_owned()),
+            first_channel,
+        },
     }
 }
 
@@ -280,43 +345,62 @@ mod tests {
         config.endpoints.into_iter().next().expect("an endpoint")
     }
 
-    /// Today's files read as before: a talker has one output, a listener
-    /// one input, and a device one of each unless told more.
+    /// Today's talkers and listeners read as one stream each, from their
+    /// own settings; a device without streams has one each way, virtual.
     #[test]
-    fn counts_default_by_kind() {
-        let talker = entry("[[endpoint]]\nkind = \"talker\"\nname = \"T\"\n");
-        assert_eq!((talker.output_count(), talker.input_count()), (1, 0));
-        let listener = entry("[[endpoint]]\nkind = \"listener\"\nname = \"L\"\ninputs = 3\n");
-        assert_eq!((listener.output_count(), listener.input_count()), (0, 3));
-        let device = entry("[[endpoint]]\nkind = \"device\"\nname = \"D\"\noutputs = 2\n");
-        assert_eq!((device.output_count(), device.input_count()), (2, 1));
+    fn talkers_and_listeners_are_one_stream() {
+        let talker = entry("[[endpoint]]\nkind = \"talker\"\nname = \"T\"\nsource = \"tone\"\n");
+        let streams = talker.stream_configs();
+        assert_eq!(streams.len(), 1);
+        assert_eq!(
+            (streams[0].direction, streams[0].name.as_str()),
+            (Direction::Out, "T")
+        );
+        assert!(!streams[0].is_virtual());
+        let device = entry("[[endpoint]]\nkind = \"device\"\nname = \"D\"\n");
+        let streams = device.stream_configs();
+        assert_eq!(
+            streams
+                .iter()
+                .map(|stream| stream.direction)
+                .collect::<Vec<_>>(),
+            [Direction::Out, Direction::In]
+        );
+        assert!(streams.iter().all(StreamConfig::is_virtual));
     }
 
-    /// With several streams, `formats` and `bindings` keep each stream's,
-    /// and stream k's audio is k streams of channels further along.
+    /// A device's streams each keep their own settings.
     #[test]
-    fn several_streams_keep_their_own_settings() {
+    fn a_devices_streams_keep_their_own_settings() {
         let device = entry(
-            "[[endpoint]]\nkind = \"device\"\nname = \"D\"\nchannels = 2\nfirst_channel = 4\n\
-             sink = \"default\"\nformats = [\"\", \"0x0205022002006000\"]\n\
-             bindings = [\"0xf0a731ff00f40f14:0\"]\n",
+            "[[endpoint]]\nkind = \"device\"\nname = \"D\"\n\
+             [[endpoint.stream]]\ndirection = \"out\"\nchannels = 2\nname = \"Mix\"\n\
+             [[endpoint.stream]]\ndirection = \"in\"\naudio = \"default\"\nfirst_channel = 4\n\
+             format = \"0x0205022002006000\"\nbound = \"0xf0a731ff00f40f14:0\"\n",
         );
-        assert_eq!(device.stream_format_at(0), None);
+        let streams = device.stream_configs();
+        assert_eq!((streams[0].channels, streams[0].name.as_str()), (2, "Mix"));
+        assert!(streams[0].is_virtual());
         assert_eq!(
-            device.stream_format_at(1),
+            streams[1].stream_format(),
             Some(StreamFormat(0x0205_0220_0200_6000))
         );
         assert_eq!(
-            device.input_bound_to(0),
+            streams[1].bound_to(),
             Some((EntityId(0xf0a7_31ff_00f4_0f14), 0))
         );
-        assert_eq!(device.input_bound_to(1), None);
         assert_eq!(
-            device.sink_at(1, 2),
+            streams[1].sink(),
             Sink::Device {
                 name: None,
-                first_channel: 6
+                first_channel: 4
             }
         );
+        let text = toml::to_string(&Config {
+            endpoints: vec![device.clone()],
+            ..Config::default()
+        })
+        .expect("writes");
+        assert_eq!(entry(&text), device);
     }
 }

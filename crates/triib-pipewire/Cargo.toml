@@ -1,0 +1,17 @@
+[package]
+name = "triib-pipewire"
+description = "Virtual audio devices on PipeWire for triib's stream inputs and outputs"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+triib-stream.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+pipewire = "0.10"

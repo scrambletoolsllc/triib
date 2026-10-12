@@ -17,6 +17,7 @@ avb-mrp = { path = "crates/avb-mrp", version = "0.1.0", default-features = false
 avb-net = { path = "crates/avb-net", version = "0.1.0", default-features = false }
 triib-store = { path = "crates/triib-store", version = "0.9.0" }
 triib-stream = { path = "crates/triib-stream", version = "0.9.0" }
+triib-pipewire = { path = "crates/triib-pipewire", version = "0.9.0" }
 triib-endpointd = { path = "crates/triib-endpointd", version = "0.9.0" }
 # Pinned by revision, as prev pins it. A git-ignored .cargo/config.toml can
 # point it at a local checkout while changing both (see the README).

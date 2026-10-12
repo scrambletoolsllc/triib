@@ -38,8 +38,9 @@ triib sends and receives raw Ethernet, which each system guards:
   `/usr/bin/triib-endpointd` when they install (`setcap`, from libcap).
   The tarball cannot; after unpacking, run `sudo setcap cap_net_raw+ep`
   on the three programs. There is no AppImage or Flatpak, as neither can
-  carry the capability. The packages depend on ALSA's library for
-  audio and recommend linuxptp, whose ptp4l this computer's talkers and
+  carry the capability. The packages depend on ALSA's and PipeWire's
+  libraries for audio, PipeWire's for the virtual audio devices of this
+  computer's streams, and recommend linuxptp, whose ptp4l this computer's talkers and
   listeners need; triib-endpointd reads the PTP hardware clock, which
   systemd's rules let everyone read.
 - **macOS:** read and write access to the BPF devices, `/dev/bpf*`,

@@ -181,12 +181,9 @@ pub enum Message {
     HostRemoved(EntityId),
     /// Takes one of this computer's endpoints' audio from or to a device,
     /// a tone, silence or nowhere.
-    /// One of this computer's endpoints is to play its inputs to, else take
-    /// its outputs from, this audio.
-    HostAudio(EntityId, bool, String),
-    /// One of this computer's devices is to have this many stream inputs,
-    /// else outputs.
-    HostStreams(EntityId, bool, u16),
+    HostAudio(EntityId, String),
+    /// One of this computer's devices changes one of its streams.
+    HostStream(EntityId, crate::host::StreamChange),
     /// One of this computer's endpoints is to have this many channels.
     HostChannels(EntityId, u16),
     Act(Action),
@@ -877,23 +874,22 @@ impl Triib {
                     self.notice = Some(error);
                 }
             }
-            Message::HostAudio(entity_id, inputs, audio) => {
+            Message::HostAudio(entity_id, audio) => {
                 let done = self
                     .interface()
                     .map(|interface| (interface.name.clone(), interface.mac));
                 if let Some((name, mac)) = done
-                    && let Err(error) = crate::host::set_audio(&name, mac, entity_id, inputs, audio)
+                    && let Err(error) = crate::host::set_audio(&name, mac, entity_id, audio)
                 {
                     self.notice = Some(error);
                 }
             }
-            Message::HostStreams(entity_id, inputs, count) => {
+            Message::HostStream(entity_id, change) => {
                 let done = self
                     .interface()
                     .map(|interface| (interface.name.clone(), interface.mac));
                 if let Some((name, mac)) = done
-                    && let Err(error) =
-                        crate::host::set_streams(&name, mac, entity_id, inputs, count)
+                    && let Err(error) = crate::host::change_stream(&name, mac, entity_id, change)
                 {
                     self.notice = Some(error);
                 }

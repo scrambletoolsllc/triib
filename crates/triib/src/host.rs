@@ -7,7 +7,7 @@ use std::sync::{Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
 use atdecc::{EntityId, MacAddress};
-use triib_endpointd::config::{self, Config, EndpointConfig, Kind};
+use triib_endpointd::config::{self, Config, Direction, EndpointConfig, Kind, StreamConfig};
 use triib_endpointd::status::{DaemonStatus, EndpointStatus};
 
 /// Whether this system runs host talkers and listeners.
@@ -68,11 +68,17 @@ pub fn add(interface: &str, kind: Kind, name: String) -> Result<(), String> {
     let (source, sink) = match kind {
         Kind::Talker => (Some("default".to_owned()), None),
         Kind::Listener => (None, Some("default".to_owned())),
-        Kind::Device => (Some("default".to_owned()), Some("default".to_owned())),
+        Kind::Device => (None, None),
     };
-    // A device starts with two streams each way, which its inspector
-    // changes.
-    let streams = (kind == Kind::Device).then_some(2);
+    // A device starts with a stream each way, each with its own virtual
+    // audio device; its inspector adds more and sets each up.
+    let streams = match kind {
+        Kind::Device => vec![
+            StreamConfig::new(Direction::Out),
+            StreamConfig::new(Direction::In),
+        ],
+        _ => Vec::new(),
+    };
     config.endpoints.push(EndpointConfig {
         kind,
         instance: Some(free),
@@ -84,10 +90,7 @@ pub fn add(interface: &str, kind: Kind, name: String) -> Result<(), String> {
         format: None,
         bound: None,
         class: Default::default(),
-        outputs: streams,
-        inputs: streams,
-        formats: Vec::new(),
-        bindings: Vec::new(),
+        streams,
     });
     save(&path, &config)
 }
@@ -102,47 +105,80 @@ pub fn remove(interface: &str, mac: MacAddress, entity_id: EntityId) -> Result<(
     save(&path, &config)
 }
 
-/// Sends the endpoint's audio to `audio` for its inputs, else takes it
-/// from `audio` for its outputs: "silence", "tone", "discard", "default"
-/// or a device's name.
+/// Sends the endpoint's audio from or to `audio`: "silence", "tone",
+/// "discard", "default" or a device's name.
 pub fn set_audio(
     interface: &str,
     mac: MacAddress,
     entity_id: EntityId,
-    inputs: bool,
     audio: String,
 ) -> Result<(), String> {
     let (path, mut config) = load(interface)?;
     let place = place_of(&config, mac, entity_id).ok_or("not one of this computer's")?;
     let endpoint = &mut config.endpoints[place];
-    if inputs {
-        endpoint.sink = Some(audio);
-    } else {
-        endpoint.source = Some(audio);
+    match endpoint.kind {
+        Kind::Talker => endpoint.source = Some(audio),
+        Kind::Listener => endpoint.sink = Some(audio),
+        Kind::Device => {}
     }
     save(&path, &config)
 }
 
-/// Gives a device this many stream inputs, else outputs.
-pub fn set_streams(
+/// A change to one of a device's streams.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum StreamChange {
+    /// A new stream of this way at the end, with its own virtual device.
+    Add(Direction),
+    /// The stream at this place goes.
+    Remove(usize),
+    /// The stream at this place has this many channels.
+    Channels(usize, u16),
+    /// The stream at this place takes its audio from or plays it to this:
+    /// "virtual", "silence", "tone", "discard", "default" or a device's
+    /// name.
+    Audio(usize, String),
+}
+
+/// Changes one of a device's streams.
+pub fn change_stream(
     interface: &str,
     mac: MacAddress,
     entity_id: EntityId,
-    inputs: bool,
-    count: u16,
+    change: StreamChange,
 ) -> Result<(), String> {
     let (path, mut config) = load(interface)?;
     let place = place_of(&config, mac, entity_id).ok_or("not one of this computer's")?;
     let endpoint = &mut config.endpoints[place];
-    let count = count.clamp(1, triib_endpointd::config::MOST_STREAMS);
-    if inputs {
-        endpoint.inputs = Some(count);
-    } else {
-        endpoint.outputs = Some(count);
+    if endpoint.kind != Kind::Device {
+        return Err("not a device".into());
     }
-    // Settings kept stream by stream belong to the streams there were.
-    endpoint.formats.clear();
-    endpoint.bindings.clear();
+    // A device's streams as they are, written down once one changes.
+    let mut streams = endpoint.stream_configs();
+    match change {
+        StreamChange::Add(direction) => {
+            let same = streams
+                .iter()
+                .filter(|stream| stream.direction == direction)
+                .count();
+            if same >= triib_endpointd::config::MOST_STREAMS {
+                return Err("no room for another".into());
+            }
+            streams.push(StreamConfig::new(direction));
+        }
+        StreamChange::Remove(at) if at < streams.len() => {
+            streams.remove(at);
+        }
+        StreamChange::Channels(at, channels) if at < streams.len() => {
+            streams[at].channels = channels;
+            // A format chosen for other channels no longer holds.
+            streams[at].format = None;
+        }
+        StreamChange::Audio(at, audio) if at < streams.len() => {
+            streams[at].audio = (audio != triib_endpointd::config::VIRTUAL).then_some(audio);
+        }
+        _ => return Err("no such stream".into()),
+    }
+    endpoint.streams = streams;
     save(&path, &config)
 }
 

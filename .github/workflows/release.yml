@@ -43,11 +43,11 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install ALSA's headers for audio
+      - name: Install ALSA's and PipeWire's headers for audio
         if: ${{ !matrix.target }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends desktop-file-utils libasound2-dev
+          sudo apt-get install -y --no-install-recommends desktop-file-utils libasound2-dev libpipewire-0.3-dev libclang-dev
       - name: Install the cross toolchain and libraries
         if: ${{ matrix.target }}
         run: scripts/cross-setup.sh ${{ matrix.arch }}

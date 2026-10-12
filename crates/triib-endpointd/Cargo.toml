@@ -20,6 +20,7 @@ avb-mrp = { workspace = true, features = ["std"] }
 avb-net = { workspace = true, features = ["std"] }
 triib-store.workspace = true
 triib-stream.workspace = true
+triib-pipewire.workspace = true
 serde = { version = "1", features = ["derive"] }
 ctrlc = { version = "3", features = ["termination"] }
 

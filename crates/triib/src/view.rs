@@ -2431,9 +2431,7 @@ pub(crate) mod tests {
                 state: "listening".into(),
                 audio: "discard".into(),
                 channels: 8,
-                sink: String::new(),
-                outputs: 0,
-                inputs: 1,
+                streams: Vec::new(),
             }],
         });
         triib.inspector_tab = InspectorTab::Entity;
@@ -2451,24 +2449,50 @@ pub(crate) mod tests {
                 .any(|message| matches!(message, Message::HostRemoved(id) if *id == WIRED_ESP)),
             "{messages:?}"
         );
-        // As a device, it has audio both ways and its streams' counts,
-        // which a pick changes.
+        // As a device, each of its streams shows its own state, audio and
+        // channels, with buttons that add and remove streams.
         if let Some(status) = &mut triib.endpoints {
+            use triib_endpointd::config::Direction;
+            use triib_endpointd::status::StreamStatus;
             let endpoint = &mut status.endpoints[0];
             endpoint.kind = EndpointKind::Device;
-            endpoint.audio = "tone".into();
-            endpoint.sink = "discard".into();
-            endpoint.outputs = 2;
-            endpoint.inputs = 3;
+            endpoint.streams = vec![
+                StreamStatus {
+                    direction: Direction::Out,
+                    name: "Out 1".into(),
+                    channels: 8,
+                    audio: "virtual".into(),
+                    state: "streaming".into(),
+                },
+                StreamStatus {
+                    direction: Direction::In,
+                    name: "In 1".into(),
+                    channels: 2,
+                    audio: "discard".into(),
+                    state: "unbound".into(),
+                },
+            ];
         }
         {
             let mut simulator = simulate(&triib, size);
-            assert!(simulator.find("Test tone").is_ok());
+            assert!(simulator.find("Out 1").is_ok());
+            assert!(simulator.find("In 1").is_ok());
+            assert!(simulator.find("Virtual device").is_ok());
             assert!(simulator.find("Nowhere").is_ok());
-            assert!(simulator.find("Stream outputs").is_ok());
-            assert!(simulator.find("Stream inputs").is_ok());
-            assert!(simulator.find("Channels in each stream").is_ok());
+            assert!(simulator.find("Add output stream").is_ok());
             assert!(simulator.find("Add device").is_ok());
+            simulator.click("Add input stream").expect("the button");
+            let messages: Vec<Message> = simulator.into_messages().collect();
+            assert!(
+                messages.iter().any(|message| matches!(
+                    message,
+                    Message::HostStream(
+                        _,
+                        crate::host::StreamChange::Add(triib_endpointd::config::Direction::In)
+                    )
+                )),
+                "{messages:?}"
+            );
         }
         // The list can show only this computer's: the wired ESP stays,
         // the Mac mini goes.

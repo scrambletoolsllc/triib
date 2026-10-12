@@ -38,6 +38,34 @@ pub enum Source {
         name: Option<String>,
         first_channel: u16,
     },
+    /// A buffer another part of the program fills as a device would, such
+    /// as a virtual audio device apps play into.
+    Shared(SharedBuffer),
+}
+
+/// A buffer another part of the program fills or drains as an audio
+/// device would, on its own clock: `channels` channels at `rate` hertz.
+#[derive(Clone)]
+pub struct SharedBuffer {
+    pub buffer: Arc<FrameBuffer>,
+    pub channels: u16,
+    pub rate: u32,
+}
+
+impl PartialEq for SharedBuffer {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.buffer, &other.buffer)
+    }
+}
+
+impl std::fmt::Debug for SharedBuffer {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            formatter,
+            "SharedBuffer({} channels at {} Hz)",
+            self.channels, self.rate
+        )
+    }
 }
 
 /// Where a listener's samples go.
@@ -51,6 +79,9 @@ pub enum Sink {
         name: Option<String>,
         first_channel: u16,
     },
+    /// A buffer another part of the program drains as a device would, such
+    /// as a virtual audio device apps record from.
+    Shared(SharedBuffer),
 }
 
 /// Interleaved sample frames passed between an audio device's callback
@@ -608,7 +639,7 @@ enum InputKind {
         /// Input frames on their way to the resampler, and its output.
         taken: Vec<f32>,
         made: Vec<f32>,
-        _thread: DeviceThread,
+        _thread: Option<DeviceThread>,
     },
 }
 
@@ -663,7 +694,29 @@ impl Input {
                     ),
                     taken: Vec::new(),
                     made: Vec::new(),
-                    _thread: thread,
+                    _thread: Some(thread),
+                }
+            }
+            Source::Shared(shared) => {
+                if shared.channels != channels {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        "a shared buffer of other channels than the stream's",
+                    ));
+                }
+                // What it held from before goes, so the stream starts from
+                // now rather than behind.
+                shared.buffer.drop_oldest(shared.buffer.level());
+                InputKind::Device {
+                    buffer: shared.buffer.clone(),
+                    drift: Drift::new(
+                        channels,
+                        DeviceSide::Pushes,
+                        f64::from(shared.rate) / f64::from(rate),
+                    ),
+                    taken: Vec::new(),
+                    made: Vec::new(),
+                    _thread: None,
                 }
             }
         };
@@ -781,6 +834,17 @@ impl Output {
     pub fn open(sink: &Sink, channels: u16, rate: u32) -> io::Result<Self> {
         match sink {
             Sink::Discard => Ok(Output::new(None, None, channels, rate, rate)),
+            Sink::Shared(shared) if shared.channels != channels => Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "a shared buffer of other channels than the stream's",
+            )),
+            Sink::Shared(shared) => Ok(Output::new(
+                Some(shared.buffer.clone()),
+                None,
+                channels,
+                rate,
+                shared.rate,
+            )),
             Sink::Device {
                 name,
                 first_channel,

@@ -43,6 +43,7 @@ overrides:
   deb:
     depends:
       - libasound2
+      - libpipewire-0.3-0
       - libc6
       - libgcc-s1
       - libcap2-bin
@@ -56,6 +57,7 @@ overrides:
   rpm:
     depends:
       - alsa-lib
+      - pipewire-libs
       - libcap
       - libwayland-client
       - libxkbcommon
