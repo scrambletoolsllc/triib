@@ -103,6 +103,8 @@ struct FakeEntity {
     /// AVB Wireless status queries it leaves unanswered before it answers,
     /// as over a Wi-Fi hop that loses them.
     wireless_silent: u8,
+    /// Its stream output sends in class B.
+    class_b: bool,
 }
 
 fn descriptor(descriptor_type: DescriptorType, index: u16, length: usize) -> Vec<u8> {
@@ -236,6 +238,7 @@ impl FakeEntity {
             lite: None,
             wireless: None,
             wireless_silent: 0,
+            class_b: false,
         }
     }
 
@@ -528,6 +531,9 @@ impl FakeEntity {
                 let mut flags = StreamInfoFlags::STREAM_FORMAT_VALID;
                 if input && self.bindings.contains_key(&index) {
                     flags |= StreamInfoFlags::CONNECTED;
+                }
+                if !input && self.class_b {
+                    flags |= StreamInfoFlags::CLASS_B;
                 }
                 payload.resize(48, 0);
                 payload[4..8].copy_from_slice(&flags.0.to_be_bytes());
@@ -1320,6 +1326,29 @@ fn refused_and_impossible_connections() {
             (unknown, Outcome::NotPossible),
         ]
     );
+}
+
+/// A connect to a talker whose output reports class B says CLASS_B, so a
+/// talker that takes its class from the connect keeps class B; one to a
+/// talker in class A leaves it clear.
+#[test]
+fn connects_carry_the_talkers_class() {
+    let class_of_connect = |class_b: bool| {
+        let mut controller = controller();
+        let mut entity = FakeEntity::new();
+        entity.class_b = class_b;
+        controller.handle_adpdu(at(0), TALKER_MAC, &aem_available(1));
+        controller.pump(at(0));
+        exchange(&mut controller, &mut entity, at(0));
+        events(&mut controller);
+        controller.connect(at(1), (TALKER, 0), (TALKER, 1));
+        let frames = transmits(&mut controller);
+        let connect = Acmpdu::decode(&frames[0].1).unwrap();
+        assert_eq!(connect.message_type, AcmpMessageType::BIND_RX_COMMAND);
+        connect.flags.contains(AcmpFlags::CLASS_B)
+    };
+    assert!(class_of_connect(true));
+    assert!(!class_of_connect(false));
 }
 
 #[test]

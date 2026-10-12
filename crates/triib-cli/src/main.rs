@@ -506,10 +506,17 @@ fn discover(interface: &str, seconds: u64) -> std::io::Result<()> {
 /// Discovers entities and reads `entity`, or every entity seen in the first
 /// few seconds, until it has answered everything the controller asks.
 fn read(interface: &str, entity: Option<EntityId>) -> std::io::Result<Driver> {
-    const DISCOVERY: Duration = Duration::from_secs(6);
     const LIMIT: Duration = Duration::from_secs(30);
     let mut driver = open(interface)?;
     driver.controller_mut().discover(entity);
+    settle(&mut driver, entity, LIMIT)?;
+    Ok(driver)
+}
+
+/// Runs the driver until `entity` is found and read, or every entity
+/// found is read when none is given, or `limit` has passed.
+fn settle(driver: &mut Driver, entity: Option<EntityId>, limit: Duration) -> std::io::Result<()> {
+    const DISCOVERY: Duration = Duration::from_secs(6);
     let started = Instant::now();
     loop {
         driver.turn(Duration::from_millis(100))?;
@@ -530,8 +537,8 @@ fn read(interface: &str, entity: Option<EntityId>) -> std::io::Result<Driver> {
                         .all(|found| settled(found.entity_id()))
             }
         };
-        if done || started.elapsed() >= LIMIT {
-            return Ok(driver);
+        if done || started.elapsed() >= limit {
+            return Ok(());
         }
     }
 }
@@ -1161,6 +1168,11 @@ fn set(interface: &str, entity: EntityId, change: Change) -> std::io::Result<()>
     if driver.controller().entity(entity).is_none() {
         println!("{entity} not found");
         return driver.close();
+    }
+    if let Change::Connect { talker, .. } = &change {
+        // The connect carries the talker's class, which reading it tells.
+        driver.controller_mut().discover(Some(talker.0));
+        settle(&mut driver, Some(talker.0), Duration::from_secs(6))?;
     }
     let control_values = match &change {
         Change::Control { index, values } => {

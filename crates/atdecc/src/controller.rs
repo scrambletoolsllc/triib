@@ -16,13 +16,13 @@ use core::time::Duration;
 use avb_mrp::msrp;
 use avb_net::MacAddress;
 
-use crate::acmp::{AcmpMessageType, AcmpStatus, Acmpdu};
+use crate::acmp::{AcmpFlags, AcmpMessageType, AcmpStatus, Acmpdu};
 use crate::adp::{AdpMessageType, Adpdu, ControllerCapabilities, EntityCapabilities};
 use crate::aecp::{AecpMessageType, AemCommandType, AemPdu, AemStatus, VendorUniquePdu};
 use crate::aem::{
     self, Addressing, AsPath, AudioMap, AudioMapping, AudioMappings, AvbInfo, Counters,
     DynamicQuery, MappingChange, MaxTransitTime, ReadDescriptorResponse, SetClockSource, SetName,
-    SetSamplingRate, SetStreamFormat, StreamInfo,
+    SetSamplingRate, SetStreamFormat, StreamInfo, StreamInfoFlags,
 };
 use crate::cache::{CachedModel, ModelKey};
 use crate::descriptor::{
@@ -292,6 +292,8 @@ enum Request {
         talker: EntityId,
         talker_unique_id: u16,
         input: u16,
+        /// The talker's stream is class B, so the connect says so.
+        class_b: bool,
         command: CommandId,
     },
     Unbind {
@@ -2374,13 +2376,21 @@ impl Controller {
                 talker,
                 talker_unique_id,
                 input,
+                class_b,
                 ..
-            } => acmp(
-                AcmpMessageType::CONNECT_RX_COMMAND,
-                (talker, talker_unique_id),
-                input,
-                &mut out,
-            ),
+            } => {
+                let mut connect = Acmpdu::command(
+                    AcmpMessageType::CONNECT_RX_COMMAND,
+                    addressing.controller,
+                    (talker, talker_unique_id),
+                    (addressing.target, input),
+                    sequence_id,
+                );
+                if class_b {
+                    connect.flags |= AcmpFlags::CLASS_B;
+                }
+                connect.encode(&mut out)
+            }
             Request::Unbind {
                 talker,
                 talker_unique_id,
@@ -2797,7 +2807,10 @@ impl Controller {
     }
 
     /// Binds a listener's stream input to a talker's stream output
-    /// (CONNECT_RX, which Milan calls BIND_RX).
+    /// (CONNECT_RX, which Milan calls BIND_RX). Where the talker reports
+    /// its output in class B, the connect carries CLASS_B, which the
+    /// listener passes on to the talker: a talker that takes its class
+    /// from the connect would otherwise go to class A.
     pub fn connect(
         &mut self,
         now: Instant,
@@ -2805,10 +2818,16 @@ impl Controller {
         listener: (EntityId, u16),
     ) -> CommandId {
         let command = self.next_command();
+        let class_b = self
+            .models
+            .get(&talker.0)
+            .and_then(|model| model.stream_info(DescriptorType::STREAM_OUTPUT, talker.1))
+            .is_some_and(|info| info.flags.contains(StreamInfoFlags::CLASS_B));
         let request = Request::Bind {
             talker: talker.0,
             talker_unique_id: talker.1,
             input: listener.1,
+            class_b,
             command,
         };
         self.queue_command(now, listener.0, command, request);
