@@ -30,6 +30,15 @@ settings-motion = Pohyb
 settings-animations = Animace
 settings-animations-note = Pružné a plynulé přechody při změnách.
 settings-animations-reduced = Pracovní plocha žádá omezení pohybu, proto se triib obejde bez animací.
+settings-outside-control = Vnější ovládání
+settings-allow-outside-control = Povolit vnější ovládání
+settings-allow-outside-control-note = Agenti, například Claude Code, mohou přes triib --mcp vidět a měnit vaši síť AVB. Před každým novým agentem se triib zeptá.
+settings-allowed-agents = Povoleno: { $agents }
+settings-forget-agents = Zapomenout
+agent-prompt-title = Povolit agentovi { $agent } ovládat triib?
+agent-prompt-body = { $agent } žádá o použití vnějšího ovládání triib: aby viděl entity ve vaší síti a měnil je, propojoval streamy a nastavoval formáty, hodiny a názvy. Vnější ovládání můžete vypnout v Nastavení.
+agent-prompt-allow = Povolit
+agent-prompt-deny = Nepovolit
 
 common-cancel = Zrušit
 common-save = Uložit

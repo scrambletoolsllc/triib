@@ -1,8 +1,10 @@
 // Release builds on Windows open no console window.
 #![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
 
+mod agents;
 mod app;
 mod column_resize;
+mod control;
 mod controls_view;
 mod describe;
 mod diagnostics_view;
@@ -15,12 +17,14 @@ mod lite_view;
 mod log_view;
 mod mapping_view;
 mod matrix;
+mod mcp;
 mod netmap;
 mod network;
 mod presets;
 mod settings;
 mod settings_view;
 mod text;
+mod tools;
 mod topology;
 mod vendor;
 mod view;
@@ -45,6 +49,9 @@ pub enum External {
     EndpointsElsewhere(Option<String>),
     /// The audio devices' names: inputs, then outputs.
     AudioDevices(Vec<String>, Vec<String>),
+    /// A request on the control channel, for `triib --mcp` and other
+    /// programs.
+    Control(control::Call),
 }
 
 static EXTERNAL_EVENTS: Mutex<Option<UnboundedReceiver<External>>> = Mutex::new(None);
@@ -65,7 +72,13 @@ fn main() -> iced::Result {
     if let Some(argument) = std::env::args().nth(1) {
         match argument.as_str() {
             "--version" | "-V" => println!("triib {}", env!("CARGO_PKG_VERSION")),
-            _ => println!("usage: triib [--version]"),
+            "--mcp" => {
+                if let Err(error) = mcp::run() {
+                    eprintln!("triib --mcp: {error}");
+                    std::process::exit(1);
+                }
+            }
+            _ => println!("usage: triib [--version | --mcp]"),
         }
         return Ok(());
     }
@@ -82,6 +95,7 @@ fn main() -> iced::Result {
         omarchy::watch(dir, || post(External::OmarchyThemeChanged));
     }
     watch_interfaces();
+    serve_control();
     if host::SUPPORTED {
         watch_endpoints();
     }
@@ -115,6 +129,16 @@ fn main() -> iced::Result {
     .theme(app::Triib::theme)
     .subscription(app::Triib::subscription)
     .run()
+}
+
+/// Opens the control channel, whose calls the app answers; triib runs
+/// without it where it cannot be opened.
+fn serve_control() {
+    let opened = control::address()
+        .and_then(|address| control::serve(address, |call| post(External::Control(call))));
+    if let Err(error) = opened {
+        eprintln!("triib: running without the control channel: {error}");
+    }
 }
 
 /// The app's icon on its windows, where the desktop takes it from them,

@@ -30,6 +30,15 @@ settings-motion = حرکت
 settings-animations = اینیمیشنز
 settings-animations-note = چیزیں بدلنے پر اسپرنگ اور سلائیڈ والی حرکتیں۔
 settings-animations-reduced = ڈیسک ٹاپ کم حرکت چاہتا ہے، اس لیے triib ساکن رہتا ہے۔
+settings-outside-control = بیرونی کنٹرول
+settings-allow-outside-control = بیرونی کنٹرول کی اجازت دیں
+settings-allow-outside-control-note = Claude Code جیسے ایجنٹ triib --mcp کے ذریعے آپ کا AVB نیٹ ورک دیکھ اور بدل سکتے ہیں۔ ہر نئے ایجنٹ سے پہلے triib پوچھتا ہے۔
+settings-allowed-agents = اجازت یافتہ: { $agents }
+settings-forget-agents = بھول جائیں
+agent-prompt-title = کیا { $agent } کو triib کنٹرول کرنے کی اجازت دیں؟
+agent-prompt-body = { $agent } triib کا بیرونی کنٹرول استعمال کرنا چاہتا ہے: آپ کے نیٹ ورک کی اینٹیٹیز دیکھنے اور بدلنے، اسٹریمز جوڑنے اور فارمیٹس، کلاک اور نام سیٹ کرنے کے لیے۔ آپ بیرونی کنٹرول کو ترتیبات میں بند کر سکتے ہیں۔
+agent-prompt-allow = اجازت دیں
+agent-prompt-deny = اجازت نہ دیں
 
 common-cancel = منسوخ کریں
 common-save = محفوظ کریں

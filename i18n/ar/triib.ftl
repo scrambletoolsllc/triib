@@ -30,6 +30,15 @@ settings-motion = الحركة
 settings-animations = الرسوم المتحركة
 settings-animations-note = حركات نابضة وانزلاقية مع تغيّر العناصر.
 settings-animations-reduced = يطلب سطح المكتب تقليل الحركة، لذا يبقى triib ساكنًا.
+settings-outside-control = التحكم الخارجي
+settings-allow-outside-control = السماح بالتحكم الخارجي
+settings-allow-outside-control-note = يمكن لوكلاء مثل Claude Code رؤية شبكة AVB لديك وتغييرها عبر triib --mcp. يسأل triib قبل كل وكيل جديد.
+settings-allowed-agents = المسموح لهم: { $agents }
+settings-forget-agents = نسيان
+agent-prompt-title = هل تسمح لـ { $agent } بالتحكم في triib؟
+agent-prompt-body = يطلب { $agent } استخدام التحكم الخارجي في triib: لرؤية الكيانات على شبكتك وتغييرها، بتوصيل التدفقات وضبط التنسيقات والساعات والأسماء. يمكنك إيقاف التحكم الخارجي من الإعدادات.
+agent-prompt-allow = سماح
+agent-prompt-deny = عدم السماح
 
 common-cancel = إلغاء
 common-save = حفظ

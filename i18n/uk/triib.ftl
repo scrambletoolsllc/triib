@@ -30,6 +30,15 @@ settings-motion = Рух
 settings-animations = Анімації
 settings-animations-note = Пружні й плавні переходи під час змін.
 settings-animations-reduced = Робочий стіл просить зменшити рух, тому triib обходиться без анімації.
+settings-outside-control = Зовнішнє керування
+settings-allow-outside-control = Дозволити зовнішнє керування
+settings-allow-outside-control-note = Агенти, як-от Claude Code, можуть бачити й змінювати вашу мережу AVB через triib --mcp. triib питає перед кожним новим агентом.
+settings-allowed-agents = Дозволено: { $agents }
+settings-forget-agents = Забути
+agent-prompt-title = Дозволити агентові { $agent } керувати triib?
+agent-prompt-body = { $agent } просить доступ до зовнішнього керування triib: бачити сутності у вашій мережі та змінювати їх — підключати потоки, задавати формати, джерела синхронізації та назви. Зовнішнє керування можна вимкнути в налаштуваннях.
+agent-prompt-allow = Дозволити
+agent-prompt-deny = Не дозволяти
 
 common-cancel = Скасувати
 common-save = Зберегти

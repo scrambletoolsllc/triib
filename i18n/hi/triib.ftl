@@ -30,6 +30,15 @@ settings-motion = गति
 settings-animations = ऐनिमेशन
 settings-animations-note = बदलाव होने पर चीज़ें उछलकर और सरककर आती हैं।
 settings-animations-reduced = डेस्कटॉप ने कम गति माँगी है, इसलिए triib स्थिर रहता है।
+settings-outside-control = बाहरी नियंत्रण
+settings-allow-outside-control = बाहरी नियंत्रण की अनुमति दें
+settings-allow-outside-control-note = Claude Code जैसे एजेंट triib --mcp के ज़रिए आपका AVB नेटवर्क देख और बदल सकते हैं। हर नए एजेंट से पहले triib पूछता है।
+settings-allowed-agents = अनुमति प्राप्त: { $agents }
+settings-forget-agents = भूल जाएँ
+agent-prompt-title = { $agent } को triib नियंत्रित करने की अनुमति दें?
+agent-prompt-body = { $agent } triib के बाहरी नियंत्रण का उपयोग करना चाहता है: आपके नेटवर्क की entities देखने और बदलने, streams जोड़ने और formats, clock व नाम सेट करने के लिए। आप सेटिंग्स में बाहरी नियंत्रण बंद कर सकते हैं।
+agent-prompt-allow = अनुमति दें
+agent-prompt-deny = अनुमति न दें
 
 common-cancel = रद्द करें
 common-save = सहेजें

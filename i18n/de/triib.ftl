@@ -32,6 +32,15 @@ settings-motion = Bewegung
 settings-animations = Animationen
 settings-animations-note = Federnde und gleitende Übergänge, wenn sich etwas ändert.
 settings-animations-reduced = Der Desktop wünscht reduzierte Bewegung, daher bleibt triib ruhig.
+settings-outside-control = Steuerung von außen
+settings-allow-outside-control = Steuerung von außen erlauben
+settings-allow-outside-control-note = Agenten wie Claude Code können über triib --mcp Ihr AVB-Netzwerk sehen und ändern. triib fragt vor jedem neuen Agenten nach.
+settings-allowed-agents = Erlaubt: { $agents }
+settings-forget-agents = Vergessen
+agent-prompt-title = { $agent } erlauben, triib zu steuern?
+agent-prompt-body = { $agent } möchte die Steuerung von außen in triib nutzen: die Entitäten in Ihrem Netzwerk sehen und ändern, Streams verbinden und Formate, Clocks und Namen einstellen. Sie können die Steuerung von außen in den Einstellungen ausschalten.
+agent-prompt-allow = Erlauben
+agent-prompt-deny = Nicht erlauben
 
 common-cancel = Abbrechen
 common-save = Speichern

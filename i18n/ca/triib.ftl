@@ -33,6 +33,15 @@ settings-motion = Moviment
 settings-animations = Animacions
 settings-animations-note = Efectes elàstics i lliscaments a cada canvi.
 settings-animations-reduced = L’escriptori demana menys moviment, així que triib es queda quiet.
+settings-outside-control = Control extern
+settings-allow-outside-control = Permet el control extern
+settings-allow-outside-control-note = Els agents com ara Claude Code poden veure i canviar la vostra xarxa AVB mitjançant triib --mcp. El triib pregunta abans de cada agent nou.
+settings-allowed-agents = Permesos: { $agents }
+settings-forget-agents = Oblida
+agent-prompt-title = Vols permetre que { $agent } controli el triib?
+agent-prompt-body = { $agent } demana fer servir el control extern del triib: veure les entitats de la xarxa i canviar-les, connectant fluxos i definint formats, rellotges i noms. Podeu desactivar el control extern a Configuració.
+agent-prompt-allow = Permet
+agent-prompt-deny = No permetis
 
 common-cancel = Cancel·la
 common-save = Desa

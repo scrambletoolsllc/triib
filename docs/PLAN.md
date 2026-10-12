@@ -492,8 +492,9 @@ budgets: 240 instances, 75% of the link, and the real-time threads.
   a grid editor for channel mappings with many channels.
 - Reading the Mac's own AVB entity through the AudioVideoBridging
   framework.
-- Firmware update over MVU, several interfaces at once, an MCP server, a
-  CRF talker, PipeWire native nodes per endpoint.
+- Firmware update over MVU, several interfaces at once, a CRF talker.
+- More for agents over MCP: channel mappings and controls, presets, and
+  this computer's own endpoints.
 
 ### Not in scope
 

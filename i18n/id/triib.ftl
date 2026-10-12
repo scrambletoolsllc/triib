@@ -30,6 +30,15 @@ settings-motion = Gerak
 settings-animations = Animasi
 settings-animations-note = Efek pegas dan geser saat sesuatu berubah.
 settings-animations-reduced = Desktop meminta gerakan dikurangi, jadi triib tetap diam.
+settings-outside-control = Kendali luar
+settings-allow-outside-control = Izinkan kendali luar
+settings-allow-outside-control-note = Agen seperti Claude Code dapat melihat dan mengubah jaringan AVB Anda melalui triib --mcp. triib akan bertanya sebelum setiap agen baru.
+settings-allowed-agents = Diizinkan: { $agents }
+settings-forget-agents = Lupakan
+agent-prompt-title = Izinkan { $agent } mengendalikan triib?
+agent-prompt-body = { $agent } meminta untuk memakai kendali luar triib: melihat entitas di jaringan Anda dan mengubahnya, menghubungkan stream serta mengatur format, clock, dan nama. Anda dapat menonaktifkan kendali luar di Pengaturan.
+agent-prompt-allow = Izinkan
+agent-prompt-deny = Jangan izinkan
 
 common-cancel = Batal
 common-save = Simpan

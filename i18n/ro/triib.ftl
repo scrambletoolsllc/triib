@@ -33,6 +33,15 @@ settings-motion = Mișcare
 settings-animations = Animații
 settings-animations-note = Efecte elastice și glisări la fiecare schimbare.
 settings-animations-reduced = Desktopul cere mișcare redusă, așa că triib rămâne nemișcat.
+settings-outside-control = Control extern
+settings-allow-outside-control = Permite controlul extern
+settings-allow-outside-control-note = Agenții precum Claude Code pot vedea și modifica rețeaua ta AVB, prin triib --mcp. triib întreabă înaintea fiecărui agent nou.
+settings-allowed-agents = Permiși: { $agents }
+settings-forget-agents = Uită
+agent-prompt-title = Permiți ca { $agent } să controleze triib?
+agent-prompt-body = { $agent } cere să folosească controlul extern al triib: să vadă entitățile din rețeaua ta și să le modifice, conectând fluxuri și setând formate, ceasuri și nume. Poți dezactiva controlul extern în Setări.
+agent-prompt-allow = Permite
+agent-prompt-deny = Nu permite
 
 common-cancel = Anulează
 common-save = Salvează

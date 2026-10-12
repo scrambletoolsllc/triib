@@ -30,6 +30,15 @@ settings-motion = תנועה
 settings-animations = אנימציות
 settings-animations-note = קפיצים והחלקות כשדברים משתנים.
 settings-animations-reduced = שולחן העבודה מבקש תנועה מופחתת, ולכן triib נשאר דומם.
+settings-outside-control = שליטה מבחוץ
+settings-allow-outside-control = התרת שליטה מבחוץ
+settings-allow-outside-control-note = סוכנים כמו Claude Code יכולים לראות ולשנות את רשת ה-AVB שלכם, דרך triib --mcp. triib שואל לפני כל סוכן חדש.
+settings-allowed-agents = מורשים: { $agents }
+settings-forget-agents = הסרה
+agent-prompt-title = לאפשר ל-{ $agent } לשלוט ב-triib?
+agent-prompt-body = { $agent } מבקש להשתמש בשליטה מבחוץ של triib: לראות את הישויות ברשת שלכם ולשנות אותן, לחבר זרמים ולהגדיר פורמטים, שעונים ושמות. אפשר לכבות את השליטה מבחוץ בהגדרות.
+agent-prompt-allow = אישור
+agent-prompt-deny = דחייה
 
 common-cancel = ביטול
 common-save = שמירה

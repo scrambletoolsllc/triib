@@ -131,6 +131,25 @@ bridge while the other still needs it. So one daemon runs on an interface
 whichever user starts it, and triib says when another user's holds it, or
 when another program on this computer declares MSRP or MVRP on the port.
 
+## Using triib with AI agents
+
+`triib --mcp` serves the Model Context Protocol on stdin and stdout, so
+an agent such as Claude Code can see and change the network through the
+triib on your desktop, which it starts when it is not running. To add it
+to Claude Code:
+
+```sh
+claude mcp add triib -- triib --mcp
+```
+
+The tools read what triib knows (its status, the entities, an entity's
+streams, formats and clocks, the connections) and change what a click
+would: connecting and disconnecting streams, setting a stream's format, a
+sampling rate or a clock source, renaming and identifying. A change
+answers once the device has, with what it said. The first time an agent
+connects, triib asks whether to let it in; Settings lists the agents
+allowed and has a switch to turn outside control off.
+
 ## Building
 
 ```
@@ -208,6 +227,7 @@ whether raw Ethernet is ready.
 | `triib-cli` | Headless controller |
 | `triib-endpointd` | Runs this computer's talkers and listeners |
 | `triib-stream` | AAF streams, the media clock and audio devices |
+| `triib-pipewire` | Virtual audio devices as PipeWire nodes |
 | `triib-store` | Settings and cache files |
 | `atdecc` | IEEE 1722.1 ATDECC with Milan: frames and state machines, no I/O |
 | `avb-mrp` | IEEE 802.1Q MRP, MSRP and MVRP: frames and state machines, no I/O |

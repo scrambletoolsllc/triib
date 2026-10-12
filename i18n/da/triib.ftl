@@ -32,6 +32,15 @@ settings-motion = Bevægelse
 settings-animations = Animationer
 settings-animations-note = Fjedrende og glidende overgange, når noget ændrer sig.
 settings-animations-reduced = Skrivebordet beder om mindre bevægelse, så triib holder sig i ro.
+settings-outside-control = Ekstern styring
+settings-allow-outside-control = Tillad ekstern styring
+settings-allow-outside-control-note = Agenter som Claude Code kan se og ændre dit AVB-netværk via triib --mcp. triib spørger før hver ny agent.
+settings-allowed-agents = Tilladt: { $agents }
+settings-forget-agents = Glem
+agent-prompt-title = Vil du give { $agent } lov til at styre triib?
+agent-prompt-body = { $agent } beder om at bruge ekstern styring af triib: at se entiteterne på dit netværk og ændre dem, forbinde streams og indstille formater, clocks og navne. Du kan slå ekstern styring fra i Indstillinger.
+agent-prompt-allow = Tillad
+agent-prompt-deny = Tillad ikke
 
 common-cancel = Annuller
 common-save = Gem

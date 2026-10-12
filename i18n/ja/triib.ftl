@@ -33,6 +33,15 @@ settings-motion = モーション
 settings-animations = アニメーション
 settings-animations-note = 表示が変わるとき、スプリングやスライドで動かします。
 settings-animations-reduced = デスクトップで動きを減らす設定になっているため、triib は動きません。
+settings-outside-control = 外部からの操作
+settings-allow-outside-control = 外部からの操作を許可
+settings-allow-outside-control-note = Claude Codeなどのエージェントが、triib --mcpを通じてAVBネットワークを確認し、変更できるようになります。新しいエージェントごとにtriibが確認します。
+settings-allowed-agents = 許可済み：{ $agents }
+settings-forget-agents = 削除
+agent-prompt-title = { $agent }にtriibの操作を許可しますか？
+agent-prompt-body = { $agent }が、triibの外部からの操作を使おうとしています。ネットワーク上のエンティティを確認して変更し、ストリームを接続したり、フォーマット、クロック、名前を設定したりします。外部からの操作は「設定」でオフにできます。
+agent-prompt-allow = 許可
+agent-prompt-deny = 許可しない
 
 common-cancel = キャンセル
 common-save = 保存

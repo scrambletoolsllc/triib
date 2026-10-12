@@ -33,6 +33,15 @@ settings-motion = 动效
 settings-animations = 动画
 settings-animations-note = 内容变化时以弹性和滑动效果过渡。
 settings-animations-reduced = 桌面要求减弱动态效果，因此 triib 不播放动画。
+settings-outside-control = 外部控制
+settings-allow-outside-control = 允许外部控制
+settings-allow-outside-control-note = Claude Code 等智能体可以通过 triib --mcp 查看和更改你的 AVB 网络。每个新智能体接入前，triib 都会先询问。
+settings-allowed-agents = 已允许：{ $agents }
+settings-forget-agents = 忘记
+agent-prompt-title = 允许 { $agent } 控制 triib？
+agent-prompt-body = { $agent } 请求使用 triib 的外部控制：查看并更改你网络上的实体，连接流，设置格式、时钟和名称。你可以在“设置”中关闭外部控制。
+agent-prompt-allow = 允许
+agent-prompt-deny = 不允许
 
 common-cancel = 取消
 common-save = 保存

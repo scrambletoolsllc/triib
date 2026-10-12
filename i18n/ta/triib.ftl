@@ -30,6 +30,15 @@ settings-motion = இயக்கம்
 settings-animations = அனிமேஷன்கள்
 settings-animations-note = மாற்றங்களின்போது துள்ளலும் சறுக்கலும்.
 settings-animations-reduced = டெஸ்க்டாப் குறைந்த இயக்கத்தைக் கேட்கிறது, எனவே triib அசையாமல் இருக்கும்.
+settings-outside-control = வெளிக் கட்டுப்பாடு
+settings-allow-outside-control = வெளிக் கட்டுப்பாட்டை அனுமதி
+settings-allow-outside-control-note = Claude Code போன்ற முகவர்கள் triib --mcp மூலம் உங்கள் AVB நெட்வொர்க்கைப் பார்க்கவும் மாற்றவும் முடியும். ஒவ்வொரு புதிய முகவருக்கும் முன் triib கேட்கும்.
+settings-allowed-agents = அனுமதிக்கப்பட்டவை: { $agents }
+settings-forget-agents = மறந்துவிடு
+agent-prompt-title = triib-ஐக் கட்டுப்படுத்த { $agent } முகவரை அனுமதிக்கவா?
+agent-prompt-body = { $agent } triib-இன் வெளிக் கட்டுப்பாட்டைப் பயன்படுத்தக் கேட்கிறது: உங்கள் நெட்வொர்க்கில் உள்ள entities-ஐப் பார்த்து மாற்ற, streams-ஐ இணைக்க, formats, clock, பெயர்களை அமைக்க. அமைப்புகளில் வெளிக் கட்டுப்பாட்டை முடக்கலாம்.
+agent-prompt-allow = அனுமதி
+agent-prompt-deny = அனுமதிக்காதே
 
 common-cancel = ரத்துசெய்
 common-save = சேமி

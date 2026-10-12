@@ -32,6 +32,15 @@ settings-motion = Hareket
 settings-animations = Animasyonlar
 settings-animations-note = Bir şey değiştiğinde yaylanma ve kayma efektleri.
 settings-animations-reduced = Masaüstü azaltılmış hareket istiyor, bu yüzden triib hareketsiz kalıyor.
+settings-outside-control = Dışarıdan denetim
+settings-allow-outside-control = Dışarıdan denetime izin ver
+settings-allow-outside-control-note = Claude Code gibi ajanlar, triib --mcp aracılığıyla AVB ağınızı görüp değiştirebilir. triib her yeni ajandan önce sorar.
+settings-allowed-agents = İzin verilenler: { $agents }
+settings-forget-agents = Unut
+agent-prompt-title = { $agent } triib'i denetleyebilsin mi?
+agent-prompt-body = { $agent }, triib'in dışarıdan denetimini kullanmak istiyor: ağınızdaki varlıkları görmek ve değiştirmek, akışları bağlamak, biçimleri, saatleri ve adları ayarlamak için. Dışarıdan denetimi Ayarlar'dan kapatabilirsiniz.
+agent-prompt-allow = İzin ver
+agent-prompt-deny = İzin verme
 
 common-cancel = İptal
 common-save = Kaydet

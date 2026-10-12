@@ -33,6 +33,15 @@ settings-motion = Movimento
 settings-animations = Animações
 settings-animations-note = Efeitos de mola e deslizamento quando algo muda.
 settings-animations-reduced = A área de trabalho pede movimento reduzido, então o triib fica parado.
+settings-outside-control = Controle externo
+settings-allow-outside-control = Permitir controle externo
+settings-allow-outside-control-note = Agentes como o Claude Code podem ver e alterar sua rede AVB, por meio do triib --mcp. O triib pergunta antes de cada novo agente.
+settings-allowed-agents = Permitidos: { $agents }
+settings-forget-agents = Esquecer
+agent-prompt-title = Permitir que { $agent } controle o triib?
+agent-prompt-body = { $agent } pede para usar o controle externo do triib: ver as entidades da sua rede e alterá-las, conectando fluxos e definindo formatos, relógios e nomes. Você pode desativar o controle externo em Configurações.
+agent-prompt-allow = Permitir
+agent-prompt-deny = Não permitir
 
 common-cancel = Cancelar
 common-save = Salvar

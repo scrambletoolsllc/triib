@@ -52,6 +52,20 @@ settings-motion = Motion
 settings-animations = Animations
 settings-animations-note = Springs and slides as things change.
 settings-animations-reduced = The desktop asks for reduced motion, so triib stays still.
+settings-outside-control = Outside control
+settings-allow-outside-control = Allow outside control
+settings-allow-outside-control-note = Agents such as Claude Code can see and change your AVB network through triib --mcp. triib asks before each new agent.
+# $agents is a list of agent names, such as claude-code.
+settings-allowed-agents = Allowed: { $agents }
+settings-forget-agents = Forget
+
+## An agent asking to control triib
+
+# $agent is the agent's name, such as Claude Code.
+agent-prompt-title = Allow { $agent } to control triib?
+agent-prompt-body = { $agent } asks to use triib's outside control: to see the entities on your network and change them, connecting streams and setting formats, clocks and names. You can turn outside control off in Settings.
+agent-prompt-allow = Allow
+agent-prompt-deny = Don't allow
 
 common-cancel = Cancel
 common-save = Save

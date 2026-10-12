@@ -32,6 +32,15 @@ settings-motion = Mozgás
 settings-animations = Animációk
 settings-animations-note = Rugózás és csúszás, ahogy a dolgok változnak.
 settings-animations-reduced = Az asztal csökkentett mozgást kér, ezért a triib mozdulatlan marad.
+settings-outside-control = Külső vezérlés
+settings-allow-outside-control = Külső vezérlés engedélyezése
+settings-allow-outside-control-note = Az ügynökök, például a Claude Code, a triib --mcp segítségével láthatják és módosíthatják az AVB-hálózatát. A triib minden új ügynök előtt rákérdez.
+settings-allowed-agents = Engedélyezve: { $agents }
+settings-forget-agents = Elfelejtés
+agent-prompt-title = Engedélyezi, hogy { $agent } vezérelje a triib alkalmazást?
+agent-prompt-body = { $agent } szeretné használni a triib külső vezérlését: látni és módosítani a hálózata entitásait, streameket csatlakoztatni, formátumokat, órajeleket és neveket beállítani. A külső vezérlést a Beállításokban kapcsolhatja ki.
+agent-prompt-allow = Engedélyezés
+agent-prompt-deny = Tiltás
 
 common-cancel = Mégse
 common-save = Mentés

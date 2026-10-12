@@ -54,13 +54,15 @@ pub fn window(triib: &Triib) -> Element<'_, Message> {
         status_bar(triib),
     ]
     .into();
-    if triib.settings_open {
+    let window = if triib.settings_open {
         crate::settings_view::dialog(triib, window)
     } else if triib.presets_open {
         crate::presets::dialog(triib, window)
     } else {
         window
-    }
+    };
+    // An agent asking to control triib comes before anything else.
+    triib.agent_prompt(window)
 }
 
 /// The active view with the log under it and the inspector beside both,

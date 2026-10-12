@@ -32,6 +32,15 @@ settings-motion = Liike
 settings-animations = Animaatiot
 settings-animations-note = Jousto- ja liukuefektit asioiden muuttuessa.
 settings-animations-reduced = Työpöytä pyytää vähentämään liikettä, joten triib pysyy paikallaan.
+settings-outside-control = Ulkoinen ohjaus
+settings-allow-outside-control = Salli ulkoinen ohjaus
+settings-allow-outside-control-note = Agentit, kuten Claude Code, voivat nähdä ja muuttaa AVB-verkkoasi komennon triib --mcp kautta. triib kysyy ennen jokaista uutta agenttia.
+settings-allowed-agents = Sallitut: { $agents }
+settings-forget-agents = Unohda
+agent-prompt-title = Saako { $agent } ohjata triib-sovellusta?
+agent-prompt-body = { $agent } pyytää käyttää triib-sovelluksen ulkoista ohjausta: nähdä verkkosi entiteetit ja muuttaa niitä, yhdistää striimejä ja asettaa muotoja, kelloja ja nimiä. Voit poistaa ulkoisen ohjauksen käytöstä Asetuksissa.
+agent-prompt-allow = Salli
+agent-prompt-deny = Älä salli
 
 common-cancel = Peruuta
 common-save = Tallenna

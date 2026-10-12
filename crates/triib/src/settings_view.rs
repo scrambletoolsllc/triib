@@ -159,8 +159,40 @@ fn general(triib: &Triib) -> iced::widget::Column<'_, Message> {
         aligned(
             styled(fl!("settings-language-note"), Type::BodySmall).style(style::on_surface_variant),
         ),
+        component::section(fl!("settings-outside-control")),
+        switch_row(
+            fl!("settings-allow-outside-control"),
+            fl!("settings-allow-outside-control-note"),
+            triib.settings.outside_control,
+            Message::OutsideControlToggled,
+        ),
+        allowed_agents(triib),
     ]
     .spacing(12)
+}
+
+/// The agents the user allowed to control triib, and forgetting them.
+fn allowed_agents(triib: &Triib) -> Element<'_, Message> {
+    if triib.settings.allowed_agents.is_empty() {
+        return space().into();
+    }
+    scramble_ui::row![
+        container(aligned(
+            styled(
+                fl!(
+                    "settings-allowed-agents",
+                    agents = triib.settings.allowed_agents.join(", ")
+                ),
+                Type::BodyMedium
+            )
+            .style(style::on_surface_variant)
+        ))
+        .width(Fill),
+        button::button(Kind::Text, fl!("settings-forget-agents")).on_press(Message::ForgetAgents),
+    ]
+    .spacing(16)
+    .align_y(Center)
+    .into()
 }
 
 /// Light or dark, colors, and motion.

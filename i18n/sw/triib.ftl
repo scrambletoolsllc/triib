@@ -30,6 +30,15 @@ settings-motion = Mwendo
 settings-animations = Uhuishaji
 settings-animations-note = Midundo na mitelezo vitu vinapobadilika.
 settings-animations-reduced = Eneo-kazi linaomba mwendo upunguzwe, kwa hivyo triib inabaki tuli.
+settings-outside-control = Udhibiti wa nje
+settings-allow-outside-control = Ruhusu udhibiti wa nje
+settings-allow-outside-control-note = Mawakala kama Claude Code wanaweza kuona na kubadilisha mtandao wako wa AVB, kupitia triib --mcp. triib huuliza kabla ya kila wakala mpya.
+settings-allowed-agents = Wanaoruhusiwa: { $agents }
+settings-forget-agents = Sahau
+agent-prompt-title = Ruhusu { $agent } kudhibiti triib?
+agent-prompt-body = { $agent } anaomba kutumia udhibiti wa nje wa triib: kuona huluki kwenye mtandao wako na kuzibadilisha, kuunganisha mitiririko na kuweka miundo, saa na majina. Unaweza kuzima udhibiti wa nje katika Mipangilio.
+agent-prompt-allow = Ruhusu
+agent-prompt-deny = Usiruhusu
 
 common-cancel = Ghairi
 common-save = Hifadhi

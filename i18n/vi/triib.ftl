@@ -33,6 +33,15 @@ settings-motion = Chuyển động
 settings-animations = Hiệu ứng động
 settings-animations-note = Hiệu ứng nảy và trượt khi nội dung thay đổi.
 settings-animations-reduced = Màn hình nền yêu cầu giảm chuyển động, nên triib không chạy hiệu ứng.
+settings-outside-control = Điều khiển từ bên ngoài
+settings-allow-outside-control = Cho phép điều khiển từ bên ngoài
+settings-allow-outside-control-note = Các tác nhân như Claude Code có thể xem và thay đổi mạng AVB của bạn, thông qua triib --mcp. triib sẽ hỏi trước mỗi tác nhân mới.
+settings-allowed-agents = Đã cho phép: { $agents }
+settings-forget-agents = Quên
+agent-prompt-title = Cho phép { $agent } điều khiển triib?
+agent-prompt-body = { $agent } yêu cầu dùng tính năng điều khiển từ bên ngoài của triib: xem các thực thể trên mạng của bạn và thay đổi chúng, kết nối luồng và đặt định dạng, đồng hồ và tên. Bạn có thể tắt điều khiển từ bên ngoài trong Cài đặt.
+agent-prompt-allow = Cho phép
+agent-prompt-deny = Không cho phép
 
 common-cancel = Hủy
 common-save = Lưu

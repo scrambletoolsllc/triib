@@ -24,6 +24,16 @@ triib-stream.workspace = true
 i18n-embed = { version = "0.16", features = ["desktop-requester", "fluent-system"] }
 i18n-embed-fl = "0.10"
 rust-embed = { version = "8", features = ["debug-embed"] }
+# Outside control: the control channel, and `triib --mcp` for AI agents.
+interprocess = "2"
+serde_json = "1"
+rmcp = { version = "3", default-features = false, features = ["server", "transport-io"] }
+tokio = { version = "1", features = ["rt", "sync"] }
+schemars = "1"
+
+[target.'cfg(windows)'.dependencies]
+# `triib --mcp` keeps its pipes from the triib it starts.
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_System_Console"] }
 
 [dev-dependencies]
 iced_test = "0.14"

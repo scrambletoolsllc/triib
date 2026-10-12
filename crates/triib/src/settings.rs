@@ -47,6 +47,11 @@ pub struct Settings {
     pub entity_column_widths: BTreeMap<EntityField, f32>,
     /// The width the user dragged the entity list's name column to.
     pub entity_name_width: Option<f32>,
+    /// Programs such as AI agents may control triib, through `triib
+    /// --mcp`, once the user allows each.
+    pub outside_control: bool,
+    /// The agents the user allowed, by the names they give.
+    pub allowed_agents: Vec<String>,
 }
 
 impl Default for Settings {
@@ -70,6 +75,8 @@ impl Default for Settings {
             entity_columns: EntityField::DEFAULT_COLUMNS.to_vec(),
             entity_column_widths: BTreeMap::new(),
             entity_name_width: None,
+            outside_control: true,
+            allowed_agents: Vec::new(),
         }
     }
 }

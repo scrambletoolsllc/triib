@@ -30,6 +30,15 @@ settings-motion = การเคลื่อนไหว
 settings-animations = ภาพเคลื่อนไหว
 settings-animations-note = เด้งและเลื่อนเมื่อมีการเปลี่ยนแปลง
 settings-animations-reduced = เดสก์ท็อปขอให้ลดการเคลื่อนไหว triib จึงอยู่นิ่ง
+settings-outside-control = การควบคุมจากภายนอก
+settings-allow-outside-control = อนุญาตการควบคุมจากภายนอก
+settings-allow-outside-control-note = เอเจนต์ เช่น Claude Code สามารถดูและแก้ไขเครือข่าย AVB ของคุณได้ผ่าน triib --mcp โดย triib จะถามก่อนทุกครั้งที่มีเอเจนต์ใหม่
+settings-allowed-agents = อนุญาตแล้ว: { $agents }
+settings-forget-agents = ลืม
+agent-prompt-title = อนุญาตให้ { $agent } ควบคุม triib หรือไม่
+agent-prompt-body = { $agent } ขอใช้การควบคุมจากภายนอกของ triib เพื่อดูและแก้ไขเอนทิตีบนเครือข่ายของคุณ เชื่อมต่อสตรีม และตั้งค่ารูปแบบ คล็อก และชื่อ คุณปิดการควบคุมจากภายนอกได้ในการตั้งค่า
+agent-prompt-allow = อนุญาต
+agent-prompt-deny = ไม่อนุญาต
 
 common-cancel = ยกเลิก
 common-save = บันทึก

@@ -32,6 +32,15 @@ settings-motion = Beweging
 settings-animations = Animaties
 settings-animations-note = Verende en glijdende overgangen als er iets verandert.
 settings-animations-reduced = De desktop vraagt om minder beweging, dus triib blijft stil.
+settings-outside-control = Besturing van buitenaf
+settings-allow-outside-control = Besturing van buitenaf toestaan
+settings-allow-outside-control-note = Agents zoals Claude Code kunnen via triib --mcp je AVB-netwerk zien en wijzigen. triib vraagt het eerst bij elke nieuwe agent.
+settings-allowed-agents = Toegestaan: { $agents }
+settings-forget-agents = Vergeten
+agent-prompt-title = { $agent } toestaan triib te besturen?
+agent-prompt-body = { $agent } vraagt om de besturing van buitenaf van triib te gebruiken: de entiteiten in je netwerk zien en wijzigen, streams verbinden en formaten, klokken en namen instellen. Je kunt besturing van buitenaf uitzetten in Instellingen.
+agent-prompt-allow = Toestaan
+agent-prompt-deny = Niet toestaan
 
 common-cancel = Annuleren
 common-save = Opslaan

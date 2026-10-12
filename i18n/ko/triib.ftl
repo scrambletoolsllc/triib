@@ -33,6 +33,15 @@ settings-motion = 동작
 settings-animations = 애니메이션
 settings-animations-note = 화면이 바뀔 때 튕기고 미끄러지는 효과를 줍니다.
 settings-animations-reduced = 데스크톱에서 동작 줄이기를 요청하여 triib 애니메이션을 표시하지 않습니다.
+settings-outside-control = 외부 제어
+settings-allow-outside-control = 외부 제어 허용
+settings-allow-outside-control-note = Claude Code 같은 에이전트가 triib --mcp를 통해 AVB 네트워크를 보고 변경할 수 있습니다. 새 에이전트마다 triib가 먼저 묻습니다.
+settings-allowed-agents = 허용됨: { $agents }
+settings-forget-agents = 지우기
+agent-prompt-title = { $agent }이(가) triib를 제어하도록 허용하시겠습니까?
+agent-prompt-body = { $agent }이(가) triib의 외부 제어를 사용하려고 합니다. 네트워크의 엔티티를 보고 변경하며, 스트림을 연결하고 포맷, 클럭, 이름을 설정합니다. 외부 제어는 설정에서 끌 수 있습니다.
+agent-prompt-allow = 허용
+agent-prompt-deny = 허용 안 함
 
 common-cancel = 취소
 common-save = 저장

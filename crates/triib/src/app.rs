@@ -127,6 +127,8 @@ pub struct Triib {
     pub settings_tab: SettingsTab,
     /// Why the settings could not be read or saved, shown in Settings.
     pub settings_error: Option<String>,
+    /// Agents asking to control triib, and the changes they wait on.
+    pub agents: crate::agents::Agents,
 }
 
 /// What the network thread for the chosen interface is doing.
@@ -257,6 +259,12 @@ pub enum Message {
     SystemAccent(Option<(u8, u8, u8)>),
     AnimationsEnabled(Option<bool>),
     External(External),
+    /// The user answered whether the agent asking may control triib.
+    AgentAnswered(bool),
+    /// The agent's prompt takes answers now.
+    AgentPromptReady,
+    OutsideControlToggled(bool),
+    ForgetAgents,
     Nothing,
 }
 
@@ -319,6 +327,7 @@ impl Triib {
             settings_open: false,
             settings_tab: SettingsTab::default(),
             settings_error: None,
+            agents: crate::agents::Agents::default(),
         }
     }
 
@@ -372,6 +381,7 @@ impl Triib {
             settings_open: false,
             settings_tab: SettingsTab::default(),
             settings_error,
+            agents: crate::agents::Agents::default(),
         };
         triib.reload_omarchy();
         triib.apply_motion();
@@ -927,6 +937,20 @@ impl Triib {
                 self.network_report(report);
                 return self.go_on_recalling();
             }
+            Message::External(External::Control(call)) => return self.control(call),
+            Message::AgentAnswered(allow) => return self.agent_answered(allow),
+            Message::AgentPromptReady => {}
+            Message::OutsideControlToggled(on) => {
+                self.settings.outside_control = on;
+                self.save_settings();
+                if !on {
+                    self.outside_control_off();
+                }
+            }
+            Message::ForgetAgents => {
+                self.settings.allowed_agents.clear();
+                self.save_settings();
+            }
             Message::Nothing => {}
         }
         Task::none()
@@ -963,6 +987,7 @@ impl Triib {
         self.models.clear();
         self.selected = None;
         self.pending.clear();
+        self.agent_actions_dropped();
         self.hover = Hover::default();
         self.neighbor = None;
         self.cannot_listen = None;
@@ -987,6 +1012,7 @@ impl Triib {
             ReportKind::Failed(failure) => {
                 self.network = None;
                 self.network_state = NetworkState::Failed(failure);
+                self.agent_actions_dropped();
             }
             ReportKind::Online(entity)
             | ReportKind::Changed(entity)
@@ -1019,6 +1045,7 @@ impl Triib {
                     self.pending.remove(position);
                 }
                 self.notice = crate::describe::outcome(self, action, outcome);
+                self.agent_action_finished(action, outcome);
                 // The steps after it go on only once it is done.
                 if let Some(position) = self.chains.iter().position(|(head, _)| *head == action) {
                     let (_, rest) = self.chains.remove(position);
@@ -1236,7 +1263,7 @@ impl Triib {
         );
     }
 
-    fn save_settings(&mut self) {
+    pub(crate) fn save_settings(&mut self) {
         self.settings_error = self.settings.save().err();
     }
 
