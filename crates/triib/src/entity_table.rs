@@ -41,6 +41,9 @@ const ADD_WIDTH: f32 = 40.0;
 /// How far right of a heading its column's divider is: the cell's padding
 /// and half the line.
 const DIVIDER: f32 = TABLE_PADDING + 0.5;
+/// How far a picker's text is from its cell's edge: an extra small
+/// drop-down's padding.
+const PICKER_INSET: f32 = 12.0;
 /// Every row's height: the name's row button's.
 const ROW_HEIGHT: f32 = 40.0;
 /// Every heading's height: the heading menus'.
@@ -142,7 +145,25 @@ fn media_clock_cell<'a>(
     match picker {
         // As wide as its column, as the table lays fixed cells out apart.
         Some(picker) => container(picker).width(Length::Fixed(width)).into(),
-        None => cell(shown, width),
+        // Its text where a picker's starts, so the column's values line
+        // up.
+        None => {
+            let inset = if dir::mirrored() {
+                iced::Padding {
+                    right: PICKER_INSET,
+                    ..iced::Padding::ZERO
+                }
+            } else {
+                iced::Padding {
+                    left: PICKER_INSET,
+                    ..iced::Padding::ZERO
+                }
+            };
+            container(cell(shown, width - PICKER_INSET))
+                .padding(inset)
+                .width(Length::Fixed(width))
+                .into()
+        }
     }
 }
 
