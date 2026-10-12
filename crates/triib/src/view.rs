@@ -2518,7 +2518,9 @@ pub(crate) mod tests {
             ];
         }
         {
-            let mut simulator = simulate(&triib, size);
+            // Tall enough that the inspector shows every stream and the
+            // buttons under them.
+            let mut simulator = simulate(&triib, Size::new(1280.0, 1400.0));
             assert!(simulator.find("Out 1").is_ok());
             assert!(simulator.find("In 1").is_ok());
             assert!(simulator.find("Virtual device").is_ok());
