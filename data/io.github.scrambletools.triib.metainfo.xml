@@ -39,6 +39,11 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="1.0.0" date="2026-10-12">
+      <description>
+        <p>AVB Wireless status for entities and access points, devices of the computer's own with several streams each way, each with its own virtual audio device, SR class B talkers, a format menu in the connection matrix, AI agents through MCP with the user's consent, and on a Mac the Mac's own AVB entity.</p>
+      </description>
+    </release>
     <release version="0.9.0" date="2026-10-10">
       <description>
         <p>The first release: discovery, a connection matrix, a map of the network and its clocks, entity settings, presets, a frame log and AVB Lite status on Linux, Windows and macOS, and on Linux talkers and listeners of the computer's own, on AVB and AVB Lite networks.</p>

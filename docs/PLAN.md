@@ -17,10 +17,13 @@ prev's look, widgets and window layout through scramble-ui.
   2026-10-10, with packages for Linux on x86_64, ARM64 and RISC-V,
   Windows on x64 and ARM64, the programs and installer signed, and macOS
   on Apple Silicon; the website is triib.run.
-- Next: P3.1, the AVB Wireless profile and triib's view of wireless
-  endpoints and bridges; then P4, whether Windows and then macOS can run
-  talkers and listeners of their own, and this computer's entities with
-  several streams.
+- Done for 1.0.0: AVB Wireless (P3.1); this computer's entities with
+  several streams, each with its own virtual audio device (P4); AI
+  agents through `triib --mcp`; and on a Mac, the Mac's own entity
+  through the AudioVideoBridging framework.
+- Next: P4's rest, whether Windows and then macOS can run talkers and
+  listeners of their own, starting with the I210 card for the Windows
+  PC.
 - Waiting on others: the linuxptp organization TLV tables, the atlantic
   driver's time stamps, and native speakers' review of the translations.
 
@@ -334,7 +337,7 @@ endpoint through a non-AVB switch.
     the kernels triib's users run.
   - Sinc resampling (`rubato`) if cubic ever falls short.
 
-### P3.1: AVB Wireless (next)
+### P3.1: AVB Wireless (done)
 
 The AVB Wireless profile (avbcommunity/profiles, `avb_wireless.md`)
 extends AVB and AVB Lite over one 802.11 hop: an access point that is a
@@ -379,7 +382,7 @@ in the access point's beacons, and streamed unicast on the air.
 - Not in P3.1: this computer as a wireless station, which needs its Wi-Fi
   card's own PTP clock and timing support; a later phase.
 
-### P4: virtual endpoints on Windows, then macOS, and entities with several streams
+### P4: virtual endpoints on Windows, then macOS (next), and entities with several streams (done)
 
 - **Windows.** Windows reports no time stamps on the Intel I226-V and the
   Realtek RTL8111 here (`GetInterfaceSupportedTimestampCapabilities`
@@ -468,7 +471,6 @@ budgets: 240 instances, 75% of the link, and the real-time threads.
   on all their sockets at once, each with its own sink and counters;
   checked with two inputs taking two tones at once, each its own, on one
   thread beside one for the outputs.
-- **Still to do:** the website guide, at the next release.
 - **Open.** Controllers changing its channel mapping (Milan's dynamic
   mappings, ADD_AUDIO_MAPPINGS and REMOVE_AUDIO_MAPPINGS); a CRF stream
   input as the domain's clock source; streams at other sampling rates,

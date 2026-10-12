@@ -51,9 +51,9 @@ triib sends and receives raw Ethernet, which each system guards:
   devices to that group at every start. Wireshark's ChmodBPF uses the
   same group, so either serves both. Group membership takes effect at
   the next login. `sudo "/Library/Application Support/triib/uninstall"`
-  removes it all. The system's own AVB entity on the same Mac cannot be
-  read from there, as macOS never hands it the commands written to BPF;
-  triib says so.
+  removes it all. macOS never hands its own AVB entity the commands
+  written to BPF, so triib reaches that entity through Apple's
+  AudioVideoBridging framework, which needs nothing more.
 - **Windows:** Npcap, from https://npcap.com. Its license does not let
   other installers carry it, so the MSI looks for it and, when it is
   missing, offers Npcap's download page on its last page instead of
@@ -66,8 +66,9 @@ triib sends and receives raw Ethernet, which each system guards:
 
 ## Steps
 
-1. Update the version in `Cargo.toml` (the workspace version) and run
-   `cargo check` so `Cargo.lock` follows; update `pkgver` in
+1. Update the version in `Cargo.toml`, the workspace version and the
+   versions of the `triib-*` crates under `[workspace.dependencies]`, and
+   run `cargo check` so `Cargo.lock` follows; update `pkgver` in
    `packaging/arch/triib/PKGBUILD` and add a `<release>` to the
    metainfo.
 2. Write the version's section in `CHANGELOG.md`, as `## [X.Y.Z]`; the

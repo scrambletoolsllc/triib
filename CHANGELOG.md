@@ -3,6 +3,60 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [1.0.0] - 2026-10-12
+
+AVB Wireless, devices of the computer's own with several streams each
+way, AI agents through MCP, and on a Mac the Mac's own AVB entity.
+
+### Controller
+
+- AVB Wireless: triib asks each entity's AVB interfaces for their
+  wireless status and shows it in the inspector, the entity list and the
+  network map: the link, the time mode, and on an access point its
+  stations and the frames a second it can deliver, which decide whether
+  it admits Class A (12000 or more). Wi-Fi hops are marked on the map.
+- A matrix cell whose input must change its format first opens a menu of
+  the formats both ends take; picking one changes them and connects.
+- The entity list keeps its headings and the names in view while the
+  rest of it scrolls, and lines up plain media clock values with the
+  menus.
+- On a Mac, triib reads and controls the Mac's own AVB entity, through
+  Apple's AudioVideoBridging framework, as macOS never hands that entity
+  what a program writes to BPF.
+- AI agents such as Claude Code can see and change the network through
+  `triib --mcp`, a Model Context Protocol server: read the entities,
+  their streams, formats, clocks and connections, connect and
+  disconnect, change formats, sampling rates, clock sources and names,
+  and identify. triib asks before each new agent, and Settings turns
+  outside control off.
+- Shift turns rediscover into clear and rescan.
+- `triib-cli wireless` and `wireless-config` read AVB Wireless status
+  and set whether an access point admits Class A; `triib-cli network`
+  marks Wi-Fi hops.
+
+### This computer's talkers and listeners (Linux)
+
+- Devices: one entity with any number of streams each way, each set up
+  on its own, with its own virtual audio device in PipeWire unless it
+  uses a sound card. Its outputs send from one thread and its inputs
+  take their streams on another.
+- Talkers can send in SR class B, with class B's own formats.
+- Talkers, listeners and devices each have their own icon.
+- MRP runs once for the port, for all the endpoints, and the port
+  declares both SR classes' domains, so a bridge passes class B
+  streams as well.
+
+### Fixed
+
+- Connections to a class B talker say so, and a class B talker
+  advertises class B support.
+- An output says it is sending only while a listener takes its stream.
+- Entities sharing a clock each show in the map, and a Wi-Fi station
+  without a gPTP path shows under its access point.
+- Wireless status queries left unanswered are asked again.
+- This computer's entities offer only their internal clock.
+- `triib-cli` says when a listener's binding is not known.
+
 ## [0.9.0] - 2026-10-10
 
 The first release: an ATDECC (IEEE 1722.1) controller with Milan and AVB

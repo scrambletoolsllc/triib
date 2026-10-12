@@ -2,7 +2,7 @@
   triib's Windows installer, built with WiX 5 by packaging/windows/build.ps1:
 
     wix build packaging\windows\triib.wxs -ext WixToolset.UI.wixext -ext WixToolset.Util.wixext
-      -d Version=0.9.0 -d Source=dist -o triib.msi
+      -d Version=1.0.0 -d Source=dist -o triib.msi
 
   It installs for the current user, with no administrator prompt, into
   %LOCALAPPDATA%\Programs\triib, adds triib to the Start menu and its
