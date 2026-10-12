@@ -12,7 +12,7 @@ Website: **[triib.run](https://triib.run)**, with
 [a tour](https://triib.run/guide.html) and
 [the specifications](https://triib.run/specs.html).
 
-> **Status:** 0.9.0, the first release. On Linux, macOS and Windows, triib discovers ATDECC entities, reads their
+> **Status:** 1.0.0. On Linux, macOS and Windows, triib discovers ATDECC entities, reads their
 > entity models (names, streams, clocks, Milan support) and keeps them for
 > next time, shows and changes stream connections in a matrix, maps the
 > network from each entity's gPTP path, identifies entities, renames
@@ -25,10 +25,13 @@ Website: **[triib.run](https://triib.run)**, with
 > Lite, what their streams take of each link and the alarms the AVB Lite
 > profile calls for, and what Wi-Fi stations and access points report
 > under [AVB Wireless](https://github.com/avbcommunity/profiles/blob/main/avb_wireless.md),
-> each station under its access point in the network view. On Linux it runs talkers and listeners of its own,
-> Milan entities streaming AAF or AM824 at 48, 96 or 192 kHz to and from the
-> computer's audio devices. It speaks 38 languages, following the system's or the
-> one picked in Settings. See the [plan](docs/PLAN.md).
+> each station under its access point in the network view. On a Mac it
+> reaches the Mac's own AVB entity too. AI agents can use it through
+> `triib --mcp`. On Linux it runs talkers, listeners and devices of its
+> own, Milan entities streaming AAF or AM824 at 48, 96 or 192 kHz to and
+> from the computer's audio devices, each of a device's streams with its
+> own virtual audio device. It speaks 38 languages, following the
+> system's or the one picked in Settings. See the [plan](docs/PLAN.md).
 
 ## Installing
 
