@@ -625,13 +625,7 @@ impl Runtime {
             msrp,
             mvrp,
             endpoints,
-            port: Port::new(
-                seed,
-                config
-                    .endpoints
-                    .iter()
-                    .any(|endpoint| endpoint.kind == Kind::Talker && endpoint.class == SrClass::B),
-            ),
+            port: Port::new(seed),
             foreign_mrp: None,
             maap,
             tagged: FrameSender::open(&interface)?,

@@ -18,21 +18,19 @@ pub const VLAN: u16 = 2;
 pub struct Port {
     pub msrp: Participant,
     pub mvrp: Participant,
-    /// The SR classes the endpoints take part in: class A always, class B
-    /// too where a talker sends in it.
-    domains: Vec<Domain>,
+    /// The SR classes the endpoints take part in: both, since a listener
+    /// may hear a talker in either. A bridge passes a talker on only to a
+    /// port whose neighbour declares the talker's class; elsewhere the
+    /// port is the edge of that class's domain.
+    domains: [Domain; 2],
 }
 
 impl Port {
-    pub fn new(seed: u64, class_b: bool) -> Self {
-        let mut domains = vec![Domain::CLASS_A];
-        if class_b {
-            domains.push(Domain::CLASS_B);
-        }
+    pub fn new(seed: u64) -> Self {
         Self {
             msrp: Participant::new(msrp::FORMAT, Duration::ZERO, seed),
             mvrp: Participant::new(mvrp::FORMAT, Duration::ZERO, seed ^ 0x5555),
-            domains,
+            domains: [Domain::CLASS_A, Domain::CLASS_B],
         }
     }
 
@@ -130,7 +128,7 @@ mod tests {
     /// are past their New phase, as a running talker's are: MRP drops a
     /// declaration still new without a Leave.
     fn two_talkers() -> Port {
-        let mut port = Port::new(7, false);
+        let mut port = Port::new(7);
         port.join(Duration::ZERO);
         for stream in [ONE, TWO] {
             port.msrp.declare(
@@ -184,7 +182,7 @@ mod tests {
         assert!(withdrawn(&msrp, msrp::attribute::DOMAIN).is_empty());
         assert!(withdrawn(&mvrp, mvrp::VID).is_empty());
 
-        let mut new = Port::new(8, false);
+        let mut new = Port::new(8);
         new.join(Duration::ZERO);
         let (_, mvrp) = sent(&mut new, Duration::ZERO, Duration::from_millis(500));
         assert!(mvrp.iter().any(|value| {
@@ -194,11 +192,11 @@ mod tests {
         }));
     }
 
-    /// A port with a class B talker declares class B's domain beside
-    /// class A's.
+    /// The port declares class B's domain beside class A's, with no
+    /// class B talker of its own, so its listeners hear class B talkers.
     #[test]
-    fn a_class_b_talker_adds_its_domain() {
-        let mut port = Port::new(9, true);
+    fn both_classes_are_declared() {
+        let mut port = Port::new(9);
         port.join(Duration::ZERO);
         let (msrp, _) = sent(&mut port, Duration::ZERO, Duration::from_millis(500));
         let mut classes: Vec<u8> = msrp
