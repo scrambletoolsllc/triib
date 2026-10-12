@@ -16,6 +16,9 @@ pub struct HeaderBand<'a, Message> {
     columns: usize,
     /// The table's padding above and below each row.
     padding_y: f32,
+    /// Whether the band's top left and top right corners are round: not
+    /// where it meets another table's band.
+    round: (bool, bool),
 }
 
 /// `table`, of `columns` columns padded `padding_y` above and below each
@@ -29,6 +32,15 @@ pub fn header_band<'a, Message>(
         table: table.into(),
         columns,
         padding_y,
+        round: (true, true),
+    }
+}
+
+impl<Message> HeaderBand<'_, Message> {
+    /// Rounds the band's top left and top right corners, or not.
+    pub fn round(mut self, left: bool, right: bool) -> Self {
+        self.round = (left, right);
+        self
     }
 }
 
@@ -134,8 +146,8 @@ impl<'a, Message: 'a> Widget<Message, Theme, iced::Renderer> for HeaderBand<'a, 
                 },
                 border: Border {
                     radius: Radius {
-                        top_left: top,
-                        top_right: top,
+                        top_left: if self.round.0 { top } else { 0.0 },
+                        top_right: if self.round.1 { top } else { 0.0 },
                         bottom_right: 0.0,
                         bottom_left: 0.0,
                     },

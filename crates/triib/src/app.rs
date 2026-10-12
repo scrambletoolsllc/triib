@@ -73,6 +73,8 @@ pub struct Triib {
     /// The formats a talker's output and a listener's input could share,
     /// offered from the matrix cell clicked.
     pub format_menu: Option<FormatMenu>,
+    /// How far the entity list's rows are scrolled, sideways and down.
+    pub entity_list_offset: (f32, f32),
     /// What happened to the last action that did not succeed.
     pub notice: Option<String>,
     /// Talkers and listeners the matrix shows as one column or row.
@@ -212,6 +214,11 @@ pub enum Message {
     MatrixConnectableOnlyToggled,
     MatrixCollapseToggled(Side, EntityId),
     MatrixHovered(Hover),
+    /// A part of the entity list scrolled, which the others follow.
+    EntityListScrolled(
+        crate::entity_table::ListPart,
+        iced::widget::scrollable::Viewport,
+    ),
     /// Offer the formats both ends of a matrix cell take.
     MatrixFormatsOpened(FormatMenu),
     MatrixFormatsClosed,
@@ -286,6 +293,7 @@ impl Triib {
             pending: Vec::new(),
             chains: Vec::new(),
             format_menu: None,
+            entity_list_offset: (0.0, 0.0),
             notice: None,
             collapsed: BTreeSet::new(),
             hover: Hover::default(),
@@ -338,6 +346,7 @@ impl Triib {
             pending: Vec::new(),
             chains: Vec::new(),
             format_menu: None,
+            entity_list_offset: (0.0, 0.0),
             notice: None,
             collapsed: BTreeSet::new(),
             hover: Hover::default(),
@@ -679,6 +688,9 @@ impl Triib {
                 }
             }
             Message::MatrixHovered(hover) => self.hover = hover,
+            Message::EntityListScrolled(part, viewport) => {
+                return self.entity_list_scrolled(part, viewport);
+            }
             Message::MatrixFormatsOpened(menu) => self.format_menu = Some(menu),
             Message::MatrixFormatsClosed => self.format_menu = None,
             Message::NetworkShows(shows) => {
@@ -1099,6 +1111,56 @@ impl Triib {
     /// Whether a change to `entity` is on its way, by what it changes.
     pub fn changing(&self, wanted: impl Fn(&Action) -> bool) -> Option<&Action> {
         self.pending.iter().rev().find(|action| wanted(action))
+    }
+
+    /// Moves the entity list's other parts with the one that scrolled:
+    /// the headings sideways with the rest of the rows, the names up and
+    /// down with them, and the rest with either.
+    fn entity_list_scrolled(
+        &mut self,
+        part: crate::entity_table::ListPart,
+        viewport: iced::widget::scrollable::Viewport,
+    ) -> Task<Message> {
+        use crate::entity_table::{ListPart, NAMES, REST, REST_HEADER};
+        use iced::widget::operation::scroll_to;
+        use iced::widget::scrollable::AbsoluteOffset;
+        let offset = viewport.absolute_offset();
+        let moved = |a: f32, b: f32| (a - b).abs() > 0.5;
+        let (x, y) = self.entity_list_offset;
+        let mut tasks = Vec::new();
+        match part {
+            ListPart::Rest => {
+                if moved(offset.x, x) {
+                    tasks.push(scroll_to(
+                        REST_HEADER,
+                        AbsoluteOffset {
+                            x: offset.x,
+                            y: 0.0,
+                        },
+                    ));
+                }
+                if moved(offset.y, y) {
+                    tasks.push(scroll_to(
+                        NAMES,
+                        AbsoluteOffset {
+                            x: 0.0,
+                            y: offset.y,
+                        },
+                    ));
+                }
+                self.entity_list_offset = (offset.x, offset.y);
+            }
+            ListPart::Headings if moved(offset.x, x) => {
+                self.entity_list_offset.0 = offset.x;
+                tasks.push(scroll_to(REST, AbsoluteOffset { x: offset.x, y }));
+            }
+            ListPart::Names if moved(offset.y, y) => {
+                self.entity_list_offset.1 = offset.y;
+                tasks.push(scroll_to(REST, AbsoluteOffset { x, y: offset.y }));
+            }
+            _ => {}
+        }
+        Task::batch(tasks)
     }
 
     /// Sends the first of `actions`, keeping the rest to send once it

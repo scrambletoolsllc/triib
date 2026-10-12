@@ -2027,6 +2027,13 @@ pub(crate) mod tests {
                 false,
                 Size::new(1280.0, 420.0),
             ),
+            // Too short for its rows: they scroll under the headings.
+            (
+                "entities-short",
+                View::Entities,
+                false,
+                Size::new(900.0, 340.0),
+            ),
             (
                 "entities-menu",
                 View::Entities,

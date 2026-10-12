@@ -41,6 +41,10 @@ const ADD_WIDTH: f32 = 40.0;
 /// How far right of a heading its column's divider is: the cell's padding
 /// and half the line.
 const DIVIDER: f32 = TABLE_PADDING + 0.5;
+/// Every row's height: the name's row button's.
+const ROW_HEIGHT: f32 = 40.0;
+/// Every heading's height: the heading menus'.
+const HEADING_HEIGHT: f32 = 32.0;
 const MEDIUM: iced::Font = iced::Font {
     weight: iced::font::Weight::Medium,
     ..TEXT
@@ -165,16 +169,18 @@ fn unshown(columns: &[EntityField]) -> impl Iterator<Item = EntityField> + '_ {
         .filter(|field| !columns.contains(field))
 }
 
+/// An entity's row: its name and the values of the columns shown.
+#[derive(Clone)]
+struct Row<'a> {
+    entity: &'a DiscoveredEntity,
+    name: String,
+    values: Vec<String>,
+}
+
 /// The table for `width` pixels: across the whole width when its columns
 /// fit, each widened in proportion to its text, else at their own widths,
 /// scrolling sideways.
 fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
-    #[derive(Clone)]
-    struct Row<'a> {
-        entity: &'a DiscoveredEntity,
-        name: String,
-        values: Vec<String>,
-    }
     let columns: &[EntityField] = &triib.settings.entity_columns;
     let only_host = triib.settings.host_entities_only && triib.hosts_endpoints();
     let rows: Vec<Row<'_>> = triib
@@ -276,52 +282,50 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
         .mirrored(dir::mirrored())
     };
     let name_width = widths[0];
-    let mut table_columns = vec![
-        table::column(
-            heading(
-                container(
-                    styled(
-                        fit(&fl!("entity-name"), MEDIUM, 14.0, name_width).name,
-                        Type::LabelLarge,
-                    )
-                    .style(style::on_surface_variant)
-                    .wrapping(Wrapping::None),
-                )
-                .width(Fill)
-                .align_x(dir::horizontal_start())
-                .into(),
-                Column::Name,
-                name_width,
-            ),
-            move |row: Row<'_>| {
-                let entity_id = row.entity.entity_id();
-                let name = fit(&row.name, TEXT, 14.0, name_width - NAME_ROOM).name;
-                container(
-                    button::custom(
-                        Kind::Row,
-                        scramble_ui::row![
-                            icon::icon(
-                                triib
-                                    .host_icon(entity_id)
-                                    .unwrap_or_else(|| describe::glyph(&row.entity.adp)),
-                                20
-                            ),
-                            styled(name, Type::BodyMedium).wrapping(Wrapping::None),
-                        ]
-                        .spacing(8)
-                        .align_y(Center),
-                    )
-                    .selected(triib.selected == Some(entity_id))
-                    .on_press(Message::EntitySelected(entity_id)),
-                )
-                .width(Length::Fixed(name_width))
-                .align_x(dir::horizontal_start())
-                .clip(true)
-            },
+    let name_heading = heading(
+        container(
+            styled(
+                fit(&fl!("entity-name"), MEDIUM, 14.0, name_width).name,
+                Type::LabelLarge,
+            )
+            .style(style::on_surface_variant)
+            .wrapping(Wrapping::None),
         )
-        .width(Length::Fixed(name_width))
-        .align_y(Center),
-    ];
+        .width(Fill)
+        // As tall as the other columns' heading menus.
+        .height(HEADING_HEIGHT)
+        .align_y(Center)
+        .align_x(dir::horizontal_start())
+        .into(),
+        Column::Name,
+        name_width,
+    );
+    let name_cell = move |row: Row<'_>| {
+        let entity_id = row.entity.entity_id();
+        let name = fit(&row.name, TEXT, 14.0, name_width - NAME_ROOM).name;
+        body_cell(
+            button::custom(
+                Kind::Row,
+                scramble_ui::row![
+                    icon::icon(
+                        triib
+                            .host_icon(entity_id)
+                            .unwrap_or_else(|| describe::glyph(&row.entity.adp)),
+                        20
+                    ),
+                    styled(name, Type::BodyMedium).wrapping(Wrapping::None),
+                ]
+                .spacing(8)
+                .align_y(Center),
+            )
+            .selected(triib.selected == Some(entity_id))
+            .on_press(Message::EntitySelected(entity_id)),
+            name_width,
+        )
+    };
+    // The other columns' headings, and their cells.
+    let mut headings: Vec<(Element<'_, Message>, f32)> = Vec::new();
+    let mut cells: Vec<(BodyCell<'_>, f32)> = Vec::new();
     let last = columns.len().saturating_sub(1);
     for (index, &field) in columns.iter().enumerate() {
         let width = widths[index + 1];
@@ -358,20 +362,21 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
             }));
         }
         let heading_menu = dropdown::menu(field.label(), entries).width(Fill);
-        table_columns.push(
-            table::column(
-                heading(heading_menu.into(), Column::Field(field), width),
-                move |row: Row<'_>| {
-                    if field == EntityField::MediaClock {
-                        media_clock_cell(triib, row.entity, &row.values[index], width)
-                    } else {
-                        cell(&row.values[index], width)
-                    }
-                },
-            )
-            .width(Length::Fixed(width))
-            .align_y(Center),
-        );
+        headings.push((
+            heading(heading_menu.into(), Column::Field(field), width).into(),
+            width,
+        ));
+        cells.push((
+            Box::new(move |row: Row<'_>| {
+                let content = if field == EntityField::MediaClock {
+                    media_clock_cell(triib, row.entity, &row.values[index], width)
+                } else {
+                    cell(&row.values[index], width)
+                };
+                body_cell(content, width)
+            }),
+            width,
+        ));
     }
     if can_add {
         let add = component::tip(
@@ -384,45 +389,140 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
             fl!("column-add"),
         );
         let add_width = widths[columns.len() + 1];
-        table_columns.push(
-            table::column(add, |_row: Row<'_>| space())
-                .width(Length::Fixed(add_width))
-                .align_y(Center),
-        );
+        headings.push((add, add_width));
+        cells.push((
+            Box::new(move |_row: Row<'_>| body_cell(space(), add_width)),
+            add_width,
+        ));
     }
     // The name on the right and the rest leftwards, in right to left
     // languages.
-    if dir::mirrored() {
-        table_columns.reverse();
+    let mirrored = dir::mirrored();
+    if mirrored {
+        headings.reverse();
+        cells.reverse();
     }
-    let column_count = table_columns.len();
-    let table = table(table_columns, rows)
-        .padding_x(TABLE_PADDING)
-        .padding_y(ROW_PADDING);
+    // The names' band rounds its outer corner, the rest's its own.
+    let name_header = header_table(vec![(name_heading.into(), name_width)], !mirrored, mirrored);
+    let name_body = body_table(vec![(Box::new(name_cell), name_width)], rows.clone());
+    let rest_header = header_table(headings, mirrored, !mirrored);
+    let rest_body = body_table(cells, rows);
+    // The names stay as the rest scrolls sideways, the headings as it
+    // scrolls down: the rest's scrolling moves the headings and names with
+    // it, and theirs move it.
+    let hidden = scrollable::Scrollbar::hidden;
+    let rest_header = scrollable(rest_header)
+        .id(REST_HEADER)
+        .direction(scrollable::Direction::Horizontal(hidden()))
+        .on_scroll(|viewport| Message::EntityListScrolled(ListPart::Headings, viewport))
+        .width(Fill);
+    let name_body = scrollable(name_body)
+        .id(NAMES)
+        .direction(scrollable::Direction::Vertical(hidden()))
+        .on_scroll(|viewport| Message::EntityListScrolled(ListPart::Names, viewport))
+        .height(Fill);
+    let rest_body = scrollable(rest_body)
+        .id(REST)
+        .direction(scrollable::Direction::Both {
+            vertical: component::thin_scrollbar(),
+            horizontal: component::thin_scrollbar(),
+        })
+        .style(style::scrollbar)
+        .on_scroll(|viewport| Message::EntityListScrolled(ListPart::Rest, viewport))
+        .width(Fill)
+        .height(Fill);
+    // A table running from the right starts scrolled to its right.
+    let (rest_header, rest_body) = if mirrored {
+        (rest_header.anchor_right(), rest_body.anchor_right())
+    } else {
+        (rest_header, rest_body)
+    };
+    // The line between the names and the rest: as tall as the headings
+    // above, and the rows' room below.
+    let line = |height: Length| container(space()).width(1).height(height).style(separator);
+    let headings_height = Length::Fixed(HEADING_HEIGHT + 2.0 * ROW_PADDING);
+    // The names first, which a row puts on the right in right to left
+    // languages.
+    let top = scramble_ui::row![name_header, line(headings_height), rest_header];
+    let bottom = scramble_ui::row![name_body, line(Fill), rest_body];
+    let view = container(scramble_ui::column![top, bottom].height(Fill))
+        .padding([0.0, TABLE_MARGIN])
+        .padding(iced::Padding {
+            top: TABLE_MARGIN,
+            bottom: TABLE_MARGIN,
+            ..iced::Padding::new(0.0)
+        });
     // A press on the table is the table's; one on the space around it
     // clears the selection.
-    let content =
-        container(opaque(header_band(table, column_count, ROW_PADDING))).padding(TABLE_MARGIN);
-    let view: Element<'_, Message> = if fits {
-        component::scroll(content).height(Fill).into()
-    } else {
-        let scrolled = scrollable(content)
-            .direction(scrollable::Direction::Both {
-                vertical: component::thin_scrollbar(),
-                horizontal: component::thin_scrollbar(),
-            })
-            .style(style::scrollbar)
-            .width(Fill)
-            .height(Fill);
-        // A table running from the right starts scrolled to its right.
-        if dir::mirrored() {
-            scrolled.anchor_right().into()
-        } else {
-            scrolled.into()
-        }
-    };
     mouse_area(view).on_press(Message::SelectionCleared).into()
 }
+
+/// Headings alone, their band shaded, its top left and right corners round
+/// or not.
+fn header_table<'a>(
+    columns: Vec<(Element<'a, Message>, f32)>,
+    left: bool,
+    right: bool,
+) -> Element<'a, Message> {
+    let count = columns.len();
+    let columns = columns.into_iter().map(|(heading, width)| {
+        table::column(heading, |_row: Row<'a>| space())
+            .width(Length::Fixed(width))
+            .align_y(Center)
+    });
+    let table = table(columns, Vec::<Row<'a>>::new())
+        .padding_x(TABLE_PADDING)
+        .padding_y(ROW_PADDING);
+    opaque(header_band(table, count, ROW_PADDING).round(left, right))
+}
+
+/// Rows alone, each its cells' fixed height, so the names and the rest
+/// line up; the line above the first parts them from the headings.
+fn body_table<'a>(columns: Vec<(BodyCell<'a>, f32)>, rows: Vec<Row<'a>>) -> Element<'a, Message> {
+    let columns = columns.into_iter().map(|(view, width)| {
+        table::column(space().width(0).height(0), view)
+            .width(Length::Fixed(width))
+            .align_y(Center)
+    });
+    opaque(table(columns, rows).padding_x(TABLE_PADDING).padding_y(0))
+}
+
+/// A row's cell of the rows' table: its content at the rows' one height,
+/// with the space rows have above and below.
+fn body_cell<'a>(content: impl Into<Element<'a, Message>>, width: f32) -> Element<'a, Message> {
+    container(content)
+        .width(Length::Fixed(width))
+        .height(ROW_HEIGHT + 2.0 * ROW_PADDING)
+        .align_y(Center)
+        .align_x(dir::horizontal_start())
+        .clip(true)
+        .into()
+}
+
+/// The line between the names and the rest, as the table's own lines are.
+fn separator(theme: &iced::Theme) -> container::Style {
+    container::Style {
+        background: Some(theme.extended_palette().background.strong.color.into()),
+        ..container::Style::default()
+    }
+}
+
+/// A cell's view in the rows' table.
+type BodyCell<'a> = Box<dyn Fn(Row<'a>) -> Element<'a, Message> + 'a>;
+
+/// The entity list's scrolled parts: the other columns' headings, the
+/// names, and the rest of the rows, which scroll together.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ListPart {
+    Headings,
+    Names,
+    Rest,
+}
+
+/// Their scrollables, which the others' scrolling moves.
+pub const REST_HEADER: &str = "entity-list-headings";
+pub const NAMES: &str = "entity-list-names";
+pub const REST: &str = "entity-list-rest";
 
 #[cfg(test)]
 mod tests {
