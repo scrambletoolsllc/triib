@@ -1021,7 +1021,7 @@ fn stream_sections<'a>(
                 format_picker(triib, entity_id, &stream),
             ]
             .spacing(2);
-            if let Some(state) = describe::stream_state(triib, model, &stream) {
+            if let Some(state) = describe::stream_state(triib, entity_id, model, &stream) {
                 lines = lines.push(styled(state, Type::BodySmall).style(style::on_surface_variant));
             }
             if let Some(nanoseconds) = (!input)

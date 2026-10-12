@@ -1,11 +1,11 @@
 //! Words and icons for what an entity advertises, shared by the entity
 //! list, the table and the inspector.
 
-use atdecc::DescriptorType;
 use atdecc::aecp::AemStatus;
 use atdecc::aem::MappingChange;
 use atdecc::controller::{Outcome, Refusal};
 use atdecc::model::{EntityModel, EnumerationFailure, EnumerationState};
+use atdecc::{DescriptorType, EntityId};
 
 use crate::app::Triib;
 use crate::fl;
@@ -289,9 +289,10 @@ pub fn outcome(triib: &Triib, action: Action, outcome: Outcome) -> Option<String
 }
 
 /// A stream's state in words: what an input is bound to and how that is
-/// going, or what an output is sending.
+/// going, or where an output sends, while some listener takes it.
 pub fn stream_state(
     triib: &Triib,
+    entity: EntityId,
     model: &EntityModel,
     stream: &atdecc::descriptor::StreamDescriptor<'_>,
 ) -> Option<String> {
@@ -313,6 +314,16 @@ pub fn stream_state(
             None => fl!("stream-from", stream = stream),
         })
     } else {
+        // A Milan talker has its stream's ID and address as soon as it has
+        // an address: it sends only to listeners bound to it, as triib
+        // knows them or the talker counts them, as the matrix and the
+        // network view show.
+        let counted = model
+            .tx_state(stream.index)
+            .map_or(0, |state| usize::from(state.connection_count));
+        if triib.listeners_of((entity, stream.index)).max(counted) == 0 {
+            return Some(fl!("stream-not-connected"));
+        }
         let info = info?;
         info.settled().then(|| {
             fl!(
@@ -422,6 +433,46 @@ pub fn reservation_failure(info: &atdecc::aem::StreamInfo) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// An output says it sends only while a listener takes it, as the
+    /// matrix and the network view show; else it is not connected.
+    #[test]
+    fn outputs_send_only_to_listeners() {
+        use crate::settings::Settings;
+        let (entities, models) = crate::view::tests::bench();
+        let interface = avb_net::Interface {
+            name: "enp6s0".to_owned(),
+            mac: avb_net::MacAddress([0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b]),
+            up: true,
+            speed: None,
+            physical: true,
+            wireless: false,
+            hardware_clock: None,
+        };
+        let triib = crate::app::Triib::sample(Settings::default(), interface, entities, models);
+        let mut outputs = 0;
+        for (entity, model) in &triib.models {
+            for output in model.streams(false) {
+                // The bench's outputs have their stream IDs and addresses,
+                // but none bound to them is not connected all the same.
+                if triib.listeners_of((*entity, output.index)) > 0
+                    || model
+                        .tx_state(output.index)
+                        .is_some_and(|state| state.connection_count > 0)
+                {
+                    continue;
+                }
+                assert_eq!(
+                    stream_state(&triib, *entity, model, &output).as_deref(),
+                    Some("Not connected"),
+                    "{entity} output {}",
+                    output.index
+                );
+                outputs += 1;
+            }
+        }
+        assert!(outputs > 0);
+    }
 
     #[test]
     fn flag_names_read_as_words() {

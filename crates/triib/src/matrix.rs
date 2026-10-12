@@ -949,7 +949,12 @@ fn say(triib: &Triib, grid: &Grid, talkers: &[Group<'_>], listeners: &[Group<'_>
                             .streams(true)
                             .find(|descriptor| descriptor.index == stream.index)
                             .and_then(|descriptor| {
-                                crate::describe::stream_state(triib, stream.model, &descriptor)
+                                crate::describe::stream_state(
+                                    triib,
+                                    stream.entity_id,
+                                    stream.model,
+                                    &descriptor,
+                                )
                             })
                     {
                         detail = fl!(

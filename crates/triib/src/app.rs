@@ -1180,6 +1180,25 @@ impl Triib {
         }
     }
 
+    /// How many stream inputs triib knows of are bound to a talker's
+    /// stream output.
+    pub fn listeners_of(&self, talker: (EntityId, u16)) -> usize {
+        self.models
+            .values()
+            .map(|model| {
+                model
+                    .streams(true)
+                    .filter(|input| {
+                        model
+                            .binding(input.index)
+                            .and_then(|binding| binding.talker_stream())
+                            == Some(talker)
+                    })
+                    .count()
+            })
+            .sum()
+    }
+
     /// Whether `action` waits in a chain for a step before it.
     pub fn waiting(&self, wanted: impl Fn(&Action) -> bool) -> bool {
         self.chains.iter().any(|(_, rest)| rest.iter().any(&wanted))
