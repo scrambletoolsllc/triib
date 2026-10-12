@@ -11,8 +11,16 @@ use crate::controller::{Config, Controller};
 use crate::id::EntityId;
 use crate::time::Instant;
 
+#[cfg(target_os = "macos")]
+mod apple;
+
 /// Room for any Ethernet payload.
 const FRAME: usize = 1536;
+
+/// The longest wait for a frame while this Mac's own entities owe
+/// answers, which come through the framework, not the socket.
+#[cfg(target_os = "macos")]
+const LOCAL_WAIT: Duration = Duration::from_millis(2);
 
 pub struct Driver {
     socket: Socket,
@@ -24,6 +32,10 @@ pub struct Driver {
     /// most.
     frames: VecDeque<Frame>,
     keep: usize,
+    /// This Mac's own entities, reached through the AudioVideoBridging
+    /// framework.
+    #[cfg(target_os = "macos")]
+    local: Option<apple::Local>,
 }
 
 /// An ATDECC frame the driver sent or received, kept when asked to.
@@ -55,10 +67,6 @@ impl Driver {
         let _ =
             socket.keep_payloads_starting(crate::avtp::subtype::ADP..=crate::avtp::subtype::ACMP);
         let mut config = Config::new(EntityId::from_mac(socket.mac()));
-        // The system's own AVB entity never sees what is written to BPF.
-        if cfg!(target_os = "macos") {
-            config.own_mac = Some(socket.mac());
-        }
         // A new start for sequence IDs each run, so a restarted controller
         // is not taken for a retry of its earlier commands.
         let clock = std::time::SystemTime::now()
@@ -67,6 +75,15 @@ impl Driver {
         config.first_sequence_id = clock as u16;
         config.random_seed = config.entity_id.0 ^ clock;
         configure(&mut config);
+        // The system's own AVB entity never sees what is written to BPF,
+        // only what comes through the framework; without it, the entity
+        // is out of reach.
+        #[cfg(target_os = "macos")]
+        let local = apple::Local::open(interface, config.entity_id);
+        #[cfg(target_os = "macos")]
+        if local.is_none() {
+            config.own_mac = Some(socket.mac());
+        }
         let controller = Controller::new(config);
         Ok(Self {
             socket,
@@ -76,6 +93,8 @@ impl Driver {
             sending: [0; FRAME],
             frames: VecDeque::new(),
             keep: 0,
+            #[cfg(target_os = "macos")]
+            local,
         })
     }
 
@@ -128,11 +147,17 @@ impl Driver {
     /// timeouts, and sends again. Events are then ready on the controller.
     pub fn turn(&mut self, max_wait: Duration) -> io::Result<()> {
         self.flush()?;
+        self.take_local();
         let now = self.now();
-        let wait = match self.controller.poll_timeout() {
+        #[cfg_attr(not(target_os = "macos"), allow(unused_mut))]
+        let mut wait = match self.controller.poll_timeout() {
             Some(deadline) => deadline.saturating_duration_since(now).min(max_wait),
             None => max_wait,
         };
+        #[cfg(target_os = "macos")]
+        if self.local.as_ref().is_some_and(apple::Local::waiting) {
+            wait = wait.min(LOCAL_WAIT);
+        }
         if let Some(received) = self.socket.receive(&mut self.received, Some(wait))? {
             let now = self.now();
             let bytes = &self.received[..received.length];
@@ -143,9 +168,39 @@ impl Driver {
                 self.kept(false, received.source, bytes);
             }
         }
+        self.take_local();
         let now = self.now();
         self.controller.handle_timeout(now);
         self.flush()
+    }
+
+    /// Hands the controller what this Mac's own entities answered through
+    /// the framework, as frames from them.
+    fn take_local(&mut self) {
+        #[cfg(target_os = "macos")]
+        while let Some(bytes) = self.local.as_ref().and_then(apple::Local::poll) {
+            let now = self.now();
+            let source = self.socket.mac();
+            let _ = self.controller.handle_frame(now, source, &bytes);
+            if self.keeps(&bytes) {
+                self.kept(false, source, bytes);
+            }
+        }
+    }
+
+    /// Sends a command to one of this Mac's own entities through the
+    /// framework, returning whether it did.
+    #[cfg(target_os = "macos")]
+    fn send_local(&self, bytes: &[u8]) -> bool {
+        let Some(local) = &self.local else {
+            return false;
+        };
+        let own = self.socket.mac();
+        local.send(bytes, |entity_id| {
+            self.controller
+                .entity(entity_id)
+                .is_some_and(|entity| entity.mac == own)
+        })
     }
 
     /// Advertises that the controller is leaving, if it advertised, and
@@ -161,8 +216,14 @@ impl Driver {
             .poll_transmit(&mut self.sending)
             .map_err(io::Error::other)?
         {
-            self.socket
-                .send(transmit.destination, &self.sending[..transmit.length])?;
+            let bytes = &self.sending[..transmit.length];
+            #[cfg(target_os = "macos")]
+            let local = self.send_local(bytes);
+            #[cfg(not(target_os = "macos"))]
+            let local = false;
+            if !local {
+                self.socket.send(transmit.destination, bytes)?;
+            }
             if self.keeps(&self.sending[..transmit.length]) {
                 let bytes = self.sending[..transmit.length].to_vec();
                 self.kept(true, transmit.destination, bytes);

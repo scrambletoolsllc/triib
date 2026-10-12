@@ -215,7 +215,9 @@ and `clang` on Arch).
 
 On macOS it needs access to `/dev/bpf*`, as Wireshark's ChmodBPF or
 triib's package gives (or, until the next restart,
-`sudo chown $USER /dev/bpf*`), and on Windows it needs
+`sudo chown $USER /dev/bpf*`). It reaches the Mac's own AVB entity
+through Apple's AudioVideoBridging framework, as the system never shows
+that entity what a program writes to BPF. On Windows it needs
 [Npcap](https://npcap.com). `cargo run -p triib-cli -- interfaces` says
 whether raw Ethernet is ready.
 
@@ -234,8 +236,10 @@ whether raw Ethernet is ready.
 | `avb-net` | Raw Ethernet, interfaces and hardware timestamps per operating system |
 
 `atdecc`, `avb-mrp` and `avb-net` are meant for other applications too:
-they depend on nothing but `avb-net`, do no I/O of their own outside its
-optional platform support, and build without std for microcontrollers.
+they depend on nothing but `avb-net` (and, for `atdecc`'s driver on
+macOS, the AudioVideoBridging framework), do no I/O of their own outside
+that optional platform support, and build without std for
+microcontrollers.
 
 ## License
 

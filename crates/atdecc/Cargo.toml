@@ -18,9 +18,15 @@ default = ["std"]
 # need neither this nor std.
 alloc = []
 # Raw Ethernet on Linux, macOS and Windows through avb-net, and a blocking
-# driver for apps that do not bring their own loop.
-std = ["alloc", "avb-net/std"]
+# driver for apps that do not bring their own loop, which on macOS reaches
+# the Mac's own entities through the AudioVideoBridging framework.
+std = ["alloc", "avb-net/std", "dep:objc2", "dep:block2", "dep:objc2-foundation"]
 
 [dependencies]
 avb-mrp.workspace = true
 avb-net.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = { version = "0.6", optional = true }
+block2 = { version = "0.6", optional = true }
+objc2-foundation = { version = "0.3", optional = true, default-features = false, features = ["std", "NSData", "NSError", "NSString"] }
