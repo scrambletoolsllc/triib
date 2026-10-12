@@ -26,9 +26,9 @@
     <img class="hero-icon" src="icon.png" alt="The triib icon" width="128" height="128">
     <h1>triib</h1>
     <p class="lede"><span class="lede-first">See, connect and look after your AVB network.</span>
-      <span class="lede-rest">Find every Milan and AVB device, connect their streams in a matrix, follow each stream and clock across the network, and change formats, clocks, channel maps and controls. On Linux, add talkers and listeners of your own, routed to the computer's&nbsp;audio.</span></p>
+      <span class="lede-rest">Find every Milan and AVB device, connect their streams in a matrix, follow each stream and clock across the network, and change formats, clocks, channel maps and controls. On Linux, add talkers, listeners and devices of your own, routed to the computer's&nbsp;audio.</span></p>
     <p class="actions">
-      <a class="button filled" href="#download">Download 0.9.0</a>
+      <a class="button filled" href="#download">Download 1.0.0</a>
       <a class="button tonal" href="https://github.com/scrambletoolsllc/triib">Source on GitHub</a>
     </p>
     <p class="small">Free and open source under MIT or Apache 2.0, on Linux, Windows and macOS. In 38 languages, including right-to-left.</p>
@@ -67,8 +67,16 @@
         <p>See how devices run <a href="https://github.com/avbcommunity/profiles/blob/main/avb_lite.md">AVB Lite</a> over switches that are not AVB bridges: their mode and why, their PTP offset, what their streams take of each link, and the alarms the profile calls for.</p>
       </article>
       <article>
-        <h3>Talkers and listeners of your own</h3>
-        <p>On Linux, with a PTP hardware clock and ptp4l, triib runs Milan talkers and listeners streaming AAF or AM824 at 48, 96 or 192 kHz to and from the computer's audio devices.</p>
+        <h3>AVB Wireless</h3>
+        <p>Wi-Fi stations and access points under the <a href="https://github.com/avbcommunity/profiles">AVB Wireless</a> profile: each station's link and time, the access point it follows, and whether an access point can carry Class A.</p>
+      </article>
+      <article>
+        <h3>Talkers, listeners and devices of your own</h3>
+        <p>On Linux, with a PTP hardware clock and ptp4l, triib runs Milan talkers, listeners and devices with any number of streams each way, AAF or AM824 at 48, 96 or 192 kHz, each stream with its own virtual audio device or one of the computer's.</p>
+      </article>
+      <article>
+        <h3>Help from AI agents</h3>
+        <p>Agents such as Claude Code can read the network and make changes through <code>triib --mcp</code>, the same way a click does, once you let each one in.</p>
       </article>
       <article>
         <h3>A command line and libraries</h3>
@@ -89,18 +97,18 @@
 
   <section id="download" class="download">
     <h2>Download</h2>
-    <p>triib 0.9.0 for Linux and Windows on x86_64 and ARM64, Linux on RISC-V, and macOS on Apple Silicon, each package setting up what triib needs to send and receive raw Ethernet. Every file is on the <a href="https://github.com/scrambletoolsllc/triib/releases/latest">release page</a>, with checksums.</p>
+    <p>triib 1.0.0 for Linux and Windows on x86_64 and ARM64, Linux on RISC-V, and macOS on Apple Silicon, each package setting up what triib needs to send and receive raw Ethernet. Every file is on the <a href="https://github.com/scrambletoolsllc/triib/releases/latest">release page</a>, with checksums.</p>
     <div class="table">
       <table>
         <thead><tr><th>System</th><th>Download</th><th>Install</th></tr></thead>
         <tbody>
-          <tr><td>Windows 10 and 11</td><td>Installer (.msi): <a href="https://github.com/scrambletoolsllc/triib/releases/download/v0.9.0/triib-0.9.0-x64.msi">x64</a> · <a href="https://github.com/scrambletoolsllc/triib/releases/download/v0.9.0/triib-0.9.0-arm64.msi">ARM64</a></td><td>Install <a href="https://npcap.com">Npcap</a> first, then open it: it installs for you alone, with no administrator prompt</td></tr>
-          <tr><td>Windows, portable</td><td>.zip: <a href="https://github.com/scrambletoolsllc/triib/releases/download/v0.9.0/triib-0.9.0-x64-windows.zip">x64</a> · <a href="https://github.com/scrambletoolsllc/triib/releases/download/v0.9.0/triib-0.9.0-arm64-windows.zip">ARM64</a></td><td>With Npcap installed, unpack it anywhere and run <code>triib.exe</code></td></tr>
-          <tr><td>macOS 11 and later, Apple Silicon</td><td>Installer package (.pkg): <a href="https://github.com/scrambletoolsllc/triib/releases/download/v0.9.0/triib-0.9.0-arm64.pkg">Apple Silicon</a></td><td>Open it: it installs triib and gives you raw Ethernet (<code>/dev/bpf*</code>) from your next login, as Wireshark's ChmodBPF does. Until it is notarized, choose Open Anyway in System Settings, Privacy &amp; Security first</td></tr>
-          <tr><td>Debian, Ubuntu</td><td>.deb: <a href="https://github.com/scrambletoolsllc/triib/releases/download/v0.9.0/triib_0.9.0-1_amd64.deb">x86_64</a> · <a href="https://github.com/scrambletoolsllc/triib/releases/download/v0.9.0/triib_0.9.0-1_arm64.deb">ARM64</a> · <a href="https://github.com/scrambletoolsllc/triib/releases/download/v0.9.0/triib_0.9.0-1_riscv64.deb">RISC-V</a></td><td><code>sudo apt install ./triib_0.9.0-1_*.deb</code></td></tr>
-          <tr><td>Fedora</td><td>.rpm: <a href="https://github.com/scrambletoolsllc/triib/releases/download/v0.9.0/triib-0.9.0-1.x86_64.rpm">x86_64</a> · <a href="https://github.com/scrambletoolsllc/triib/releases/download/v0.9.0/triib-0.9.0-1.aarch64.rpm">ARM64</a> · <a href="https://github.com/scrambletoolsllc/triib/releases/download/v0.9.0/triib-0.9.0-1.riscv64.rpm">RISC-V</a></td><td><code>sudo dnf install ./triib-0.9.0-1.*.rpm</code></td></tr>
-          <tr><td>Arch</td><td><a href="https://github.com/scrambletoolsllc/triib/releases/download/v0.9.0/PKGBUILD">PKGBUILD</a> and <a href="https://github.com/scrambletoolsllc/triib/releases/download/v0.9.0/triib.install">triib.install</a></td><td><code>makepkg -si</code> in a folder with both</td></tr>
-          <tr><td>Any distribution</td><td>.tar.gz: <a href="https://github.com/scrambletoolsllc/triib/releases/download/v0.9.0/triib-0.9.0-x86_64-linux.tar.gz">x86_64</a> · <a href="https://github.com/scrambletoolsllc/triib/releases/download/v0.9.0/triib-0.9.0-aarch64-linux.tar.gz">ARM64</a> · <a href="https://github.com/scrambletoolsllc/triib/releases/download/v0.9.0/triib-0.9.0-riscv64-linux.tar.gz">RISC-V</a></td><td><code>sudo tar -C / -xzf triib-0.9.0-*-linux.tar.gz</code>, then <code>sudo setcap cap_net_raw+ep</code> on <code>/usr/bin/triib</code>, <code>triib-cli</code> and <code>triib-endpointd</code></td></tr>
+          <tr><td>Windows 10 and 11</td><td>Installer (.msi): <a href="https://github.com/scrambletoolsllc/triib/releases/download/v1.0.0/triib-1.0.0-x64.msi">x64</a> · <a href="https://github.com/scrambletoolsllc/triib/releases/download/v1.0.0/triib-1.0.0-arm64.msi">ARM64</a></td><td>Install <a href="https://npcap.com">Npcap</a> first, then open it: it installs for you alone, with no administrator prompt</td></tr>
+          <tr><td>Windows, portable</td><td>.zip: <a href="https://github.com/scrambletoolsllc/triib/releases/download/v1.0.0/triib-1.0.0-x64-windows.zip">x64</a> · <a href="https://github.com/scrambletoolsllc/triib/releases/download/v1.0.0/triib-1.0.0-arm64-windows.zip">ARM64</a></td><td>With Npcap installed, unpack it anywhere and run <code>triib.exe</code></td></tr>
+          <tr><td>macOS 11 and later, Apple Silicon</td><td>Installer package (.pkg): <a href="https://github.com/scrambletoolsllc/triib/releases/download/v1.0.0/triib-1.0.0-arm64.pkg">Apple Silicon</a></td><td>Open it: it installs triib and gives you raw Ethernet (<code>/dev/bpf*</code>) from your next login, as Wireshark's ChmodBPF does. Until it is notarized, choose Open Anyway in System Settings, Privacy &amp; Security first</td></tr>
+          <tr><td>Debian, Ubuntu</td><td>.deb: <a href="https://github.com/scrambletoolsllc/triib/releases/download/v1.0.0/triib_1.0.0-1_amd64.deb">x86_64</a> · <a href="https://github.com/scrambletoolsllc/triib/releases/download/v1.0.0/triib_1.0.0-1_arm64.deb">ARM64</a> · <a href="https://github.com/scrambletoolsllc/triib/releases/download/v1.0.0/triib_1.0.0-1_riscv64.deb">RISC-V</a></td><td><code>sudo apt install ./triib_1.0.0-1_*.deb</code></td></tr>
+          <tr><td>Fedora</td><td>.rpm: <a href="https://github.com/scrambletoolsllc/triib/releases/download/v1.0.0/triib-1.0.0-1.x86_64.rpm">x86_64</a> · <a href="https://github.com/scrambletoolsllc/triib/releases/download/v1.0.0/triib-1.0.0-1.aarch64.rpm">ARM64</a> · <a href="https://github.com/scrambletoolsllc/triib/releases/download/v1.0.0/triib-1.0.0-1.riscv64.rpm">RISC-V</a></td><td><code>sudo dnf install ./triib-1.0.0-1.*.rpm</code></td></tr>
+          <tr><td>Arch</td><td><a href="https://github.com/scrambletoolsllc/triib/releases/download/v1.0.0/PKGBUILD">PKGBUILD</a> and <a href="https://github.com/scrambletoolsllc/triib/releases/download/v1.0.0/triib.install">triib.install</a></td><td><code>makepkg -si</code> in a folder with both</td></tr>
+          <tr><td>Any distribution</td><td>.tar.gz: <a href="https://github.com/scrambletoolsllc/triib/releases/download/v1.0.0/triib-1.0.0-x86_64-linux.tar.gz">x86_64</a> · <a href="https://github.com/scrambletoolsllc/triib/releases/download/v1.0.0/triib-1.0.0-aarch64-linux.tar.gz">ARM64</a> · <a href="https://github.com/scrambletoolsllc/triib/releases/download/v1.0.0/triib-1.0.0-riscv64-linux.tar.gz">RISC-V</a></td><td><code>sudo tar -C / -xzf triib-1.0.0-*-linux.tar.gz</code>, then <code>sudo setcap cap_net_raw+ep</code> on <code>/usr/bin/triib</code>, <code>triib-cli</code> and <code>triib-endpointd</code></td></tr>
         </tbody>
       </table>
     </div>

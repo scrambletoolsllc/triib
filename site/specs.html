@@ -23,13 +23,13 @@
 
 <main class="guide specs">
   <h1>Specifications</h1>
-  <p class="lede-left">triib 0.9.0, an ATDECC controller with Milan and AVB Lite support, released October 10, 2026. For what each feature does, see the <a href="guide.html">tour</a>.</p>
+  <p class="lede-left">triib 1.0.0, an ATDECC controller with Milan, AVB Lite and AVB Wireless support, released October 12, 2026. For what each feature does, see the <a href="guide.html">tour</a>.</p>
   <nav class="contents" aria-label="Contents">
 <ul>
 <li><a href="#systems">Systems</a></li>
 <li><a href="#standards">Standards</a></li>
 <li><a href="#controller">Controller</a></li>
-<li><a href="#endpoints">Talkers and listeners</a></li>
+<li><a href="#endpoints">Talkers, listeners and devices</a></li>
 <li><a href="#avb-lite">AVB Lite</a></li>
 <li><a href="#languages">Languages</a></li>
 <li><a href="#technology">Technology</a></li>
@@ -51,7 +51,8 @@
 <tr><th>Network</th><td>A wired Ethernet interface, through raw sockets on Linux (<code>CAP_NET_RAW</code>), BPF on macOS and Npcap on Windows</td></tr>
 <tr><th>Graphics</th><td>The GPU through Vulkan on Linux, DirectX 12 or Vulkan on Windows, and Metal on macOS; the CPU when no GPU backend starts</td></tr>
 <tr><th>Look</th><td>Material Design 3, light or dark and the accent color from the system</td></tr>
-<tr><th>Not here yet</th><td>Talkers and listeners of the computer's own on Windows and macOS; the Mac's own AVB entity, which macOS does not let the same Mac control</td></tr>
+<tr><th>The Mac's own entity</th><td>Read and controlled through Apple's AudioVideoBridging framework, as macOS never hands it what a program writes to BPF</td></tr>
+<tr><th>Not here yet</th><td>Talkers, listeners and devices of the computer's own on Windows and macOS</td></tr>
 </tbody></table>
 
 <h2 id="standards">Standards and profiles</h2>
@@ -62,28 +63,31 @@
 <tr><th>Reservations</th><td>IEEE 802.1Q MRP, MSRP and MVRP</td></tr>
 <tr><th>Time</th><td>IEEE 802.1AS gPTP, through <a href="https://linuxptp.nwtime.org">linuxptp</a>'s ptp4l, and each entity's gPTP path and grandmaster</td></tr>
 <tr><th>AVB Lite</th><td>The <a href="https://github.com/avbcommunity/profiles/blob/main/avb_lite.md">AVB Lite</a> community profile: falling back over switches that are not AVB bridges, CVU SRP declarations, its PTP profile, status and alarms</td></tr>
+<tr><th>AVB Wireless</th><td>The <a href="https://github.com/avbcommunity/profiles">AVB Wireless</a> community profile: each AVB interface's wireless status (GET_WIRELESS_STATUS), whether an access point admits Class A (SET_WIRELESS_CONFIG), and its unsolicited responses</td></tr>
 </tbody></table>
 <p class="small">Milan and AVB are trademarks of Avnu Alliance. triib is not certified by Avnu Alliance.</p>
 
 <h2 id="controller">Controller</h2>
 <table class="spec"><tbody>
 <tr><th>Discovery</th><td>Every entity on the interface, with its entity model read and kept for next time, and offline entities shown as such</td></tr>
-<tr><th>Connections</th><td>A matrix of talker outputs and listener inputs for audio and media clock streams, with each connection's state and whether the formats meet; connections by group or one by one</td></tr>
+<tr><th>Connections</th><td>A matrix of talker outputs and listener inputs for audio and media clock streams, with each connection's state and whether the formats meet; connections by group or one by one, and a menu of the formats both ends take where the input must change first</td></tr>
 <tr><th>Network</th><td>A map of bridges and devices from each entity's gPTP path, with audio streams, CRF streams or the clock tree drawn on it</td></tr>
 <tr><th>Changes</th><td>Names and groups, stream formats, sampling rates, clock sources, channel maps, controls such as gain and mute, and identifying</td></tr>
 <tr><th>Diagnostics</th><td>How each clock domain and stream has fared, from the entity's counters, with what went wrong marked; each bound input's reservation; each stream's maximum transit time; and the descriptors themselves</td></tr>
 <tr><th>Presets</th><td>Clock sources, sampling rates, stream formats, controls and connections, and this computer's own talkers and listeners; recalling one changes only what differs</td></tr>
 <tr><th>Log</th><td>Every ATDECC frame sent and heard, decoded, with the frames that break the rules marked</td></tr>
+<tr><th>AVB Wireless</th><td>Each Wi-Fi station's role, time mode, link and access point, each access point's stations and the frames a second it delivers, stations under their access point on the map, and the profile's alarms</td></tr>
+<tr><th>AI agents</th><td><code>triib --mcp</code>, a Model Context Protocol server for agents such as Claude Code: status, entities, streams, formats, clocks and connections to read, and connecting, formats, sampling rates, clock sources, names and identifying to change, once you let the agent in</td></tr>
 <tr><th>Command line</th><td><code>triib-cli</code>: discover, describe, connect and disconnect, name, formats, rates, clocks, channel maps, controls, identify, the network and the stream state</td></tr>
 </tbody></table>
 
-<h2 id="endpoints">Talkers and listeners of the computer's own</h2>
+<h2 id="endpoints">Talkers, listeners and devices of the computer's own</h2>
 <table class="spec"><tbody>
 <tr><th>Systems</th><td>Linux, on a wired interface with a PTP hardware clock (<code>ethtool -T</code> shows one)</td></tr>
 <tr><th>Time</th><td>ptp4l running gPTP on that interface, read through its read-only socket</td></tr>
-<tr><th>Each endpoint</th><td>A Milan entity with one stream, which any controller binds</td></tr>
-<tr><th>Formats</th><td>AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless another count is picked</td></tr>
-<tr><th>Audio</th><td>To and from the computer's audio devices, one per endpoint; a talker can send a tone or silence instead, and a listener can discard what it receives</td></tr>
+<tr><th>Entities</th><td>Talkers and listeners, Milan entities with one stream, and devices, with any number of streams each way; any controller binds them</td></tr>
+<tr><th>Formats</th><td>AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless another count is picked, in SR class A or B</td></tr>
+<tr><th>Audio</th><td>To and from the computer's audio devices; each of a device's streams with a virtual audio device of its own in PipeWire unless it uses a sound card; a talker can send a tone or silence instead, and a listener can discard what it receives</td></tr>
 <tr><th>Scheduling</th><td>Real-time threads through RealtimeKit, as PipeWire asks for</td></tr>
 <tr><th>Program</th><td><code>triib-endpointd</code>, which reads <code>endpoints.toml</code> again whenever it changes</td></tr>
 </tbody></table>
@@ -119,6 +123,7 @@
 <table class="spec"><tbody>
 <tr><th>License</th><td><a href="https://github.com/scrambletoolsllc/triib/blob/main/LICENSE-MIT">MIT</a> or <a href="https://github.com/scrambletoolsllc/triib/blob/main/LICENSE-APACHE">Apache 2.0</a>, at your option</td></tr>
 <tr><th>Network</th><td>Only AVB frames, on the local interface you pick; triib never goes online</td></tr>
+<tr><th>Outside control</th><td>For <code>triib --mcp</code>, a local socket that only your user can open on Linux and macOS, and a named pipe on Windows; each agent acts only once you allow it, and Settings turns it off</td></tr>
 <tr><th>Accounts and telemetry</th><td>None</td></tr>
 </tbody></table>
 <p class="small">See the <a href="./#privacy">privacy note</a> and the <a href="./#code-signing">code signing policy</a>.</p>
