@@ -80,8 +80,9 @@ triib sends and receives raw Ethernet, which each system guards:
    drafts a release with them, `SHA256SUMS`, and a `PKGBUILD` with the
    source checksum filled in, beside its `triib.install`. Check the draft
    and publish it. Then point the website's download section
-   (`site/index.html`) at the version's packages and update the version
-   on `site/specs.html`; pushing `site/` redeploys the website.
+   (`site/index.html`) at the version's packages, put the version on its
+   Download button, and update the version on `site/specs.html`; pushing
+   `site/` redeploys the website.
 5. AUR: in a clone of `ssh://aur@aur.archlinux.org/triib.git`, replace
    `PKGBUILD` with the one from the release and copy
    `packaging/arch/triib/triib.install`, run
