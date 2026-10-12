@@ -5,9 +5,9 @@
 use std::collections::{HashMap, VecDeque};
 use std::io;
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
+use std::sync::{Arc, Weak};
 use std::time::SystemTime;
 use std::time::{Duration, Instant as Clock};
 
@@ -27,7 +27,9 @@ use avb_mrp::msrp::{self, ListenerState, TalkerDeclaration, TalkerFailure};
 use avb_net::Socket;
 use avb_net::stream::FrameSender;
 use triib_stream::audio::{Sink, Source};
-use triib_stream::{Listener, ListenerConfig, MediaClock, Talker, TalkerConfig};
+use triib_stream::{
+    GroupConfig, GroupStream, GroupTalker, Listener, ListenerConfig, MediaClock, TalkerGroup,
+};
 
 use crate::config::{Config, EndpointConfig, Kind, LiteChoice, SrClass, binding_text};
 use crate::gptp;
@@ -242,7 +244,8 @@ struct In(usize, u16);
 /// What runs for one of an endpoint's stream outputs.
 #[derive(Default)]
 struct OutputState {
-    talker: Option<Talker>,
+    /// Its stream in the endpoint's group, while it sends.
+    talker: Option<GroupTalker>,
     /// When a talker whose stream changed declares it again.
     redeclare_at: Option<Duration>,
     /// When it last withdrew its declaration.
@@ -274,6 +277,9 @@ struct InputState {
 struct Endpoint {
     config: EndpointConfig,
     entity: Entity,
+    /// The thread and audio input every output sends from, while one
+    /// does: its streams hold it.
+    group: Weak<TalkerGroup>,
     outputs: Vec<OutputState>,
     inputs: Vec<InputState>,
     /// Its place in the configuration's list.
@@ -381,6 +387,7 @@ impl Endpoint {
         Endpoint {
             config,
             entity: Entity::new(model, &streams),
+            group: Weak::new(),
             outputs: (0..output_count).map(|_| OutputState::default()).collect(),
             inputs: (0..input_count).map(|_| InputState::default()).collect(),
             place: 0,
@@ -1631,9 +1638,16 @@ impl Runtime {
         let transit = endpoint.entity.max_transit_time(out.1).unwrap_or(2_000_000);
         let lite = self.lite.is_some();
         let name = self.out_name(out);
-        let config = TalkerConfig {
-            interface: self.interface.clone(),
-            mac: self.mac,
+        let format = stream.current_format;
+        let channels = stream.channels;
+        let Some(rate) = triib_stream::media::Media::of(format).map(|media| media.sample_rate())
+        else {
+            log(format!(
+                "{name}: could not start the stream: not a format it sends"
+            ));
+            return;
+        };
+        let wanted = GroupStream {
             stream_id: stream_id.0,
             destinations: if lite {
                 self.output(out).copies.clone()
@@ -1642,22 +1656,45 @@ impl Runtime {
             },
             vlan_id: if lite { self.media_vlan() } else { VLAN },
             priority: self.priority(out),
-            format: stream.current_format,
+            format,
             max_transit_time: Duration::from_nanos(u64::from(transit)),
-            source: endpoint.config.source_at(out.1, stream.channels),
+            first_channel: out.1 * channels,
         };
-        // An audio device that isn't there, as on another computer than
-        // the one its name came from, leaves the stream running silent.
-        let started = Talker::start(config.clone(), self.clock.clone()).or_else(|error| {
-            if config.source == Source::Silence {
-                return Err(error);
+        // Every output sends from the endpoint's one group, its source's
+        // channels the outputs' in order; one at another rate, as the
+        // entity's moved, starts a new group.
+        let group = match endpoint.group.upgrade() {
+            Some(group) if group.rate() == rate => Ok(group),
+            _ => {
+                let config = GroupConfig {
+                    interface: self.interface.clone(),
+                    mac: self.mac,
+                    source: endpoint.config.source_at(0, channels),
+                    channels: channels * endpoint.outputs.len() as u16,
+                    rate,
+                };
+                let places = endpoint.outputs.len();
+                // An audio device that isn't there, as on another computer
+                // than the one its name came from, leaves the streams
+                // running silent.
+                TalkerGroup::start(config.clone(), places, self.clock.clone())
+                    .or_else(|error| {
+                        if config.source == Source::Silence {
+                            return Err(error);
+                        }
+                        log(format!("{name}: {error}, sending silence"));
+                        let silent = GroupConfig {
+                            source: Source::Silence,
+                            ..config
+                        };
+                        TalkerGroup::start(silent, places, self.clock.clone())
+                    })
+                    .map(Arc::new)
             }
-            log(format!("{name}: {error}, sending silence"));
-            let silent = TalkerConfig {
-                source: Source::Silence,
-                ..config
-            };
-            Talker::start(silent, self.clock.clone())
+        };
+        let started = group.and_then(|group| {
+            self.endpoints[out.0].group = Arc::downgrade(&group);
+            GroupTalker::start(&group, usize::from(out.1), wanted)
         });
         match started {
             Ok(talker) => self.output_mut(out).talker = Some(talker),

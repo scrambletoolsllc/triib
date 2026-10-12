@@ -21,4 +21,6 @@ pub mod talker;
 
 pub use clock::MediaClock;
 pub use listener::{Listener, ListenerConfig, ListenerStats};
-pub use talker::{Talker, TalkerConfig, TalkerStats};
+pub use talker::{
+    GroupConfig, GroupStream, GroupTalker, Talker, TalkerConfig, TalkerGroup, TalkerStats,
+};
