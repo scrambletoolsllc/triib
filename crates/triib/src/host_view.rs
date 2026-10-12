@@ -158,14 +158,10 @@ pub fn sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>>
                     .size(Size::ExtraSmall)
                     .on_press(Message::HostStream(entity_id, StreamChange::Add(direction)))
             };
-            rows.push(
-                scramble_ui::row![
-                    add(Direction::Out, fl!("host-add-output-stream")),
-                    add(Direction::In, fl!("host-add-input-stream")),
-                ]
-                .spacing(8)
-                .into(),
-            );
+            // Each on its own line, as two side by side are wider than
+            // the inspector.
+            rows.push(add(Direction::Out, fl!("host-add-output-stream")).into());
+            rows.push(add(Direction::In, fl!("host-add-input-stream")).into());
         }
     }
     rows.push(

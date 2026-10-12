@@ -2041,6 +2041,13 @@ pub(crate) mod tests {
                 Size::new(2200.0, 760.0),
             ),
             ("inspector-editing", View::Entities, true, desktop),
+            // As one of this computer's devices, with a stream each way.
+            (
+                "inspector-device",
+                View::Entities,
+                true,
+                Size::new(1280.0, 1400.0),
+            ),
             (
                 "inspector-tree",
                 View::Entities,
@@ -2216,6 +2223,36 @@ pub(crate) mod tests {
                     column: Some(crate::matrix::Line::Stream(MAC_MINI, 0)),
                     row: Some(crate::matrix::Line::Stream(MAC_MINI, 0)),
                 };
+            }
+            if suffix.contains("device") {
+                use triib_endpointd::config::{Direction, Kind};
+                use triib_endpointd::status::{DaemonStatus, EndpointStatus, StreamStatus};
+                let stream = |direction, name: &str, state: &str| StreamStatus {
+                    direction,
+                    name: name.into(),
+                    channels: 8,
+                    audio: "virtual".into(),
+                    state: state.into(),
+                };
+                triib.endpoints = Some(DaemonStatus {
+                    pid: 1,
+                    started: 0,
+                    interface: "enp6s0".into(),
+                    gptp: "grandmaster 0x0001f2fffeff3b14, asCapable".into(),
+                    foreign_mrp: false,
+                    endpoints: vec![EndpointStatus {
+                        entity_id: triib.selected.map(|id| id.to_string()).unwrap_or_default(),
+                        name: "Host device 1".into(),
+                        kind: Kind::Device,
+                        state: "streaming".into(),
+                        audio: String::new(),
+                        channels: 8,
+                        streams: vec![
+                            stream(Direction::Out, "Out 1", "streaming"),
+                            stream(Direction::In, "In 1", "unbound"),
+                        ],
+                    }],
+                });
             }
             if suffix.contains("formats") {
                 // The menu a cell whose input must change opens.
