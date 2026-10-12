@@ -41,6 +41,14 @@ pub struct EndpointStatus {
     /// Its stream's channels.
     #[serde(default = "eight")]
     pub channels: u16,
+    /// A device's sink, as endpoints.toml says it; its source is `audio`.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub sink: String,
+    /// How many stream outputs and inputs it has.
+    #[serde(default)]
+    pub outputs: u16,
+    #[serde(default)]
+    pub inputs: u16,
 }
 
 fn eight() -> u16 {

@@ -2431,6 +2431,9 @@ pub(crate) mod tests {
                 state: "listening".into(),
                 audio: "discard".into(),
                 channels: 8,
+                sink: String::new(),
+                outputs: 0,
+                inputs: 1,
             }],
         });
         triib.inspector_tab = InspectorTab::Entity;
@@ -2448,6 +2451,25 @@ pub(crate) mod tests {
                 .any(|message| matches!(message, Message::HostRemoved(id) if *id == WIRED_ESP)),
             "{messages:?}"
         );
+        // As a device, it has audio both ways and its streams' counts,
+        // which a pick changes.
+        if let Some(status) = &mut triib.endpoints {
+            let endpoint = &mut status.endpoints[0];
+            endpoint.kind = EndpointKind::Device;
+            endpoint.audio = "tone".into();
+            endpoint.sink = "discard".into();
+            endpoint.outputs = 2;
+            endpoint.inputs = 3;
+        }
+        {
+            let mut simulator = simulate(&triib, size);
+            assert!(simulator.find("Test tone").is_ok());
+            assert!(simulator.find("Nowhere").is_ok());
+            assert!(simulator.find("Stream outputs").is_ok());
+            assert!(simulator.find("Stream inputs").is_ok());
+            assert!(simulator.find("Channels in each stream").is_ok());
+            assert!(simulator.find("Add device").is_ok());
+        }
         // The list can show only this computer's: the wired ESP stays,
         // the Mac mini goes.
         assert!(simulate(&triib, size).find("Mac mini").is_ok());

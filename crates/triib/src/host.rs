@@ -68,7 +68,11 @@ pub fn add(interface: &str, kind: Kind, name: String) -> Result<(), String> {
     let (source, sink) = match kind {
         Kind::Talker => (Some("default".to_owned()), None),
         Kind::Listener => (None, Some("default".to_owned())),
+        Kind::Device => (Some("default".to_owned()), Some("default".to_owned())),
     };
+    // A device starts with two streams each way, which its inspector
+    // changes.
+    let streams = (kind == Kind::Device).then_some(2);
     config.endpoints.push(EndpointConfig {
         kind,
         instance: Some(free),
@@ -80,6 +84,10 @@ pub fn add(interface: &str, kind: Kind, name: String) -> Result<(), String> {
         format: None,
         bound: None,
         class: Default::default(),
+        outputs: streams,
+        inputs: streams,
+        formats: Vec::new(),
+        bindings: Vec::new(),
     });
     save(&path, &config)
 }
@@ -94,21 +102,47 @@ pub fn remove(interface: &str, mac: MacAddress, entity_id: EntityId) -> Result<(
     save(&path, &config)
 }
 
-/// Sends the endpoint's audio from or to `audio`: "silence", "tone",
-/// "discard", "default" or a device's name.
+/// Sends the endpoint's audio to `audio` for its inputs, else takes it
+/// from `audio` for its outputs: "silence", "tone", "discard", "default"
+/// or a device's name.
 pub fn set_audio(
     interface: &str,
     mac: MacAddress,
     entity_id: EntityId,
+    inputs: bool,
     audio: String,
 ) -> Result<(), String> {
     let (path, mut config) = load(interface)?;
     let place = place_of(&config, mac, entity_id).ok_or("not one of this computer's")?;
     let endpoint = &mut config.endpoints[place];
-    match endpoint.kind {
-        Kind::Talker => endpoint.source = Some(audio),
-        Kind::Listener => endpoint.sink = Some(audio),
+    if inputs {
+        endpoint.sink = Some(audio);
+    } else {
+        endpoint.source = Some(audio);
     }
+    save(&path, &config)
+}
+
+/// Gives a device this many stream inputs, else outputs.
+pub fn set_streams(
+    interface: &str,
+    mac: MacAddress,
+    entity_id: EntityId,
+    inputs: bool,
+    count: u16,
+) -> Result<(), String> {
+    let (path, mut config) = load(interface)?;
+    let place = place_of(&config, mac, entity_id).ok_or("not one of this computer's")?;
+    let endpoint = &mut config.endpoints[place];
+    let count = count.clamp(1, triib_endpointd::config::MOST_STREAMS);
+    if inputs {
+        endpoint.inputs = Some(count);
+    } else {
+        endpoint.outputs = Some(count);
+    }
+    // Settings kept stream by stream belong to the streams there were.
+    endpoint.formats.clear();
+    endpoint.bindings.clear();
     save(&path, &config)
 }
 

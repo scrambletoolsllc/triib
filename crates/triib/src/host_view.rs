@@ -73,6 +73,7 @@ pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
                 ),
                 add(EndpointKind::Talker, fl!("host-add-talker")),
                 add(EndpointKind::Listener, fl!("host-add-listener")),
+                add(EndpointKind::Device, fl!("host-add-device")),
             ]
             .spacing(8)
             .align_y(Center),
@@ -85,6 +86,9 @@ pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
 /// The channel counts the inspector offers; six samples of each fit in a
 /// frame up to 60.
 const CHANNEL_COUNTS: [u16; 11] = [1, 2, 4, 6, 8, 12, 16, 24, 32, 48, 56];
+
+/// The stream counts each way the inspector offers a device.
+const STREAM_COUNTS: [u16; 8] = [1, 2, 3, 4, 6, 8, 12, 16];
 
 /// One choice for an endpoint's audio: what endpoints.toml says, and the
 /// words for it.
@@ -118,46 +122,38 @@ pub fn sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>>
         "bound" => fl!("host-bound"),
         _ => fl!("host-unbound"),
     };
-    let audio = |spec: &str, label: String| Audio {
-        spec: spec.to_owned(),
-        label,
-    };
-    let (label, mut choices, devices) = match endpoint.kind {
-        EndpointKind::Talker => (
+    let device = endpoint.kind == EndpointKind::Device;
+    let mut rows = vec![
+        component::section(fl!("netmap-this-computer")),
+        property(fl!("host-state"), state),
+    ];
+    if endpoint.kind != EndpointKind::Listener {
+        rows.push(stacked(
             fl!("host-audio-from"),
-            vec![
-                audio("silence", fl!("host-silence")),
-                audio("tone", fl!("host-tone")),
-            ],
-            &triib.audio_devices.0,
-        ),
-        EndpointKind::Listener => (
+            audio_picker(triib, entity_id, false, &endpoint.audio),
+        ));
+    }
+    match endpoint.kind {
+        EndpointKind::Listener => rows.push(stacked(
             fl!("host-audio-to"),
-            vec![audio("discard", fl!("host-nowhere"))],
-            &triib.audio_devices.1,
-        ),
-    };
-    choices.push(audio("default", fl!("host-default-device")));
-    choices.extend(
-        devices
-            .iter()
-            .filter(|name| name.as_str() != "default")
-            .map(|name| audio(name, name.clone())),
-    );
-    let current = choices
-        .iter()
-        .find(|choice| choice.spec == endpoint.audio)
-        .cloned()
-        .unwrap_or_else(|| audio(&endpoint.audio, endpoint.audio.clone()));
-    let picker: Element<'_, Message> = {
-        let _reading = dir::reading();
-        dropdown::pick(choices, Some(current), move |choice: Audio| {
-            Message::HostAudio(entity_id, choice.spec)
-        })
-        .size(button::Size::ExtraSmall)
-        .width(Fill)
-        .into()
-    };
+            audio_picker(triib, entity_id, true, &endpoint.audio),
+        )),
+        EndpointKind::Device => {
+            rows.push(stacked(
+                fl!("host-audio-to"),
+                audio_picker(triib, entity_id, true, &endpoint.sink),
+            ));
+            rows.push(stacked(
+                fl!("stream-outputs"),
+                stream_picker(entity_id, false, endpoint.outputs),
+            ));
+            rows.push(stacked(
+                fl!("stream-inputs"),
+                stream_picker(entity_id, true, endpoint.inputs),
+            ));
+        }
+        EndpointKind::Talker => {}
+    }
     let channels: Element<'_, Message> = {
         let mut counts = CHANNEL_COUNTS.to_vec();
         if !counts.contains(&endpoint.channels) {
@@ -172,14 +168,82 @@ pub fn sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>>
         .width(Fill)
         .into()
     };
-    vec![
-        component::section(fl!("netmap-this-computer")),
-        property(fl!("host-state"), state),
-        stacked(label, picker),
-        stacked(fl!("host-channels"), channels),
+    rows.push(stacked(
+        if device {
+            fl!("host-channels-each")
+        } else {
+            fl!("host-channels")
+        },
+        channels,
+    ));
+    rows.push(
         button::with_icon(Kind::Outlined, Icon::Delete, fl!("host-remove"))
             .size(Size::ExtraSmall)
             .on_press(Message::HostRemoved(entity_id))
             .into(),
-    ]
+    );
+    rows
+}
+
+/// A picker of where an endpoint's inputs play, or its outputs' audio
+/// comes from, with `current` picked.
+fn audio_picker<'a>(
+    triib: &'a Triib,
+    entity_id: EntityId,
+    inputs: bool,
+    current: &str,
+) -> Element<'a, Message> {
+    let audio = |spec: &str, label: String| Audio {
+        spec: spec.to_owned(),
+        label,
+    };
+    let (mut choices, devices) = if inputs {
+        (
+            vec![audio("discard", fl!("host-nowhere"))],
+            &triib.audio_devices.1,
+        )
+    } else {
+        (
+            vec![
+                audio("silence", fl!("host-silence")),
+                audio("tone", fl!("host-tone")),
+            ],
+            &triib.audio_devices.0,
+        )
+    };
+    choices.push(audio("default", fl!("host-default-device")));
+    choices.extend(
+        devices
+            .iter()
+            .filter(|name| name.as_str() != "default")
+            .map(|name| audio(name, name.clone())),
+    );
+    let current = choices
+        .iter()
+        .find(|choice| choice.spec == current)
+        .cloned()
+        .unwrap_or_else(|| audio(current, current.to_owned()));
+    let _reading = dir::reading();
+    dropdown::pick(choices, Some(current), move |choice: Audio| {
+        Message::HostAudio(entity_id, inputs, choice.spec)
+    })
+    .size(button::Size::ExtraSmall)
+    .width(Fill)
+    .into()
+}
+
+/// A picker of how many stream inputs, else outputs, a device has.
+fn stream_picker<'a>(entity_id: EntityId, inputs: bool, current: u16) -> Element<'a, Message> {
+    let mut counts = STREAM_COUNTS.to_vec();
+    if !counts.contains(&current) {
+        counts.push(current);
+        counts.sort_unstable();
+    }
+    let _reading = dir::reading();
+    dropdown::pick(counts, Some(current), move |count| {
+        Message::HostStreams(entity_id, inputs, count)
+    })
+    .size(button::Size::ExtraSmall)
+    .width(Fill)
+    .into()
 }

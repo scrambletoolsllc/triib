@@ -743,6 +743,10 @@ mod tests {
                 format: None,
                 bound: None,
                 class: Default::default(),
+                outputs: None,
+                inputs: None,
+                formats: Vec::new(),
+                bindings: Vec::new(),
             },
             EndpointConfig {
                 kind: Kind::Listener,
@@ -756,6 +760,10 @@ mod tests {
                 // Bound to the talker above, on the computer it was saved on.
                 bound: Some("0xf0a731ff00f40f14:0".to_owned()),
                 class: Default::default(),
+                outputs: None,
+                inputs: None,
+                formats: Vec::new(),
+                bindings: Vec::new(),
             },
         ]
     }

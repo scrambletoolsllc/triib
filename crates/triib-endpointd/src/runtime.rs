@@ -39,6 +39,9 @@ use crate::status::{DaemonStatus, EndpointStatus, status_path};
 /// Entity model IDs under Scramble Tools' MA-S `8C-1F-64-36-C`.
 const TALKER_MODEL: EntityModelId = EntityModelId(0x8c1f_6436_c000_0002);
 const LISTENER_MODEL: EntityModelId = EntityModelId(0x8c1f_6436_c000_0003);
+/// The entity models of every other shape: this, then the inputs and the
+/// outputs, an octet each.
+const DEVICE_MODELS: u64 = 0x8c1f_6436_c001_0000;
 /// Class A's priority; its VLAN is the port's.
 const PRIORITY: u8 = 3;
 /// Class B's priority.
@@ -228,31 +231,65 @@ fn output_stream(mac: MacAddress, instance: u8, index: u16) -> StreamId {
     StreamId::new(mac, (u16::from(instance) << 8) | index)
 }
 
-struct Endpoint {
-    config: EndpointConfig,
-    entity: Entity,
+/// A talker output: its endpoint, and its index there.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Out(usize, u16);
+
+/// A listener input: its endpoint, and its index there.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct In(usize, u16);
+
+/// What runs for one of an endpoint's stream outputs.
+#[derive(Default)]
+struct OutputState {
     talker: Option<Talker>,
-    listener: Option<Listener>,
-    /// The stream its Listener declaration names, while it declares one.
-    declared: Option<Vec<u8>>,
     /// When a talker whose stream changed declares it again.
     redeclare_at: Option<Duration>,
-    /// When a talker last withdrew its declaration.
+    /// When it last withdrew its declaration.
     withdrawn_at: Option<Duration>,
-    /// The stream a listener's thread takes.
-    listening_to: Option<atdecc::entity::ProbedStream>,
-    /// In AVB Lite, the stream a listener declares itself for, the
-    /// talker it tells and what; for a talker, where its copies go.
-    cvu_to: Option<(u64, MacAddress, ListenerState)>,
+    /// In AVB Lite, where its copies go, whether its stream went
+    /// multicast, when its frames move there, and the listeners it
+    /// refuses, with the failure code each has.
     copies: Vec<MacAddress>,
-    /// For a talker in AVB Lite: whether its stream went multicast, when
-    /// its frames move there, and the listeners it refuses, with the
-    /// failure code each has.
     escalated: bool,
     escalate_at: Option<Duration>,
     refused: HashMap<MacAddress, u8>,
+}
+
+/// What runs for one of an endpoint's stream inputs.
+#[derive(Default)]
+struct InputState {
+    listener: Option<Listener>,
+    /// The stream its Listener declaration names, while it declares one.
+    declared: Option<Vec<u8>>,
+    /// The stream its listener's thread takes.
+    listening_to: Option<atdecc::entity::ProbedStream>,
+    /// In AVB Lite, the stream it declares itself for, the talker it
+    /// tells and what.
+    cvu_to: Option<(u64, MacAddress, ListenerState)>,
+}
+
+/// One of this computer's entities: a talker, a listener, or a device
+/// with any number of stream outputs and inputs.
+struct Endpoint {
+    config: EndpointConfig,
+    entity: Entity,
+    outputs: Vec<OutputState>,
+    inputs: Vec<InputState>,
     /// Its place in the configuration's list.
     place: usize,
+}
+
+/// The entity model of an endpoint with `inputs` and `outputs`: a talker's
+/// and a listener's of one stream as before, else one for each shape.
+fn model_id(inputs: u16, outputs: u16) -> EntityModelId {
+    match (inputs, outputs) {
+        (0, 1) => TALKER_MODEL,
+        (1, 0) => LISTENER_MODEL,
+        _ => EntityModelId(
+            DEVICE_MODELS | (u64::from(inputs.min(255)) << 8) | u64::from(outputs.min(255)),
+        ),
+    }
 }
 
 impl Endpoint {
@@ -266,41 +303,63 @@ impl Endpoint {
         // As many as six samples of each fit in one Ethernet frame, at
         // 48 kHz; fewer offer the higher rates too.
         let channels = config.channels.clamp(1, 60);
-        let talker = config.kind == Kind::Talker;
-        let formats = offered_formats(channels, talker && config.class == SrClass::B);
-        // The format chosen last, with the channels there are now.
-        let current_format = config
-            .stream_format()
-            .and_then(|wanted| {
-                formats
-                    .iter()
-                    .copied()
-                    .find(|offered| same_packing(*offered, wanted))
-            })
-            .unwrap_or(formats[0]);
-        let mut sampling_rates: Vec<u32> = formats
-            .iter()
-            .filter_map(|format| format.sample_rate())
-            .collect();
-        sampling_rates.dedup();
-        let current_sampling_rate = current_format.sample_rate().unwrap_or(48_000);
-        let stream = StreamModel {
-            name: config.name.clone(),
-            current_format,
-            formats,
-            channels,
-            class_b: talker && config.class == SrClass::B,
+        let (output_count, input_count) = (config.output_count(), config.input_count());
+        let several = output_count + input_count > 1;
+        let class_b = config.class == SrClass::B;
+        // Stream k of a direction, the outputs first: its name, and the
+        // format chosen last, with the channels there are now.
+        let stream = |input: bool, index: u16| {
+            let formats = offered_formats(channels, !input && class_b);
+            let place = if input { output_count + index } else { index };
+            let current_format = config
+                .stream_format_at(place)
+                .and_then(|wanted| {
+                    formats
+                        .iter()
+                        .copied()
+                        .find(|offered| same_packing(*offered, wanted))
+                })
+                .unwrap_or(formats[0]);
+            StreamModel {
+                name: if several {
+                    format!("{} {}", if input { "In" } else { "Out" }, index + 1)
+                } else {
+                    config.name.clone()
+                },
+                current_format,
+                formats,
+                channels,
+                class_b: !input && class_b,
+            }
         };
+        let outputs: Vec<StreamModel> = (0..output_count)
+            .map(|index| stream(false, index))
+            .collect();
+        let inputs: Vec<StreamModel> = (0..input_count).map(|index| stream(true, index)).collect();
+        let first = outputs.iter().chain(&inputs).next();
+        let mut sampling_rates: Vec<u32> = first
+            .map(|stream| {
+                stream
+                    .formats
+                    .iter()
+                    .filter_map(|format| format.sample_rate())
+                    .collect()
+            })
+            .unwrap_or_default();
+        sampling_rates.dedup();
+        let current_sampling_rate = first
+            .and_then(|stream| stream.current_format.sample_rate())
+            .unwrap_or(48_000);
         let model = EndpointModel {
             entity_id: entity_id(mac, instance),
-            entity_model_id: if talker { TALKER_MODEL } else { LISTENER_MODEL },
+            entity_model_id: model_id(input_count, output_count),
             entity_name: config.name.clone(),
             group_name: String::new(),
             vendor_name: "Scramble Tools".into(),
-            model_name: if talker {
-                "triib talker"
-            } else {
-                "triib listener"
+            model_name: match (input_count, output_count) {
+                (0, _) => "triib talker",
+                (_, 0) => "triib listener",
+                _ => "triib device",
             }
             .into(),
             firmware_version: env!("CARGO_PKG_VERSION").into(),
@@ -310,32 +369,36 @@ impl Endpoint {
             clock_identity: clock,
             sampling_rates,
             current_sampling_rate,
-            outputs: if talker { vec![stream.clone()] } else { vec![] },
-            inputs: if talker { vec![] } else { vec![stream] },
+            outputs,
+            inputs,
             clock_source: 0,
         };
-        // A talker's stream has no destination until MAAP gives it one.
-        let outputs = if talker {
-            vec![(output_stream(mac, instance, 0), UNADDRESSED)]
-        } else {
-            vec![]
-        };
+        // A talker's streams have no destination until MAAP gives them
+        // one.
+        let streams: Vec<(StreamId, MacAddress)> = (0..output_count)
+            .map(|index| (output_stream(mac, instance, index), UNADDRESSED))
+            .collect();
         Endpoint {
             config,
-            entity: Entity::new(model, &outputs),
-            talker: None,
-            listener: None,
-            declared: None,
-            redeclare_at: None,
-            withdrawn_at: None,
-            listening_to: None,
-            cvu_to: None,
-            copies: Vec::new(),
-            escalated: false,
-            escalate_at: None,
-            refused: HashMap::new(),
+            entity: Entity::new(model, &streams),
+            outputs: (0..output_count).map(|_| OutputState::default()).collect(),
+            inputs: (0..input_count).map(|_| InputState::default()).collect(),
             place: 0,
         }
+    }
+
+    /// The name its log lines give a stream: the entity's own where it has
+    /// one stream, else the entity's and the stream's.
+    fn stream_name(&self, input: bool, index: u16) -> String {
+        if !self.config.several() {
+            return self.config.name.clone();
+        }
+        format!(
+            "{} {} {}",
+            self.config.name,
+            if input { "in" } else { "out" },
+            index + 1
+        )
     }
 }
 
@@ -606,10 +669,10 @@ impl Runtime {
             .0
             .iter()
             .fold(0u64, |seed, octet| (seed << 8) | u64::from(*octet));
-        let talkers = endpoints
+        let talkers: usize = endpoints
             .iter()
-            .filter(|endpoint| endpoint.config.kind == Kind::Talker)
-            .count();
+            .map(|endpoint| endpoint.outputs.len())
+            .sum();
         let maap = (talkers > 0).then(|| Maap::new(mac, talkers as u16));
         let fallback = Fallback::new(
             own_clock.0,
@@ -678,24 +741,36 @@ impl Runtime {
         let since = self.elapsed();
         for endpoint in &mut self.endpoints {
             endpoint.entity.start(now);
-            // A listener binds again to what it was bound to.
-            if let Some((talker, output)) = endpoint.config.bound_to() {
-                endpoint.entity.restore_binding(
-                    now,
-                    0,
-                    InputBinding {
-                        talker,
-                        talker_unique_id: output,
-                        controller: EntityId(0),
-                        flags: AcmpFlags::empty(),
-                    },
-                );
+            // Inputs bind again to what they were bound to.
+            for input in 0..endpoint.inputs.len() as u16 {
+                if let Some((talker, output)) = endpoint.config.input_bound_to(input) {
+                    endpoint.entity.restore_binding(
+                        now,
+                        input,
+                        InputBinding {
+                            talker,
+                            talker_unique_id: output,
+                            controller: EntityId(0),
+                            flags: AcmpFlags::empty(),
+                        },
+                    );
+                }
             }
+            let streams = if endpoint.config.several() {
+                format!(
+                    ", {} out and {} in",
+                    endpoint.outputs.len(),
+                    endpoint.inputs.len()
+                )
+            } else {
+                String::new()
+            };
             log(format!(
-                "{} {} as {}",
+                "{} {} as {}{streams}",
                 match endpoint.config.kind {
                     Kind::Talker => "talker",
                     Kind::Listener => "listener",
+                    Kind::Device => "device",
                 },
                 endpoint.config.name,
                 endpoint.entity.entity_id()
@@ -756,23 +831,50 @@ impl Runtime {
         let endpoint = &self.endpoints[index];
         let model = endpoint.entity.model();
         let name = model.entity_name.clone();
-        let format = model
+        let mut formats: Vec<String> = model
             .outputs
             .iter()
             .chain(&model.inputs)
-            .next()
-            .map(|stream| format!("{:#018x}", stream.current_format.0));
-        let bound = endpoint
-            .entity
-            .input_binding(0)
-            .map(|binding| binding_text(binding.talker, binding.talker_unique_id));
+            .map(|stream| format!("{:#018x}", stream.current_format.0))
+            .collect();
+        let mut bindings: Vec<String> = (0..model.inputs.len() as u16)
+            .map(|input| {
+                endpoint
+                    .entity
+                    .input_binding(input)
+                    .map(|binding| binding_text(binding.talker, binding.talker_unique_id))
+                    .unwrap_or_default()
+            })
+            .collect();
+        if bindings.iter().all(String::is_empty) {
+            bindings.clear();
+        }
+        // One stream keeps its settings in `format` and `bound`, as
+        // before; more keep them in `formats` and `bindings`.
+        let (format, bound) = if endpoint.config.several() {
+            (None, None)
+        } else {
+            let format = formats.pop();
+            let bound = bindings.pop();
+            formats.clear();
+            bindings.clear();
+            (format, bound)
+        };
         let instance = endpoint.config.instance_at(endpoint.place);
         let place = endpoint.place;
         let keep = |entry: &mut EndpointConfig| {
-            let same = (&entry.name, &entry.format, &entry.bound) == (&name, &format, &bound);
+            let same = (
+                &entry.name,
+                &entry.format,
+                &entry.bound,
+                &entry.formats,
+                &entry.bindings,
+            ) == (&name, &format, &bound, &formats, &bindings);
             entry.name.clone_from(&name);
             entry.format.clone_from(&format);
             entry.bound.clone_from(&bound);
+            entry.formats.clone_from(&formats);
+            entry.bindings.clone_from(&bindings);
             !same
         };
         let Some(entry) = self.config.endpoints.get_mut(place) else {
@@ -840,38 +942,63 @@ impl Runtime {
         let endpoints = self
             .endpoints
             .iter()
-            .map(|endpoint| EndpointStatus {
-                entity_id: endpoint.entity.entity_id().to_string(),
-                name: endpoint.entity.model().entity_name.clone(),
-                kind: endpoint.config.kind,
-                audio: match endpoint.config.kind {
-                    Kind::Talker => endpoint
+            .map(|endpoint| {
+                let source = || {
+                    endpoint
                         .config
                         .source
                         .clone()
-                        .unwrap_or_else(|| "silence".into()),
-                    Kind::Listener => endpoint
+                        .unwrap_or_else(|| "silence".into())
+                };
+                let sink = || {
+                    endpoint
                         .config
                         .sink
                         .clone()
-                        .unwrap_or_else(|| "discard".into()),
-                },
-                channels: endpoint
-                    .entity
-                    .model()
+                        .unwrap_or_else(|| "discard".into())
+                };
+                let streaming = endpoint
                     .outputs
                     .iter()
-                    .chain(&endpoint.entity.model().inputs)
-                    .next()
-                    .map_or(0, |stream| stream.channels),
-                state: match endpoint.config.kind {
-                    Kind::Talker if endpoint.talker.is_some() => "streaming",
-                    Kind::Talker => "waiting",
-                    Kind::Listener if endpoint.listener.is_some() => "listening",
-                    Kind::Listener if endpoint.entity.input_binding(0).is_some() => "bound",
-                    Kind::Listener => "unbound",
+                    .any(|output| output.talker.is_some());
+                let listening = endpoint.inputs.iter().any(|input| input.listener.is_some());
+                let bound = (0..endpoint.inputs.len() as u16)
+                    .any(|input| endpoint.entity.input_binding(input).is_some());
+                EndpointStatus {
+                    entity_id: endpoint.entity.entity_id().to_string(),
+                    name: endpoint.entity.model().entity_name.clone(),
+                    kind: endpoint.config.kind,
+                    audio: match endpoint.config.kind {
+                        Kind::Talker | Kind::Device => source(),
+                        Kind::Listener => sink(),
+                    },
+                    sink: match endpoint.config.kind {
+                        Kind::Device => sink(),
+                        _ => String::new(),
+                    },
+                    channels: endpoint
+                        .entity
+                        .model()
+                        .outputs
+                        .iter()
+                        .chain(&endpoint.entity.model().inputs)
+                        .next()
+                        .map_or(0, |stream| stream.channels),
+                    outputs: endpoint.outputs.len() as u16,
+                    inputs: endpoint.inputs.len() as u16,
+                    state: if streaming {
+                        "streaming"
+                    } else if listening {
+                        "listening"
+                    } else if bound {
+                        "bound"
+                    } else if endpoint.inputs.is_empty() {
+                        "waiting"
+                    } else {
+                        "unbound"
+                    }
+                    .into(),
                 }
-                .into(),
             })
             .collect();
         let status = DaemonStatus {
@@ -919,7 +1046,8 @@ impl Runtime {
             }),
             self.endpoints
                 .iter()
-                .filter_map(|endpoint| endpoint.escalate_at)
+                .flat_map(|endpoint| &endpoint.outputs)
+                .filter_map(|output| output.escalate_at)
                 .min(),
         ]
         .into_iter()
@@ -1076,15 +1204,11 @@ impl Runtime {
             self.maap_event(event);
         }
         let addressed = self.addressed();
-        for index in 0..self.endpoints.len() {
-            if addressed
-                && self.endpoints[index]
-                    .redeclare_at
-                    .is_some_and(|at| at <= since)
-            {
-                self.endpoints[index].redeclare_at = None;
-                self.declare_talker(index);
-                self.update_talker(index);
+        for out in self.outs() {
+            if addressed && self.output(out).redeclare_at.is_some_and(|at| at <= since) {
+                self.output_mut(out).redeclare_at = None;
+                self.declare_talker(out);
+                self.update_talker(out);
             }
         }
         loop {
@@ -1156,24 +1280,77 @@ impl Runtime {
         handed
     }
 
-    /// The priority a talker endpoint's frames go out on: AVB Lite's, else
-    /// its SR class's.
-    fn priority(&self, index: usize) -> u8 {
+    /// Every endpoint's stream outputs, in order.
+    fn outs(&self) -> Vec<Out> {
+        self.endpoints
+            .iter()
+            .enumerate()
+            .flat_map(|(index, endpoint)| {
+                (0..endpoint.outputs.len() as u16).map(move |output| Out(index, output))
+            })
+            .collect()
+    }
+
+    /// Every endpoint's stream inputs, in order.
+    fn ins(&self) -> Vec<In> {
+        self.endpoints
+            .iter()
+            .enumerate()
+            .flat_map(|(index, endpoint)| {
+                (0..endpoint.inputs.len() as u16).map(move |input| In(index, input))
+            })
+            .collect()
+    }
+
+    fn output(&self, out: Out) -> &OutputState {
+        &self.endpoints[out.0].outputs[usize::from(out.1)]
+    }
+
+    fn output_mut(&mut self, out: Out) -> &mut OutputState {
+        &mut self.endpoints[out.0].outputs[usize::from(out.1)]
+    }
+
+    fn input(&self, input: In) -> &InputState {
+        &self.endpoints[input.0].inputs[usize::from(input.1)]
+    }
+
+    fn input_mut(&mut self, input: In) -> &mut InputState {
+        &mut self.endpoints[input.0].inputs[usize::from(input.1)]
+    }
+
+    /// The name log lines give an output.
+    fn out_name(&self, out: Out) -> String {
+        self.endpoints[out.0].stream_name(false, out.1)
+    }
+
+    /// The name log lines give an input.
+    fn in_name(&self, input: In) -> String {
+        self.endpoints[input.0].stream_name(true, input.1)
+    }
+
+    /// The priority an output's frames go out on: AVB Lite's, else its SR
+    /// class's.
+    fn priority(&self, out: Out) -> u8 {
         if self.lite.is_some() {
             LITE_PRIORITY
-        } else if self.endpoints[index].config.class == SrClass::B {
+        } else if self.endpoints[out.0].config.class == SrClass::B {
             CLASS_B_PRIORITY
         } else {
             PRIORITY
         }
     }
 
-    /// The Talker Advertise for a talker endpoint's stream, from its
-    /// current format.
-    fn declaration(&self, index: usize) -> Option<TalkerDeclaration> {
-        let endpoint = &self.endpoints[index];
-        let (stream_id, destination) = endpoint.entity.output_stream(0)?;
-        let format = endpoint.entity.model().outputs.first()?.current_format;
+    /// The Talker Advertise for an output's stream, from its current
+    /// format.
+    fn declaration(&self, out: Out) -> Option<TalkerDeclaration> {
+        let endpoint = &self.endpoints[out.0];
+        let (stream_id, destination) = endpoint.entity.output_stream(out.1)?;
+        let format = endpoint
+            .entity
+            .model()
+            .outputs
+            .get(usize::from(out.1))?
+            .current_format;
         let media = triib_stream::media::Media::of(format)?;
         Some(TalkerDeclaration {
             stream_id: stream_id.0,
@@ -1191,7 +1368,7 @@ impl Runtime {
             } else {
                 1
             },
-            priority: self.priority(index),
+            priority: self.priority(out),
             rank: true,
             accumulated_latency: TALKER_LATENCY,
             failure: None,
@@ -1199,20 +1376,20 @@ impl Runtime {
         })
     }
 
-    fn declare_talker(&mut self, index: usize) {
-        let Some(declaration) = self.declaration(index) else {
+    fn declare_talker(&mut self, out: Out) {
+        let Some(declaration) = self.declaration(out) else {
             return;
         };
         if self.lite.is_some()
-            && let Some(declaration) = self.lite_declaration(index)
+            && let Some(declaration) = self.lite_declaration(out)
         {
             self.declare_cvu(
-                index,
+                out.0,
                 BROADCAST,
                 lite::talker_message(&declaration, avb_mrp::Event::New),
             );
-            self.endpoints[index].entity.set_output_reservation(
-                0,
+            self.endpoints[out.0].entity.set_output_reservation(
+                out.1,
                 OutputReservation {
                     ready_listeners: 0,
                     registering: true,
@@ -1227,8 +1404,8 @@ impl Runtime {
             msrp::talker_value(&declaration),
             None,
         );
-        self.endpoints[index].entity.set_output_reservation(
-            0,
+        self.endpoints[out.0].entity.set_output_reservation(
+            out.1,
             OutputReservation {
                 ready_listeners: 0,
                 registering: true,
@@ -1248,13 +1425,11 @@ impl Runtime {
     fn maap_event(&mut self, event: MaapEvent) {
         let since = self.elapsed();
         let now = self.now();
-        let talkers: Vec<usize> = (0..self.endpoints.len())
-            .filter(|index| self.endpoints[*index].config.kind == Kind::Talker)
-            .collect();
+        let talkers = self.outs();
         match event {
             MaapEvent::Acquired(first) => {
                 log(format!("MAAP: streams go to {first} on"));
-                for (place, index) in talkers.into_iter().enumerate() {
+                for (place, out) in talkers.into_iter().enumerate() {
                     let Some(address) = self
                         .maap
                         .as_ref()
@@ -1262,63 +1437,63 @@ impl Runtime {
                     else {
                         continue;
                     };
-                    self.endpoints[index]
+                    self.endpoints[out.0]
                         .entity
-                        .set_output_destination(0, address);
+                        .set_output_destination(out.1, address);
                     // Declared again only once a bridge has let the old
                     // declaration go.
-                    let at = self.endpoints[index]
+                    let at = self
+                        .output(out)
                         .withdrawn_at
                         .map_or(since, |withdrawn| withdrawn + REDECLARE)
                         .max(since);
-                    self.endpoints[index].redeclare_at = Some(at);
+                    self.output_mut(out).redeclare_at = Some(at);
                 }
-                // Our listeners of our talkers find where they went.
-                for endpoint in &mut self.endpoints {
-                    if endpoint.config.kind == Kind::Listener {
-                        endpoint.entity.probe_again(now, 0);
-                    }
+                // Our inputs of our talkers find where they went.
+                for input in self.ins() {
+                    self.endpoints[input.0].entity.probe_again(now, input.1);
                 }
             }
             MaapEvent::Lost => {
                 log("MAAP: another device took the streams' addresses, claiming others");
-                for index in talkers {
-                    self.endpoints[index].talker = None;
+                for out in talkers {
+                    let output = self.output_mut(out);
+                    output.talker = None;
                     // Declared again once MAAP gives it an address.
-                    self.endpoints[index].redeclare_at = None;
-                    self.withdraw_talker(index);
+                    output.redeclare_at = None;
+                    self.withdraw_talker(out);
                 }
             }
         }
     }
 
     /// Withdraws a talker's declaration, which a stream needs to stop.
-    fn withdraw_talker(&mut self, index: usize) {
-        let Some((stream_id, _)) = self.endpoints[index].entity.output_stream(0) else {
+    fn withdraw_talker(&mut self, out: Out) {
+        let Some((stream_id, _)) = self.endpoints[out.0].entity.output_stream(out.1) else {
             return;
         };
         if self.lite.is_some()
-            && let Some(declaration) = self.lite_declaration(index)
+            && let Some(declaration) = self.lite_declaration(out)
         {
             self.send_cvu(
-                index,
+                out.0,
                 BROADCAST,
                 &lite::talker_message(&declaration, avb_mrp::Event::Lv),
             );
-            let refused = std::mem::take(&mut self.endpoints[index].refused);
+            let refused = std::mem::take(&mut self.output_mut(out).refused);
             for (listener, code) in refused {
-                if let Some(refusal) = self.refusal(index, code) {
+                if let Some(refusal) = self.refusal(out, code) {
                     self.send_cvu(
-                        index,
+                        out.0,
                         listener,
                         &lite::talker_message(&refusal, avb_mrp::Event::Lv),
                     );
                 }
             }
-            let endpoint = &mut self.endpoints[index];
-            endpoint.copies.clear();
-            endpoint.escalated = false;
-            endpoint.escalate_at = None;
+            let output = self.output_mut(out);
+            output.copies.clear();
+            output.escalated = false;
+            output.escalate_at = None;
         }
         let since = self.elapsed();
         self.port.msrp.withdraw(
@@ -1326,9 +1501,9 @@ impl Runtime {
             msrp::attribute::TALKER_ADVERTISE,
             &stream_id.0.to_be_bytes(),
         );
-        self.endpoints[index].withdrawn_at = Some(since);
-        self.endpoints[index].entity.set_output_reservation(
-            0,
+        self.output_mut(out).withdrawn_at = Some(since);
+        self.endpoints[out.0].entity.set_output_reservation(
+            out.1,
             OutputReservation {
                 ready_listeners: 0,
                 registering: false,
@@ -1375,33 +1550,38 @@ impl Runtime {
         }
     }
 
-    /// Which of our talkers sends `stream_id`.
-    fn own_talker(&self, stream_id: u64) -> Option<usize> {
-        self.endpoints.iter().position(|endpoint| {
-            endpoint
+    /// Which of our outputs sends `stream_id`.
+    fn own_talker(&self, stream_id: u64) -> Option<Out> {
+        self.outs().into_iter().find(|out| {
+            self.endpoints[out.0]
                 .entity
-                .output_stream(0)
+                .output_stream(out.1)
                 .is_some_and(|(id, _)| id.0 == stream_id)
         })
+    }
+
+    /// The stream an input settled on, its probe having found it.
+    fn input_stream(&self, input: In) -> Option<atdecc::entity::ProbedStream> {
+        self.endpoints[input.0].entity.input_stream(input.1)
     }
 
     /// A listener's declaration for one of our talkers' streams changed.
     fn listener_heard(&mut self, stream_id: u64, state: Option<ListenerState>) {
         let ready = state.is_some_and(ListenerState::ready);
         self.ready_remotely.insert(stream_id, ready);
-        if let Some(index) = self.own_talker(stream_id) {
-            self.update_talker(index);
+        if let Some(out) = self.own_talker(stream_id) {
+            self.update_talker(out);
         }
     }
 
-    /// Starts a talker's stream when a listener is ready for it, on the
+    /// Starts an output's stream when a listener is ready for it, on the
     /// network or here, and stops it when none is.
-    fn update_talker(&mut self, index: usize) {
+    fn update_talker(&mut self, out: Out) {
         if self.lite.is_some() {
-            self.lite_update_talker(index);
+            self.lite_update_talker(out);
             return;
         }
-        let Some((stream_id, _)) = self.endpoints[index].entity.output_stream(0) else {
+        let Some((stream_id, _)) = self.endpoints[out.0].entity.output_stream(out.1) else {
             return;
         };
         let remote = self
@@ -1410,66 +1590,61 @@ impl Runtime {
             .copied()
             .unwrap_or(false);
         let local = self
-            .endpoints
-            .iter()
-            .filter(|endpoint| {
-                endpoint.listener.is_some()
-                    && endpoint
-                        .entity
-                        .input_stream(0)
+            .ins()
+            .into_iter()
+            .filter(|input| {
+                self.input(*input).listener.is_some()
+                    && self
+                        .input_stream(*input)
                         .is_some_and(|stream| stream.stream_id == stream_id)
             })
             .count();
         let listeners = usize::from(remote) + local;
         let ready = listeners > 0;
-        self.endpoints[index].entity.set_output_reservation(
-            0,
+        self.endpoints[out.0].entity.set_output_reservation(
+            out.1,
             OutputReservation {
                 ready_listeners: listeners.min(usize::from(u16::MAX)) as u16,
                 registering: true,
             },
         );
         let addressed = self.addressed();
-        let endpoint = &mut self.endpoints[index];
-        if ready && endpoint.talker.is_none() && endpoint.redeclare_at.is_none() && addressed {
-            log(format!(
-                "{}: a listener is ready, streaming",
-                endpoint.config.name
-            ));
-            self.start_talker(index);
-        } else if !ready && endpoint.talker.is_some() {
-            log(format!(
-                "{}: no listener ready, stopping",
-                endpoint.config.name
-            ));
-            endpoint.talker = None;
+        let name = self.out_name(out);
+        let output = self.output_mut(out);
+        if ready && output.talker.is_none() && output.redeclare_at.is_none() && addressed {
+            log(format!("{name}: a listener is ready, streaming"));
+            self.start_talker(out);
+        } else if !ready && output.talker.is_some() {
+            log(format!("{name}: no listener ready, stopping"));
+            output.talker = None;
         }
     }
 
-    fn start_talker(&mut self, index: usize) {
-        let endpoint = &self.endpoints[index];
-        let Some((stream_id, destination)) = endpoint.entity.output_stream(0) else {
+    fn start_talker(&mut self, out: Out) {
+        let endpoint = &self.endpoints[out.0];
+        let Some((stream_id, destination)) = endpoint.entity.output_stream(out.1) else {
             return;
         };
-        let Some(stream) = endpoint.entity.model().outputs.first() else {
+        let Some(stream) = endpoint.entity.model().outputs.get(usize::from(out.1)) else {
             return;
         };
-        let transit = endpoint.entity.max_transit_time(0).unwrap_or(2_000_000);
+        let transit = endpoint.entity.max_transit_time(out.1).unwrap_or(2_000_000);
         let lite = self.lite.is_some();
+        let name = self.out_name(out);
         let config = TalkerConfig {
             interface: self.interface.clone(),
             mac: self.mac,
             stream_id: stream_id.0,
             destinations: if lite {
-                endpoint.copies.clone()
+                self.output(out).copies.clone()
             } else {
                 vec![destination]
             },
             vlan_id: if lite { self.media_vlan() } else { VLAN },
-            priority: self.priority(index),
+            priority: self.priority(out),
             format: stream.current_format,
             max_transit_time: Duration::from_nanos(u64::from(transit)),
-            source: endpoint.config.source(),
+            source: endpoint.config.source_at(out.1, stream.channels),
         };
         // An audio device that isn't there, as on another computer than
         // the one its name came from, leaves the stream running silent.
@@ -1477,10 +1652,7 @@ impl Runtime {
             if config.source == Source::Silence {
                 return Err(error);
             }
-            log(format!(
-                "{}: {error}, sending silence",
-                endpoint.config.name
-            ));
+            log(format!("{name}: {error}, sending silence"));
             let silent = TalkerConfig {
                 source: Source::Silence,
                 ..config
@@ -1488,24 +1660,20 @@ impl Runtime {
             Talker::start(silent, self.clock.clone())
         });
         match started {
-            Ok(talker) => self.endpoints[index].talker = Some(talker),
-            Err(error) => log(format!(
-                "{}: could not start the stream: {error}",
-                endpoint.config.name
-            )),
+            Ok(talker) => self.output_mut(out).talker = Some(talker),
+            Err(error) => log(format!("{name}: could not start the stream: {error}")),
         }
     }
 
     /// A talker declaration came or went: inputs settled on its stream
     /// declare themselves and listen, or stop.
     fn talker_heard(&mut self, stream_id: u64) {
-        for index in 0..self.endpoints.len() {
-            let settled = self.endpoints[index]
-                .entity
-                .input_stream(0)
+        for input in self.ins() {
+            let settled = self
+                .input_stream(input)
                 .is_some_and(|stream| stream.stream_id.0 == stream_id);
             if settled {
-                self.update_listener(index);
+                self.update_listener(input);
             }
         }
     }
@@ -1514,13 +1682,13 @@ impl Runtime {
     /// allows, and listens when it is advertised. A talker of ours needs
     /// no reservation, as the bridge never sends our own declarations back
     /// to us; its frames reach the listener as they leave.
-    fn update_listener(&mut self, index: usize) {
+    fn update_listener(&mut self, input: In) {
         if self.lite.is_some() {
-            self.lite_update_listener(index);
+            self.lite_update_listener(input);
             return;
         }
         let since = self.elapsed();
-        let Some(stream) = self.endpoints[index].entity.input_stream(0) else {
+        let Some(stream) = self.input_stream(input) else {
             return;
         };
         let own = self.own_talker(stream.stream_id.0);
@@ -1550,7 +1718,7 @@ impl Runtime {
         };
         match state {
             Some(_) if own.is_some() => {
-                if let Some(key) = self.endpoints[index].declared.take() {
+                if let Some(key) = self.input_mut(input).declared.take() {
                     self.port
                         .msrp
                         .withdraw(since, msrp::attribute::LISTENER, &key);
@@ -1563,18 +1731,18 @@ impl Runtime {
                     key.clone(),
                     Some(state.number()),
                 );
-                self.endpoints[index].declared = Some(key);
+                self.input_mut(input).declared = Some(key);
             }
             None => {
                 self.port
                     .msrp
                     .withdraw(since, msrp::attribute::LISTENER, &key);
-                self.endpoints[index].declared = None;
+                self.input_mut(input).declared = None;
             }
         }
-        self.endpoints[index]
+        self.endpoints[input.0]
             .entity
-            .set_input_reservation(0, reservation);
+            .set_input_reservation(input.1, reservation);
         let advertised = state == Some(ListenerState::Ready);
         // Where the stream goes, as its talker declares it now: a probe
         // can have answered before the talker had its address, or before
@@ -1583,18 +1751,16 @@ impl Runtime {
             destination: declaration.map_or(stream.destination, |declared| declared.destination),
             ..stream
         };
-        let endpoint = &mut self.endpoints[index];
-        if endpoint.listener.is_some() && endpoint.listening_to != Some(stream) {
-            endpoint.listener = None;
+        let name = self.in_name(input);
+        let state = self.input_mut(input);
+        if state.listener.is_some() && state.listening_to != Some(stream) {
+            state.listener = None;
         }
-        if advertised && endpoint.listener.is_none() {
-            self.start_listener(index, stream, vec![stream.destination]);
-        } else if !advertised && endpoint.listener.is_some() {
-            log(format!(
-                "{}: the talker is gone, not listening",
-                endpoint.config.name
-            ));
-            endpoint.listener = None;
+        if advertised && state.listener.is_none() {
+            self.start_listener(input, stream, vec![stream.destination]);
+        } else if !advertised && state.listener.is_some() {
+            log(format!("{name}: the talker is gone, not listening"));
+            state.listener = None;
         }
         self.update_own_talkers();
     }
@@ -1603,78 +1769,68 @@ impl Runtime {
     /// of `destinations`.
     fn start_listener(
         &mut self,
-        index: usize,
+        input: In,
         stream: atdecc::entity::ProbedStream,
         destinations: Vec<MacAddress>,
     ) {
-        let endpoint = &self.endpoints[index];
-        let Some(model) = endpoint.entity.model().inputs.first() else {
+        let endpoint = &self.endpoints[input.0];
+        let Some(model) = endpoint.entity.model().inputs.get(usize::from(input.1)) else {
             return;
         };
+        let name = self.in_name(input);
         let config = ListenerConfig {
             interface: self.interface.clone(),
             stream_id: stream.stream_id.0,
             destinations,
             format: model.current_format,
-            sink: endpoint.config.sink(),
+            sink: endpoint.config.sink_at(input.1, model.channels),
         };
         let started = Listener::start(config.clone(), self.clock.clone()).or_else(|error| {
             if config.sink == Sink::Discard {
                 return Err(error);
             }
-            log(format!(
-                "{}: {error}, playing nowhere",
-                endpoint.config.name
-            ));
+            log(format!("{name}: {error}, playing nowhere"));
             let discarding = ListenerConfig {
                 sink: Sink::Discard,
                 ..config
             };
             Listener::start(discarding, self.clock.clone())
         });
-        let endpoint = &mut self.endpoints[index];
         match started {
             Ok(listener) => {
-                log(format!(
-                    "{}: listening to {}",
-                    endpoint.config.name, stream.stream_id
-                ));
-                endpoint.listener = Some(listener);
-                endpoint.listening_to = Some(stream);
+                log(format!("{name}: listening to {}", stream.stream_id));
+                let state = self.input_mut(input);
+                state.listener = Some(listener);
+                state.listening_to = Some(stream);
             }
-            Err(error) => log(format!(
-                "{}: could not listen: {error}",
-                endpoint.config.name
-            )),
+            Err(error) => log(format!("{name}: could not listen: {error}")),
         }
     }
 
     /// Our talkers, again, after one of our listeners started or stopped.
     fn update_own_talkers(&mut self) {
-        for index in 0..self.endpoints.len() {
-            if self.endpoints[index].config.kind == Kind::Talker {
-                self.update_talker(index);
-            }
+        for out in self.outs() {
+            self.update_talker(out);
         }
     }
 
-    fn stop_listener(&mut self, index: usize) {
+    fn stop_listener(&mut self, input: In) {
         let since = self.elapsed();
-        let endpoint = &mut self.endpoints[index];
-        if endpoint.listener.take().is_some() {
-            log(format!("{}: not listening", endpoint.config.name));
+        let name = self.in_name(input);
+        if self.input_mut(input).listener.take().is_some() {
+            log(format!("{name}: not listening"));
         }
-        endpoint
+        self.endpoints[input.0]
             .entity
-            .set_input_reservation(0, InputReservation::default());
-        if let Some(key) = endpoint.declared.take() {
+            .set_input_reservation(input.1, InputReservation::default());
+        if let Some(key) = self.input_mut(input).declared.take() {
             self.port
                 .msrp
                 .withdraw(since, msrp::attribute::LISTENER, &key);
         }
-        if let Some((stream_id, talker, state)) = endpoint.cvu_to.take() {
+        if let Some((stream_id, talker, state)) = self.input_mut(input).cvu_to.take() {
             self.send_cvu(
-                index,
+                input.0,
                 talker,
                 &lite::listener_message(stream_id, state, avb_mrp::Event::Lv),
             );
@@ -1689,47 +1845,69 @@ impl Runtime {
                 "{name}: identify {}",
                 if on { "on" } else { "off" }
             )),
-            EntityEvent::InputBound { binding, .. } => {
+            EntityEvent::InputBound { index: at, binding } => {
+                let name = self.in_name(In(index, at));
                 log(format!(
                     "{name}: bound to {} output {}",
                     binding.talker, binding.talker_unique_id
                 ));
                 self.keep_settings(index);
             }
-            EntityEvent::InputSettled { stream, .. } => {
+            EntityEvent::InputSettled { index: at, stream } => {
+                let input = In(index, at);
                 log(format!(
-                    "{name}: probed stream {} to {}",
-                    stream.stream_id, stream.destination
+                    "{}: probed stream {} to {}",
+                    self.in_name(input),
+                    stream.stream_id,
+                    stream.destination
                 ));
                 // A stream that moved is taken from where it went.
-                let endpoint = &mut self.endpoints[index];
-                if endpoint.listener.is_some() && endpoint.listening_to != Some(stream) {
-                    endpoint.listener = None;
+                let state = self.input_mut(input);
+                if state.listener.is_some() && state.listening_to != Some(stream) {
+                    state.listener = None;
                 }
-                self.update_listener(index);
+                self.update_listener(input);
             }
-            EntityEvent::InputUnsettled { .. } => self.stop_listener(index),
-            EntityEvent::InputUnbound { .. } => {
-                log(format!("{name}: unbound"));
-                self.stop_listener(index);
+            EntityEvent::InputUnsettled { index: at } => self.stop_listener(In(index, at)),
+            EntityEvent::InputUnbound { index: at } => {
+                log(format!("{}: unbound", self.in_name(In(index, at))));
+                self.stop_listener(In(index, at));
                 self.keep_settings(index);
             }
-            EntityEvent::StreamFormatChanged { format, .. } => {
-                log(format!("{name}: format {format}"));
+            EntityEvent::StreamFormatChanged {
+                descriptor_type,
+                index: at,
+                format,
+            } => {
+                let input = descriptor_type == atdecc::DescriptorType::STREAM_INPUT;
+                log(format!(
+                    "{}: format {format}",
+                    self.endpoints[index].stream_name(input, at)
+                ));
                 self.keep_settings(index);
-                if self.endpoints[index].config.kind == Kind::Talker {
-                    self.endpoints[index].talker = None;
-                    self.withdraw_talker(index);
-                    self.endpoints[index].redeclare_at = Some(self.elapsed() + REDECLARE);
-                }
-                if self.endpoints[index].listener.take().is_some() {
-                    self.update_listener(index);
+                if input {
+                    let input = In(index, at);
+                    if self.input_mut(input).listener.take().is_some() {
+                        self.update_listener(input);
+                    }
+                } else {
+                    let out = Out(index, at);
+                    self.output_mut(out).talker = None;
+                    self.withdraw_talker(out);
+                    self.output_mut(out).redeclare_at = Some(self.elapsed() + REDECLARE);
                 }
             }
-            EntityEvent::MaxTransitTimeChanged { nanoseconds, .. } => {
-                log(format!("{name}: max transit time {nanoseconds} ns"));
-                if self.endpoints[index].talker.take().is_some() {
-                    self.start_talker(index);
+            EntityEvent::MaxTransitTimeChanged {
+                index: at,
+                nanoseconds,
+            } => {
+                let out = Out(index, at);
+                log(format!(
+                    "{}: max transit time {nanoseconds} ns",
+                    self.out_name(out)
+                ));
+                if self.output_mut(out).talker.take().is_some() {
+                    self.start_talker(out);
                 }
             }
             EntityEvent::SamplingRateChanged(rate) => log(format!("{name}: sampling rate {rate}")),
@@ -1749,11 +1927,7 @@ impl Runtime {
                 self.keep_config();
                 self.update_lite_status();
                 if self.lite.is_some() {
-                    for index in 0..self.endpoints.len() {
-                        if self.endpoints[index].config.kind == Kind::Talker {
-                            self.update_talker(index);
-                        }
-                    }
+                    self.update_own_talkers();
                 }
             }
             EntityEvent::NameChanged => {
@@ -1771,7 +1945,10 @@ impl Runtime {
     fn update_counters(&mut self) {
         let low = |value: u64| value as u32;
         for endpoint in &mut self.endpoints {
-            if let Some(talker) = &endpoint.talker {
+            for (at, output) in endpoint.outputs.iter().enumerate() {
+                let Some(talker) = &output.talker else {
+                    continue;
+                };
                 let stats = talker.stats();
                 let mut counters = [0; 32];
                 counters[0] = 1; // stream_start
@@ -1780,11 +1957,14 @@ impl Runtime {
                 counters[7] = low(stats.frames_sent);
                 endpoint.entity.set_stream_counters(
                     atdecc::DescriptorType::STREAM_OUTPUT,
-                    0,
+                    at as u16,
                     counters,
                 );
             }
-            if let Some(listener) = &endpoint.listener {
+            for (at, input) in endpoint.inputs.iter().enumerate() {
+                let Some(listener) = &input.listener else {
+                    continue;
+                };
                 let stats = listener.stats();
                 let mut counters = [0; 32];
                 counters[0] = low(stats.media_locked);
@@ -1798,7 +1978,7 @@ impl Runtime {
                 counters[11] = low(stats.frames_received);
                 endpoint.entity.set_stream_counters(
                     atdecc::DescriptorType::STREAM_INPUT,
-                    0,
+                    at as u16,
                     counters,
                 );
             }
@@ -1807,11 +1987,14 @@ impl Runtime {
 
     fn report(&self) {
         for endpoint in &self.endpoints {
-            if let Some(talker) = &endpoint.talker {
+            for (at, output) in endpoint.outputs.iter().enumerate() {
+                let Some(talker) = &output.talker else {
+                    continue;
+                };
                 let stats = talker.stats();
                 log(format!(
                     "{}: sent {} frames, {} media resets, {} send errors, device {:+} ppm, {} short{}",
-                    endpoint.config.name,
+                    endpoint.stream_name(false, at as u16),
                     stats.frames_sent,
                     stats.media_resets,
                     stats.send_errors,
@@ -1820,11 +2003,14 @@ impl Runtime {
                     if stats.realtime { ", real time" } else { "" }
                 ));
             }
-            if let Some(listener) = &endpoint.listener {
+            for (at, input) in endpoint.inputs.iter().enumerate() {
+                let Some(listener) = &input.listener else {
+                    continue;
+                };
                 let stats = listener.stats();
                 log(format!(
                     "{}: received {} frames, {} out of sequence, {} late, {} early, peak {:.3}, device {:+} ppm, {} short{}{}",
-                    endpoint.config.name,
+                    endpoint.stream_name(true, at as u16),
                     stats.frames_received,
                     stats.sequence_mismatches,
                     stats.late,
@@ -1873,13 +2059,13 @@ impl Runtime {
         let since = self.elapsed();
         if self.lite.is_some() {
             // AVB Lite's declarations go too, as no bridge withdraws them.
-            for index in 0..self.endpoints.len() {
-                if self.endpoints[index].config.kind == Kind::Talker {
-                    self.withdraw_talker(index);
-                } else if let Some((stream_id, talker, state)) = self.endpoints[index].cvu_to.take()
-                {
+            for out in self.outs() {
+                self.withdraw_talker(out);
+            }
+            for input in self.ins() {
+                if let Some((stream_id, talker, state)) = self.input_mut(input).cvu_to.take() {
                     self.send_cvu(
-                        index,
+                        input.0,
                         talker,
                         &lite::listener_message(stream_id, state, avb_mrp::Event::Lv),
                     );
@@ -1887,14 +2073,18 @@ impl Runtime {
             }
         }
         for endpoint in &mut self.endpoints {
-            endpoint.talker = None;
-            endpoint.listener = None;
+            for output in &mut endpoint.outputs {
+                output.talker = None;
+            }
+            for input in &mut endpoint.inputs {
+                input.listener = None;
+            }
             endpoint.entity.depart();
         }
         let streams: Vec<StreamId> = self
-            .endpoints
-            .iter()
-            .filter_map(|endpoint| endpoint.entity.output_stream(0))
+            .outs()
+            .into_iter()
+            .filter_map(|out| self.endpoints[out.0].entity.output_stream(out.1))
             .map(|(stream_id, _)| stream_id)
             .collect();
         self.port.withdraw_streams(since, streams);
@@ -1926,21 +2116,23 @@ impl Runtime {
             }
         ));
         let since = self.elapsed();
-        for index in 0..self.endpoints.len() {
-            let endpoint = &mut self.endpoints[index];
-            endpoint.talker = None;
-            endpoint.listener = None;
-            if let Some(key) = endpoint.declared.take() {
-                self.port
-                    .msrp
-                    .withdraw(since, msrp::attribute::LISTENER, &key);
-            }
-            if let Some((stream_id, _)) = self.endpoints[index].entity.output_stream(0) {
+        for out in self.outs() {
+            self.output_mut(out).talker = None;
+            if let Some((stream_id, _)) = self.endpoints[out.0].entity.output_stream(out.1) {
                 self.port.msrp.withdraw(
                     since,
                     msrp::attribute::TALKER_ADVERTISE,
                     &stream_id.0.to_be_bytes(),
                 );
+            }
+        }
+        for input in self.ins() {
+            let state = self.input_mut(input);
+            state.listener = None;
+            if let Some(key) = state.declared.take() {
+                self.port
+                    .msrp
+                    .withdraw(since, msrp::attribute::LISTENER, &key);
             }
         }
         self.port.leave(since);
@@ -1970,15 +2162,22 @@ impl Runtime {
         };
         lite.next_refresh = lite.refresh_after(since);
         self.lite = Some(lite);
-        for index in 0..self.endpoints.len() {
-            match self.endpoints[index].config.kind {
-                Kind::Talker if self.addressed() => self.declare_talker(index),
-                Kind::Talker => {}
-                Kind::Listener => self.update_listener(index),
-            }
-        }
+        self.declare_all();
         self.update_lite_status();
         self.steer_profile();
+    }
+
+    /// Declares every output's stream, once MAAP gave them addresses, and
+    /// every input as its talker allows.
+    fn declare_all(&mut self) {
+        if self.addressed() {
+            for out in self.outs() {
+                self.declare_talker(out);
+            }
+        }
+        for input in self.ins() {
+            self.update_listener(input);
+        }
     }
 
     /// Leaves AVB Lite as the link comes up again (profile 2.2): CVU SRP's
@@ -1987,33 +2186,28 @@ impl Runtime {
     fn leave_lite(&mut self) {
         log("AVB Lite: the link came up again, trying AVB");
         let since = self.elapsed();
-        for index in 0..self.endpoints.len() {
-            if self.endpoints[index].config.kind == Kind::Talker {
-                self.withdraw_talker(index);
-            } else if let Some((stream_id, talker, state)) = self.endpoints[index].cvu_to.take() {
+        for out in self.outs() {
+            self.withdraw_talker(out);
+            let output = self.output_mut(out);
+            output.talker = None;
+            output.copies.clear();
+        }
+        for input in self.ins() {
+            if let Some((stream_id, talker, state)) = self.input_mut(input).cvu_to.take() {
                 self.send_cvu(
-                    index,
+                    input.0,
                     talker,
                     &lite::listener_message(stream_id, state, avb_mrp::Event::Lv),
                 );
             }
-            let endpoint = &mut self.endpoints[index];
-            endpoint.talker = None;
-            endpoint.listener = None;
-            endpoint.copies.clear();
+            self.input_mut(input).listener = None;
         }
         self.lite = None;
         self.talkers.clear();
         self.ready_remotely.clear();
         self.fallback = Fallback::new(self.own_clock.0, false, since);
         self.port.join(since);
-        for index in 0..self.endpoints.len() {
-            match self.endpoints[index].config.kind {
-                Kind::Talker if self.addressed() => self.declare_talker(index),
-                Kind::Talker => {}
-                Kind::Listener => self.update_listener(index),
-            }
-        }
+        self.declare_all();
         self.update_lite_status();
         self.steer_profile();
     }
@@ -2261,49 +2455,47 @@ impl Runtime {
         for stream_id in stale_refusals {
             self.lite_talker_changed(stream_id);
         }
-        for index in 0..self.endpoints.len() {
-            if self.endpoints[index]
-                .escalate_at
-                .is_some_and(|at| at <= since)
-            {
-                self.update_talker(index);
+        for out in self.outs() {
+            if self.output(out).escalate_at.is_some_and(|at| at <= since) {
+                self.update_talker(out);
             }
         }
         for stream_id in gone_listeners {
-            if let Some(index) = self.own_talker(stream_id) {
-                self.update_talker(index);
+            if let Some(out) = self.own_talker(stream_id) {
+                self.update_talker(out);
             }
         }
         if refresh {
-            for index in 0..self.endpoints.len() {
-                let endpoint = &self.endpoints[index];
-                if endpoint.config.kind == Kind::Talker {
-                    if self.addressed()
-                        && let Some(declaration) = self.lite_declaration(index)
-                    {
+            for out in self.outs() {
+                if self.addressed()
+                    && let Some(declaration) = self.lite_declaration(out)
+                {
+                    self.declare_cvu(
+                        out.0,
+                        BROADCAST,
+                        lite::talker_message(&declaration, avb_mrp::Event::JoinIn),
+                    );
+                }
+                let refused: Vec<(MacAddress, u8)> = self
+                    .output(out)
+                    .refused
+                    .iter()
+                    .map(|(listener, code)| (*listener, *code))
+                    .collect();
+                for (listener, code) in refused {
+                    if let Some(refusal) = self.refusal(out, code) {
                         self.declare_cvu(
-                            index,
-                            BROADCAST,
-                            lite::talker_message(&declaration, avb_mrp::Event::JoinIn),
+                            out.0,
+                            listener,
+                            lite::talker_message(&refusal, avb_mrp::Event::JoinIn),
                         );
                     }
-                    let refused: Vec<(MacAddress, u8)> = self.endpoints[index]
-                        .refused
-                        .iter()
-                        .map(|(listener, code)| (*listener, *code))
-                        .collect();
-                    for (listener, code) in refused {
-                        if let Some(refusal) = self.refusal(index, code) {
-                            self.declare_cvu(
-                                index,
-                                listener,
-                                lite::talker_message(&refusal, avb_mrp::Event::JoinIn),
-                            );
-                        }
-                    }
-                } else if let Some((stream_id, talker, state)) = endpoint.cvu_to {
+                }
+            }
+            for input in self.ins() {
+                if let Some((stream_id, talker, state)) = self.input(input).cvu_to {
                     self.declare_cvu(
-                        index,
+                        input.0,
                         talker,
                         lite::listener_message(stream_id, state, avb_mrp::Event::JoinIn),
                     );
@@ -2432,8 +2624,8 @@ impl Runtime {
                         .get(&source)
                         .is_none_or(|(known, _)| *known != state);
                     listeners.insert(source, (state, since));
-                    if changed && let Some(index) = self.own_talker(stream_id) {
-                        self.update_talker(index);
+                    if changed && let Some(out) = self.own_talker(stream_id) {
+                        self.update_talker(out);
                     }
                 }
                 Declared::ListenerGone(stream_id) => {
@@ -2454,15 +2646,7 @@ impl Runtime {
     /// A talker's declaration came, changed or went: our listeners
     /// settled on its stream follow.
     fn lite_talker_changed(&mut self, stream_id: u64) {
-        for index in 0..self.endpoints.len() {
-            let settled = self.endpoints[index]
-                .entity
-                .input_stream(0)
-                .is_some_and(|stream| stream.stream_id.0 == stream_id);
-            if settled {
-                self.update_listener(index);
-            }
-        }
+        self.talker_heard(stream_id);
     }
 
     /// Corrects the media clock for the asymmetry of the grandmaster's and
@@ -2500,12 +2684,13 @@ impl Runtime {
 
     /// The bandwidth our talkers' copies take, but for talker `except`'s,
     /// in bits per second.
-    fn committed(&self, except: Option<usize>) -> u64 {
-        (0..self.endpoints.len())
-            .filter(|index| Some(*index) != except)
-            .filter_map(|index| {
-                let copies = self.endpoints[index].copies.len() as u64;
-                self.declaration(index)
+    fn committed(&self, except: Option<Out>) -> u64 {
+        self.outs()
+            .into_iter()
+            .filter(|out| Some(*out) != except)
+            .filter_map(|out| {
+                let copies = self.output(out).copies.len() as u64;
+                self.declaration(out)
                     .map(|declaration| copies * declaration.bandwidth(8000))
             })
             .sum()
@@ -2514,10 +2699,10 @@ impl Runtime {
     /// A talker's declaration in AVB Lite, its destination where the
     /// stream's frames go now: `00:00:00:00:00:00` while unicast, the
     /// multicast address once escalated (profile 6).
-    fn lite_declaration(&self, index: usize) -> Option<TalkerDeclaration> {
-        let declaration = self.declaration(index)?;
+    fn lite_declaration(&self, out: Out) -> Option<TalkerDeclaration> {
+        let declaration = self.declaration(out)?;
         Some(TalkerDeclaration {
-            destination: if self.endpoints[index].escalated {
+            destination: if self.output(out).escalated {
                 declaration.destination
             } else {
                 MacAddress([0; 6])
@@ -2528,8 +2713,8 @@ impl Runtime {
 
     /// The Talker Failed a talker sends one listener it refuses (profile
     /// 6, item 10), naming this computer as the system that failed.
-    fn refusal(&self, index: usize, code: u8) -> Option<TalkerDeclaration> {
-        let declaration = self.lite_declaration(index)?;
+    fn refusal(&self, out: Out, code: u8) -> Option<TalkerDeclaration> {
+        let declaration = self.lite_declaration(out)?;
         let [a, b, c, d, e, f] = self.mac.0;
         Some(TalkerDeclaration {
             failure: Some(TalkerFailure {
@@ -2544,11 +2729,11 @@ impl Runtime {
     /// unicast fan-out and 75% of the link (profile 6): a unicast copy
     /// each, or, where escalation is allowed and they are more, its
     /// multicast address. A listener it cannot serve it refuses alone.
-    fn lite_update_talker(&mut self, index: usize) {
-        let Some((stream_id, multicast)) = self.endpoints[index].entity.output_stream(0) else {
+    fn lite_update_talker(&mut self, out: Out) {
+        let Some((stream_id, multicast)) = self.endpoints[out.0].entity.output_stream(out.1) else {
             return;
         };
-        let Some(declaration) = self.declaration(index) else {
+        let Some(declaration) = self.declaration(out) else {
             return;
         };
         let since = self.elapsed();
@@ -2565,11 +2750,11 @@ impl Runtime {
             .unwrap_or_default();
         // Those it serves keep their place, then those it refuses, who ask
         // and fail because of it, then newcomers ready for the stream.
-        let endpoint = &self.endpoints[index];
+        let output = self.output(out);
         let rank = |mac: &MacAddress| {
-            if endpoint.copies.contains(mac) {
+            if output.copies.contains(mac) {
                 0
-            } else if endpoint.refused.contains_key(mac) {
+            } else if output.refused.contains_key(mac) {
                 1
             } else {
                 2
@@ -2577,7 +2762,7 @@ impl Runtime {
         };
         let mut wanting: Vec<(MacAddress, ListenerState)> = declared
             .into_iter()
-            .filter(|(mac, state)| state.ready() || endpoint.refused.contains_key(mac))
+            .filter(|(mac, state)| state.ready() || output.refused.contains_key(mac))
             .collect();
         wanting.sort_by_key(|(mac, _)| (rank(mac), mac.0));
         let per_copy = declaration.bandwidth(8000).max(1);
@@ -2585,7 +2770,7 @@ impl Runtime {
             usize::MAX
         } else {
             let budget = u64::from(self.link_speed) * 750_000;
-            (budget.saturating_sub(self.committed(Some(index))) / per_copy) as usize
+            (budget.saturating_sub(self.committed(Some(out))) / per_copy) as usize
         };
         let fanout = self.fanout();
         let go_multicast = self.config.multicast_escalation && wanting.len() > fanout && room >= 1;
@@ -2615,18 +2800,18 @@ impl Runtime {
             .collect();
         // To escalate, the declaration goes first and the frames JoinTime
         // later; to go back, the frames go first and the declaration after.
-        let endpoint = &mut self.endpoints[index];
+        let output = self.output_mut(out);
         let mut announce = false;
         let copies = if go_multicast {
-            if !endpoint.escalated {
-                endpoint.escalated = true;
-                endpoint.escalate_at = Some(since + JOIN_TIME);
+            if !output.escalated {
+                output.escalated = true;
+                output.escalate_at = Some(since + JOIN_TIME);
                 announce = true;
             }
-            match endpoint.escalate_at {
-                Some(at) if since < at => endpoint.copies.clone(),
+            match output.escalate_at {
+                Some(at) if since < at => output.copies.clone(),
                 _ => {
-                    endpoint.escalate_at = None;
+                    output.escalate_at = None;
                     if ready.is_empty() {
                         Vec::new()
                     } else {
@@ -2635,22 +2820,22 @@ impl Runtime {
                 }
             }
         } else {
-            if endpoint.escalated {
-                endpoint.escalated = false;
-                endpoint.escalate_at = None;
+            if output.escalated {
+                output.escalated = false;
+                output.escalate_at = None;
                 announce = true;
             }
             ready.clone()
         };
-        let name = self.endpoints[index].config.name.clone();
-        self.endpoints[index].entity.set_output_reservation(
-            0,
+        let name = self.out_name(out);
+        self.endpoints[out.0].entity.set_output_reservation(
+            out.1,
             OutputReservation {
                 ready_listeners: ready.len().min(usize::from(u16::MAX)) as u16,
                 registering: true,
             },
         );
-        if copies != self.endpoints[index].copies && !copies.is_empty() {
+        if copies != self.output(out).copies && !copies.is_empty() {
             log(format!(
                 "{name}: AVB Lite, {}",
                 if copies == [multicast] {
@@ -2661,36 +2846,36 @@ impl Runtime {
                 }
             ));
         }
-        self.endpoints[index].copies.clone_from(&copies);
+        self.output_mut(out).copies.clone_from(&copies);
         let addressed = self.addressed();
-        let endpoint = &mut self.endpoints[index];
+        let output = self.output_mut(out);
         if copies.is_empty() {
-            if endpoint.talker.take().is_some() {
+            if output.talker.take().is_some() {
                 log(format!("{name}: no listener ready, stopping"));
             }
-        } else if let Some(talker) = &endpoint.talker {
+        } else if let Some(talker) = &output.talker {
             talker.set_destinations(copies);
-        } else if endpoint.redeclare_at.is_none() && addressed {
+        } else if output.redeclare_at.is_none() && addressed {
             log(format!("{name}: a listener is ready, streaming"));
-            self.start_talker(index);
+            self.start_talker(out);
         }
-        if announce && let Some(declaration) = self.lite_declaration(index) {
+        if announce && let Some(declaration) = self.lite_declaration(out) {
             self.declare_cvu(
-                index,
+                out.0,
                 BROADCAST,
                 lite::talker_message(&declaration, avb_mrp::Event::New),
             );
         }
-        let before = std::mem::replace(&mut self.endpoints[index].refused, refused.clone());
+        let before = std::mem::replace(&mut self.output_mut(out).refused, refused.clone());
         for (listener, code) in &refused {
             if before.get(listener) != Some(code)
-                && let Some(refusal) = self.refusal(index, *code)
+                && let Some(refusal) = self.refusal(out, *code)
             {
                 log(format!(
                     "{name}: AVB Lite refuses {listener}, failure code {code}"
                 ));
                 self.declare_cvu(
-                    index,
+                    out.0,
                     *listener,
                     lite::talker_message(&refusal, avb_mrp::Event::New),
                 );
@@ -2698,10 +2883,10 @@ impl Runtime {
         }
         for (listener, code) in before {
             if !refused.contains_key(&listener)
-                && let Some(refusal) = self.refusal(index, code)
+                && let Some(refusal) = self.refusal(out, code)
             {
                 self.send_cvu(
-                    index,
+                    out.0,
                     listener,
                     &lite::talker_message(&refusal, avb_mrp::Event::Lv),
                 );
@@ -2712,16 +2897,18 @@ impl Runtime {
     /// Whether this computer's link takes a stream of `declaration` for
     /// listener `index` on top of the streams its other listeners are
     /// ready for from other computers, within 75% (profile 6, item 6).
-    fn ingress_fits(&self, index: usize, declaration: &TalkerDeclaration) -> bool {
+    fn ingress_fits(&self, input: In, declaration: &TalkerDeclaration) -> bool {
         if self.link_speed == 0 {
             return true;
         }
         let Some(lite) = &self.lite else {
             return true;
         };
-        let taken: u64 = (0..self.endpoints.len())
-            .filter(|other| *other != index)
-            .filter_map(|other| self.endpoints[other].cvu_to)
+        let taken: u64 = self
+            .ins()
+            .into_iter()
+            .filter(|other| *other != input)
+            .filter_map(|other| self.input(other).cvu_to)
             .filter(|(_, talker, state)| *talker != self.mac && state.ready())
             .filter_map(|(stream_id, _, _)| lite.talkers.get(&stream_id))
             .map(|(declaration, _, _)| declaration.bandwidth(8000))
@@ -2732,8 +2919,8 @@ impl Runtime {
     /// Declares a listener to the talker whose declaration names its
     /// stream, unicast, and takes the stream sent to this computer or to
     /// the stream's multicast address.
-    fn lite_update_listener(&mut self, index: usize) {
-        let Some(stream) = self.endpoints[index].entity.input_stream(0) else {
+    fn lite_update_listener(&mut self, input: In) {
+        let Some(stream) = self.input_stream(input) else {
             return;
         };
         // A Talker Failed sent to this computer alone outranks the
@@ -2749,7 +2936,7 @@ impl Runtime {
         let full = heard.is_some_and(|(declaration, from)| {
             declaration.failure.is_none()
                 && from != self.mac
-                && !self.ingress_fits(index, &declaration)
+                && !self.ingress_fits(input, &declaration)
         });
         let wanted = heard.map(|(declaration, from)| {
             let state = if declaration.failure.is_some() || full {
@@ -2759,28 +2946,29 @@ impl Runtime {
             };
             (stream.stream_id.0, from, state)
         });
-        if full && wanted != self.endpoints[index].cvu_to {
+        if full && wanted != self.input(input).cvu_to {
             log(format!(
                 "{}: AVB Lite, the link has no room for {:#018x}",
-                self.endpoints[index].config.name, stream.stream_id.0
+                self.in_name(input),
+                stream.stream_id.0
             ));
         }
-        let before = self.endpoints[index].cvu_to;
+        let before = self.input(input).cvu_to;
         if let Some((stream_id, talker, state)) = before
             && wanted.map(|(id, to, _)| (id, to)) != Some((stream_id, talker))
         {
             self.send_cvu(
-                index,
+                input.0,
                 talker,
                 &lite::listener_message(stream_id, state, avb_mrp::Event::Lv),
             );
         }
-        self.endpoints[index].cvu_to = wanted;
+        self.input_mut(input).cvu_to = wanted;
         if wanted != before
             && let Some((stream_id, talker, state)) = wanted
         {
             self.declare_cvu(
-                index,
+                input.0,
                 talker,
                 lite::listener_message(stream_id, state, avb_mrp::Event::New),
             );
@@ -2799,9 +2987,9 @@ impl Runtime {
             },
             None => InputReservation::default(),
         };
-        self.endpoints[index]
+        self.endpoints[input.0]
             .entity
-            .set_input_reservation(0, reservation);
+            .set_input_reservation(input.1, reservation);
         let advertised = heard.filter(|(declaration, _)| declaration.failure.is_none() && !full);
         // The stream comes to this computer's own address, and to the
         // multicast address the talker declares once escalated; until
@@ -2813,17 +3001,18 @@ impl Runtime {
             destination: declared.unwrap_or(stream.destination),
             ..stream
         };
-        let endpoint = &mut self.endpoints[index];
-        if endpoint.listener.is_some() && endpoint.listening_to != Some(stream) {
-            endpoint.listener = None;
+        let name = self.in_name(input);
+        let state = self.input_mut(input);
+        if state.listener.is_some() && state.listening_to != Some(stream) {
+            state.listener = None;
         }
-        if advertised.is_some() && endpoint.listener.is_none() {
+        if advertised.is_some() && state.listener.is_none() {
             let mut destinations = vec![self.mac];
             if stream.destination != self.mac {
                 destinations.push(stream.destination);
             }
-            self.start_listener(index, stream, destinations);
-        } else if advertised.is_none() && endpoint.listener.take().is_some() {
+            self.start_listener(input, stream, destinations);
+        } else if advertised.is_none() && state.listener.take().is_some() {
             let why = match heard {
                 Some((declaration, _)) => match declaration.failure {
                     Some(failure) => format!("the talker failed, code {}", failure.code),
@@ -2831,7 +3020,7 @@ impl Runtime {
                 },
                 None => "the talker is gone".to_owned(),
             };
-            log(format!("{}: {why}, not listening", endpoint.config.name));
+            log(format!("{name}: {why}, not listening"));
         }
     }
 
@@ -2851,14 +3040,15 @@ impl Runtime {
             flags |= LiteFlags::OFFSET_VALID;
         }
         for index in 0..self.endpoints.len() {
-            let talker = self.endpoints[index].config.kind == Kind::Talker;
-            let egress = if talker {
-                let copies = self.endpoints[index].copies.len() as u64;
-                self.declaration(index)
-                    .map_or(0, |declaration| copies * declaration.bandwidth(8000) / 1000)
-            } else {
-                0
-            };
+            let talker = !self.endpoints[index].outputs.is_empty();
+            let egress: u64 = (0..self.endpoints[index].outputs.len() as u16)
+                .map(|at| {
+                    let out = Out(index, at);
+                    let copies = self.output(out).copies.len() as u64;
+                    self.declaration(out)
+                        .map_or(0, |declaration| copies * declaration.bandwidth(8000) / 1000)
+                })
+                .sum();
             let status = LiteStatus {
                 interface: 0,
                 flags,
@@ -3023,5 +3213,78 @@ mod tests {
         let mac = MacAddress([0xf0, 0xa7, 0x31, 0xf4, 0x0f, 0x14]);
         assert_eq!(entity_id(mac, 0), EntityId(0xf0a7_31ff_00f4_0f14));
         assert_eq!(output_stream(mac, 2, 0), StreamId(0xf0a7_31f4_0f14_0200));
+    }
+
+    fn endpoint(kind: Kind, outputs: Option<u16>, inputs: Option<u16>) -> Endpoint {
+        let config = EndpointConfig {
+            kind,
+            instance: Some(4),
+            name: "Studio".into(),
+            channels: 8,
+            source: Some("tone".into()),
+            sink: None,
+            first_channel: 2,
+            format: None,
+            bound: None,
+            class: SrClass::A,
+            outputs,
+            inputs,
+            formats: Vec::new(),
+            bindings: Vec::new(),
+        };
+        let mac = MacAddress([0xf0, 0xa7, 0x31, 0xf4, 0x0f, 0x14]);
+        Endpoint::new(config, 4, mac, "enp2s0", ClockIdentity(1))
+    }
+
+    /// A device has its streams each way on one entity: a model of its
+    /// own shape, streams named by number, an output's stream ID from its
+    /// index, and each stream's channels further along the audio device.
+    #[test]
+    fn a_device_has_several_streams_each_way() {
+        let device = endpoint(Kind::Device, Some(3), Some(2));
+        let model = device.entity.model();
+        assert_eq!(model.entity_model_id, EntityModelId(0x8c1f_6436_c001_0203));
+        assert_eq!(model.model_name, "triib device");
+        let names: Vec<&str> = model
+            .outputs
+            .iter()
+            .chain(&model.inputs)
+            .map(|stream| stream.name.as_str())
+            .collect();
+        assert_eq!(names, ["Out 1", "Out 2", "Out 3", "In 1", "In 2"]);
+        assert_eq!((device.outputs.len(), device.inputs.len()), (3, 2));
+        assert_eq!(
+            device.entity.output_stream(2).map(|(stream, _)| stream),
+            Some(StreamId(0xf0a7_31f4_0f14_0402))
+        );
+        assert_eq!(
+            device.config.source_at(2, 8),
+            Source::Tone {
+                hertz: 1000.0,
+                level: 0.1
+            }
+        );
+        let device = endpoint(Kind::Device, None, None);
+        assert_eq!((device.outputs.len(), device.inputs.len()), (1, 1));
+        assert_eq!(device.stream_name(true, 0), "Studio in 1");
+    }
+
+    /// One talker or listener stays as it was: its model, and its stream
+    /// named as the entity is.
+    #[test]
+    fn one_stream_endpoints_keep_their_models() {
+        let talker = endpoint(Kind::Talker, None, None);
+        assert_eq!(talker.entity.model().entity_model_id, TALKER_MODEL);
+        assert_eq!(talker.entity.model().outputs[0].name, "Studio");
+        assert_eq!(talker.stream_name(false, 0), "Studio");
+        let listener = endpoint(Kind::Listener, None, None);
+        assert_eq!(listener.entity.model().entity_model_id, LISTENER_MODEL);
+        assert!(listener.outputs.is_empty());
+        // A talker given two outputs is a shape of its own.
+        let talker = endpoint(Kind::Talker, Some(2), None);
+        assert_eq!(
+            talker.entity.model().entity_model_id,
+            EntityModelId(0x8c1f_6436_c001_0002)
+        );
     }
 }

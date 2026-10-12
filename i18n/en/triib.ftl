@@ -915,10 +915,13 @@ common-decimal-separator = {"."}
 
 host-add-talker = Add talker
 host-add-listener = Add listener
+# This computer as one device with stream outputs and inputs.
+host-add-device = Add device
 host-show-mine = Show only this computer's own talkers and listeners
 host-show-all = Show every entity
 host-new-talker = Host talker { $number }
 host-new-listener = Host listener { $number }
+host-new-device = Host device { $number }
 host-failed = Could not add it to this computer: { $reason }
 host-needs-clock = This computer's own talkers and listeners need a wired interface with a PTP hardware clock
 host-no-ptp4l = ptp4l does not answer, so this computer's streams cannot keep gPTP time
@@ -938,6 +941,8 @@ host-unbound = Not bound
 host-audio-from = Audio from
 host-audio-to = Audio to
 host-channels = Channels
+# A device's channels in each of its streams.
+host-channels-each = Channels in each stream
 host-silence = Silence
 host-tone = Test tone
 host-nowhere = Nowhere

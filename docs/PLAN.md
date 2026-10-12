@@ -449,10 +449,22 @@ budgets: 240 instances, 75% of the link, and the real-time threads.
   file and the model IDs; then the app. Checked by binding several of
   its streams from Hive and from the Mac mini, with today's endpoints
   running beside it.
+- **Done so far:** the daemon runs endpoints of any number of outputs
+  and inputs, state and reservations stream by stream; `endpoints.toml`
+  takes `inputs`, `outputs` and `kind = "device"`, keeping a stream's
+  format and binding in `formats` and `bindings` where there are
+  several; the model IDs by shape; and the app's Add device, with its
+  audio both ways and its stream counts in the inspector. Checked on the
+  bench: a device of 2 out and 2 in streamed to a listener of ours and
+  to the Mac mini, and its input took a talker of ours. Each stream
+  still has its own pacing thread and its own audio stream; one of each
+  for every way, with one drift estimate, comes next.
 - **Open.** Controllers changing its channel mapping (Milan's dynamic
   mappings, ADD_AUDIO_MAPPINGS and REMOVE_AUDIO_MAPPINGS); a CRF stream
   input as the domain's clock source; streams at other sampling rates,
-  which stay entities of their own.
+  which stay entities of their own; an input bound to its own entity's
+  output, which the daemon does not hand the entity's ACMP back to it
+  for, and which the matrix does not offer.
 
 ### Later
 

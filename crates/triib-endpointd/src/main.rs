@@ -37,6 +37,10 @@ fn first_config() -> Config {
         format: None,
         bound: None,
         class: Default::default(),
+        outputs: None,
+        inputs: None,
+        formats: Vec::new(),
+        bindings: Vec::new(),
     };
     Config {
         interface,

@@ -491,6 +491,9 @@ mod tests {
             state: "listening".into(),
             audio: "discard".into(),
             channels: 8,
+            sink: String::new(),
+            outputs: 0,
+            inputs: 1,
         };
         let mut status = DaemonStatus {
             pid: 1,

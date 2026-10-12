@@ -181,7 +181,12 @@ pub enum Message {
     HostRemoved(EntityId),
     /// Takes one of this computer's endpoints' audio from or to a device,
     /// a tone, silence or nowhere.
-    HostAudio(EntityId, String),
+    /// One of this computer's endpoints is to play its inputs to, else take
+    /// its outputs from, this audio.
+    HostAudio(EntityId, bool, String),
+    /// One of this computer's devices is to have this many stream inputs,
+    /// else outputs.
+    HostStreams(EntityId, bool, u16),
     /// One of this computer's endpoints is to have this many channels.
     HostChannels(EntityId, u16),
     Act(Action),
@@ -465,6 +470,7 @@ impl Triib {
             triib_endpointd::config::Kind::Listener => {
                 crate::fl!("host-new-listener", number = count)
             }
+            triib_endpointd::config::Kind::Device => crate::fl!("host-new-device", number = count),
         };
         let result =
             crate::host::add(&interface, kind, name).and_then(|()| crate::host::ensure_running());
@@ -871,12 +877,23 @@ impl Triib {
                     self.notice = Some(error);
                 }
             }
-            Message::HostAudio(entity_id, audio) => {
+            Message::HostAudio(entity_id, inputs, audio) => {
                 let done = self
                     .interface()
                     .map(|interface| (interface.name.clone(), interface.mac));
                 if let Some((name, mac)) = done
-                    && let Err(error) = crate::host::set_audio(&name, mac, entity_id, audio)
+                    && let Err(error) = crate::host::set_audio(&name, mac, entity_id, inputs, audio)
+                {
+                    self.notice = Some(error);
+                }
+            }
+            Message::HostStreams(entity_id, inputs, count) => {
+                let done = self
+                    .interface()
+                    .map(|interface| (interface.name.clone(), interface.mac));
+                if let Some((name, mac)) = done
+                    && let Err(error) =
+                        crate::host::set_streams(&name, mac, entity_id, inputs, count)
                 {
                     self.notice = Some(error);
                 }
