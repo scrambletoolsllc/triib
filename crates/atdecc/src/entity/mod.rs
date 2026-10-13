@@ -542,6 +542,39 @@ impl Entity {
         self.advertise_at = Some(now);
     }
 
+    /// Carries the state of `earlier`'s stream outputs and inputs at the
+    /// indexes given into this entity's, those streams running on as
+    /// they were: their reservations and counters, and an input's
+    /// binding, the stream its probe found and its mappings, so it need
+    /// not probe again.
+    pub fn carry_streams(&mut self, earlier: &Entity, outputs: &[u16], inputs: &[u16]) {
+        for &index in outputs {
+            let at = usize::from(index);
+            if let (Some(output), Some(before)) =
+                (self.outputs.get_mut(at), earlier.outputs.get(at))
+            {
+                output.reservation = before.reservation;
+                output.counters = before.counters;
+            }
+        }
+        for &index in inputs {
+            let at = usize::from(index);
+            if let (Some(input), Some(before)) = (self.inputs.get_mut(at), earlier.inputs.get(at)) {
+                input.binding = before.binding;
+                input.probe = before.probe;
+                input.probe_status = before.probe_status;
+                input.reservation = before.reservation;
+                input.counters = before.counters;
+            }
+            if let (Some(port), Some(mappings)) =
+                (self.input_port(index), earlier.input_mappings(index))
+                && let Some(slot) = self.input_mappings.get_mut(usize::from(port))
+            {
+                slot.clone_from(&mappings.to_vec());
+            }
+        }
+    }
+
     /// Says the entity is leaving and stops advertising.
     pub fn depart(&mut self) {
         self.advertise_at = None;

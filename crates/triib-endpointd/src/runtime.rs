@@ -35,7 +35,8 @@ use triib_stream::{
 use triib_pipewire::{DeviceSpec, VirtualAudio, VirtualDevice};
 
 use crate::config::{
-    Config, Direction, EndpointConfig, LiteChoice, SrClass, StreamConfig, binding_text,
+    Config, Direction, EndpointConfig, LiteChoice, MOST_STREAMS, SrClass, StreamConfig,
+    binding_text,
 };
 use crate::gptp;
 use crate::lite::{self, Declared, Fallback, Ptp4l};
@@ -372,8 +373,12 @@ impl Endpoint {
             }
         }
         self.entity.start(now);
-        // Inputs bind again to what they were bound to.
+        // Inputs bind again to what they were bound to, but those carried
+        // over bound as they were.
         for input in 0..self.inputs.len() as u16 {
+            if self.entity.input_binding(input).is_some() {
+                continue;
+            }
             if let Some((talker, output)) = self.in_config(input).bound_to() {
                 self.entity.restore_binding(
                     now,
@@ -504,6 +509,21 @@ impl Endpoint {
         if sampling_rates.is_empty() {
             sampling_rates.push(current_sampling_rate);
         }
+        // Every audio stream at the entity's rate, as one added to an
+        // entity at another rate than its formats' first starts.
+        let mut outputs = outputs;
+        let mut inputs = inputs;
+        for stream in outputs.iter_mut().chain(inputs.iter_mut()) {
+            let current = stream.current_format;
+            if current.is_clock() || current.sample_rate() == Some(current_sampling_rate) {
+                continue;
+            }
+            if let Some(format) = stream.formats.iter().copied().find(|format| {
+                format.sample_rate() == Some(current_sampling_rate) && format.same_but_rate(current)
+            }) {
+                stream.current_format = format;
+            }
+        }
         let model = EndpointModel {
             entity_id: entity_id(mac, instance),
             entity_model_id: model_id(&outputs, &inputs),
@@ -591,6 +611,18 @@ impl Endpoint {
     /// The virtual devices its streams use, made anew for the entity's
     /// sampling rate now; none where `audio` cannot make them.
     fn make_devices(&mut self, audio: Option<&VirtualAudio>) {
+        for state in &mut self.outputs {
+            state.device = None;
+        }
+        for state in &mut self.inputs {
+            state.device = None;
+        }
+        self.make_missing_devices(audio);
+    }
+
+    /// The virtual devices its streams that have none use, as those
+    /// added while the others go on with theirs.
+    fn make_missing_devices(&mut self, audio: Option<&VirtualAudio>) {
         let Some(audio) = audio else {
             return;
         };
@@ -628,26 +660,76 @@ impl Endpoint {
         };
         let outputs: Vec<Option<VirtualDevice>> = (0..self.outputs.len())
             .map(|index| {
-                self.streams[self.out_streams[index]]
-                    .is_virtual()
-                    .then(|| made(false, index))
-                    .flatten()
+                (self.outputs[index].device.is_none()
+                    && self.streams[self.out_streams[index]].is_virtual())
+                .then(|| made(false, index))
+                .flatten()
             })
             .collect();
         let inputs: Vec<Option<VirtualDevice>> = (0..self.inputs.len())
             .map(|index| {
-                self.streams[self.in_streams[index]]
-                    .is_virtual()
-                    .then(|| made(true, index))
-                    .flatten()
+                (self.inputs[index].device.is_none()
+                    && self.streams[self.in_streams[index]].is_virtual())
+                .then(|| made(true, index))
+                .flatten()
             })
             .collect();
         for (state, device) in self.outputs.iter_mut().zip(outputs) {
-            state.device = device;
+            if device.is_some() {
+                state.device = device;
+            }
         }
         for (state, device) in self.inputs.iter_mut().zip(inputs) {
-            state.device = device;
+            if device.is_some() {
+                state.device = device;
+            }
         }
+    }
+
+    /// Whether its stream output or input `index` runs as `earlier`'s
+    /// does: the same audio, channels, class and format at the same rate,
+    /// so it can go on as it is when `earlier` hands over to it.
+    fn runs_as(&self, earlier: &Endpoint, input: bool, index: u16) -> bool {
+        let at = usize::from(index);
+        let (count, before) = if input {
+            (self.inputs.len(), earlier.inputs.len())
+        } else {
+            (self.outputs.len(), earlier.outputs.len())
+        };
+        if at >= count || at >= before {
+            return false;
+        }
+        let (this, that) = if input {
+            (self.in_config(index), earlier.in_config(index))
+        } else {
+            (self.out_config(index), earlier.out_config(index))
+        };
+        let model = |endpoint: &Endpoint| {
+            let model = endpoint.entity.model();
+            let streams = if input { &model.inputs } else { &model.outputs };
+            streams.get(at).map(|stream| {
+                (
+                    stream.current_format,
+                    stream.channels,
+                    stream.class_b,
+                    model.current_sampling_rate,
+                )
+            })
+        };
+        model(self) == model(earlier)
+            && (
+                this.clock,
+                this.channels,
+                &this.audio,
+                this.first_channel,
+                this.class,
+            ) == (
+                that.clock,
+                that.channels,
+                &that.audio,
+                that.first_channel,
+                that.class,
+            )
     }
 }
 
@@ -1166,13 +1248,17 @@ impl Runtime {
             return false;
         }
 
-        let mut earlier: Vec<Entity> = Vec::new();
+        let now = self.now();
+        let mut started = started;
         for index in (0..self.endpoints.len()).rev() {
             if goes_on[index].is_none() {
-                let replaced = kept.contains_key(&self.endpoints[index].entity.entity_id());
-                let entity = self.stop_endpoint(index, !replaced);
-                if replaced {
-                    earlier.push(entity);
+                let id = self.endpoints[index].entity.entity_id();
+                match started
+                    .iter_mut()
+                    .find(|made| made.entity.entity_id() == id)
+                {
+                    Some(made) => self.hand_over(now, index, made),
+                    None => self.stop_endpoint(index),
                 }
             }
         }
@@ -1189,7 +1275,6 @@ impl Runtime {
                 Err(error) => log(format!("no virtual audio devices: {error}")),
             }
         }
-        let now = self.now();
         let since = self.elapsed();
         let mut free = free.into_iter();
         // What ptp4l last said, so a new endpoint advertises the network's
@@ -1202,7 +1287,7 @@ impl Runtime {
         for mut endpoint in started {
             let id = endpoint.entity.entity_id();
             endpoint.entity.set_gptp(now, gptp.clone());
-            endpoint.make_devices(self.audio.as_ref());
+            endpoint.make_missing_devices(self.audio.as_ref());
             let mut slots = kept.get(&id).cloned().unwrap_or_default().into_iter();
             for (index, output) in endpoint.outputs.iter_mut().enumerate() {
                 output.slot = slots.next().or_else(|| free.next()).unwrap_or_default();
@@ -1216,9 +1301,6 @@ impl Runtime {
                         .set_output_destination(index as u16, address);
                     output.redeclare_at = Some(since);
                 }
-            }
-            if let Some(before) = earlier.iter().find(|entity| entity.entity_id() == id) {
-                endpoint.entity.take_over(now, before);
             }
             endpoint.begin(now);
             self.endpoints.push(endpoint);
@@ -1235,9 +1317,8 @@ impl Runtime {
 
     /// Stops one endpoint while the others go on: its streams'
     /// declarations withdrawn, its threads and virtual audio devices
-    /// ended, and, where it `departs`, its departure said, rather than
-    /// handing its entity on to the one taking over. Gives its entity.
-    fn stop_endpoint(&mut self, index: usize, departs: bool) -> Entity {
+    /// ended, and its departure said.
+    fn stop_endpoint(&mut self, index: usize) {
         for out in self.outs().into_iter().filter(|out| out.0 == index) {
             self.output_mut(out).talker = None;
             self.withdraw_talker(out);
@@ -1246,9 +1327,7 @@ impl Runtime {
             self.stop_listener(input);
         }
         let mut endpoint = self.endpoints.remove(index);
-        if departs {
-            endpoint.entity.depart();
-        }
+        endpoint.entity.depart();
         let now = self.now();
         while let Some((destination, bytes)) = endpoint.entity.poll_transmit() {
             let _ = self.avtp.send(destination, &bytes);
@@ -1260,10 +1339,59 @@ impl Runtime {
                 }
             }
         }
-        if departs {
-            log(format!("{} stopped", endpoint.config.name));
+        log(format!("{} stopped", endpoint.config.name));
+    }
+
+    /// Hands endpoint `index` over to `made`, the same entity whose
+    /// streams changed, in place of stopping it: its streams that run as
+    /// before go on in `made`, with their threads, virtual devices,
+    /// reservations, bindings and probes; the others stop. The entity
+    /// takes over without leaving, as `Entity::take_over` has it.
+    fn hand_over(&mut self, now: Instant, index: usize, made: &mut Endpoint) {
+        let earlier = &self.endpoints[index];
+        let kept = |input: bool, count: usize| -> Vec<u16> {
+            (0..count as u16)
+                .filter(|&at| made.runs_as(earlier, input, at))
+                .collect()
+        };
+        let outputs = kept(false, earlier.outputs.len());
+        let inputs = kept(true, earlier.inputs.len());
+        for out in self.outs().into_iter().filter(|out| out.0 == index) {
+            if !outputs.contains(&out.1) {
+                self.output_mut(out).talker = None;
+                self.withdraw_talker(out);
+            }
         }
-        endpoint.entity
+        for input in self.ins().into_iter().filter(|input| input.0 == index) {
+            if !inputs.contains(&input.1) {
+                self.stop_listener(input);
+            }
+        }
+        let mut earlier = self.endpoints.remove(index);
+        while let Some((destination, bytes)) = earlier.entity.poll_transmit() {
+            let _ = self.avtp.send(destination, &bytes);
+        }
+        for &at in &outputs {
+            made.outputs[usize::from(at)] = std::mem::take(&mut earlier.outputs[usize::from(at)]);
+        }
+        for &at in &inputs {
+            made.inputs[usize::from(at)] = std::mem::take(&mut earlier.inputs[usize::from(at)]);
+        }
+        made.group = earlier.group.clone();
+        made.listening = earlier.listening.clone();
+        made.clock_locked = earlier.clock_locked;
+        made.clock_locks = earlier.clock_locks;
+        made.clock_unlocks = earlier.clock_unlocks;
+        made.entity.take_over(now, &earlier.entity);
+        made.entity
+            .carry_streams(&earlier.entity, &outputs, &inputs);
+        if outputs.len() + inputs.len() > 0 {
+            log(format!(
+                "{}: {} streams go on as they were",
+                made.config.name,
+                outputs.len() + inputs.len()
+            ));
+        }
     }
 
     /// The configuration file, when it changed into something else.
@@ -2098,7 +2226,7 @@ impl Runtime {
                     mac: self.mac,
                     rate,
                 },
-                endpoint.outputs.len(),
+                MOST_STREAMS,
                 self.clock.clone(),
             )
             .map(Arc::new),
@@ -2270,11 +2398,11 @@ impl Runtime {
                 }),
         };
         // Every input takes its stream on the endpoint's one listening
-        // thread, which the first to listen starts.
-        let places = endpoint.inputs.len();
+        // thread, which the first to listen starts, with room for as many
+        // as an entity may have, so streams added go on it too.
         let group = match endpoint.listening.upgrade() {
             Some(group) => Ok(group),
-            None => ListenerGroup::start(places, self.clock.clone()).map(Arc::new),
+            None => ListenerGroup::start(MOST_STREAMS, self.clock.clone()).map(Arc::new),
         };
         // An audio device that isn't there, as on another computer than
         // the one its name came from, leaves the stream playing nowhere.
@@ -3967,6 +4095,45 @@ mod tests {
         assert_eq!(plain.entity.model().clock_source, 0);
         assert_eq!(plain.followed(), None);
         assert_eq!(plain.clock_source_name(), "the internal clock");
+    }
+
+    /// A stream added to an entity leaves the others running as before,
+    /// so they go on through the handover; one whose channels changed
+    /// does not. A stream added runs at the entity's rate.
+    #[test]
+    fn streams_that_run_as_before_carry_over() {
+        let at_192k = |stream: StreamConfig| StreamConfig {
+            format: Some("0x0209021802018000".into()),
+            ..stream
+        };
+        let before = endpoint(vec![
+            at_192k(stream(Direction::Out, 8)),
+            stream(Direction::In, 8),
+        ]);
+        assert_eq!(before.entity.model().current_sampling_rate, 192_000);
+        assert_eq!(
+            before.entity.model().inputs[0].current_format.sample_rate(),
+            Some(192_000),
+            "the input follows the entity's rate"
+        );
+        let added = endpoint(vec![
+            at_192k(stream(Direction::Out, 8)),
+            stream(Direction::In, 8),
+            stream(Direction::Out, 2),
+        ]);
+        assert!(added.runs_as(&before, false, 0));
+        assert!(added.runs_as(&before, true, 0));
+        assert!(!added.runs_as(&before, false, 1), "the new one");
+        assert_eq!(
+            added.entity.model().outputs[1].current_format.sample_rate(),
+            Some(192_000)
+        );
+        let changed = endpoint(vec![
+            at_192k(stream(Direction::Out, 4)),
+            stream(Direction::In, 8),
+        ]);
+        assert!(!changed.runs_as(&before, false, 0));
+        assert!(changed.runs_as(&before, true, 0));
     }
 
     /// Mappings a controller gave an input, kept in the configuration,

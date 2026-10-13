@@ -807,3 +807,30 @@ fn a_listener_maps_its_inputs_dynamically() {
         Event::CommandFinished(command, Outcome::Refused(_)) if *command == refused
     )));
 }
+
+/// A listener whose streams changed carries an input that runs on into
+/// the entity taking over: its binding and the stream its probe found,
+/// so it listens on without probing again.
+#[test]
+fn a_kept_input_carries_its_binding_and_stream() {
+    let mut network = Network::new();
+    network.controller.discover(None);
+    network.run(3000);
+    let now = network.now;
+    network.controller.connect(now, (TALKER, 0), (LISTENER, 0));
+    network.run(1000);
+    let found = network.listener.input_stream(0).expect("settled");
+
+    let mut model = model(LISTENER, "Listener", false);
+    model.entity_model_id = EntityModelId(0x8c1f_6436_c0f3_59f0);
+    model.inputs.push(stream("Host in 2"));
+    let mut listener = Entity::new(model, &[]);
+    listener.take_over(network.now, &network.listener);
+    listener.carry_streams(&network.listener, &[], &[0]);
+    assert_eq!(listener.input_stream(0), Some(found));
+    assert_eq!(
+        listener.input_binding(0).map(|binding| binding.talker),
+        Some(TALKER)
+    );
+    assert_eq!(listener.input_binding(1), None);
+}
