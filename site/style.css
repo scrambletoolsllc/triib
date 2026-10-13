@@ -99,6 +99,59 @@ code {
 .top nav a:hover { color: var(--primary); }
 .top nav .repo { color: var(--primary); }
 
+/* The language menu: a list of links, which opens without script. */
+.top nav { align-items: center; }
+.languages { position: relative; }
+.languages summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+  color: var(--on-surface-variant);
+  font-weight: 500;
+}
+.languages summary::-webkit-details-marker { display: none; }
+.languages summary:hover { color: var(--primary); }
+.languages ul {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 8px);
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+  columns: 3;
+  column-gap: 8px;
+  width: max-content;
+  max-width: min(640px, calc(100vw - 32px));
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  background: var(--surface-container-high);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+.languages li { break-inside: avoid; }
+@media (max-width: 640px) {
+  /* Across the screen, under the button, as the header wraps. */
+  .languages ul {
+    position: fixed;
+    inset-inline: 16px;
+    top: auto;
+    margin-top: 8px;
+    width: auto;
+    max-width: none;
+    columns: 2;
+  }
+}
+.languages ul a {
+  display: block;
+  padding: 6px 12px;
+  border-radius: 8px;
+  color: var(--on-surface);
+}
+.languages ul a:hover { background: var(--surface-container); color: var(--on-surface); }
+.languages ul a[aria-current] { color: var(--primary); font-weight: 650; }
+
 main, footer { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
 
 section { padding: 56px 0; }
@@ -113,11 +166,16 @@ h3 { font-size: 20px; margin: 0 0 6px; font-weight: 650; }
    line, centered under it; narrower windows wrap it at their own width. */
 .hero .lede { width: fit-content; max-width: none; }
 .lede-first { display: block; white-space: nowrap; }
-.lede-rest { display: block; width: 0; min-width: 200%; margin-left: -50%; }
+.lede-rest { display: block; width: 0; min-width: 200%; margin-inline-start: -50%; }
 @media (max-width: 1000px) {
   .hero .lede { max-width: 680px; }
-  .lede-rest { width: auto; min-width: 0; margin-left: 0; }
+  .lede-rest { width: auto; min-width: 0; margin-inline-start: 0; }
 }
+/* The two widths are the English lede's; a translation wraps as any
+   other text does. */
+html:not([lang="en"]) .hero .lede { max-width: 680px; }
+html:not([lang="en"]) .lede-first { white-space: normal; }
+html:not([lang="en"]) .lede-rest { width: auto; min-width: 0; margin-inline-start: 0; }
 @media (max-width: 640px) {
   .lede-first { white-space: normal; }
 }
@@ -152,20 +210,20 @@ figcaption { margin-top: 10px; text-align: center; color: var(--on-surface-varia
 
 .table { overflow-x: auto; border-radius: 16px; border: 1px solid var(--outline-variant); }
 table { width: 100%; border-collapse: collapse; font-size: 16px; }
-th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--outline-variant); vertical-align: top; }
+th, td { text-align: start; padding: 12px 16px; border-bottom: 1px solid var(--outline-variant); vertical-align: top; }
 tr:last-child td { border-bottom: none; }
 th { background: var(--surface-container); font-weight: 600; }
 td a { white-space: nowrap; }
 
 .policy { border-top: 1px solid var(--outline-variant); }
-.policy ul { padding-left: 20px; }
+.policy ul { padding-inline-start: 20px; }
 .policy li { margin-bottom: 8px; }
 .policy h3 { margin-top: 28px; }
 
 /* The specifications: label and value rows. */
 .spec { width: 100%; border-collapse: collapse; margin: 8px 0 16px; font-size: 16px; }
-.spec th, .spec td { text-align: left; vertical-align: top; padding: 10px 0; border-bottom: 1px solid var(--outline-variant); }
-.spec th { width: 190px; padding-right: 20px; background: none; color: var(--on-surface-variant); font-weight: 600; }
+.spec th, .spec td { text-align: start; vertical-align: top; padding: 10px 0; border-bottom: 1px solid var(--outline-variant); }
+.spec th { width: 190px; padding-inline-end: 20px; background: none; color: var(--on-surface-variant); font-weight: 600; }
 .spec tr:last-child th, .spec tr:last-child td { border-bottom: none; }
 .lede-left { color: var(--on-surface-variant); font-size: 18px; }
 @media (max-width: 640px) {
@@ -189,6 +247,7 @@ td a { white-space: nowrap; }
 .guide .gallery { margin: 16px 0; gap: 16px; }
 .guide figure.states { max-width: 520px; margin-left: auto; margin-right: auto; }
 .guide figure.portrait { max-width: 460px; margin-left: auto; margin-right: auto; }
+.guide figure.panel { max-width: 320px; margin-left: auto; margin-right: auto; }
 .contents ul { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0 0 24px; list-style: none; }
 .contents li { margin: 0; }
 .contents a { display: inline-block; padding: 6px 14px; border-radius: 999px; background: var(--surface-container); color: var(--on-surface); text-decoration: none; font-size: 15px; }

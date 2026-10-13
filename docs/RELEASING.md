@@ -16,6 +16,7 @@ Everything a release ships is built from this repository:
 | `packaging/macos/` | triib.app and its installer package, made by `bundle.sh --pkg`, with the capture access helper |
 | `.github/workflows/release.yml` | Builds all of them for a tag and drafts the GitHub release |
 | `site/`, `scripts/build-site.sh`, `.github/workflows/site.yml` | The website, published to GitHub Pages whenever it changes on main |
+| `site/i18n/`, `scripts/site-i18n.py` | The website's text in every language, built into the pages; `docs/GLOSSARY.md` says how |
 | `scripts/site-screenshots.sh` | Renders the website's screenshots into `docs/screenshots` from the test bench |
 
 Each package is built for x86_64 and ARM64 on GitHub's runners of that
@@ -84,7 +85,9 @@ triib sends and receives raw Ethernet, which each system guards:
    and publish it. Then point the website's download section
    (`site/index.html`) at the version's packages, put the version on its
    Download button, and update the version on `site/specs.html`; pushing
-   `site/` redeploys the website.
+   `site/` redeploys the website. A release number is `{v}` in the
+   translations, so they need nothing new; changed sentences do (see
+   `scripts/site-i18n.py check`).
 5. AUR: in a clone of `ssh://aur@aur.archlinux.org/triib.git`, replace
    `PKGBUILD` with the one from the release and copy
    `packaging/arch/triib/triib.install`, run

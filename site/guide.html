@@ -32,10 +32,12 @@
 <li><a href="#inspector">Inspector</a></li>
 <li><a href="#network">Network</a></li>
 <li><a href="#avb-lite">AVB Lite</a></li>
+<li><a href="#avb-wireless">AVB Wireless</a></li>
 <li><a href="#presets">Presets</a></li>
 <li><a href="#log">Log</a></li>
-<li><a href="#own-endpoints">This computer's talkers and listeners</a></li>
+<li><a href="#own-endpoints">This computer's talkers, listeners and devices</a></li>
 <li><a href="#settings">Settings</a></li>
+<li><a href="#agents">AI agents</a></li>
 <li><a href="#command-line">Command line</a></li>
 </ul>
   </nav>
@@ -43,7 +45,7 @@
 <h2 id="interface">Picking an interface</h2>
 <p>triib works on one network interface at a time: pick it from the menu at the left of the toolbar, which shows each wired interface with its speed and whether it has a PTP hardware clock. Virtual interfaces stay hidden unless you ask for them. The status bar says how the interface is doing and the entity ID triib discovers as.</p>
 <p>triib asks every entity to announce itself when it starts, and again whenever you press the refresh button. Each entity it finds has its entity model read once and kept, so a device you have seen before shows in full at once the next time.</p>
-<p>On Linux triib needs <code>CAP_NET_RAW</code>, on macOS access to <code>/dev/bpf*</code>, and on Windows <a href="https://npcap.com">Npcap</a>. The packages set the first two up; when something is missing, triib says what and how to fix it.</p>
+<p>On Linux triib needs <code>CAP_NET_RAW</code>, on macOS access to <code>/dev/bpf*</code>, and on Windows <a href="https://npcap.com">Npcap</a>. The packages set the first two up; when something is missing, triib says what and how to fix it. On a Mac, triib reaches the Mac's own AVB entity through Apple's AudioVideoBridging framework, as macOS never hands that entity what a program writes to BPF.</p>
 
 <h2 id="connections">Connections</h2>
 <figure><img class="shot" src="screenshots/matrix.png" alt="The connection matrix: talker outputs of three entities written diagonally across the top, listener inputs down the right, and circles in the cells where a connection can be made" width="1360" height="850" loading="lazy"></figure>
@@ -59,18 +61,20 @@
 <tr><td>Formats cannot meet</td><td>The talker and listener have no format in common</td></tr>
 </tbody>
 </table></div>
+<p>Click a cell marked <em>Input format must change first</em> for a menu of the formats both ends take: pick one and triib changes the input, or both ends, and connects.</p>
+<figure><img class="shot" src="screenshots/matrix-formats.png" alt="The connection matrix with a menu open over a cell: change the input to AAF 48 kHz, 8 ch, 32-bit, or change both to AM824 48 kHz, 8 ch or AAF 48 kHz, 8 ch, 32-bit (24 used), or connect without changing formats" width="1360" height="850" loading="lazy"></figure>
 <p>The chips above the matrix show all streams, only audio or only media clock streams, and <em>Hide what cannot connect</em> leaves out the rows and columns with nothing to connect. The search field in the toolbar finds entities and streams by name.</p>
 
 <h2 id="entities">Entities</h2>
 <figure><img class="shot" src="screenshots/entities.png" alt="The entity list: two AVB Example Entities and a Mac mini, with their group, product, firmware, Milan version, roles, media clock and grandmaster" width="1360" height="850" loading="lazy"></figure>
 <p>The entity list has a row for each entity: its name and group, product and firmware, Milan version, roles, media clock and more. The media clock's menu changes an entity's clock source right in the list. Each column header has a menu to move or remove its column or add another, such as vendor, model, state, AVB Lite or egress.</p>
-<p>On Linux, <em>Add talker</em> and <em>Add listener</em> add the computer's own; see <a href="#own-endpoints">below</a>.</p>
+<p>On Linux, <em>Add talker</em>, <em>Add listener</em> and <em>Add device</em> add the computer's own; see <a href="#own-endpoints">below</a>.</p>
 
 <h2 id="inspector">Inspector</h2>
 <figure><img class="shot" src="screenshots/inspector.png" alt="The inspector beside the entity list, showing an entity's name, group, product, firmware and Milan version, its clock domain and sampling rate, and its AVB Lite section with mode, the reason it fell back, PTP profile, offset, media VLAN, unicast and link speed" width="1360" height="1116" loading="lazy"></figure>
 <p>Select an entity, in the matrix, the entity list or the network, and the inspector shows all there is to know about it, in five tabs:</p>
 <ul>
-<li><strong>Entity:</strong> its name and group, which you can rename, its product, firmware and configuration, its media clock with the clock source and sampling rate to change, its AVB Lite state, its identity and roles. <em>Identify</em> makes the device show itself, as by a blinking light.</li>
+<li><strong>Entity:</strong> its name and group, which you can rename, its product, firmware and configuration, its media clock with the clock source and sampling rate to change, its AVB Lite and AVB Wireless state, its identity and roles. <em>Identify</em> makes the device show itself, as by a blinking light.</li>
 <li><strong>Streams:</strong> each stream's format, which you can change, its state and maximum transit time, and how the stream's channels map to the entity's audio.</li>
 <li><strong>Controls:</strong> the entity's controls, such as gain, volume and mute, to set.</li>
 <li><strong>Diagnostics:</strong> how each clock domain and stream has fared since the entity started, from the counters it keeps, with what went wrong marked, and how each bound input's reservation stands.</li>
@@ -98,6 +102,15 @@
 <li>The alarms the profile calls for, such as a PTP offset past what AVB Lite allows, show in the status bar and the inspector.</li>
 </ul>
 
+<h2 id="avb-wireless">AVB Wireless</h2>
+<figure><img class="shot" src="screenshots/wireless.png" alt="The inspector's Wireless section for a Wi-Fi station: role Station, Mode A over FTM, time holding over, a 5 GHz link on channel 36 at 80 MHz, signal, rate, its access point and FTM" width="1360" height="1116" loading="lazy"></figure>
+<p>The <a href="https://github.com/avbcommunity/profiles">AVB Wireless</a> profile carries AVB over one Wi-Fi hop: an access point that is a bridge on its wired port, and Wi-Fi stations as talkers and listeners. triib asks each entity's AVB interfaces for their wireless status and shows it:</p>
+<ul>
+<li>The inspector's Wireless section gives a station's role, time mode and whether its time holds, its link, signal and rate, and the access point it follows; on an access point, its stations, the listeners it cannot serve and the frames a second it can deliver.</li>
+<li>An access point admits Class A only where it delivers 12000 frames a second or more; <code>triib-cli wireless-config</code> allows it or keeps it off.</li>
+<li>The network view draws each station under its access point, its Wi-Fi hop dotted, and in sync while its time is locked. A station not locked and listeners an access point cannot serve show as alarms.</li>
+</ul>
+
 <h2 id="presets">Presets</h2>
 <figure><img class="shot" src="screenshots/presets.png" alt="The Presets dialog with Matinee typed in to save, Recalling Rehearsal: 3 changes, and Rehearsal and Sunday service listed with Recall buttons" width="1360" height="850" loading="lazy"></figure>
 <p>A preset keeps each entity's clock sources, sampling rates, stream formats, controls and connections, and this computer's own talkers and listeners. Name it and save it from the toolbar's presets button; recalling it later changes only what differs, and says how many changes it made.</p>
@@ -106,17 +119,25 @@
 <figure><img class="shot" src="screenshots/log.png" alt="The log below the entity list, with frames sent and heard: a Connect RX command, a Get counters response with a warning, and a response marked Not implemented" width="1360" height="850" loading="lazy"></figure>
 <p>The log lists every ATDECC frame triib sends and hears, newest first, each decoded into plain words with its time, direction and entity. A frame that breaks the rules is marked with the reason, and a response that refuses a command shows its status. Show all frames, only warnings, or only ADP, AECP or ACMP; pause the log to read it, or clear it.</p>
 
-<h2 id="own-endpoints">This computer's talkers and listeners</h2>
-<p>On Linux, triib can run talkers and listeners of the computer's own, which other controllers see and bind like any device. They need:</p>
+<h2 id="own-endpoints">This computer's talkers, listeners and devices</h2>
+<p>On Linux, triib can run talkers, listeners and devices of the computer's own, which other controllers see and bind like any device. They need:</p>
 <ul>
 <li>A wired interface with a PTP hardware clock; <code>ethtool -T &lt;interface&gt;</code> shows whether it has one.</li>
 <li><a href="https://linuxptp.nwtime.org">linuxptp</a>'s <code>ptp4l</code> running gPTP on that interface, so the clock keeps the network's time. triib reads its state and says when it is not there.</li>
 </ul>
-<p>Add them with <em>Add talker</em> and <em>Add listener</em> in the entity list. Each is a Milan entity with one stream of AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless the inspector picks another count; the inspector also picks the audio device a talker sends from or a listener plays to. <code>triib-endpointd</code> runs them, and keeps the names, formats and bindings controllers give, so a listener binds again after a restart.</p>
+<figure class="panel"><img class="shot" src="screenshots/device.png" alt="The inspector for one of this computer's devices: its state, an output stream Out 1 streaming from a virtual device and an input stream In 1 to another, each with its channels and Remove stream, and Add output stream, Add input stream and Remove from this computer" width="640" height="1500" loading="lazy"></figure>
+<p>Add them with <em>Add talker</em>, <em>Add listener</em> and <em>Add device</em> in the entity list. A talker or a listener is a Milan entity with one stream; a device is one with any number of streams each way, which the inspector adds and removes. Each stream is AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless the inspector picks another count, in SR class A or B.</p>
+<p>A talker sends from one of the computer's audio devices and a listener plays to one, as the inspector picks. Each of a device's streams has a virtual audio device of its own in PipeWire, named after the device and the stream, such as <em>Host device 1 Out 1</em>, for any program to play into or record from, unless the inspector picks a sound card instead. <code>triib-endpointd</code> runs them all, and keeps the names, formats and bindings controllers give, so a listener binds again after a restart.</p>
 <p>Where no AVB bridge answers on the interface, they fall back to AVB Lite. The Linux packages carry systemd units that move ptp4l to AVB Lite's PTP profile when they do, and back to gPTP when the link comes up again, and keep Energy-Efficient Ethernet and PAUSE off the link, as the profile asks. The <a href="https://github.com/scrambletoolsllc/triib#this-computers-talkers-and-listeners">README</a> has the settings.</p>
 
 <h2 id="settings">Settings</h2>
-<p>Settings has the language, any of 38 or the system's, and the appearance: light, dark or the system's, the colors, and whether triib animates. triib takes its colors from the system's accent color, or from the Omarchy theme, unless you pick one.</p>
+<p>Settings has the language, any of 38 or the system's, and the appearance: light, dark or the system's, the colors, and whether triib animates. triib takes its colors from the system's accent color, or from the Omarchy theme, unless you pick one. Settings also has outside control: whether AI agents may control triib, and the agents you have allowed, which <em>Forget</em> clears.</p>
+
+<h2 id="agents">AI agents</h2>
+<figure><img class="shot" src="screenshots/settings.png" alt="Settings, General: the language, and Outside control with Allow outside control switched on" width="1360" height="850" loading="lazy"></figure>
+<p><code>triib --mcp</code> lets an AI agent such as Claude Code see and change your network through the triib on your desktop, over the Model Context Protocol; it starts triib when it is not running. To add it to Claude Code:</p>
+<pre><code>claude mcp add triib -- triib --mcp</code></pre>
+<p>The agent can read triib's status, the entities, each one's streams, formats and clocks, and the connections, and change what a click would: connect and disconnect streams, set a stream's format, a sampling rate or a clock source, rename and identify. A change answers once the device has, with what it said. The first time an agent connects, triib asks you whether to let it in.</p>
 
 <h2 id="command-line">Command line</h2>
 <p><code>triib-cli</code> does what the app does from a terminal or a script. A few examples:</p>

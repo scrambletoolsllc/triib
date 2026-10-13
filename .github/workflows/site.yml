@@ -9,6 +9,7 @@ on:
       - site/**
       - site/.well-known/**
       - scripts/build-site.sh
+      - scripts/site-i18n.py
       - docs/screenshots/**
       - data/icons/**
       - .github/workflows/site.yml
