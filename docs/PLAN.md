@@ -471,12 +471,19 @@ budgets: 240 instances, 75% of the link, and the real-time threads.
   on all their sockets at once, each with its own sink and counters;
   checked with two inputs taking two tones at once, each its own, on one
   thread beside one for the outputs.
+- **Media clock streams.** The Streams tab's Add stream menu adds an
+  audio or a media clock stream either way. A media clock stream is CRF
+  in Milan's format, 48 kHz with a timestamp every 96 samples, without
+  channels, audio or mappings; its talker sends on the outputs' timeline,
+  so the clock lines up with the audio. A media clock input is a clock
+  source: chosen, the device's talkers follow the clock recovered from
+  its timestamps, and gPTP time while it is not recovered. Checked on the
+  bench following the Mac's clock at -5 ppm.
 - **Open.** Controllers changing its channel mapping (Milan's dynamic
-  mappings, ADD_AUDIO_MAPPINGS and REMOVE_AUDIO_MAPPINGS); a CRF stream
-  input as the domain's clock source; streams at other sampling rates,
-  which stay entities of their own; an input bound to its own entity's
-  output, which the daemon does not hand the entity's ACMP back to it
-  for, and which the matrix does not offer.
+  mappings, ADD_AUDIO_MAPPINGS and REMOVE_AUDIO_MAPPINGS); streams at
+  other sampling rates, which stay entities of their own; an input bound
+  to its own entity's output, which the daemon does not hand the
+  entity's ACMP back to it for, and which the matrix does not offer.
 
 ### Later
 
@@ -492,7 +499,16 @@ budgets: 240 instances, 75% of the link, and the real-time threads.
   ENTITY_DISCOVER answered late.
 - Editing array and text controls, Bode plots, and meters drawn as bars;
   a grid editor for channel mappings with many channels.
-- Firmware update over MVU, several interfaces at once, a CRF talker.
+- Firmware update over MVU, several interfaces at once.
+- Media clock outputs that send as audio: a stream that offers CRF
+  formats is a media clock output whatever its current format, as the
+  Mac's Media Clock Output Streams 2 and 3 send one channel of AAF whose
+  presentation times carry the clock. The views showing them as media
+  clock streams, without their channel or mappings.
+- An audio stream input as a device's clock source: the clock recovered
+  from AAF's or AM824's presentation times, AAF's 32 bits extended with
+  the local gPTP time, as a media clock input's is from its CRF
+  timestamps.
 - More for agents over MCP: channel mappings and controls, presets, and
   this computer's own endpoints.
 
