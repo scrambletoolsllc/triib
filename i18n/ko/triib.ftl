@@ -226,6 +226,7 @@ outcome-rename-group = { $entity }의 그룹 이름을 “{ $name }”(으)로 �
 outcome-format-streaming = { $stream }의 포맷을 변경할 수 없습니다: 스트리밍 중입니다. 먼저 연결을 끊으세요.
 outcome-format = { $stream }의 포맷을 변경할 수 없습니다: { $reason }.
 outcome-max-transit-time = { $stream }의 최대 전송 시간을 변경할 수 없습니다: { $reason }.
+outcome-max-transit-time-streaming = { $stream }의 최대 전송 시간을 변경할 수 없습니다: 스트리밍 중입니다. 먼저 연결을 끊으세요.
 outcome-sampling-rate = { $entity }의 샘플링 레이트를 변경할 수 없습니다: { $reason }.
 outcome-clock-source = { $entity }의 클럭 소스를 변경할 수 없습니다: { $reason }.
 outcome-map = { $entity }의 채널을 매핑할 수 없습니다: { $reason }.

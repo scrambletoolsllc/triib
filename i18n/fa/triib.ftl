@@ -238,6 +238,7 @@ outcome-rename-group = تغییر نام گروه { $entity } به «{ $name }»
 outcome-format-streaming = تغییر قالب { $stream } ممکن نشد: در حال ارسال جریان است. ابتدا اتصال آن را قطع کنید.
 outcome-format = تغییر قالب { $stream } ممکن نشد: { $reason }.
 outcome-max-transit-time = تغییر بیشینه زمان عبور { $stream } ممکن نشد: { $reason }.
+outcome-max-transit-time-streaming = تغییر بیشینه زمان عبور { $stream } ممکن نشد: در حال ارسال جریان است. ابتدا اتصال آن را قطع کنید.
 outcome-sampling-rate = تغییر نرخ نمونه‌برداری { $entity } ممکن نشد: { $reason }.
 outcome-clock-source = تغییر منبع ساعت { $entity } ممکن نشد: { $reason }.
 outcome-map = نگاشت کانال روی { $entity } ممکن نشد: { $reason }.

@@ -223,6 +223,7 @@ outcome-rename-group = Gagal menamakan semula kumpulan { $entity } kepada "{ $na
 outcome-format-streaming = Gagal menukar format { $stream }: strim sedang berjalan. Putuskan sambungannya dahulu.
 outcome-format = Gagal menukar format { $stream }: { $reason }.
 outcome-max-transit-time = Gagal menukar masa transit maks. { $stream }: { $reason }.
+outcome-max-transit-time-streaming = Gagal menukar masa transit maks. { $stream }: strim sedang berjalan. Putuskan sambungannya dahulu.
 outcome-sampling-rate = Gagal menukar kadar pensampelan { $entity }: { $reason }.
 outcome-clock-source = Gagal menukar sumber jam { $entity }: { $reason }.
 outcome-map = Gagal memetakan saluran pada { $entity }: { $reason }.

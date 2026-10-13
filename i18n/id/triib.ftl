@@ -223,6 +223,7 @@ outcome-rename-group = Gagal mengganti nama grup { $entity } menjadi "{ $name }"
 outcome-format-streaming = Gagal mengubah format { $stream }: stream sedang berjalan. Putuskan dulu.
 outcome-format = Gagal mengubah format { $stream }: { $reason }.
 outcome-max-transit-time = Gagal mengubah waktu transit maks. { $stream }: { $reason }.
+outcome-max-transit-time-streaming = Gagal mengubah waktu transit maks. { $stream }: stream sedang berjalan. Putuskan dulu.
 outcome-sampling-rate = Gagal mengubah sampling rate { $entity }: { $reason }.
 outcome-clock-source = Gagal mengubah sumber clock { $entity }: { $reason }.
 outcome-map = Gagal memetakan kanal di { $entity }: { $reason }.

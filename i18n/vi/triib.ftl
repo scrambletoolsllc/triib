@@ -226,6 +226,7 @@ outcome-rename-group = Không thể đổi tên nhóm của { $entity } thành �
 outcome-format-streaming = Không thể đổi định dạng của { $stream }: luồng đang truyền. Hãy ngắt kết nối trước.
 outcome-format = Không thể đổi định dạng của { $stream }: { $reason }.
 outcome-max-transit-time = Không thể đổi thời gian truyền tối đa của { $stream }: { $reason }.
+outcome-max-transit-time-streaming = Không thể đổi thời gian truyền tối đa của { $stream }: luồng đang truyền. Hãy ngắt kết nối trước.
 outcome-sampling-rate = Không thể đổi tần số lấy mẫu của { $entity }: { $reason }.
 outcome-clock-source = Không thể đổi nguồn đồng hồ của { $entity }: { $reason }.
 outcome-map = Không thể ánh xạ kênh trên { $entity }: { $reason }.

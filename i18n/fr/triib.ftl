@@ -254,6 +254,7 @@ outcome-rename-group = Impossible de renommer le groupe de { $entity } en « { 
 outcome-format-streaming = Impossible de changer le format de { $stream } : il est en cours de transmission. Déconnectez-le d’abord.
 outcome-format = Impossible de changer le format de { $stream } : { $reason }.
 outcome-max-transit-time = Impossible de changer le temps de transit max. de { $stream } : { $reason }.
+outcome-max-transit-time-streaming = Impossible de changer le temps de transit max. de { $stream } : il est en cours de transmission. Déconnectez-le d’abord.
 outcome-sampling-rate = Impossible de changer la fréquence d’échantillonnage de { $entity } : { $reason }.
 outcome-clock-source = Impossible de changer la source d’horloge de { $entity } : { $reason }.
 outcome-map = Impossible de mapper le canal sur { $entity } : { $reason }.

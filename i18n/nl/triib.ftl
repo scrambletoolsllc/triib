@@ -240,6 +240,7 @@ outcome-rename-group = Kon de groep van { $entity } niet hernoemen naar “{ $na
 outcome-format-streaming = Kon het formaat van { $stream } niet wijzigen: de stream is actief. Koppel hem eerst los.
 outcome-format = Kon het formaat van { $stream } niet wijzigen: { $reason }.
 outcome-max-transit-time = Kon de max. doorlooptijd van { $stream } niet wijzigen: { $reason }.
+outcome-max-transit-time-streaming = Kon de max. doorlooptijd van { $stream } niet wijzigen: de stream is actief. Koppel hem eerst los.
 outcome-sampling-rate = Kon de samplefrequentie van { $entity } niet wijzigen: { $reason }.
 outcome-clock-source = Kon de klokbron van { $entity } niet wijzigen: { $reason }.
 outcome-map = Kon het kanaal op { $entity } niet toewijzen: { $reason }.

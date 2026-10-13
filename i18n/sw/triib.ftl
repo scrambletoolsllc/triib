@@ -238,6 +238,7 @@ outcome-rename-group = Imeshindwa kubadilisha jina la kikundi cha { $entity } ku
 outcome-format-streaming = Imeshindwa kubadilisha muundo wa { $stream }: unatiririsha. Tenganisha kwanza.
 outcome-format = Imeshindwa kubadilisha muundo wa { $stream }: { $reason }.
 outcome-max-transit-time = Imeshindwa kubadilisha muda wa juu wa kupita wa { $stream }: { $reason }.
+outcome-max-transit-time-streaming = Imeshindwa kubadilisha muda wa juu wa kupita wa { $stream }: unatiririsha. Tenganisha kwanza.
 outcome-sampling-rate = Imeshindwa kubadilisha kiwango cha sampuli cha { $entity }: { $reason }.
 outcome-clock-source = Imeshindwa kubadilisha chanzo cha saa cha { $entity }: { $reason }.
 outcome-map = Imeshindwa kuweka ramani ya chaneli kwenye { $entity }: { $reason }.

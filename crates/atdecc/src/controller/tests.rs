@@ -105,6 +105,11 @@ struct FakeEntity {
     wireless_silent: u8,
     /// Its stream output sends in class B.
     class_b: bool,
+    /// Answers GET_MILAN_INFO, as a Milan entity; without it NOT_IMPLEMENTED.
+    milan: bool,
+    /// Answers GET_MAX_TRANSIT_TIME and SET_MAX_TRANSIT_TIME; without it
+    /// NOT_IMPLEMENTED.
+    answers_transit: bool,
 }
 
 fn descriptor(descriptor_type: DescriptorType, index: u16, length: usize) -> Vec<u8> {
@@ -239,6 +244,8 @@ impl FakeEntity {
             wireless: None,
             wireless_silent: 0,
             class_b: false,
+            milan: true,
+            answers_transit: true,
         }
     }
 
@@ -601,16 +608,21 @@ impl FakeEntity {
                 command.command_type,
                 AemCommandType::GET_MAX_TRANSIT_TIME | AemCommandType::SET_MAX_TRANSIT_TIME
             ) {
-                if command.command_type == AemCommandType::SET_MAX_TRANSIT_TIME {
-                    if self.streaming {
-                        status = AemStatus::STREAM_IS_RUNNING;
-                    } else {
+                if !self.answers_transit {
+                    status = AemStatus::NOT_IMPLEMENTED;
+                } else if command.command_type == AemCommandType::SET_MAX_TRANSIT_TIME
+                    && self.streaming
+                {
+                    // A refusal holds the time asked for, as macOS's does.
+                    status = AemStatus::STREAM_IS_RUNNING;
+                } else {
+                    if command.command_type == AemCommandType::SET_MAX_TRANSIT_TIME {
                         self.transit = u64::from_be_bytes(payload[4..12].try_into().unwrap());
                     }
+                    // Otherwise the response holds the time the output has.
+                    payload.truncate(4);
+                    payload.extend_from_slice(&self.transit.to_be_bytes());
                 }
-                // Either response holds the time the output has.
-                payload.truncate(4);
-                payload.extend_from_slice(&self.transit.to_be_bytes());
             }
             let response = AemPdu {
                 header: AecpHeader {
@@ -659,6 +671,18 @@ impl FakeEntity {
             return Some(self.respond_wireless(&command, &asked));
         }
         let asked = crate::mvu::MvuMessage::from_pdu(&command).ok()?;
+        if !self.milan {
+            let response = VendorUniquePdu {
+                header: AecpHeader {
+                    message_type: AecpMessageType::VENDOR_UNIQUE_RESPONSE,
+                    status: AemStatus::NOT_IMPLEMENTED.0,
+                    ..command.header
+                },
+                ..command
+            };
+            let length = response.encode(&mut out).unwrap();
+            return Some(out[..length].to_vec());
+        }
         let data = match asked.command_type {
             crate::mvu::MvuCommandType::GET_MEDIA_CLOCK_REFERENCE_INFO => {
                 // Priority 192, for an audio interface, both changeable.
@@ -693,6 +717,24 @@ impl FakeEntity {
 }
 
 impl FakeEntity {
+    /// The entity with `count` stream outputs, each as the first.
+    fn with_outputs(mut self, count: u16) -> Self {
+        let configuration = self
+            .descriptors
+            .get_mut(&(DescriptorType::CONFIGURATION.0, 0))
+            .unwrap();
+        // The outputs' count, third of the configuration's.
+        put(configuration, 84, count);
+        let first = self.descriptors[&(DescriptorType::STREAM_OUTPUT.0, 0)].clone();
+        for index in 1..count {
+            let mut output = first.clone();
+            put(&mut output, 2, index);
+            self.descriptors
+                .insert((DescriptorType::STREAM_OUTPUT.0, index), output);
+        }
+        self
+    }
+
     /// Answers the AVB Wireless status query and configuration: for its
     /// wireless interface when it has AVB Wireless, NOT_SUPPORTED for its
     /// wired ones, and NOT_IMPLEMENTED without AVB Wireless.
@@ -1813,6 +1855,35 @@ fn max_transit_times_are_read_and_set_while_not_streaming() {
         )]
     );
     assert_eq!(time(&controller), Some(1_500_000), "the old time kept");
+}
+
+/// An entity outside Milan may answer GET_MAX_TRANSIT_TIME too, as
+/// macOS's does: asked for its first output's, then, once it answers, the
+/// others'. One that does not is asked no more.
+#[test]
+fn max_transit_times_are_read_outside_milan_once_answered() {
+    let read = |answers: bool| {
+        let mut controller = controller();
+        let mut entity = FakeEntity::new().with_outputs(3);
+        entity.milan = false;
+        entity.answers_transit = answers;
+        controller.handle_adpdu(at(0), TALKER_MAC, &aem_available(1));
+        controller.pump(at(0));
+        exchange(&mut controller, &mut entity, at(0));
+        let asked = entity
+            .commands
+            .iter()
+            .filter(|&&command| command == AemCommandType::GET_MAX_TRANSIT_TIME)
+            .count();
+        let model = controller.model(TALKER).unwrap();
+        assert!(model.milan.is_none());
+        let times: Vec<Option<u64>> = (0..3)
+            .map(|output| model.max_transit_time(output))
+            .collect();
+        (asked, times)
+    };
+    assert_eq!(read(true), (3, vec![Some(2_000_000); 3]));
+    assert_eq!(read(false), (1, vec![None; 3]));
 }
 
 #[test]

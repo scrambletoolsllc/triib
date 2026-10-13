@@ -240,6 +240,7 @@ outcome-rename-group = { $entity } varlığının grubu “{ $name }” olarak y
 outcome-format-streaming = { $stream } akışının biçimi değiştirilemedi: akış sürüyor. Önce bağlantısını kesin.
 outcome-format = { $stream } akışının biçimi değiştirilemedi: { $reason }.
 outcome-max-transit-time = { $stream } akışının azami geçiş süresi değiştirilemedi: { $reason }.
+outcome-max-transit-time-streaming = { $stream } akışının azami geçiş süresi değiştirilemedi: akış sürüyor. Önce bağlantısını kesin.
 outcome-sampling-rate = { $entity } varlığının örnekleme hızı değiştirilemedi: { $reason }.
 outcome-clock-source = { $entity } varlığının saat kaynağı değiştirilemedi: { $reason }.
 outcome-map = { $entity } varlığında kanal eşlenemedi: { $reason }.

@@ -315,6 +315,7 @@ outcome-rename-group = Could not rename { $entity }'s group to "{ $name }": { $r
 outcome-format-streaming = Could not change the format of { $stream }: it is streaming. Disconnect it first.
 outcome-format = Could not change the format of { $stream }: { $reason }.
 outcome-max-transit-time = Could not change the max transit time of { $stream }: { $reason }.
+outcome-max-transit-time-streaming = Could not change the max transit time of { $stream }: it is streaming. Disconnect it first.
 outcome-sampling-rate = Could not change the sampling rate of { $entity }: { $reason }.
 outcome-clock-source = Could not change the clock source of { $entity }: { $reason }.
 outcome-map = Could not map the channel on { $entity }: { $reason }.

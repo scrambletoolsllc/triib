@@ -258,6 +258,7 @@ outcome-rename-group = تعذّرت إعادة تسمية مجموعة { $entity
 outcome-format-streaming = تعذّر تغيير تنسيق { $stream }: إنه قيد البث. افصله أولًا.
 outcome-format = تعذّر تغيير تنسيق { $stream }: { $reason }.
 outcome-max-transit-time = تعذّر تغيير أقصى زمن عبور { $stream }: { $reason }.
+outcome-max-transit-time-streaming = تعذّر تغيير أقصى زمن عبور { $stream }: إنه قيد البث. افصله أولًا.
 outcome-sampling-rate = تعذّر تغيير معدل أخذ العينات في { $entity }: { $reason }.
 outcome-clock-source = تعذّر تغيير مصدر الساعة في { $entity }: { $reason }.
 outcome-map = تعذّر تعيين القناة على { $entity }: { $reason }.

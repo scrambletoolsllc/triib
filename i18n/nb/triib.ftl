@@ -240,6 +240,7 @@ outcome-rename-group = Kunne ikke endre navnet på gruppen for { $entity } til �
 outcome-format-streaming = Kunne ikke endre formatet for { $stream }: den streamer. Koble den fra først.
 outcome-format = Kunne ikke endre formatet for { $stream }: { $reason }.
 outcome-max-transit-time = Kunne ikke endre maks. transittid for { $stream }: { $reason }.
+outcome-max-transit-time-streaming = Kunne ikke endre maks. transittid for { $stream }: den streamer. Koble den fra først.
 outcome-sampling-rate = Kunne ikke endre samplingsfrekvensen for { $entity }: { $reason }.
 outcome-clock-source = Kunne ikke endre klokkekilden for { $entity }: { $reason }.
 outcome-map = Kunne ikke tilordne kanalen på { $entity }: { $reason }.

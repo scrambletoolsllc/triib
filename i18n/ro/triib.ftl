@@ -246,6 +246,7 @@ outcome-rename-group = Nu s-a putut redenumi grupul entității { $entity } în 
 outcome-format-streaming = Nu s-a putut schimba formatul pentru { $stream }: fluxul este în transmisie. Deconectează-l mai întâi.
 outcome-format = Nu s-a putut schimba formatul pentru { $stream }: { $reason }.
 outcome-max-transit-time = Nu s-a putut schimba timpul maxim de tranzit pentru { $stream }: { $reason }.
+outcome-max-transit-time-streaming = Nu s-a putut schimba timpul maxim de tranzit pentru { $stream }: fluxul este în transmisie. Deconectează-l mai întâi.
 outcome-sampling-rate = Nu s-a putut schimba frecvența de eșantionare pentru { $entity }: { $reason }.
 outcome-clock-source = Nu s-a putut schimba sursa de ceas pentru { $entity }: { $reason }.
 outcome-map = Nu s-a putut mapa canalul pe { $entity }: { $reason }.

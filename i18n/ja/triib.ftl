@@ -226,6 +226,7 @@ outcome-rename-group = { $entity } のグループ名を「{ $name }」に変更
 outcome-format-streaming = { $stream } はストリーミング中のため、フォーマットを変更できませんでした。先に切断してください。
 outcome-format = { $stream } のフォーマットを変更できませんでした：{ $reason }。
 outcome-max-transit-time = { $stream } の最大伝送時間を変更できませんでした：{ $reason }。
+outcome-max-transit-time-streaming = { $stream } はストリーミング中のため、最大伝送時間を変更できませんでした。先に切断してください。
 outcome-sampling-rate = { $entity } のサンプリングレートを変更できませんでした：{ $reason }。
 outcome-clock-source = { $entity } のクロックソースを変更できませんでした：{ $reason }。
 outcome-map = { $entity } のチャンネルをマッピングできませんでした：{ $reason }。

@@ -248,6 +248,7 @@ outcome-rename-group = Nepodařilo se přejmenovat skupinu entity { $entity } na
 outcome-format-streaming = Nepodařilo se změnit formát streamu { $stream }: právě se vysílá. Nejprve stream odpojte.
 outcome-format = Nepodařilo se změnit formát streamu { $stream }: { $reason }.
 outcome-max-transit-time = Nepodařilo se změnit max. dobu průchodu streamu { $stream }: { $reason }.
+outcome-max-transit-time-streaming = Nepodařilo se změnit max. dobu průchodu streamu { $stream }: právě se vysílá. Nejprve stream odpojte.
 outcome-sampling-rate = Nepodařilo se změnit vzorkovací frekvenci entity { $entity }: { $reason }.
 outcome-clock-source = Nepodařilo se změnit zdroj hodin entity { $entity }: { $reason }.
 outcome-map = Nepodařilo se namapovat kanál na entitě { $entity }: { $reason }.

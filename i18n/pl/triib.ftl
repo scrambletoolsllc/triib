@@ -248,6 +248,7 @@ outcome-rename-group = Nie udało się zmienić nazwy grupy encji { $entity } na
 outcome-format-streaming = Nie udało się zmienić formatu strumienia { $stream }: trwa transmisja. Najpierw go rozłącz.
 outcome-format = Nie udało się zmienić formatu strumienia { $stream }: { $reason }.
 outcome-max-transit-time = Nie udało się zmienić maks. czasu przejścia strumienia { $stream }: { $reason }.
+outcome-max-transit-time-streaming = Nie udało się zmienić maks. czasu przejścia strumienia { $stream }: trwa transmisja. Najpierw go rozłącz.
 outcome-sampling-rate = Nie udało się zmienić częstotliwości próbkowania encji { $entity }: { $reason }.
 outcome-clock-source = Nie udało się zmienić źródła zegara encji { $entity }: { $reason }.
 outcome-map = Nie udało się zmapować kanału w encji { $entity }: { $reason }.

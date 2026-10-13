@@ -223,6 +223,7 @@ outcome-rename-group = เปลี่ยนชื่อกลุ่มของ
 outcome-format-streaming = เปลี่ยนรูปแบบของ { $stream } ไม่ได้: สตรีมกำลังส่งอยู่ ให้ตัดการเชื่อมต่อก่อน
 outcome-format = เปลี่ยนรูปแบบของ { $stream } ไม่ได้: { $reason }
 outcome-max-transit-time = เปลี่ยนเวลาส่งผ่านสูงสุดของ { $stream } ไม่ได้: { $reason }
+outcome-max-transit-time-streaming = เปลี่ยนเวลาส่งผ่านสูงสุดของ { $stream } ไม่ได้: สตรีมกำลังส่งอยู่ ให้ตัดการเชื่อมต่อก่อน
 outcome-sampling-rate = เปลี่ยนอัตราสุ่มตัวอย่างของ { $entity } ไม่ได้: { $reason }
 outcome-clock-source = เปลี่ยนแหล่งคล็อกของ { $entity } ไม่ได้: { $reason }
 outcome-map = แมปช่องสัญญาณบน { $entity } ไม่ได้: { $reason }

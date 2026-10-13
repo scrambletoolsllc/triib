@@ -240,6 +240,7 @@ outcome-rename-group = Die Gruppe von { $entity } konnte nicht in „{ $name }�
 outcome-format-streaming = Das Format von { $stream } konnte nicht geändert werden: Der Stream läuft. Zuerst trennen.
 outcome-format = Das Format von { $stream } konnte nicht geändert werden: { $reason }.
 outcome-max-transit-time = Die max. Laufzeit von { $stream } konnte nicht geändert werden: { $reason }.
+outcome-max-transit-time-streaming = Die max. Laufzeit von { $stream } konnte nicht geändert werden: Der Stream läuft. Zuerst trennen.
 outcome-sampling-rate = Die Abtastrate von { $entity } konnte nicht geändert werden: { $reason }.
 outcome-clock-source = Die Clock-Quelle von { $entity } konnte nicht geändert werden: { $reason }.
 outcome-map = Der Kanal auf { $entity } konnte nicht zugeordnet werden: { $reason }.

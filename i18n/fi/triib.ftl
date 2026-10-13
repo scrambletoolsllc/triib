@@ -246,6 +246,7 @@ outcome-rename-group = Entiteetin { $entity } ryhmän uudeksi nimeksi ei voitu a
 outcome-format-streaming = Striimin { $stream } muotoa ei voitu muuttaa: se on käynnissä. Katkaise sen yhteys ensin.
 outcome-format = Striimin { $stream } muotoa ei voitu muuttaa: { $reason }.
 outcome-max-transit-time = Striimin { $stream } suurinta läpikulkuaikaa ei voitu muuttaa: { $reason }.
+outcome-max-transit-time-streaming = Striimin { $stream } suurinta läpikulkuaikaa ei voitu muuttaa: se on käynnissä. Katkaise sen yhteys ensin.
 outcome-sampling-rate = Entiteetin { $entity } näytteenottotaajuutta ei voitu muuttaa: { $reason }.
 outcome-clock-source = Entiteetin { $entity } kellolähdettä ei voitu muuttaa: { $reason }.
 outcome-map = Kanavaa ei voitu kartoittaa entiteetissä { $entity }: { $reason }.

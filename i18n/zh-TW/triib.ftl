@@ -226,6 +226,7 @@ outcome-rename-group = 無法將 { $entity } 的群組重新命名為「{ $name 
 outcome-format-streaming = 無法變更 { $stream } 的格式：該串流正在傳輸。請先中斷連線。
 outcome-format = 無法變更 { $stream } 的格式：{ $reason }。
 outcome-max-transit-time = 無法變更 { $stream } 的最大傳輸時間：{ $reason }。
+outcome-max-transit-time-streaming = 無法變更 { $stream } 的最大傳輸時間：該串流正在傳輸。請先中斷連線。
 outcome-sampling-rate = 無法變更 { $entity } 的取樣率：{ $reason }。
 outcome-clock-source = 無法變更 { $entity } 的時鐘源：{ $reason }。
 outcome-map = 無法在 { $entity } 上對應通道：{ $reason }。

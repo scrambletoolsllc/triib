@@ -264,6 +264,14 @@ pub fn outcome(triib: &Triib, action: Action, outcome: Outcome) -> Option<String
             entity = triib.entity_name_of(entity),
             reason = reason
         ),
+        Action::SetMaxTransitTime { entity, output, .. }
+            if outcome == Outcome::Refused(Refusal::Aem(AemStatus::STREAM_IS_RUNNING)) =>
+        {
+            fl!(
+                "outcome-max-transit-time-streaming",
+                stream = triib.stream_name(entity, DescriptorType::STREAM_OUTPUT, output)
+            )
+        }
         Action::SetMaxTransitTime { entity, output, .. } => fl!(
             "outcome-max-transit-time",
             stream = triib.stream_name(entity, DescriptorType::STREAM_OUTPUT, output),
@@ -477,6 +485,55 @@ mod tests {
             }
         }
         assert!(outputs > 0);
+    }
+
+    /// A max transit time a running stream refuses says what to do; any
+    /// other refusal says why.
+    #[test]
+    fn a_refused_transit_time_says_why() {
+        use crate::settings::Settings;
+        let (entities, models) = crate::view::tests::bench();
+        let interface = avb_net::Interface {
+            name: "enp6s0".to_owned(),
+            mac: avb_net::MacAddress([0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b]),
+            up: true,
+            speed: None,
+            physical: true,
+            wireless: false,
+            hardware_clock: None,
+        };
+        let triib = crate::app::Triib::sample(Settings::default(), interface, entities, models);
+        let (&entity, _) = triib
+            .models
+            .iter()
+            .find(|(_, model)| model.streams(false).next().is_some())
+            .expect("an entity with an output");
+        let action = Action::SetMaxTransitTime {
+            entity,
+            output: 0,
+            nanoseconds: 5_000_000,
+        };
+        let running = outcome(
+            &triib,
+            action,
+            Outcome::Refused(Refusal::Aem(AemStatus::STREAM_IS_RUNNING)),
+        )
+        .unwrap();
+        assert!(
+            running.ends_with("it is streaming. Disconnect it first."),
+            "{running}"
+        );
+        let other = outcome(
+            &triib,
+            action,
+            Outcome::Refused(Refusal::Aem(AemStatus::NOT_IMPLEMENTED)),
+        )
+        .unwrap();
+        assert!(
+            other.starts_with("Could not change the max transit time"),
+            "{other}"
+        );
+        assert!(!other.contains("Disconnect"), "{other}");
     }
 
     #[test]

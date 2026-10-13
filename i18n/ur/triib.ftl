@@ -238,6 +238,7 @@ outcome-rename-group = { $entity } کے گروپ کا نام بدل کر "{ $nam
 outcome-format-streaming = { $stream } کا فارمیٹ نہیں بدلا جا سکا: یہ اسٹریمنگ کر رہا ہے۔ پہلے اسے منقطع کریں۔
 outcome-format = { $stream } کا فارمیٹ نہیں بدلا جا سکا: { $reason }۔
 outcome-max-transit-time = { $stream } کا زیادہ سے زیادہ ٹرانزٹ ٹائم نہیں بدلا جا سکا: { $reason }۔
+outcome-max-transit-time-streaming = { $stream } کا زیادہ سے زیادہ ٹرانزٹ ٹائم نہیں بدلا جا سکا: یہ اسٹریمنگ کر رہا ہے۔ پہلے اسے منقطع کریں۔
 outcome-sampling-rate = { $entity } کا سیمپلنگ ریٹ نہیں بدلا جا سکا: { $reason }۔
 outcome-clock-source = { $entity } کا کلاک سورس نہیں بدلا جا سکا: { $reason }۔
 outcome-map = { $entity } پر چینل میپ نہیں کیا جا سکا: { $reason }۔

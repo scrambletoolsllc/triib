@@ -248,6 +248,7 @@ outcome-rename-group = Не вдалося перейменувати групу
 outcome-format-streaming = Не вдалося змінити формат потоку { $stream }: триває передавання. Спершу відключіть потік.
 outcome-format = Не вдалося змінити формат потоку { $stream }: { $reason }.
 outcome-max-transit-time = Не вдалося змінити макс. час проходження потоку { $stream }: { $reason }.
+outcome-max-transit-time-streaming = Не вдалося змінити макс. час проходження потоку { $stream }: триває передавання. Спершу відключіть потік.
 outcome-sampling-rate = Не вдалося змінити частоту дискретизації сутності { $entity }: { $reason }.
 outcome-clock-source = Не вдалося змінити джерело синхронізації сутності { $entity }: { $reason }.
 outcome-map = Не вдалося призначити канал у сутності { $entity }: { $reason }.

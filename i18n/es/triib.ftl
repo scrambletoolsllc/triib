@@ -250,6 +250,7 @@ outcome-rename-group = No se pudo cambiar el nombre del grupo de { $entity } a �
 outcome-format-streaming = No se pudo cambiar el formato de { $stream }: está transmitiendo. Desconéctalo primero.
 outcome-format = No se pudo cambiar el formato de { $stream }: { $reason }.
 outcome-max-transit-time = No se pudo cambiar el tiempo de tránsito máx. de { $stream }: { $reason }.
+outcome-max-transit-time-streaming = No se pudo cambiar el tiempo de tránsito máx. de { $stream }: está transmitiendo. Desconéctalo primero.
 outcome-sampling-rate = No se pudo cambiar la frecuencia de muestreo de { $entity }: { $reason }.
 outcome-clock-source = No se pudo cambiar la fuente de reloj de { $entity }: { $reason }.
 outcome-map = No se pudo mapear el canal en { $entity }: { $reason }.

@@ -238,6 +238,7 @@ outcome-rename-group = { $entity }-இன் குழுவின் பெய�
 outcome-format-streaming = { $stream }-இன் format-ஐ மாற்ற முடியவில்லை: அது stream செய்துகொண்டிருக்கிறது. முதலில் அதைத் துண்டி.
 outcome-format = { $stream }-இன் format-ஐ மாற்ற முடியவில்லை: { $reason }.
 outcome-max-transit-time = { $stream }-இன் அதிகபட்ச transit time-ஐ மாற்ற முடியவில்லை: { $reason }.
+outcome-max-transit-time-streaming = { $stream }-இன் அதிகபட்ச transit time-ஐ மாற்ற முடியவில்லை: அது stream செய்துகொண்டிருக்கிறது. முதலில் அதைத் துண்டி.
 outcome-sampling-rate = { $entity }-இன் sampling rate-ஐ மாற்ற முடியவில்லை: { $reason }.
 outcome-clock-source = { $entity }-இன் clock source-ஐ மாற்ற முடியவில்லை: { $reason }.
 outcome-map = { $entity }-இல் channel-ஐ map செய்ய முடியவில்லை: { $reason }.

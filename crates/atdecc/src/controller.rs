@@ -1233,6 +1233,7 @@ impl Controller {
             Request::GetMaxTransitTime { output, command } => {
                 if aem.status().is_success() {
                     self.store_max_transit_time(entity_id, output, aem.payload);
+                    self.read_other_transit_times(entity_id, output);
                 }
                 if let Some(command) = command {
                     self.events
@@ -1240,9 +1241,12 @@ impl Controller {
                 }
             }
             Request::SetMaxTransitTime { set, command } => {
-                // The response holds the time the output has after, set
-                // or not.
-                self.store_max_transit_time(entity_id, set.output, aem.payload);
+                // The response holds the time the output has after; a
+                // refusal may hold the time asked for instead, as macOS's
+                // does, so the time the model has stays.
+                if aem.status().is_success() {
+                    self.store_max_transit_time(entity_id, set.output, aem.payload);
+                }
                 self.events
                     .push_back(Event::CommandFinished(command, aem_outcome(aem)));
             }
@@ -2019,9 +2023,12 @@ impl Controller {
             }
         }
         // How long each stream output's frames may take, which Milan
-        // talkers report.
-        if self.config.read_transit_times && model.milan.is_some() {
-            for (output, _) in model.descriptors(DescriptorType::STREAM_OUTPUT) {
+        // talkers report and others may, as macOS does: an entity outside
+        // Milan is asked for its first output's, and for the rest once it
+        // answers.
+        if self.config.read_transit_times {
+            let asked = if model.milan.is_some() { usize::MAX } else { 1 };
+            for (output, _) in model.descriptors(DescriptorType::STREAM_OUTPUT).take(asked) {
                 session.queue.push_back(Request::GetMaxTransitTime {
                     output,
                     command: None,
@@ -2758,6 +2765,34 @@ impl Controller {
             && model.state == EnumerationState::Complete
         {
             self.events.push_back(Event::EntityModelChanged(entity_id));
+        }
+    }
+
+    /// Asks an entity outside Milan, asked first for its first stream
+    /// output's max transit time alone, for the others it has not told,
+    /// once it answers for that one.
+    fn read_other_transit_times(&mut self, entity_id: EntityId, answered: u16) {
+        let Some(model) = self.models.get(&entity_id) else {
+            return;
+        };
+        if model.milan.is_some() {
+            return;
+        }
+        let mut outputs = model
+            .descriptors(DescriptorType::STREAM_OUTPUT)
+            .map(|(output, _)| output);
+        if outputs.next() != Some(answered) {
+            return;
+        }
+        let others: Vec<u16> = outputs
+            .filter(|&output| model.max_transit_time(output).is_none())
+            .collect();
+        let queue = &mut self.sessions.entry(entity_id).or_default().queue;
+        for output in others {
+            queue.push_back(Request::GetMaxTransitTime {
+                output,
+                command: None,
+            });
         }
     }
 

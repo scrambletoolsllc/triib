@@ -243,6 +243,7 @@ outcome-rename-group = לא ניתן היה לשנות את שם הקבוצה ש
 outcome-format-streaming = לא ניתן היה לשנות את הפורמט של { $stream }: הוא משדר. נתקו אותו קודם.
 outcome-format = לא ניתן היה לשנות את הפורמט של { $stream }: { $reason }.
 outcome-max-transit-time = לא ניתן היה לשנות את זמן המעבר המרבי של { $stream }: { $reason }.
+outcome-max-transit-time-streaming = לא ניתן היה לשנות את זמן המעבר המרבי של { $stream }: הוא משדר. נתקו אותו קודם.
 outcome-sampling-rate = לא ניתן היה לשנות את קצב הדגימה של { $entity }: { $reason }.
 outcome-clock-source = לא ניתן היה לשנות את מקור השעון של { $entity }: { $reason }.
 outcome-map = לא ניתן היה למפות את הערוץ ב-{ $entity }: { $reason }.
