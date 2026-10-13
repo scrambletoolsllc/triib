@@ -1121,6 +1121,33 @@ fn reads_where_each_interface_sits() {
 }
 
 #[test]
+fn a_new_grandmaster_reads_where_the_entity_sits_again() {
+    let (mut controller, mut entity) = enumerated();
+    events(&mut controller);
+    let from = entity.commands.len();
+    let mut moved = aem_available(2);
+    moved.gptp_grandmaster_id = ClockIdentity(0x0001_f2ff_feff_3b14);
+    controller.handle_adpdu(at(1), TALKER_MAC, &moved);
+    exchange(&mut controller, &mut entity, at(1));
+    assert_eq!(
+        commands_since(&entity, from),
+        [AemCommandType::GET_AVB_INFO, AemCommandType::GET_AS_PATH]
+    );
+    // The same grandmaster again reads nothing.
+    let from = entity.commands.len();
+    controller.handle_adpdu(
+        at(2),
+        TALKER_MAC,
+        &Adpdu {
+            available_index: 3,
+            ..moved
+        },
+    );
+    exchange(&mut controller, &mut entity, at(2));
+    assert!(commands_since(&entity, from).is_empty());
+}
+
+#[test]
 fn entities_without_network_queries_are_still_read() {
     let mut controller = controller();
     let mut entity = FakeEntity::new();

@@ -704,6 +704,9 @@ impl Controller {
         };
         let restarted = adpdu.available_index < known.adp.available_index;
         let changed = !same_advertisement(&known.adp, adpdu) || known.mac != source;
+        // A new grandmaster or domain moves the entity in the network.
+        let moved = adpdu.gptp_grandmaster_id != known.adp.gptp_grandmaster_id
+            || adpdu.gptp_domain_number != known.adp.gptp_domain_number;
         let reconfigured = adpdu.current_configuration_index
             != known.adp.current_configuration_index
             && adpdu
@@ -721,7 +724,30 @@ impl Controller {
         }
         if (restarted || reconfigured) && self.wants_model(adpdu) {
             self.start_enumeration(now, entity_id);
+        } else if moved {
+            self.read_network_info(now, entity_id);
         }
+    }
+
+    /// Reads again where an entity sits in the network, each AVB
+    /// interface's gPTP state and path, as not every entity says unasked
+    /// when they change.
+    fn read_network_info(&mut self, now: Instant, entity_id: EntityId) {
+        if !self.config.network_info {
+            return;
+        }
+        let Some(model) = self.models.get(&entity_id) else {
+            return;
+        };
+        let interfaces: Vec<u16> = model
+            .descriptors(DescriptorType::AVB_INTERFACE)
+            .map(|(index, _)| index)
+            .collect();
+        for index in interfaces {
+            self.queue_query(entity_id, Request::GetAvbInfo { index });
+            self.queue_query(entity_id, Request::GetAsPath { index });
+        }
+        self.pump(now);
     }
 
     fn wants_model(&self, adpdu: &Adpdu) -> bool {
