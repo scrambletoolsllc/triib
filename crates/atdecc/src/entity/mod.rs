@@ -241,6 +241,8 @@ pub struct Entity {
     lite: Option<LiteStatus>,
     outputs: Vec<Output>,
     inputs: Vec<Input>,
+    /// The clock domain's counters: how often it locked and unlocked.
+    clock_counters: [u32; 32],
     known: BTreeMap<EntityId, Known>,
     random: Random,
     outgoing: VecDeque<(MacAddress, Vec<u8>)>,
@@ -293,6 +295,7 @@ impl Entity {
             lite: None,
             outputs,
             inputs,
+            clock_counters: [0; 32],
             known: BTreeMap::new(),
             outgoing: VecDeque::new(),
             events: VecDeque::new(),
@@ -493,16 +496,17 @@ impl Entity {
         }
     }
 
-    /// Takes a stream's counters, by their place in GET_COUNTERS (Milan
-    /// 1.3, 5.4.2.25): registered controllers hear when they change. Call
-    /// it no more than once a second.
-    pub fn set_stream_counters(
+    /// Takes a stream's or the clock domain's counters, by their place in
+    /// GET_COUNTERS (Milan 1.3, 5.4.2.25): registered controllers hear
+    /// when they change. Call it no more than once a second.
+    pub fn set_counters(
         &mut self,
         descriptor_type: DescriptorType,
         index: u16,
         counters: [u32; 32],
     ) {
         let slot = match descriptor_type {
+            DescriptorType::CLOCK_DOMAIN if index == 0 => Some(&mut self.clock_counters),
             DescriptorType::STREAM_INPUT => self
                 .inputs
                 .get_mut(usize::from(index))
@@ -1526,6 +1530,7 @@ impl Entity {
         let block = match descriptor_type {
             DescriptorType::STREAM_INPUT => self.inputs[usize::from(index)].counters,
             DescriptorType::STREAM_OUTPUT => self.outputs[usize::from(index)].counters,
+            DescriptorType::CLOCK_DOMAIN => self.clock_counters,
             _ => [0; 32],
         };
         let mut answer = Vec::with_capacity(136);

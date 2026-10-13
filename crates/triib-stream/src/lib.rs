@@ -18,10 +18,12 @@ pub mod crf;
 pub mod listener;
 pub mod media;
 pub mod realtime;
+pub mod recovered;
 pub mod talker;
 
 pub use clock::MediaClock;
 pub use listener::{GroupListener, Listener, ListenerConfig, ListenerGroup, ListenerStats};
+pub use recovered::RecoveredClock;
 pub use talker::{
     GroupConfig, GroupStream, GroupTalker, Talker, TalkerConfig, TalkerGroup, TalkerStats,
 };

@@ -29,7 +29,7 @@ use avb_net::stream::FrameSender;
 use triib_stream::audio::{Sink, Source};
 use triib_stream::{
     GroupConfig, GroupListener, GroupStream, GroupTalker, ListenerConfig, ListenerGroup,
-    MediaClock, TalkerGroup,
+    MediaClock, RecoveredClock, TalkerGroup,
 };
 
 use triib_pipewire::{DeviceSpec, VirtualAudio, VirtualDevice};
@@ -309,6 +309,9 @@ struct InputState {
     /// In AVB Lite, the stream it declares itself for, the talker it
     /// tells and what.
     cvu_to: Option<(u64, MacAddress, ListenerState)>,
+    /// For a media clock input, the clock its stream carries, which the
+    /// device's talkers follow while it is the clock source.
+    recovered: RecoveredClock,
 }
 
 /// One of this computer's entities: a talker, a listener, or a device
@@ -329,6 +332,11 @@ struct Endpoint {
     inputs: Vec<InputState>,
     /// Its place in the configuration's list.
     place: usize,
+    /// Whether its clock domain is locked to its clock source, and how
+    /// often it locked and unlocked, as its counters say.
+    clock_locked: bool,
+    clock_locks: u32,
+    clock_unlocks: u32,
 }
 
 /// The entity model of a talker or listener of one stream, as before; of
@@ -504,6 +512,18 @@ impl Endpoint {
         let current_sampling_rate = first
             .and_then(|stream| stream.current_format.sample_rate())
             .unwrap_or(48_000);
+        // Its media clock inputs are clock sources after the internal
+        // clock, the one kept as the source chosen.
+        let clock_source_inputs: Vec<u16> = in_streams
+            .iter()
+            .enumerate()
+            .filter(|(_, place)| streams[**place].clock)
+            .map(|(at, _)| at as u16)
+            .collect();
+        let clock_source = clock_source_inputs
+            .iter()
+            .position(|&at| streams[in_streams[usize::from(at)]].clock_source)
+            .map_or(0, |position| position as u16 + 1);
         // Media clocks alone run at the rate they count.
         if sampling_rates.is_empty() {
             sampling_rates.push(current_sampling_rate);
@@ -529,11 +549,8 @@ impl Endpoint {
             current_sampling_rate,
             outputs,
             inputs,
-            clock_source: 0,
-            // The streams run on gPTP time whatever a controller chooses,
-            // so the internal clock is the only source until an input's
-            // media clock can be followed.
-            input_clock_sources: false,
+            clock_source,
+            clock_source_inputs,
         };
         // A talker's streams have no destination until MAAP gives them
         // one.
@@ -551,6 +568,26 @@ impl Endpoint {
             group: Weak::new(),
             listening: Weak::new(),
             place: 0,
+            clock_locked: true,
+            clock_locks: 1,
+            clock_unlocks: 0,
+        }
+    }
+
+    /// The media clock its talkers follow: its clock source's, none for
+    /// the internal clock.
+    fn followed(&self) -> Option<RecoveredClock> {
+        let model = self.entity.model();
+        let input = model.clock_source_input(model.clock_source)?;
+        Some(self.inputs.get(usize::from(input))?.recovered.clone())
+    }
+
+    /// The name its log lines give its clock source.
+    fn clock_source_name(&self) -> String {
+        let model = self.entity.model();
+        match model.clock_source_input(model.clock_source) {
+            Some(input) => self.stream_name(true, input),
+            None => "the internal clock".into(),
         }
     }
 
@@ -1255,11 +1292,13 @@ impl Runtime {
                 .then(|| endpoint.entity.max_transit_time(at as u16))
                 .flatten();
         }
+        let source = model.clock_source_input(model.clock_source);
         for (at, place) in endpoint.in_streams.iter().enumerate() {
             streams[*place].format = model
                 .inputs
                 .get(at)
                 .map(|stream| format!("{:#018x}", stream.current_format.0));
+            streams[*place].clock_source = source == Some(at as u16);
             streams[*place].bound = endpoint
                 .entity
                 .input_binding(at as u16)
@@ -1632,6 +1671,9 @@ impl Runtime {
         if self.last_counters.elapsed() >= Duration::from_secs(1) {
             self.last_counters = Clock::now();
             self.update_counters();
+            for index in 0..self.endpoints.len() {
+                self.update_clock_lock(index);
+            }
             self.update_lite_status();
         }
         if self.last_report.elapsed() >= REPORT {
@@ -2085,8 +2127,10 @@ impl Runtime {
         };
         // An audio device that isn't there, as on another computer than
         // the one its name came from, leaves the stream running silent.
+        let followed = endpoint.followed();
         let started = group.and_then(|group| {
             self.endpoints[out.0].group = Arc::downgrade(&group);
+            group.follow(followed);
             let place = usize::from(out.1);
             GroupTalker::start(&group, place, wanted.clone()).or_else(|error| {
                 if wanted.source == Source::Silence {
@@ -2231,6 +2275,10 @@ impl Runtime {
                 None if endpoint.in_config(input.1).clock => Sink::Discard,
                 None => endpoint.in_config(input.1).sink(),
             },
+            recovered: endpoint
+                .in_config(input.1)
+                .clock
+                .then(|| self.input(input).recovered.clone()),
         };
         // Every input takes its stream on the endpoint's one listening
         // thread, which the first to listen starts.
@@ -2387,8 +2435,17 @@ impl Runtime {
                     }
                 }
             }
-            EntityEvent::ClockSourceChanged(source) => {
-                log(format!("{name}: clock source {source}"))
+            EntityEvent::ClockSourceChanged(_) => {
+                let endpoint = &self.endpoints[index];
+                log(format!(
+                    "{name}: clock source {}",
+                    endpoint.clock_source_name()
+                ));
+                if let Some(group) = endpoint.group.upgrade() {
+                    group.follow(endpoint.followed());
+                }
+                self.update_clock_lock(index);
+                self.keep_settings(index);
             }
             EntityEvent::LiteConfigChanged { escalation_allowed } => {
                 log(format!(
@@ -2416,6 +2473,39 @@ impl Runtime {
         }
     }
 
+    /// Notes whether an endpoint's clock domain is locked to its clock
+    /// source: always to the internal clock, to a media clock input while
+    /// its clock is recovered, its talkers on gPTP time until then. Its
+    /// counters count each lock and loss.
+    fn update_clock_lock(&mut self, index: usize) {
+        let endpoint = &mut self.endpoints[index];
+        let locked = endpoint.followed().is_none_or(|clock| clock.locked());
+        let changed = locked != endpoint.clock_locked;
+        if changed {
+            endpoint.clock_locked = locked;
+            if locked {
+                endpoint.clock_locks += 1;
+            } else {
+                endpoint.clock_unlocks += 1;
+            }
+        }
+        let mut counters = [0; 32];
+        counters[0] = endpoint.clock_locks;
+        counters[1] = endpoint.clock_unlocks;
+        endpoint
+            .entity
+            .set_counters(atdecc::DescriptorType::CLOCK_DOMAIN, 0, counters);
+        if changed {
+            let name = endpoint.config.name.clone();
+            let source = endpoint.clock_source_name();
+            log(if locked {
+                format!("{name}: locked to {source}")
+            } else {
+                format!("{name}: waiting for {source}, on gPTP time")
+            });
+        }
+    }
+
     /// Hands each running stream's counters to its entity, in Milan's
     /// places for them.
     fn update_counters(&mut self) {
@@ -2431,7 +2521,7 @@ impl Runtime {
                 counters[3] = low(stats.media_resets);
                 counters[5] = low(stats.frames_sent);
                 counters[7] = low(stats.frames_sent);
-                endpoint.entity.set_stream_counters(
+                endpoint.entity.set_counters(
                     atdecc::DescriptorType::STREAM_OUTPUT,
                     at as u16,
                     counters,
@@ -2452,7 +2542,7 @@ impl Runtime {
                 counters[9] = low(stats.late);
                 counters[10] = low(stats.early);
                 counters[11] = low(stats.frames_received);
-                endpoint.entity.set_stream_counters(
+                endpoint.entity.set_counters(
                     atdecc::DescriptorType::STREAM_INPUT,
                     at as u16,
                     counters,
@@ -2484,8 +2574,16 @@ impl Runtime {
                     continue;
                 };
                 let stats = listener.stats();
+                // A media clock's rate, as recovered.
+                let clock = match endpoint.in_config(at as u16).clock {
+                    true => match input.recovered.fit() {
+                        Some(fit) => format!(", clock {:+.2} ppm", fit.ppm()),
+                        None => ", clock not recovered".into(),
+                    },
+                    false => String::new(),
+                };
                 log(format!(
-                    "{}: received {} frames, {} out of sequence, {} late, {} early, peak {:.3}, device {:+} ppm, {} short{}{}",
+                    "{}: received {} frames, {} out of sequence, {} late, {} early, peak {:.3}, device {:+} ppm, {} short{}{}{clock}",
                     endpoint.stream_name(true, at as u16),
                     stats.frames_received,
                     stats.sequence_mismatches,
@@ -3859,6 +3957,43 @@ mod tests {
         // Media clocks alone run at the rate they count.
         let clocks = endpoint(Kind::Device, vec![StreamConfig::clock(Direction::Out)]);
         assert_eq!(clocks.entity.model().sampling_rates, [48_000]);
+    }
+
+    /// A device's media clock inputs are its clock sources after the
+    /// internal clock, flagged as such; the one kept as its source is the
+    /// source it starts on, and its talkers follow that input's clock.
+    #[test]
+    fn media_clock_inputs_are_clock_sources() {
+        let device = endpoint(
+            Kind::Device,
+            vec![
+                stream(Direction::In, 2),
+                StreamConfig::clock(Direction::In),
+                stream(Direction::Out, 2),
+                StreamConfig {
+                    clock_source: true,
+                    ..StreamConfig::clock(Direction::In)
+                },
+            ],
+        );
+        let model = device.entity.model();
+        assert_eq!(model.clock_source_inputs, [1, 2]);
+        assert_eq!(model.clock_source, 2, "the second media clock input");
+        assert_eq!(model.clock_source_input(2), Some(2));
+        assert_eq!(model.clock_source_input(0), None);
+        assert_eq!(device.clock_source_name(), "Studio Media Clock In 2");
+        assert_eq!(device.followed(), Some(device.inputs[2].recovered.clone()));
+        // Without one kept, the internal clock, which nothing follows.
+        let plain = endpoint(
+            Kind::Device,
+            vec![
+                StreamConfig::clock(Direction::In),
+                stream(Direction::Out, 2),
+            ],
+        );
+        assert_eq!(plain.entity.model().clock_source, 0);
+        assert_eq!(plain.followed(), None);
+        assert_eq!(plain.clock_source_name(), "the internal clock");
     }
 
     /// A max transit time a controller set, kept in the configuration,

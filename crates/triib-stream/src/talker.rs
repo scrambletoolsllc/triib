@@ -22,6 +22,7 @@ use avb_net::stream::FrameSender;
 use crate::MediaClock;
 use crate::audio::{Input, Source};
 use crate::media::{Media, Packetizer};
+use crate::recovered::{Fit, RecoveredClock, div_ceil};
 
 /// The VLAN tag's ethertype, and AVTP's.
 const ETHERTYPE_VLAN: u16 = 0x8100;
@@ -131,6 +132,8 @@ struct Shared {
     /// Each new stream's source, opened for the thread to take; none for
     /// a media clock.
     inputs: Mutex<Vec<Option<Input>>>,
+    /// The media clock the streams follow, none for gPTP time itself.
+    follow: Mutex<Option<RecoveredClock>>,
     counters: Vec<StreamCounters>,
     group: GroupCounters,
 }
@@ -159,6 +162,7 @@ impl TalkerGroup {
             streams: Mutex::new(vec![None; places]),
             changes: AtomicU64::new(0),
             inputs: Mutex::new((0..places).map(|_| None).collect()),
+            follow: Mutex::new(None),
             counters: (0..places).map(|_| StreamCounters::default()).collect(),
             group: GroupCounters::default(),
         });
@@ -232,6 +236,22 @@ impl TalkerGroup {
         let mut streams = self.shared.lock();
         if let Some(Some(stream)) = streams.get_mut(place) {
             stream.destinations = destinations;
+            self.shared.changes.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+
+    /// Times the streams on `clock`, a media clock recovered from a CRF
+    /// stream, while it is recovered, and on gPTP time otherwise; `None`
+    /// on gPTP time alone. The streams start again on each change of
+    /// clock, as a media reset tells their listeners.
+    pub fn follow(&self, clock: Option<RecoveredClock>) {
+        let mut follow = self
+            .shared
+            .follow
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        if *follow != clock {
+            *follow = clock;
             self.shared.changes.fetch_add(1, Ordering::Relaxed);
         }
     }
@@ -418,30 +438,93 @@ impl Running {
 }
 
 /// The group's clock: sample `s` goes out at gPTP time `origin` plus `s`
-/// sample periods.
+/// sample periods, or, following a media clock, where that clock puts it.
 struct Timeline {
     rate: u64,
     origin: i64,
+    /// The media clock followed, and where the samples fall on it.
+    follow: Option<Following>,
+    /// The latest line of the media clock to follow, which a restart
+    /// takes up.
+    wanted: Option<Fit>,
+}
+
+/// Samples on a recovered media clock: sample `sample` falls on its event
+/// `sub / rate`, and each sample takes `base` of those `1 / rate` events.
+#[derive(Debug, Clone, Copy)]
+struct Following {
+    fit: Fit,
+    sample: u64,
+    sub: i128,
+    base: i128,
 }
 
 impl Timeline {
     fn at(&self, sample: u64) -> i64 {
-        self.origin + (u128::from(sample) * NANOS / u128::from(self.rate)) as i64
+        match &self.follow {
+            Some(following) => {
+                let samples = i128::from(sample) - i128::from(following.sample);
+                following
+                    .fit
+                    .time_at(following.sub + samples * following.base, self.rate)
+            }
+            None => self.origin + (u128::from(sample) * NANOS / u128::from(self.rate)) as i64,
+        }
     }
 
     /// The first sample sent at or after gPTP time `time`.
     fn sample_at(&self, time: i64) -> u64 {
-        let since = (time - self.origin).max(0);
-        (since as u128 * u128::from(self.rate)).div_ceil(NANOS) as u64
+        match &self.follow {
+            Some(following) => {
+                let sub = following.fit.sub_at(time, self.rate);
+                let samples = div_ceil(sub - following.sub, following.base);
+                (i128::from(following.sample) + samples).max(0) as u64
+            }
+            None => {
+                let since = (time - self.origin).max(0);
+                (since as u128 * u128::from(self.rate)).div_ceil(NANOS) as u64
+            }
+        }
+    }
+
+    /// Takes the followed clock's latest line, none while it is not
+    /// recovered: the same clock moves the samples with it; whether the
+    /// samples must start again on another, or on gPTP time, it tells.
+    fn take(&mut self, fit: Option<Fit>) -> bool {
+        self.wanted = fit;
+        match (fit, self.follow.as_mut()) {
+            (Some(fit), Some(following)) if following.fit.generation == fit.generation => {
+                following.fit = fit;
+                false
+            }
+            (None, None) => false,
+            _ => true,
+        }
     }
 
     /// Starts again so that sample `from`, rounded up to the alignment,
-    /// goes out on a millisecond at least a millisecond after `now`;
-    /// gives that sample.
+    /// goes out at least a millisecond after `now`: on a millisecond of
+    /// gPTP time, or on an event of the media clock followed; gives that
+    /// sample.
     fn restart(&mut self, from: u64, now: i64) -> u64 {
         let first = from.div_ceil(ALIGN) * ALIGN;
         let boundary = (now / 1_000_000 + 2) * 1_000_000;
-        self.origin = boundary - (u128::from(first) * NANOS / u128::from(self.rate)) as i64;
+        match self.wanted {
+            Some(fit) => {
+                let rate = i128::from(self.rate);
+                let edge = div_ceil(fit.sub_at(boundary, self.rate), rate) * rate;
+                self.follow = Some(Following {
+                    fit,
+                    sample: first,
+                    sub: edge,
+                    base: i128::from(fit.base_frequency),
+                });
+            }
+            None => {
+                self.follow = None;
+                self.origin = boundary - (u128::from(first) * NANOS / u128::from(self.rate)) as i64;
+            }
+        }
         first
     }
 }
@@ -530,15 +613,40 @@ fn run(
     let mut timeline = Timeline {
         rate: u64::from(config.rate.max(1)),
         origin: 0,
+        follow: None,
+        wanted: None,
     };
     let mut seen = u64::MAX;
     let mut media_reset = false;
     let mut frames: u64 = 0;
+    let mut follow: Option<RecoveredClock> = None;
+    let mut switched = false;
     while !stop.load(Ordering::Relaxed) {
         let changes = shared.changes.load(Ordering::Relaxed);
         if changes != seen {
             seen = changes;
+            let wanted = shared
+                .follow
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .clone();
+            // Leaving a clock followed starts again; samples on gPTP time
+            // start again once the new clock is recovered.
+            if wanted != follow {
+                follow = wanted;
+                switched = timeline.follow.take().is_some();
+            }
+            timeline.take(follow.as_ref().and_then(RecoveredClock::fit));
             take_changes(config, shared, &mut running, &mut timeline, clock);
+        }
+        // The media clock followed moves the samples with it; one that
+        // comes, goes or starts again starts them again on it, or on gPTP
+        // time.
+        let retime = timeline.take(follow.as_ref().and_then(RecoveredClock::fit));
+        if (retime || std::mem::take(&mut switched)) && running.iter().any(Option::is_some) {
+            restart(&mut running, &mut timeline, clock);
+            media_reset = !media_reset;
+            shared.group.media_resets.fetch_add(1, Ordering::Relaxed);
         }
         // The stream whose frame is due first.
         let Some((place, due)) = running
@@ -647,6 +755,8 @@ mod tests {
         let mut timeline = Timeline {
             rate: 48_000,
             origin: 0,
+            follow: None,
+            wanted: None,
         };
         let first = timeline.restart(5, 7_400_000);
         assert_eq!(first, 48);
@@ -656,5 +766,61 @@ mod tests {
         assert_eq!(timeline.sample_at(timeline.at(first + 6)), first + 6);
         // A time between samples gives the next sample.
         assert_eq!(timeline.sample_at(timeline.at(first) + 1), first + 1);
+    }
+
+    /// Following a media clock 50 ppm fast at 48 kHz, a 192 kHz group's
+    /// samples start on one of its events and run 50 ppm fast with it,
+    /// four to an event; another start of the clock, or its loss, starts
+    /// them again.
+    #[test]
+    fn the_timeline_follows_a_media_clock() {
+        // Events 20833.33 ns apart, less 50 ppm, 32.32.
+        let period = (1e9 / 48_000.0 / (1.0 + 50e-6) * 4_294_967_296.0) as u64;
+        let fit = Fit {
+            generation: 3,
+            event: 960_000,
+            time: 21_000_000_000,
+            period,
+            base_frequency: 48_000,
+        };
+        let mut timeline = Timeline {
+            rate: 192_000,
+            origin: 0,
+            follow: None,
+            wanted: None,
+        };
+        assert!(timeline.take(Some(fit)), "a clock to follow starts again");
+        let first = timeline.restart(1000, 21_000_000_000);
+        assert_eq!(first, 1008);
+        let start = timeline.at(first);
+        assert!(start >= 21_002_000_000, "{start}");
+        // On an event: a whole number of periods from the line's.
+        let events = fit.sub_at(start, 1) - i128::from(fit.event);
+        assert_eq!(fit.time_at(i128::from(fit.event) + events, 1), start);
+        // A second of samples is 50 ppm short of a second.
+        let second = timeline.at(first + 192_000) - start;
+        assert!((second - 999_950_002).abs() <= 2, "{second}");
+        assert_eq!(
+            timeline.at(first + 4) - start,
+            fit.time_at(i128::from(fit.event) + events + 1, 1) - start
+        );
+        assert_eq!(timeline.sample_at(timeline.at(first + 7)), first + 7);
+        // The same clock's next line moves the samples on.
+        let later = Fit {
+            event: fit.event + 96,
+            time: fit.time_at(i128::from(fit.event) + 96, 1),
+            ..fit
+        };
+        assert!(!timeline.take(Some(later)));
+        assert_eq!(timeline.at(first + 192_000) - start, second);
+        // A new start of the clock, or none, starts again.
+        assert!(timeline.take(Some(Fit {
+            generation: 4,
+            ..later
+        })));
+        assert!(timeline.take(None));
+        timeline.restart(first + 192_000, 22_500_000_000);
+        assert!(timeline.follow.is_none());
+        assert!(!timeline.take(None));
     }
 }

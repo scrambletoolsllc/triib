@@ -59,7 +59,7 @@ fn model(entity_id: EntityId, name: &str, talker: bool) -> EndpointModel {
             vec![stream("Host in")]
         },
         clock_source: 0,
-        input_clock_sources: true,
+        clock_source_inputs: if talker { vec![] } else { vec![0] },
     }
 }
 
@@ -559,4 +559,68 @@ fn a_media_clock_stream_has_no_port_and_keeps_its_rate() {
         (outputs[0].current_format, outputs[1].current_format),
         (CRF_48K, AAF_96K_8CH)
     );
+}
+
+/// A listener whose media clock input is a clock source: the controller
+/// reads it as one, after the internal clock, flagged on its input alone,
+/// and picking it tells the entity.
+#[test]
+fn a_media_clock_input_is_a_clock_source() {
+    use atdecc::descriptor::{ClockSourceType, StreamFlags};
+
+    const CRF_48K: StreamFormat = StreamFormat(0x0410_6001_0000_bb80);
+    let mut network = Network::new();
+    let mut model = model(LISTENER, "Listener", false);
+    model.inputs.push(StreamModel {
+        name: "Media Clock In 1".into(),
+        formats: vec![CRF_48K],
+        current_format: CRF_48K,
+        channels: 0,
+        class_b: false,
+    });
+    model.clock_source_inputs = vec![1];
+    let mut listener = Entity::new(model, &[]);
+    listener.start(network.now);
+    network.listener = listener;
+    network.controller.discover(None);
+    network.run(3000);
+
+    let read = network.controller.model(LISTENER).expect("read");
+    let sources: Vec<(String, ClockSourceType, DescriptorType, u16)> = read
+        .clock_sources()
+        .map(|source| {
+            (
+                source.object_name.to_owned(),
+                source.clock_source_type,
+                source.location_type,
+                source.location_index,
+            )
+        })
+        .collect();
+    assert_eq!(sources.len(), 2);
+    assert_eq!(sources[0].1, ClockSourceType::INTERNAL);
+    assert_eq!(
+        sources[1],
+        (
+            "Media Clock In 1".to_owned(),
+            ClockSourceType::INPUT_STREAM,
+            DescriptorType::STREAM_INPUT,
+            1
+        )
+    );
+    let synced: Vec<bool> = read
+        .streams(true)
+        .map(|stream| stream.stream_flags.contains(StreamFlags::CLOCK_SYNC_SOURCE))
+        .collect();
+    assert_eq!(synced, [false, true]);
+
+    let now = network.now;
+    network.controller.set_clock_source(now, LISTENER, 0, 1);
+    network.run(500);
+    assert!(
+        network
+            .entity_events
+            .contains(&EntityEvent::ClockSourceChanged(1))
+    );
+    assert_eq!(network.listener.model().clock_source, 1);
 }

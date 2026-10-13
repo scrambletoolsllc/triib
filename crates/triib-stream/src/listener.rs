@@ -16,9 +16,9 @@ use atdecc::stream_format::StreamFormat;
 use avb_net::MacAddress;
 use avb_net::stream::{FrameReceiver, avtp_payload};
 
-use crate::MediaClock;
 use crate::audio::{Output, Presented, Sink};
 use crate::media::{self, Media};
+use crate::{MediaClock, RecoveredClock, crf};
 
 /// How long without a frame before the stream counts as interrupted.
 const SILENCE: Duration = Duration::from_millis(100);
@@ -38,6 +38,9 @@ pub struct ListenerConfig {
     pub destinations: Vec<MacAddress>,
     pub format: StreamFormat,
     pub sink: Sink,
+    /// For a media clock stream, the clock it recovers, for talkers to
+    /// follow.
+    pub recovered: Option<RecoveredClock>,
 }
 
 /// A listener's counters (Milan 1.3, Table 5.10).
@@ -330,6 +333,16 @@ struct Running {
     last: Instant,
 }
 
+impl Drop for Running {
+    /// The clock a stream recovered goes with it, however it stops: in
+    /// place of another, or with the group's thread.
+    fn drop(&mut self) {
+        if let Some(recovered) = &self.opened.config.recovered {
+            recovered.lose();
+        }
+    }
+}
+
 fn run(shared: &Shared, clock: &MediaClock, stop: &AtomicBool) {
     shared
         .realtime
@@ -389,6 +402,9 @@ fn run(shared: &Shared, clock: &MediaClock, stop: &AtomicBool) {
                 counters.media_unlocked.fetch_add(1, Ordering::Relaxed);
                 counters.interrupted.fetch_add(1, Ordering::Relaxed);
                 stream.expected = None;
+                if let Some(recovered) = &stream.opened.config.recovered {
+                    recovered.lose();
+                }
             }
         }
     }
@@ -428,8 +444,10 @@ fn take_frame(stream: &mut Running, frame: &[u8], samples: &mut Vec<f32>, clock:
         last,
     } = stream;
     samples.clear();
-    let Some(header) = avtp_payload(frame).and_then(|pdu| media::read(pdu, &opened.media, samples))
-    else {
+    let Some(pdu) = avtp_payload(frame) else {
+        return;
+    };
+    let Some(header) = media::read(pdu, &opened.media, samples) else {
         return;
     };
     if header.stream_id != opened.config.stream_id {
@@ -438,6 +456,22 @@ fn take_frame(stream: &mut Running, frame: &[u8], samples: &mut Vec<f32>, clock:
     if !header.matches {
         counters.unsupported_formats.fetch_add(1, Ordering::Relaxed);
         return;
+    }
+    // A media clock's timestamps, for the clock it recovers.
+    if let (Media::Crf(layout), Some(recovered)) = (&opened.media, &opened.config.recovered)
+        && let Some((crf, timestamps)) = crf::Header::decode(pdu)
+    {
+        let times = timestamps
+            .as_chunks::<8>()
+            .0
+            .iter()
+            .map(|time| u64::from_be_bytes(*time));
+        recovered.take(
+            times,
+            layout.timestamp_interval,
+            layout.base_frequency,
+            crf.media_reset,
+        );
     }
     *last = Instant::now();
     counters.frames_received.fetch_add(1, Ordering::Relaxed);

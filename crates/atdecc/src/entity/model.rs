@@ -7,8 +7,8 @@
 //! domain. Each audio stream has a stream port of its own on the audio
 //! unit, with an audio cluster of one channel for each of the stream's
 //! channels and a static map between them; a media clock stream, CRF, has
-//! none. The clock sources are the internal clock, then each stream input
-//! where the model offers them.
+//! none. The clock sources are the internal clock, then the stream inputs
+//! the model offers as clock sources.
 
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -65,12 +65,11 @@ pub struct EndpointModel {
     pub outputs: Vec<StreamModel>,
     pub inputs: Vec<StreamModel>,
     /// The clock domain's current clock source: 0 the internal clock,
-    /// then the stream inputs.
+    /// then those of `clock_source_inputs`, in order.
     pub clock_source: u16,
-    /// Whether the stream inputs are clock sources too, beside the
-    /// internal clock: only for an entity that can follow one's media
-    /// clock.
-    pub input_clock_sources: bool,
+    /// The stream inputs that are clock sources too, beside the internal
+    /// clock: those whose media clock the entity can follow.
+    pub clock_source_inputs: Vec<u16>,
 }
 
 /// Fixed-size AEM text: UTF-8, zero padded, cut at a character boundary.
@@ -180,11 +179,14 @@ impl EndpointModel {
 
     /// How many clock sources the clock domain has.
     pub(crate) fn clock_sources(&self) -> u16 {
-        if self.input_clock_sources {
-            1 + self.inputs.len() as u16
-        } else {
-            1
-        }
+        1 + self.clock_source_inputs.len() as u16
+    }
+
+    /// The stream input clock source `source` follows, none for the
+    /// internal clock.
+    pub fn clock_source_input(&self, source: u16) -> Option<u16> {
+        let at = usize::from(source.checked_sub(1)?);
+        self.clock_source_inputs.get(at).copied()
     }
 
     /// The descriptor types the configuration counts, with how many of
@@ -284,7 +286,7 @@ impl EndpointModel {
                 } else {
                     StreamFlags::CLASS_A
                 };
-                if input && self.input_clock_sources {
+                if input && self.clock_source_inputs.contains(&index) {
                     flags |= StreamFlags::CLOCK_SYNC_SOURCE;
                 }
                 writer
@@ -335,7 +337,7 @@ impl EndpointModel {
                         .u16(LOCATION_ENTITY)
                         .u16(0)
                 } else {
-                    let input = index - 1;
+                    let input = self.clock_source_input(index)?;
                     let name = self.inputs.get(usize::from(input))?.name.as_str();
                     writer
                         .name(name)

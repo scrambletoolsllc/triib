@@ -95,6 +95,10 @@ pub struct StreamConfig {
     /// and no audio.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub clock: bool,
+    /// For a media clock input, the device's clock source: its talkers
+    /// follow the clock the input carries.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub clock_source: bool,
     /// Its name, "Out 1", "In 1", "Media Clock Out 1" and on when empty.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub name: String,
@@ -135,6 +139,7 @@ impl StreamConfig {
         StreamConfig {
             direction,
             clock: false,
+            clock_source: false,
             name: String::new(),
             channels: 8,
             audio: None,
