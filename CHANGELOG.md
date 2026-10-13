@@ -96,6 +96,9 @@ computer's talkers and listeners folded into its entities.
 - A preset moved to another computer renames the talkers its entities'
   inputs are bound to.
 - An entity lists each sampling rate once.
+- On Linux, the links triib opens open: the desktop portal refused
+  them, as it does any app holding a capability, as triib holds
+  `cap_net_raw`. triib now asks it from a helper without one.
 
 ## [1.0.0] - 2026-10-12
 
