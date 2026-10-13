@@ -327,11 +327,13 @@ fn toolbar_at(triib: &Triib, width: f32) -> Element<'_, Message> {
 }
 
 /// The interface picker's filters: a tool, shown as in use while any
-/// leaves interfaces out, whose menu checks each kind it leaves out, open
-/// while they are checked.
+/// leaves interfaces out, whose menu marks each kind it leaves out with a
+/// check, open while they are checked.
 fn interface_filters(triib: &Triib) -> Element<'_, Message> {
     use crate::settings::InterfaceFilter;
-    use scramble_ui::dropdown::Entry;
+    /// The check's room before each label, and the row's around them.
+    const MARK: f32 = 20.0;
+    const ROW_ROOM: f32 = 2.0 * 16.0 + 8.0 + MARK + 12.0;
     let settings = &triib.settings;
     let open = triib.interface_filters_open;
     let filters = [
@@ -340,14 +342,34 @@ fn interface_filters(triib: &Triib) -> Element<'_, Message> {
         (InterfaceFilter::Unclocked, fl!("toolbar-hide-unclocked")),
     ];
     let menu = open.then(|| {
-        let entries = filters
-            .into_iter()
-            .map(|(filter, label)| {
-                Entry::item(label, Message::InterfaceFilterToggled(filter))
-                    .checked(settings.hides(filter))
-            })
-            .collect();
-        dropdown::surface(entries, 0.0)
+        let _reading = dir::reading();
+        let widest = filters
+            .iter()
+            .map(|(_, label)| scramble_ui::font::measure(label, Type::LabelLarge))
+            .fold(0.0, f32::max);
+        // A check before each filter on, the room for one before the
+        // others, so the labels line up.
+        let rows = filters.into_iter().map(|(filter, label)| {
+            let mark: Element<'_, Message> = if settings.hides(filter) {
+                icon::icon(Icon::Check, MARK).into()
+            } else {
+                space().width(MARK).into()
+            };
+            let label = styled(label, Type::LabelLarge)
+                .wrapping(iced::widget::text::Wrapping::None)
+                .into();
+            let row = dir::row([mark, label, space().width(Fill).into()])
+                .spacing(12)
+                .align_y(Center)
+                .width(Fill);
+            button::custom(Kind::Row, row)
+                .height(40.0)
+                .width(Fill)
+                .on_press(Message::InterfaceFilterToggled(filter))
+                .into()
+        });
+        let rows = iced::widget::Column::with_children(rows).width((widest + ROW_ROOM).ceil());
+        scramble_ui::popover::surface(rows)
     });
     let any = [
         InterfaceFilter::Virtual,
@@ -2420,6 +2442,7 @@ pub(crate) mod tests {
             ),
             ("log-phone", View::Network, false, phone),
             ("presets-desktop", View::Matrix, false, desktop),
+            ("filters-desktop", View::Matrix, false, desktop),
             (
                 "inspector-mappings-phone",
                 View::Entities,
@@ -2602,6 +2625,11 @@ pub(crate) mod tests {
                     name_index: 0,
                 };
                 triib.editing = Some((target, "Studio Mac".to_owned()));
+            }
+            if suffix.contains("filters") {
+                // The interface filters' menu, open, two of them on.
+                triib.interface_filters_open = true;
+                triib.settings.hide_wireless_interfaces = true;
             }
             let iced_settings = iced::Settings {
                 fonts: scramble_ui::font::files().collect(),
@@ -3049,8 +3077,18 @@ pub(crate) mod tests {
         triib.settings.toggle_filter(InterfaceFilter::Unclocked);
         assert_eq!(listed(&triib), ["enp2s0", "enp6s0", "enp7s0", "br0"]);
 
+        // A filter on has a check before it; with none on, none has.
         triib.interface_filters_open = true;
+        let check = Icon::Check.codepoint().to_string();
+        triib.settings.toggle_filter(InterfaceFilter::Wireless);
+        assert!(
+            simulate(&triib, Size::new(1280.0, 800.0))
+                .find(check.as_str())
+                .is_err()
+        );
+        triib.settings.toggle_filter(InterfaceFilter::Wireless);
         let mut simulator = simulate(&triib, Size::new(1280.0, 800.0));
+        assert!(simulator.find(check.as_str()).is_ok());
         assert!(simulator.find("Hide virtual interfaces").is_ok());
         assert!(
             simulator
