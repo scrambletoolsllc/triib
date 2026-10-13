@@ -358,8 +358,8 @@ fn groups(triib: &Triib, side: Side) -> Vec<Group<'_>> {
                 .filter(|stream| whole || app::stream_matches(model, stream, &search))
                 .filter(|stream| match streams {
                     Streams::All => true,
-                    Streams::Audio => !stream.current_format.is_clock(),
-                    Streams::Clock => stream.current_format.is_clock(),
+                    Streams::Audio => !stream.is_media_clock(),
+                    Streams::Clock => stream.is_media_clock(),
                 })
                 .map(|stream| Stream {
                     entity_id,
@@ -1020,6 +1020,40 @@ fn legend<'a>() -> Element<'a, Message> {
 mod tests {
     use super::*;
     use crate::settings::Settings;
+
+    /// A media clock output sending its clock as audio, as the Mac's
+    /// Media Clock Output Streams 2 and 3 send one channel of AAF, is a
+    /// media clock stream: the matrix's media clock streams show it, its
+    /// audio streams do not.
+    #[test]
+    fn a_media_clock_output_sending_audio_is_a_media_clock_stream() {
+        use crate::settings::Streams;
+
+        let (entities, models) = crate::view::tests::bench();
+        let interface = avb_net::Interface {
+            name: "enp6s0".to_owned(),
+            mac: avb_net::MacAddress([0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b]),
+            up: true,
+            speed: None,
+            physical: true,
+            wireless: false,
+            hardware_clock: None,
+        };
+        let mut triib = Triib::sample(Settings::default(), interface, entities, models);
+        let shows = |triib: &Triib| {
+            groups(triib, Side::Talker)
+                .iter()
+                .flat_map(|group| &group.streams)
+                .find(|stream| stream.name == "Media Clock Output Stream 2")
+                .map(|stream| stream.format)
+        };
+        let format = shows(&triib).expect("the Mac's second media clock output");
+        assert!(!format.is_clock(), "sending AAF");
+        triib.settings.matrix_streams = Streams::Clock;
+        assert!(shows(&triib).is_some());
+        triib.settings.matrix_streams = Streams::Audio;
+        assert!(shows(&triib).is_none());
+    }
 
     #[test]
     fn entities_do_not_connect_to_themselves() {

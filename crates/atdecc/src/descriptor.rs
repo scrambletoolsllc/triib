@@ -392,6 +392,14 @@ impl<'a> StreamDescriptor<'a> {
             .iter()
             .map(|format| StreamFormat(u64::from_be_bytes(*format)))
     }
+
+    /// Whether the stream carries a media clock: CRF now, or a stream
+    /// that offers CRF, which an audio stream does not, sending its clock
+    /// as audio whose presentation times carry it, as the Mac's media
+    /// clock outputs can.
+    pub fn is_media_clock(&self) -> bool {
+        self.current_format.is_clock() || self.formats().any(StreamFormat::is_clock)
+    }
 }
 
 /// The AVB_INTERFACE descriptor (Table 7-13).

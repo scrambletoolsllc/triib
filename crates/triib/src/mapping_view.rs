@@ -76,7 +76,7 @@ impl fmt::Display for Choice {
 fn streams(model: &EntityModel, input: bool) -> Vec<Channels> {
     model
         .streams(input)
-        .filter(|stream| !stream.current_format.is_clock())
+        .filter(|stream| !stream.is_media_clock())
         .filter_map(|stream| {
             Some(Channels {
                 at: stream.index,

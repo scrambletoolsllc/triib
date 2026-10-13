@@ -619,7 +619,7 @@ fn streams(triib: &Triib, topology: &Topology) -> Vec<Stream> {
                 },
                 talker_name: triib.entity_name_of(talker_id),
                 listener_name,
-                media_clock: input.current_format.is_clock(),
+                media_clock: input.is_media_clock(),
                 status,
                 reason,
                 route,

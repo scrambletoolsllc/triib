@@ -1127,7 +1127,7 @@ fn stream_sections<'a>(
     }
     // A media clock stream carries no channels, so the audio's mappings
     // are not its.
-    if !picked.is_some_and(|stream| stream.current_format.is_clock()) {
+    if !picked.is_some_and(StreamDescriptor::is_media_clock) {
         items.extend(mapping_view::mapping_details(triib, entity_id, model));
     }
     items
