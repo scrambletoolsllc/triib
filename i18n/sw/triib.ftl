@@ -130,6 +130,8 @@ clock-source-numbered = Chanzo { $index }
 rate-pull = pull { $pull }
 
 stream-format = Muundo
+stream-id = ID ya mtiririko
+stream-destination = Lengwa
 stream-max-transit-time = Muda wa juu wa kupita { $time }
 
 avb-interfaces = Violesura vya AVB

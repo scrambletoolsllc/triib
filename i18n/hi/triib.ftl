@@ -130,6 +130,8 @@ clock-source-numbered = Source { $index }
 rate-pull = pull { $pull }
 
 stream-format = Format
+stream-id = Stream ID
+stream-destination = गंतव्य
 stream-max-transit-time = अधिकतम transit time { $time }
 
 avb-interfaces = AVB interfaces

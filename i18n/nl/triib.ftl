@@ -132,6 +132,8 @@ clock-source-numbered = Bron { $index }
 rate-pull = pull { $pull }
 
 stream-format = Formaat
+stream-id = Stream-ID
+stream-destination = Bestemming
 stream-max-transit-time = Max. doorlooptijd { $time }
 
 avb-interfaces = AVB-interfaces

@@ -132,6 +132,8 @@ clock-source-numbered = Källa { $index }
 rate-pull = pull { $pull }
 
 stream-format = Format
+stream-id = Stream-ID
+stream-destination = Destination
 stream-max-transit-time = Max. transittid { $time }
 
 avb-interfaces = AVB-gränssnitt

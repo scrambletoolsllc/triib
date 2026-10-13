@@ -132,6 +132,8 @@ clock-source-numbered = Πηγή { $index }
 rate-pull = pull { $pull }
 
 stream-format = Μορφή
+stream-id = ID ροής
+stream-destination = Προορισμός
 stream-max-transit-time = Μέγ. χρόνος διέλευσης { $time }
 
 avb-interfaces = Διεπαφές AVB

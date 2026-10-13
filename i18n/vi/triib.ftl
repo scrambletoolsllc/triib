@@ -133,6 +133,8 @@ clock-source-numbered = Nguồn { $index }
 rate-pull = hệ số pull { $pull }
 
 stream-format = Định dạng
+stream-id = ID luồng
+stream-destination = Đích
 stream-max-transit-time = Thời gian truyền tối đa { $time }
 
 avb-interfaces = Giao diện AVB

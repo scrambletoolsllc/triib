@@ -132,6 +132,8 @@ clock-source-numbered = Kilde { $index }
 rate-pull = pull { $pull }
 
 stream-format = Format
+stream-id = Stream-ID
+stream-destination = Destination
 stream-max-transit-time = Maks. transittid { $time }
 
 avb-interfaces = AVB-interfaces

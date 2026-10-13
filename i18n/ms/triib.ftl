@@ -130,6 +130,8 @@ clock-source-numbered = Sumber { $index }
 rate-pull = pull { $pull }
 
 stream-format = Format
+stream-id = ID strim
+stream-destination = Destinasi
 stream-max-transit-time = Masa transit maks. { $time }
 
 avb-interfaces = Antara muka AVB

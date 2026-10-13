@@ -132,6 +132,8 @@ clock-source-numbered = Lähde { $index }
 rate-pull = pull { $pull }
 
 stream-format = Muoto
+stream-id = Striimin ID
+stream-destination = Kohde
 stream-max-transit-time = Suurin läpikulkuaika { $time }
 
 avb-interfaces = AVB-liitännät

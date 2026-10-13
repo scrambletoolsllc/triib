@@ -133,6 +133,8 @@ clock-source-numbered = Sorgente { $index }
 rate-pull = pull { $pull }
 
 stream-format = Formato
+stream-id = ID del flusso
+stream-destination = Destinazione
 stream-max-transit-time = Tempo di transito max { $time }
 
 avb-interfaces = Interfacce AVB

@@ -132,6 +132,8 @@ clock-source-numbered = Forrás { $index }
 rate-pull = pull { $pull }
 
 stream-format = Formátum
+stream-id = Stream-ID
+stream-destination = Cél
 stream-max-transit-time = Max. átfutási idő: { $time }
 
 avb-interfaces = AVB-interfészek

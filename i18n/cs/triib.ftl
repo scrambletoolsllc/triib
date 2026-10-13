@@ -130,6 +130,8 @@ clock-source-numbered = Zdroj { $index }
 rate-pull = pull { $pull }
 
 stream-format = Formát
+stream-id = ID streamu
+stream-destination = Cíl
 stream-max-transit-time = Max. doba průchodu { $time }
 
 avb-interfaces = Rozhraní AVB

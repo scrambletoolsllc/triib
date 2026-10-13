@@ -181,6 +181,10 @@ rate-pull = pull { $pull }
 
 # The most time a stream output's frames take through the network.
 stream-format = Format
+# A stream's ID, as in 0xd111e597f5440000.
+stream-id = Stream ID
+# The MAC address a stream is sent to.
+stream-destination = Destination
 stream-max-transit-time = Max transit time { $time }
 
 avb-interfaces = AVB interfaces

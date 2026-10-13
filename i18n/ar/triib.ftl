@@ -130,6 +130,8 @@ clock-source-numbered = المصدر { $index }
 rate-pull = سحب { $pull }
 
 stream-format = التنسيق
+stream-id = ID التدفق
+stream-destination = الوجهة
 stream-max-transit-time = أقصى زمن عبور { $time }
 
 avb-interfaces = واجهات AVB

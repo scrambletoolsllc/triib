@@ -130,6 +130,8 @@ clock-source-numbered = מקור { $index }
 rate-pull = משיכה { $pull }
 
 stream-format = פורמט
+stream-id = ID של הזרם
+stream-destination = יעד
 stream-max-transit-time = זמן מעבר מרבי { $time }
 
 avb-interfaces = ממשקי AVB

@@ -130,6 +130,8 @@ clock-source-numbered = Джерело { $index }
 rate-pull = pull { $pull }
 
 stream-format = Формат
+stream-id = ID потоку
+stream-destination = Призначення
 stream-max-transit-time = Макс. час проходження { $time }
 
 avb-interfaces = Інтерфейси AVB

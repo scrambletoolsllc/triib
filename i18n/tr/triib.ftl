@@ -132,6 +132,8 @@ clock-source-numbered = Kaynak { $index }
 rate-pull = pull { $pull }
 
 stream-format = Biçim
+stream-id = Akış ID'si
+stream-destination = Hedef
 stream-max-transit-time = Azami geçiş süresi { $time }
 
 avb-interfaces = AVB arayüzleri

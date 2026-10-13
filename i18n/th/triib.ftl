@@ -130,6 +130,8 @@ clock-source-numbered = แหล่ง { $index }
 rate-pull = pull { $pull }
 
 stream-format = รูปแบบ
+stream-id = ID สตรีม
+stream-destination = ปลายทาง
 stream-max-transit-time = เวลาส่งผ่านสูงสุด { $time }
 
 avb-interfaces = อินเทอร์เฟซ AVB

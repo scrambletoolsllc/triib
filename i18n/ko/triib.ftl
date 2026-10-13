@@ -133,6 +133,8 @@ clock-source-numbered = 소스 { $index }
 rate-pull = 풀 { $pull }
 
 stream-format = 포맷
+stream-id = 스트림 ID
+stream-destination = 대상
 stream-max-transit-time = 최대 전송 시간 { $time }
 
 avb-interfaces = AVB 인터페이스

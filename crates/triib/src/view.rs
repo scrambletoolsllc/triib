@@ -3,7 +3,7 @@
 
 use std::fmt;
 
-use atdecc::aem::AvbInfoFlags;
+use atdecc::aem::{AvbInfoFlags, StreamInfoFlags};
 use atdecc::descriptor::DescriptorType;
 use atdecc::descriptor::{
     AudioUnitDescriptor, AvbInterfaceDescriptor, ClockDomainDescriptor, ClockSourceDescriptor,
@@ -1048,6 +1048,50 @@ fn picked_stream(
         .or((!streams.is_empty()).then_some(0))
 }
 
+/// A stream's ID, destination address and VLAN, as its stream info
+/// reports them, the stream an input is bound to; for an output without
+/// stream info, as its transmit state does.
+fn stream_addressing<'a>(
+    model: &EntityModel,
+    stream: &StreamDescriptor<'_>,
+) -> Vec<Element<'a, Message>> {
+    let reported = model
+        .stream_info(stream.descriptor_type, stream.index)
+        .map(|info| {
+            let valid = |flag| info.flags.contains(flag);
+            (
+                valid(StreamInfoFlags::STREAM_ID_VALID).then_some(info.stream_id),
+                valid(StreamInfoFlags::STREAM_DEST_MAC_VALID).then_some(info.stream_dest_mac),
+                valid(StreamInfoFlags::STREAM_VLAN_ID_VALID).then_some(info.stream_vlan_id),
+            )
+        })
+        .filter(|addressing| *addressing != (None, None, None))
+        .or_else(|| {
+            let state = (!stream.is_input())
+                .then(|| model.tx_state(stream.index))
+                .flatten()?;
+            Some((
+                Some(state.stream_id),
+                Some(state.destination),
+                Some(state.vlan_id),
+            ))
+        });
+    let Some((stream_id, destination, vlan)) = reported else {
+        return Vec::new();
+    };
+    let mut items = Vec::new();
+    if let Some(stream_id) = stream_id.filter(|id| id.0 != 0) {
+        items.push(property(fl!("stream-id"), stream_id.to_string()));
+    }
+    if let Some(destination) = destination.filter(|mac| mac.0 != [0; 6]) {
+        items.push(property(fl!("stream-destination"), destination.to_string()));
+    }
+    if let Some(vlan) = vlan.filter(|&vlan| vlan != 0) {
+        items.push(property("VLAN", vlan.to_string()));
+    }
+    items
+}
+
 /// The streams as a compact list, each with its way, name and format in
 /// short, showing [`STREAMS_SHOWN`] before it scrolls; a name too long
 /// for the row ends in an ellipsis.
@@ -1167,6 +1211,7 @@ fn stream_details<'a>(
     if let Some(state) = describe::stream_state(triib, entity_id, model, stream) {
         items.push(property(fl!("host-state"), state));
     }
+    items.extend(stream_addressing(model, stream));
     if let Some(nanoseconds) = (!input)
         .then(|| model.max_transit_time(stream.index))
         .flatten()
@@ -2036,10 +2081,24 @@ pub(crate) mod tests {
                         {
                             flags |= StreamInfoFlags::CONNECTED
                                 | StreamInfoFlags::STREAM_ID_VALID
+                                | StreamInfoFlags::STREAM_DEST_MAC_VALID
+                                | StreamInfoFlags::STREAM_VLAN_ID_VALID
                                 | StreamInfoFlags::MSRP_ACC_LAT_VALID;
                         }
                         payload.resize(48, 0);
                         payload[4..8].copy_from_slice(&flags.0.to_be_bytes());
+                        // The stream it is bound to: its talker's, sent to
+                        // a multicast address on VLAN 2.
+                        if let Some((talker, output)) = (descriptor_type
+                            == DescriptorType::STREAM_INPUT.0)
+                            .then(|| bound_to(index))
+                            .flatten()
+                        {
+                            let stream_id = (talker.0 & !0xffff) | u64::from(output);
+                            payload[16..24].copy_from_slice(&stream_id.to_be_bytes());
+                            payload[28..34].copy_from_slice(&[0x91, 0xe0, 0xf0, 0x00, 0x6a, 0x20]);
+                            payload[44..46].copy_from_slice(&2u16.to_be_bytes());
+                        }
                         AemStatus::SUCCESS
                     }
                     _ => AemStatus::NOT_IMPLEMENTED,
@@ -2814,6 +2873,52 @@ pub(crate) mod tests {
             }
             assert_eq!(triib.settings.log_height, height);
         }
+    }
+
+    #[test]
+    fn the_picked_stream_shows_its_id_destination_and_vlan() {
+        let (entities, mut models) = bench();
+        let bound = reread(
+            &entities,
+            &models,
+            WIRED_ESP,
+            |_| {},
+            &[],
+            &[(0, MAC_MINI, 0)],
+            false,
+        );
+        models.insert(WIRED_ESP, bound);
+        let interface = Interface {
+            name: "enp6s0".to_owned(),
+            mac: MacAddress(HOST_MAC),
+            up: true,
+            speed: Some(1000),
+            physical: true,
+            wireless: false,
+            hardware_clock: Some(0),
+        };
+        let settings = Settings {
+            interface: Some(interface.name.clone()),
+            view: View::Entities,
+            inspector: true,
+            ..Settings::default()
+        };
+        let mut triib = Triib::sample(settings, interface, entities, models);
+        triib.selected = Some(WIRED_ESP);
+        triib.inspector_tab = InspectorTab::Streams;
+        triib.stream_selected = Some((WIRED_ESP, true, 0));
+        {
+            let mut simulator = simulate(&triib, Size::new(1280.0, 1600.0));
+            assert!(simulator.find("Stream ID").is_ok());
+            assert!(simulator.find("0xd111e597f5440000").is_ok());
+            assert!(simulator.find("Destination").is_ok());
+            assert!(simulator.find("91:e0:f0:00:6a:20").is_ok());
+            assert!(simulator.find("VLAN").is_ok());
+        }
+        // An input bound to nothing has none of them.
+        triib.stream_selected = Some((WIRED_ESP, true, 1));
+        let mut simulator = simulate(&triib, Size::new(1280.0, 1600.0));
+        assert!(simulator.find("Stream ID").is_err());
     }
 
     #[test]

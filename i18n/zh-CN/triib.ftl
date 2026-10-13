@@ -133,6 +133,8 @@ clock-source-numbered = 时钟源 { $index }
 rate-pull = pull 系数 { $pull }
 
 stream-format = 格式
+stream-id = 流 ID
+stream-destination = 目标
 stream-max-transit-time = 最大传输时间 { $time }
 
 avb-interfaces = AVB 接口
