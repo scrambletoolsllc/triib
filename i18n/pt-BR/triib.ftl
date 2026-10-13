@@ -135,7 +135,7 @@ rate-pull = pull { $pull }
 stream-format = Formato
 stream-id = ID do fluxo
 stream-destination = Destino
-stream-max-transit-time = Tempo de trânsito máx. { $time }
+stream-max-transit = Tempo de trânsito máx.
 
 avb-interfaces = Interfaces AVB
 avb-interface = Interface
@@ -254,6 +254,7 @@ outcome-rename = Não foi possível renomear { $what } para “{ $name }”: { $
 outcome-rename-group = Não foi possível renomear o grupo de { $entity } para “{ $name }”: { $reason }.
 outcome-format-streaming = Não foi possível alterar o formato de { $stream }: ele está transmitindo. Desconecte-o primeiro.
 outcome-format = Não foi possível alterar o formato de { $stream }: { $reason }.
+outcome-max-transit-time = Não foi possível alterar o tempo de trânsito máx. de { $stream }: { $reason }.
 outcome-sampling-rate = Não foi possível alterar a taxa de amostragem de { $entity }: { $reason }.
 outcome-clock-source = Não foi possível alterar a fonte de relógio de { $entity }: { $reason }.
 outcome-map = Não foi possível mapear o canal em { $entity }: { $reason }.

@@ -88,6 +88,7 @@ pub fn add(interface: &str, kind: Kind, name: String) -> Result<(), String> {
         sink,
         first_channel: 0,
         format: None,
+        transit: None,
         bound: None,
         class: Default::default(),
         streams,

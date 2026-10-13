@@ -111,6 +111,13 @@ pub enum Action {
         index: u16,
         values: ControlValues,
     },
+    /// Set how far ahead of sending a stream output's presentation times
+    /// are (Milan's SET_MAX_TRANSIT_TIME), in nanoseconds.
+    SetMaxTransitTime {
+        entity: EntityId,
+        output: u16,
+        nanoseconds: u64,
+    },
 }
 
 /// The most octets of a control's values an action carries: a linear
@@ -409,6 +416,11 @@ fn run(
                             index,
                             values,
                         } => controller.set_control(now, entity, index, values.as_slice()),
+                        Action::SetMaxTransitTime {
+                            entity,
+                            output,
+                            nanoseconds,
+                        } => controller.set_max_transit_time(now, entity, output, nanoseconds),
                     };
                     actions.insert(command, action);
                 }

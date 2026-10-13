@@ -132,7 +132,7 @@ rate-pull = کھنچاؤ { $pull }
 stream-format = فارمیٹ
 stream-id = اسٹریم ID
 stream-destination = منزل
-stream-max-transit-time = زیادہ سے زیادہ ٹرانزٹ ٹائم { $time }
+stream-max-transit = زیادہ سے زیادہ ٹرانزٹ ٹائم
 
 avb-interfaces = AVB انٹرفیسز
 avb-interface = انٹرفیس
@@ -237,6 +237,7 @@ outcome-rename = { $what } کا نام بدل کر "{ $name }" نہیں کیا �
 outcome-rename-group = { $entity } کے گروپ کا نام بدل کر "{ $name }" نہیں کیا جا سکا: { $reason }۔
 outcome-format-streaming = { $stream } کا فارمیٹ نہیں بدلا جا سکا: یہ اسٹریمنگ کر رہا ہے۔ پہلے اسے منقطع کریں۔
 outcome-format = { $stream } کا فارمیٹ نہیں بدلا جا سکا: { $reason }۔
+outcome-max-transit-time = { $stream } کا زیادہ سے زیادہ ٹرانزٹ ٹائم نہیں بدلا جا سکا: { $reason }۔
 outcome-sampling-rate = { $entity } کا سیمپلنگ ریٹ نہیں بدلا جا سکا: { $reason }۔
 outcome-clock-source = { $entity } کا کلاک سورس نہیں بدلا جا سکا: { $reason }۔
 outcome-map = { $entity } پر چینل میپ نہیں کیا جا سکا: { $reason }۔

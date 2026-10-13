@@ -134,7 +134,7 @@ rate-pull = pull { $pull }
 stream-format = Muoto
 stream-id = Striimin ID
 stream-destination = Kohde
-stream-max-transit-time = Suurin läpikulkuaika { $time }
+stream-max-transit = Suurin läpikulkuaika
 
 avb-interfaces = AVB-liitännät
 avb-interface = Liitäntä
@@ -245,6 +245,7 @@ outcome-rename = Kohteen { $what } uudeksi nimeksi ei voitu asettaa ”{ $name }
 outcome-rename-group = Entiteetin { $entity } ryhmän uudeksi nimeksi ei voitu asettaa ”{ $name }”: { $reason }.
 outcome-format-streaming = Striimin { $stream } muotoa ei voitu muuttaa: se on käynnissä. Katkaise sen yhteys ensin.
 outcome-format = Striimin { $stream } muotoa ei voitu muuttaa: { $reason }.
+outcome-max-transit-time = Striimin { $stream } suurinta läpikulkuaikaa ei voitu muuttaa: { $reason }.
 outcome-sampling-rate = Entiteetin { $entity } näytteenottotaajuutta ei voitu muuttaa: { $reason }.
 outcome-clock-source = Entiteetin { $entity } kellolähdettä ei voitu muuttaa: { $reason }.
 outcome-map = Kanavaa ei voitu kartoittaa entiteetissä { $entity }: { $reason }.

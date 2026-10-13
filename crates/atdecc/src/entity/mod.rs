@@ -319,6 +319,24 @@ impl Entity {
         Some(self.outputs.get(usize::from(index))?.max_transit_time)
     }
 
+    /// Whether a stream output's max transit time is its class's default.
+    pub fn max_transit_time_is_default(&self, index: u16) -> bool {
+        self.outputs
+            .get(usize::from(index))
+            .is_none_or(|output| output.max_transit_time == output.default_transit())
+    }
+
+    /// Gives a stream output back the max transit time a controller set
+    /// before, as the entity starts; zero is the default.
+    pub fn restore_max_transit_time(&mut self, index: u16, nanoseconds: u32) {
+        if let Some(output) = self.outputs.get_mut(usize::from(index)) {
+            output.max_transit_time = match nanoseconds {
+                0 => output.default_transit(),
+                nanoseconds => nanoseconds,
+            };
+        }
+    }
+
     pub fn input_binding(&self, index: u16) -> Option<InputBinding> {
         self.inputs.get(usize::from(index))?.binding
     }

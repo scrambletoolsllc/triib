@@ -135,7 +135,7 @@ rate-pull = hệ số pull { $pull }
 stream-format = Định dạng
 stream-id = ID luồng
 stream-destination = Đích
-stream-max-transit-time = Thời gian truyền tối đa { $time }
+stream-max-transit = Thời gian truyền tối đa
 
 avb-interfaces = Giao diện AVB
 avb-interface = Giao diện
@@ -225,6 +225,7 @@ outcome-rename = Không thể đổi tên { $what } thành “{ $name }”: { $r
 outcome-rename-group = Không thể đổi tên nhóm của { $entity } thành “{ $name }”: { $reason }.
 outcome-format-streaming = Không thể đổi định dạng của { $stream }: luồng đang truyền. Hãy ngắt kết nối trước.
 outcome-format = Không thể đổi định dạng của { $stream }: { $reason }.
+outcome-max-transit-time = Không thể đổi thời gian truyền tối đa của { $stream }: { $reason }.
 outcome-sampling-rate = Không thể đổi tần số lấy mẫu của { $entity }: { $reason }.
 outcome-clock-source = Không thể đổi nguồn đồng hồ của { $entity }: { $reason }.
 outcome-map = Không thể ánh xạ kênh trên { $entity }: { $reason }.

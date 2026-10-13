@@ -134,7 +134,7 @@ rate-pull = pull { $pull }
 stream-format = Formaat
 stream-id = Stream-ID
 stream-destination = Bestemming
-stream-max-transit-time = Max. doorlooptijd { $time }
+stream-max-transit = Max. doorlooptijd
 
 avb-interfaces = AVB-interfaces
 avb-interface = Interface
@@ -239,6 +239,7 @@ outcome-rename = Kon { $what } niet hernoemen naar “{ $name }”: { $reason }.
 outcome-rename-group = Kon de groep van { $entity } niet hernoemen naar “{ $name }”: { $reason }.
 outcome-format-streaming = Kon het formaat van { $stream } niet wijzigen: de stream is actief. Koppel hem eerst los.
 outcome-format = Kon het formaat van { $stream } niet wijzigen: { $reason }.
+outcome-max-transit-time = Kon de max. doorlooptijd van { $stream } niet wijzigen: { $reason }.
 outcome-sampling-rate = Kon de samplefrequentie van { $entity } niet wijzigen: { $reason }.
 outcome-clock-source = Kon de klokbron van { $entity } niet wijzigen: { $reason }.
 outcome-map = Kon het kanaal op { $entity } niet toewijzen: { $reason }.

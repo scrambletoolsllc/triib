@@ -134,7 +134,7 @@ rate-pull = Pull { $pull }
 stream-format = Format
 stream-id = Stream-ID
 stream-destination = Ziel
-stream-max-transit-time = Max. Laufzeit { $time }
+stream-max-transit = Max. Laufzeit
 
 avb-interfaces = AVB-Schnittstellen
 avb-interface = Schnittstelle
@@ -239,6 +239,7 @@ outcome-rename = { $what } konnte nicht in „{ $name }“ umbenannt werden: { $
 outcome-rename-group = Die Gruppe von { $entity } konnte nicht in „{ $name }“ umbenannt werden: { $reason }.
 outcome-format-streaming = Das Format von { $stream } konnte nicht geändert werden: Der Stream läuft. Zuerst trennen.
 outcome-format = Das Format von { $stream } konnte nicht geändert werden: { $reason }.
+outcome-max-transit-time = Die max. Laufzeit von { $stream } konnte nicht geändert werden: { $reason }.
 outcome-sampling-rate = Die Abtastrate von { $entity } konnte nicht geändert werden: { $reason }.
 outcome-clock-source = Die Clock-Quelle von { $entity } konnte nicht geändert werden: { $reason }.
 outcome-map = Der Kanal auf { $entity } konnte nicht zugeordnet werden: { $reason }.

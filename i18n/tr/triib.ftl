@@ -134,7 +134,7 @@ rate-pull = pull { $pull }
 stream-format = Biçim
 stream-id = Akış ID'si
 stream-destination = Hedef
-stream-max-transit-time = Azami geçiş süresi { $time }
+stream-max-transit = Azami geçiş süresi
 
 avb-interfaces = AVB arayüzleri
 avb-interface = Arayüz
@@ -239,6 +239,7 @@ outcome-rename = { $what } “{ $name }” olarak yeniden adlandırılamadı: { 
 outcome-rename-group = { $entity } varlığının grubu “{ $name }” olarak yeniden adlandırılamadı: { $reason }.
 outcome-format-streaming = { $stream } akışının biçimi değiştirilemedi: akış sürüyor. Önce bağlantısını kesin.
 outcome-format = { $stream } akışının biçimi değiştirilemedi: { $reason }.
+outcome-max-transit-time = { $stream } akışının azami geçiş süresi değiştirilemedi: { $reason }.
 outcome-sampling-rate = { $entity } varlığının örnekleme hızı değiştirilemedi: { $reason }.
 outcome-clock-source = { $entity } varlığının saat kaynağı değiştirilemedi: { $reason }.
 outcome-map = { $entity } varlığında kanal eşlenemedi: { $reason }.

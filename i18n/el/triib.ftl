@@ -134,7 +134,7 @@ rate-pull = pull { $pull }
 stream-format = Μορφή
 stream-id = ID ροής
 stream-destination = Προορισμός
-stream-max-transit-time = Μέγ. χρόνος διέλευσης { $time }
+stream-max-transit = Μέγ. χρόνος διέλευσης
 
 avb-interfaces = Διεπαφές AVB
 avb-interface = Διεπαφή
@@ -242,6 +242,7 @@ outcome-rename = Δεν ήταν δυνατή η μετονομασία του {
 outcome-rename-group = Δεν ήταν δυνατή η μετονομασία της ομάδας της οντότητας { $entity } σε «{ $name }»: { $reason }.
 outcome-format-streaming = Δεν ήταν δυνατή η αλλαγή μορφής της ροής { $stream }: βρίσκεται σε μετάδοση. Αποσυνδέστε την πρώτα.
 outcome-format = Δεν ήταν δυνατή η αλλαγή μορφής της ροής { $stream }: { $reason }.
+outcome-max-transit-time = Δεν ήταν δυνατή η αλλαγή του μέγ. χρόνου διέλευσης της ροής { $stream }: { $reason }.
 outcome-sampling-rate = Δεν ήταν δυνατή η αλλαγή της συχνότητας δειγματοληψίας της οντότητας { $entity }: { $reason }.
 outcome-clock-source = Δεν ήταν δυνατή η αλλαγή της πηγής ρολογιού της οντότητας { $entity }: { $reason }.
 outcome-map = Δεν ήταν δυνατή η αντιστοίχιση του καναλιού στην οντότητα { $entity }: { $reason }.

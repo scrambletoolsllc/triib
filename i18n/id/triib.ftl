@@ -132,7 +132,7 @@ rate-pull = pull { $pull }
 stream-format = Format
 stream-id = ID stream
 stream-destination = Tujuan
-stream-max-transit-time = Waktu transit maks. { $time }
+stream-max-transit = Waktu transit maks.
 
 avb-interfaces = Antarmuka AVB
 avb-interface = Antarmuka
@@ -222,6 +222,7 @@ outcome-rename = Gagal mengganti nama { $what } menjadi "{ $name }": { $reason }
 outcome-rename-group = Gagal mengganti nama grup { $entity } menjadi "{ $name }": { $reason }.
 outcome-format-streaming = Gagal mengubah format { $stream }: stream sedang berjalan. Putuskan dulu.
 outcome-format = Gagal mengubah format { $stream }: { $reason }.
+outcome-max-transit-time = Gagal mengubah waktu transit maks. { $stream }: { $reason }.
 outcome-sampling-rate = Gagal mengubah sampling rate { $entity }: { $reason }.
 outcome-clock-source = Gagal mengubah sumber clock { $entity }: { $reason }.
 outcome-map = Gagal memetakan kanal di { $entity }: { $reason }.

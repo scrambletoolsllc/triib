@@ -135,7 +135,7 @@ rate-pull = pull 系数 { $pull }
 stream-format = 格式
 stream-id = 流 ID
 stream-destination = 目标
-stream-max-transit-time = 最大传输时间 { $time }
+stream-max-transit = 最大传输时间
 
 avb-interfaces = AVB 接口
 avb-interface = 接口
@@ -225,6 +225,7 @@ outcome-rename = 无法将 { $what } 重命名为“{ $name }”：{ $reason }�
 outcome-rename-group = 无法将 { $entity } 的组重命名为“{ $name }”：{ $reason }。
 outcome-format-streaming = 无法更改 { $stream } 的格式：该流正在传输。请先断开连接。
 outcome-format = 无法更改 { $stream } 的格式：{ $reason }。
+outcome-max-transit-time = 无法更改 { $stream } 的最大传输时间：{ $reason }。
 outcome-sampling-rate = 无法更改 { $entity } 的采样率：{ $reason }。
 outcome-clock-source = 无法更改 { $entity } 的时钟源：{ $reason }。
 outcome-map = 无法在 { $entity } 上映射通道：{ $reason }。

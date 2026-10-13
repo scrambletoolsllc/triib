@@ -741,6 +741,7 @@ mod tests {
                 sink: None,
                 first_channel: 0,
                 format: None,
+                transit: None,
                 bound: None,
                 class: Default::default(),
                 streams: Vec::new(),
@@ -754,6 +755,7 @@ mod tests {
                 sink: Some("Speakers".to_owned()),
                 first_channel: 2,
                 format: Some("0x00a0020840000800".to_owned()),
+                transit: None,
                 // Bound to the talker above, on the computer it was saved on.
                 bound: Some("0xf0a731ff00f40f14:0".to_owned()),
                 class: Default::default(),

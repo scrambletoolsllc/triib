@@ -132,7 +132,7 @@ rate-pull = کشش { $pull }
 stream-format = قالب
 stream-id = ID جریان
 stream-destination = مقصد
-stream-max-transit-time = بیشینه زمان عبور { $time }
+stream-max-transit = بیشینه زمان عبور
 
 avb-interfaces = واسط‌های AVB
 avb-interface = واسط
@@ -237,6 +237,7 @@ outcome-rename = تغییر نام { $what } به «{ $name }» ممکن نشد:
 outcome-rename-group = تغییر نام گروه { $entity } به «{ $name }» ممکن نشد: { $reason }.
 outcome-format-streaming = تغییر قالب { $stream } ممکن نشد: در حال ارسال جریان است. ابتدا اتصال آن را قطع کنید.
 outcome-format = تغییر قالب { $stream } ممکن نشد: { $reason }.
+outcome-max-transit-time = تغییر بیشینه زمان عبور { $stream } ممکن نشد: { $reason }.
 outcome-sampling-rate = تغییر نرخ نمونه‌برداری { $entity } ممکن نشد: { $reason }.
 outcome-clock-source = تغییر منبع ساعت { $entity } ممکن نشد: { $reason }.
 outcome-map = نگاشت کانال روی { $entity } ممکن نشد: { $reason }.

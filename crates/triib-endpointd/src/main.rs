@@ -35,6 +35,7 @@ fn first_config() -> Config {
         sink: None,
         first_channel: 0,
         format: None,
+        transit: None,
         bound: None,
         class: Default::default(),
         streams: Vec::new(),

@@ -122,7 +122,7 @@ entity-sampling-rate = Sampling rate
 clock-source-numbered = Source { $index }
 rate-pull = pull { $pull }
 
-stream-max-transit-time = Max transit time { $time }
+stream-max-transit = Max transit time
 
 avb-interfaces = AVB interfaces
 avb-interface = Interface

@@ -264,6 +264,11 @@ pub fn outcome(triib: &Triib, action: Action, outcome: Outcome) -> Option<String
             entity = triib.entity_name_of(entity),
             reason = reason
         ),
+        Action::SetMaxTransitTime { entity, output, .. } => fl!(
+            "outcome-max-transit-time",
+            stream = triib.stream_name(entity, DescriptorType::STREAM_OUTPUT, output),
+            reason = reason
+        ),
         Action::SetControl { entity, index, .. } => {
             let entity_name = triib.entity_name_of(entity);
             match triib

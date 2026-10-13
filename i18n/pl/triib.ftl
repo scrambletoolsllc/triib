@@ -132,7 +132,7 @@ rate-pull = pull { $pull }
 stream-format = Format
 stream-id = ID strumienia
 stream-destination = Cel
-stream-max-transit-time = Maks. czas przejścia { $time }
+stream-max-transit = Maks. czas przejścia
 
 avb-interfaces = Interfejsy AVB
 avb-interface = Interfejs
@@ -247,6 +247,7 @@ outcome-rename = Nie udało się zmienić nazwy { $what } na „{ $name }”: { 
 outcome-rename-group = Nie udało się zmienić nazwy grupy encji { $entity } na „{ $name }”: { $reason }.
 outcome-format-streaming = Nie udało się zmienić formatu strumienia { $stream }: trwa transmisja. Najpierw go rozłącz.
 outcome-format = Nie udało się zmienić formatu strumienia { $stream }: { $reason }.
+outcome-max-transit-time = Nie udało się zmienić maks. czasu przejścia strumienia { $stream }: { $reason }.
 outcome-sampling-rate = Nie udało się zmienić częstotliwości próbkowania encji { $entity }: { $reason }.
 outcome-clock-source = Nie udało się zmienić źródła zegara encji { $entity }: { $reason }.
 outcome-map = Nie udało się zmapować kanału w encji { $entity }: { $reason }.

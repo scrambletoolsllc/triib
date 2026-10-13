@@ -135,7 +135,7 @@ rate-pull = 풀 { $pull }
 stream-format = 포맷
 stream-id = 스트림 ID
 stream-destination = 대상
-stream-max-transit-time = 최대 전송 시간 { $time }
+stream-max-transit = 최대 전송 시간
 
 avb-interfaces = AVB 인터페이스
 avb-interface = 인터페이스
@@ -225,6 +225,7 @@ outcome-rename = { $what }의 이름을 “{ $name }”(으)로 바꿀 수 없�
 outcome-rename-group = { $entity }의 그룹 이름을 “{ $name }”(으)로 바꿀 수 없습니다: { $reason }.
 outcome-format-streaming = { $stream }의 포맷을 변경할 수 없습니다: 스트리밍 중입니다. 먼저 연결을 끊으세요.
 outcome-format = { $stream }의 포맷을 변경할 수 없습니다: { $reason }.
+outcome-max-transit-time = { $stream }의 최대 전송 시간을 변경할 수 없습니다: { $reason }.
 outcome-sampling-rate = { $entity }의 샘플링 레이트를 변경할 수 없습니다: { $reason }.
 outcome-clock-source = { $entity }의 클럭 소스를 변경할 수 없습니다: { $reason }.
 outcome-map = { $entity }의 채널을 매핑할 수 없습니다: { $reason }.

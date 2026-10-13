@@ -132,7 +132,7 @@ rate-pull = pull { $pull }
 stream-format = Format
 stream-id = Stream ID
 stream-destination = गंतव्य
-stream-max-transit-time = अधिकतम transit time { $time }
+stream-max-transit = अधिकतम transit time
 
 avb-interfaces = AVB interfaces
 avb-interface = Interface
@@ -237,6 +237,7 @@ outcome-rename = { $what } का नाम बदलकर “{ $name }” न�
 outcome-rename-group = { $entity } के समूह का नाम बदलकर “{ $name }” नहीं किया जा सका: { $reason }।
 outcome-format-streaming = { $stream } का format नहीं बदला जा सका: इस पर streaming चल रही है। पहले इसे डिसकनेक्ट करें।
 outcome-format = { $stream } का format नहीं बदला जा सका: { $reason }।
+outcome-max-transit-time = { $stream } का अधिकतम transit time नहीं बदला जा सका: { $reason }।
 outcome-sampling-rate = { $entity } का sampling rate नहीं बदला जा सका: { $reason }।
 outcome-clock-source = { $entity } का clock source नहीं बदला जा सका: { $reason }।
 outcome-map = { $entity } पर channel map नहीं किया जा सका: { $reason }।

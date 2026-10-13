@@ -109,6 +109,10 @@ pub struct StreamConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<String>,
     /// For an input, the talker's stream output it is bound to, as
+    /// The max transit time a controller set for an output, in
+    /// nanoseconds; its class's default when left out.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transit: Option<u32>,
     /// `bound` keeps it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bound: Option<String>,
@@ -131,6 +135,7 @@ impl StreamConfig {
             audio: None,
             first_channel: 0,
             format: None,
+            transit: None,
             bound: None,
             class: SrClass::A,
         }
@@ -190,6 +195,10 @@ pub struct EndpointConfig {
     /// offered when left out.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<String>,
+    /// The max transit time a controller set for a talker's stream, in
+    /// nanoseconds; its class's default when left out.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transit: Option<u32>,
     /// The talker's stream output a listener is bound to, as
     /// `<entity ID>:<output>`, bound again when it starts.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -238,6 +247,7 @@ impl EndpointConfig {
                 audio: Some(self.source.clone().unwrap_or_else(|| "silence".into())),
                 first_channel: self.first_channel,
                 format: self.format.clone(),
+                transit: self.transit,
                 class: self.class,
                 ..StreamConfig::new(Direction::Out)
             }],

@@ -132,7 +132,7 @@ rate-pull = سحب { $pull }
 stream-format = التنسيق
 stream-id = ID التدفق
 stream-destination = الوجهة
-stream-max-transit-time = أقصى زمن عبور { $time }
+stream-max-transit = أقصى زمن عبور
 
 avb-interfaces = واجهات AVB
 avb-interface = الواجهة
@@ -257,6 +257,7 @@ outcome-rename = تعذّرت إعادة تسمية { $what } إلى «{ $name }
 outcome-rename-group = تعذّرت إعادة تسمية مجموعة { $entity } إلى «{ $name }»: { $reason }.
 outcome-format-streaming = تعذّر تغيير تنسيق { $stream }: إنه قيد البث. افصله أولًا.
 outcome-format = تعذّر تغيير تنسيق { $stream }: { $reason }.
+outcome-max-transit-time = تعذّر تغيير أقصى زمن عبور { $stream }: { $reason }.
 outcome-sampling-rate = تعذّر تغيير معدل أخذ العينات في { $entity }: { $reason }.
 outcome-clock-source = تعذّر تغيير مصدر الساعة في { $entity }: { $reason }.
 outcome-map = تعذّر تعيين القناة على { $entity }: { $reason }.

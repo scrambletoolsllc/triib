@@ -134,7 +134,7 @@ rate-pull = pull { $pull }
 stream-format = Format
 stream-id = Stream-ID
 stream-destination = Destination
-stream-max-transit-time = Max. transittid { $time }
+stream-max-transit = Max. transittid
 
 avb-interfaces = AVB-gränssnitt
 avb-interface = Gränssnitt
@@ -239,6 +239,7 @@ outcome-rename = Kunde inte byta namn på { $what } till ”{ $name }”: { $rea
 outcome-rename-group = Kunde inte byta namn på gruppen för { $entity } till ”{ $name }”: { $reason }.
 outcome-format-streaming = Kunde inte ändra formatet för { $stream }: den streamar. Koppla från den först.
 outcome-format = Kunde inte ändra formatet för { $stream }: { $reason }.
+outcome-max-transit-time = Kunde inte ändra max. transittid för { $stream }: { $reason }.
 outcome-sampling-rate = Kunde inte ändra samplingsfrekvensen för { $entity }: { $reason }.
 outcome-clock-source = Kunde inte ändra klockkällan för { $entity }: { $reason }.
 outcome-map = Kunde inte tilldela kanalen på { $entity }: { $reason }.

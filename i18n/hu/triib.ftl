@@ -134,7 +134,7 @@ rate-pull = pull { $pull }
 stream-format = Formátum
 stream-id = Stream-ID
 stream-destination = Cél
-stream-max-transit-time = Max. átfutási idő: { $time }
+stream-max-transit = Max. átfutási idő
 
 avb-interfaces = AVB-interfészek
 avb-interface = Interfész
@@ -239,6 +239,7 @@ outcome-rename = Az átnevezés nem sikerült ({ $what } → „{ $name }”): {
 outcome-rename-group = A csoport átnevezése nem sikerült ({ $entity } → „{ $name }”): { $reason }.
 outcome-format-streaming = A formátum nem módosítható ({ $stream }): a stream fut. Előbb válassza le.
 outcome-format = A formátum módosítása nem sikerült ({ $stream }): { $reason }.
+outcome-max-transit-time = A max. átfutási idő módosítása nem sikerült ({ $stream }): { $reason }.
 outcome-sampling-rate = A mintavételi frekvencia módosítása nem sikerült ({ $entity }): { $reason }.
 outcome-clock-source = Az órajelforrás módosítása nem sikerült ({ $entity }): { $reason }.
 outcome-map = A csatorna kiosztása nem sikerült ({ $entity }): { $reason }.

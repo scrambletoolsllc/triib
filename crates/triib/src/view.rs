@@ -636,6 +636,55 @@ where
     .into()
 }
 
+/// Max transit times a picker offers, in nanoseconds: from a short class
+/// A path to class B's 50 ms.
+const TRANSIT_TIMES: [u64; 8] = [
+    250_000, 500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000, 20_000_000, 50_000_000,
+];
+
+/// A max transit time as a picker shows it.
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Transit(u64);
+
+impl fmt::Display for Transit {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&describe::milliseconds(self.0))
+    }
+}
+
+/// A stream output's max transit time, `current` nanoseconds, with a
+/// picker of others; set by SET_MAX_TRANSIT_TIME, through triib-endpointd
+/// for this computer's, which keeps it.
+fn transit_picker<'a>(
+    triib: &'a Triib,
+    entity: EntityId,
+    output: u16,
+    current: u64,
+) -> Element<'a, Message> {
+    let changing = triib
+        .changing(|action| {
+            matches!(action, Action::SetMaxTransitTime { entity: pending, output: place, .. }
+                if *pending == entity && *place == output)
+        })
+        .and_then(|action| match action {
+            Action::SetMaxTransitTime { nanoseconds, .. } => Some(*nanoseconds),
+            _ => None,
+        });
+    let shown = Transit(changing.unwrap_or(current));
+    let mut times: Vec<Transit> = TRANSIT_TIMES.into_iter().map(Transit).collect();
+    if !times.contains(&Transit(current)) {
+        times.push(Transit(current));
+        times.sort_by_key(|time| time.0);
+    }
+    picker(times, shown, changing.is_some(), move |time| {
+        Action::SetMaxTransitTime {
+            entity,
+            output,
+            nanoseconds: time.0,
+        }
+    })
+}
+
 /// A stream's format, with a picker of the formats it supports when it
 /// has more than one.
 fn format_picker<'a>(
@@ -1216,17 +1265,10 @@ fn stream_details<'a>(
         .then(|| model.max_transit_time(stream.index))
         .flatten()
     {
-        items.push(
-            styled(
-                fl!(
-                    "stream-max-transit-time",
-                    time = describe::milliseconds(nanoseconds)
-                ),
-                Type::BodySmall,
-            )
-            .style(style::on_surface_variant)
-            .into(),
-        );
+        items.push(stacked(
+            fl!("stream-max-transit"),
+            transit_picker(triib, entity_id, stream.index, nanoseconds),
+        ));
     }
     items.extend(crate::host_view::remove_stream(
         triib,
@@ -1931,6 +1973,32 @@ pub(crate) mod tests {
 
     /// What the Wi-Fi ESP would report as an AVB Wireless station, its time
     /// as `flags` say, unsolicited.
+    /// An unsolicited SET_MAX_TRANSIT_TIME response from the wired ESP,
+    /// as it sends when a stream output's max transit time changes.
+    pub(crate) fn transit_frames(output: u16, nanoseconds: u64) -> Vec<Vec<u8>> {
+        use atdecc::aecp::{AecpHeader, AecpMessageType, AemCommandType, AemPdu};
+
+        let mut payload = DescriptorType::STREAM_OUTPUT.0.to_be_bytes().to_vec();
+        payload.extend_from_slice(&output.to_be_bytes());
+        payload.extend_from_slice(&nanoseconds.to_be_bytes());
+        let notification = AemPdu {
+            header: AecpHeader {
+                message_type: AecpMessageType::AEM_RESPONSE,
+                status: 0,
+                target_entity_id: WIRED_ESP,
+                controller_entity_id: EntityId(0x9c6b_00ff_fe30_9a2b),
+                sequence_id: 0,
+            },
+            unsolicited: true,
+            controller_request: false,
+            command_type: AemCommandType::SET_MAX_TRANSIT_TIME,
+            payload: &payload,
+        };
+        let mut out = [0; 160];
+        let length = notification.encode(&mut out).unwrap();
+        vec![out[..length].to_vec()]
+    }
+
     pub(crate) fn wireless_frames(flags: atdecc::wireless::WirelessFlags) -> Vec<Vec<u8>> {
         use atdecc::aecp::{AecpHeader, AecpMessageType, VendorUniquePdu};
         use atdecc::id::ClockIdentity;
@@ -2919,6 +2987,60 @@ pub(crate) mod tests {
         triib.stream_selected = Some((WIRED_ESP, true, 1));
         let mut simulator = simulate(&triib, Size::new(1280.0, 1600.0));
         assert!(simulator.find("Stream ID").is_err());
+    }
+
+    #[test]
+    fn an_outputs_max_transit_time_is_picked_in_its_details() {
+        let (entities, models) = bench_then(&transit_frames(0, 2_000_000));
+        let interface = Interface {
+            name: "enp6s0".to_owned(),
+            mac: MacAddress(HOST_MAC),
+            up: true,
+            speed: Some(1000),
+            physical: true,
+            wireless: false,
+            hardware_clock: Some(0),
+        };
+        let settings = Settings {
+            interface: Some(interface.name.clone()),
+            view: View::Entities,
+            inspector: true,
+            ..Settings::default()
+        };
+        let mut triib = Triib::sample(settings, interface, entities, models);
+        triib.selected = Some(WIRED_ESP);
+        triib.inspector_tab = InspectorTab::Streams;
+        triib.stream_selected = Some((WIRED_ESP, false, 0));
+        {
+            let mut simulator = simulate(&triib, Size::new(1280.0, 1600.0));
+            assert!(simulator.find("Max transit time").is_ok());
+            simulator.click("2 ms").expect("the picker");
+            simulator.click("5 ms").expect("a longer time");
+            let messages: Vec<Message> = simulator.into_messages().collect();
+            assert!(
+                messages.iter().any(|message| matches!(
+                    message,
+                    Message::Act(Action::SetMaxTransitTime { entity, output: 0, nanoseconds: 5_000_000 })
+                        if *entity == WIRED_ESP
+                )),
+                "{messages:?}"
+            );
+        }
+        // On its way, the picker holds the new time.
+        triib.pending.push(Action::SetMaxTransitTime {
+            entity: WIRED_ESP,
+            output: 0,
+            nanoseconds: 5_000_000,
+        });
+        {
+            let mut simulator = simulate(&triib, Size::new(1280.0, 1600.0));
+            assert!(simulator.find("5 ms").is_ok());
+            assert!(simulator.find("2 ms").is_err());
+        }
+        // An input has none.
+        triib.stream_selected = Some((WIRED_ESP, true, 0));
+        let mut simulator = simulate(&triib, Size::new(1280.0, 1600.0));
+        assert!(simulator.find("Max transit time").is_err());
     }
 
     #[test]

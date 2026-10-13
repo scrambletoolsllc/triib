@@ -135,7 +135,7 @@ rate-pull = pull 係數 { $pull }
 stream-format = 格式
 stream-id = 串流 ID
 stream-destination = 目的地
-stream-max-transit-time = 最大傳輸時間 { $time }
+stream-max-transit = 最大傳輸時間
 
 avb-interfaces = AVB 介面
 avb-interface = 介面
@@ -225,6 +225,7 @@ outcome-rename = 無法將 { $what } 重新命名為「{ $name }」：{ $reason 
 outcome-rename-group = 無法將 { $entity } 的群組重新命名為「{ $name }」：{ $reason }。
 outcome-format-streaming = 無法變更 { $stream } 的格式：該串流正在傳輸。請先中斷連線。
 outcome-format = 無法變更 { $stream } 的格式：{ $reason }。
+outcome-max-transit-time = 無法變更 { $stream } 的最大傳輸時間：{ $reason }。
 outcome-sampling-rate = 無法變更 { $entity } 的取樣率：{ $reason }。
 outcome-clock-source = 無法變更 { $entity } 的時鐘源：{ $reason }。
 outcome-map = 無法在 { $entity } 上對應通道：{ $reason }。

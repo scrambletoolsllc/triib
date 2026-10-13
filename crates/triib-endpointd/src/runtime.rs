@@ -364,6 +364,12 @@ impl Endpoint {
     /// Starts advertising, and binds its inputs again to what they were
     /// bound to.
     fn begin(&mut self, now: Instant) {
+        // The max transit times controllers set before.
+        for (at, place) in self.out_streams.iter().enumerate() {
+            if let Some(nanoseconds) = self.streams[*place].transit {
+                self.entity.restore_max_transit_time(at as u16, nanoseconds);
+            }
+        }
         self.entity.start(now);
         // Inputs bind again to what they were bound to.
         for input in 0..self.inputs.len() as u16 {
@@ -1213,6 +1219,9 @@ impl Runtime {
                 .outputs
                 .get(at)
                 .map(|stream| format!("{:#018x}", stream.current_format.0));
+            streams[*place].transit = (!endpoint.entity.max_transit_time_is_default(at as u16))
+                .then(|| endpoint.entity.max_transit_time(at as u16))
+                .flatten();
         }
         for (at, place) in endpoint.in_streams.iter().enumerate() {
             streams[*place].format = model
@@ -1236,6 +1245,7 @@ impl Runtime {
                 entry.streams.clone_from(&streams);
             } else if let Some(stream) = streams.first() {
                 entry.format.clone_from(&stream.format);
+                entry.transit = stream.transit;
                 entry.bound.clone_from(&stream.bound);
             }
             *entry != before
@@ -2319,6 +2329,7 @@ impl Runtime {
                 if self.output_mut(out).talker.take().is_some() {
                     self.start_talker(out);
                 }
+                self.keep_settings(index);
             }
             EntityEvent::SamplingRateChanged(rate) => {
                 log(format!("{name}: sampling rate {rate}"));
@@ -3686,7 +3697,16 @@ mod tests {
     }
 
     fn endpoint(kind: Kind, streams: Vec<StreamConfig>) -> Endpoint {
-        let config = EndpointConfig {
+        made(endpoint_config(kind, streams))
+    }
+
+    fn made(config: EndpointConfig) -> Endpoint {
+        let mac = MacAddress([0xf0, 0xa7, 0x31, 0xf4, 0x0f, 0x14]);
+        Endpoint::new(config, 4, mac, "enp2s0", ClockIdentity(1))
+    }
+
+    fn endpoint_config(kind: Kind, streams: Vec<StreamConfig>) -> EndpointConfig {
+        EndpointConfig {
             kind,
             instance: Some(4),
             name: "Studio".into(),
@@ -3695,12 +3715,11 @@ mod tests {
             sink: None,
             first_channel: 2,
             format: None,
+            transit: None,
             bound: None,
             class: SrClass::A,
             streams,
-        };
-        let mac = MacAddress([0xf0, 0xa7, 0x31, 0xf4, 0x0f, 0x14]);
-        Endpoint::new(config, 4, mac, "enp2s0", ClockIdentity(1))
+        }
     }
 
     fn stream(direction: Direction, channels: u16) -> StreamConfig {
@@ -3763,6 +3782,34 @@ mod tests {
             ],
         );
         assert_eq!(again.entity.model().entity_model_id, id);
+    }
+
+    /// A max transit time a controller set, kept in the configuration,
+    /// comes back as the endpoint starts: a talker's in its entry, a
+    /// device's in its stream's. Without one, the class's default stays.
+    #[test]
+    fn a_kept_max_transit_time_comes_back() {
+        let mut talker = made(EndpointConfig {
+            transit: Some(5_000_000),
+            ..endpoint_config(Kind::Talker, Vec::new())
+        });
+        talker.begin(Instant::from_nanos(0));
+        assert_eq!(talker.entity.max_transit_time(0), Some(5_000_000));
+        assert!(!talker.entity.max_transit_time_is_default(0));
+        let mut device = endpoint(
+            Kind::Device,
+            vec![
+                stream(Direction::Out, 8),
+                StreamConfig {
+                    transit: Some(1_000_000),
+                    ..stream(Direction::Out, 2)
+                },
+            ],
+        );
+        device.begin(Instant::from_nanos(0));
+        assert_eq!(device.entity.max_transit_time(0), Some(2_000_000));
+        assert!(device.entity.max_transit_time_is_default(0));
+        assert_eq!(device.entity.max_transit_time(1), Some(1_000_000));
     }
 
     /// One talker or listener stays as it was: its model, and its stream

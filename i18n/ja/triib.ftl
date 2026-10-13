@@ -135,7 +135,7 @@ rate-pull = プル { $pull }
 stream-format = フォーマット
 stream-id = ストリーム ID
 stream-destination = 宛先
-stream-max-transit-time = 最大伝送時間 { $time }
+stream-max-transit = 最大伝送時間
 
 avb-interfaces = AVB インターフェイス
 avb-interface = インターフェイス
@@ -225,6 +225,7 @@ outcome-rename = { $what } の名前を「{ $name }」に変更できません�
 outcome-rename-group = { $entity } のグループ名を「{ $name }」に変更できませんでした：{ $reason }。
 outcome-format-streaming = { $stream } はストリーミング中のため、フォーマットを変更できませんでした。先に切断してください。
 outcome-format = { $stream } のフォーマットを変更できませんでした：{ $reason }。
+outcome-max-transit-time = { $stream } の最大伝送時間を変更できませんでした：{ $reason }。
 outcome-sampling-rate = { $entity } のサンプリングレートを変更できませんでした：{ $reason }。
 outcome-clock-source = { $entity } のクロックソースを変更できませんでした：{ $reason }。
 outcome-map = { $entity } のチャンネルをマッピングできませんでした：{ $reason }。

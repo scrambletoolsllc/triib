@@ -132,7 +132,7 @@ rate-pull = pull { $pull }
 stream-format = รูปแบบ
 stream-id = ID สตรีม
 stream-destination = ปลายทาง
-stream-max-transit-time = เวลาส่งผ่านสูงสุด { $time }
+stream-max-transit = เวลาส่งผ่านสูงสุด
 
 avb-interfaces = อินเทอร์เฟซ AVB
 avb-interface = อินเทอร์เฟซ
@@ -222,6 +222,7 @@ outcome-rename = เปลี่ยนชื่อ { $what } เป็น “{ $
 outcome-rename-group = เปลี่ยนชื่อกลุ่มของ { $entity } เป็น “{ $name }” ไม่ได้: { $reason }
 outcome-format-streaming = เปลี่ยนรูปแบบของ { $stream } ไม่ได้: สตรีมกำลังส่งอยู่ ให้ตัดการเชื่อมต่อก่อน
 outcome-format = เปลี่ยนรูปแบบของ { $stream } ไม่ได้: { $reason }
+outcome-max-transit-time = เปลี่ยนเวลาส่งผ่านสูงสุดของ { $stream } ไม่ได้: { $reason }
 outcome-sampling-rate = เปลี่ยนอัตราสุ่มตัวอย่างของ { $entity } ไม่ได้: { $reason }
 outcome-clock-source = เปลี่ยนแหล่งคล็อกของ { $entity } ไม่ได้: { $reason }
 outcome-map = แมปช่องสัญญาณบน { $entity } ไม่ได้: { $reason }

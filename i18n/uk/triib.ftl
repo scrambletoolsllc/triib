@@ -132,7 +132,7 @@ rate-pull = pull { $pull }
 stream-format = Формат
 stream-id = ID потоку
 stream-destination = Призначення
-stream-max-transit-time = Макс. час проходження { $time }
+stream-max-transit = Макс. час проходження
 
 avb-interfaces = Інтерфейси AVB
 avb-interface = Інтерфейс
@@ -247,6 +247,7 @@ outcome-rename = Не вдалося перейменувати { $what } на �
 outcome-rename-group = Не вдалося перейменувати групу сутності { $entity } на «{ $name }»: { $reason }.
 outcome-format-streaming = Не вдалося змінити формат потоку { $stream }: триває передавання. Спершу відключіть потік.
 outcome-format = Не вдалося змінити формат потоку { $stream }: { $reason }.
+outcome-max-transit-time = Не вдалося змінити макс. час проходження потоку { $stream }: { $reason }.
 outcome-sampling-rate = Не вдалося змінити частоту дискретизації сутності { $entity }: { $reason }.
 outcome-clock-source = Не вдалося змінити джерело синхронізації сутності { $entity }: { $reason }.
 outcome-map = Не вдалося призначити канал у сутності { $entity }: { $reason }.

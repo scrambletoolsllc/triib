@@ -132,7 +132,7 @@ rate-pull = pull { $pull }
 stream-format = Formát
 stream-id = ID streamu
 stream-destination = Cíl
-stream-max-transit-time = Max. doba průchodu { $time }
+stream-max-transit = Max. doba průchodu
 
 avb-interfaces = Rozhraní AVB
 avb-interface = Rozhraní
@@ -247,6 +247,7 @@ outcome-rename = Nepodařilo se přejmenovat { $what } na „{ $name }“: { $re
 outcome-rename-group = Nepodařilo se přejmenovat skupinu entity { $entity } na „{ $name }“: { $reason }.
 outcome-format-streaming = Nepodařilo se změnit formát streamu { $stream }: právě se vysílá. Nejprve stream odpojte.
 outcome-format = Nepodařilo se změnit formát streamu { $stream }: { $reason }.
+outcome-max-transit-time = Nepodařilo se změnit max. dobu průchodu streamu { $stream }: { $reason }.
 outcome-sampling-rate = Nepodařilo se změnit vzorkovací frekvenci entity { $entity }: { $reason }.
 outcome-clock-source = Nepodařilo se změnit zdroj hodin entity { $entity }: { $reason }.
 outcome-map = Nepodařilo se namapovat kanál na entitě { $entity }: { $reason }.

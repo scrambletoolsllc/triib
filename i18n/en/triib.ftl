@@ -185,7 +185,7 @@ stream-format = Format
 stream-id = Stream ID
 # The MAC address a stream is sent to.
 stream-destination = Destination
-stream-max-transit-time = Max transit time { $time }
+stream-max-transit = Max transit time
 
 avb-interfaces = AVB interfaces
 avb-interface = Interface
@@ -314,6 +314,7 @@ outcome-rename = Could not rename { $what } to "{ $name }": { $reason }.
 outcome-rename-group = Could not rename { $entity }'s group to "{ $name }": { $reason }.
 outcome-format-streaming = Could not change the format of { $stream }: it is streaming. Disconnect it first.
 outcome-format = Could not change the format of { $stream }: { $reason }.
+outcome-max-transit-time = Could not change the max transit time of { $stream }: { $reason }.
 outcome-sampling-rate = Could not change the sampling rate of { $entity }: { $reason }.
 outcome-clock-source = Could not change the clock source of { $entity }: { $reason }.
 outcome-map = Could not map the channel on { $entity }: { $reason }.

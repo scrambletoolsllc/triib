@@ -132,7 +132,7 @@ rate-pull = pull { $pull }
 stream-format = Format
 stream-id = Stream ID
 stream-destination = இலக்கு
-stream-max-transit-time = அதிகபட்ச transit time { $time }
+stream-max-transit = அதிகபட்ச transit time
 
 avb-interfaces = AVB interfaces
 avb-interface = Interface
@@ -237,6 +237,7 @@ outcome-rename = { $what }-இன் பெயரை “{ $name }” என ம�
 outcome-rename-group = { $entity }-இன் குழுவின் பெயரை “{ $name }” என மாற்ற முடியவில்லை: { $reason }.
 outcome-format-streaming = { $stream }-இன் format-ஐ மாற்ற முடியவில்லை: அது stream செய்துகொண்டிருக்கிறது. முதலில் அதைத் துண்டி.
 outcome-format = { $stream }-இன் format-ஐ மாற்ற முடியவில்லை: { $reason }.
+outcome-max-transit-time = { $stream }-இன் அதிகபட்ச transit time-ஐ மாற்ற முடியவில்லை: { $reason }.
 outcome-sampling-rate = { $entity }-இன் sampling rate-ஐ மாற்ற முடியவில்லை: { $reason }.
 outcome-clock-source = { $entity }-இன் clock source-ஐ மாற்ற முடியவில்லை: { $reason }.
 outcome-map = { $entity }-இல் channel-ஐ map செய்ய முடியவில்லை: { $reason }.
