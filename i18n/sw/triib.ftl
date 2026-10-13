@@ -719,7 +719,7 @@ matrix-stream-format-state = { $format }. { $state }.
 
 ## This computer's own devices
 
-host-add-device = Ongeza kifaa
+host-add-endpoint = Ongeza endpoint
 host-show-mine = Onyesha vifaa vya kompyuta hii pekee
 host-show-all = Onyesha huluki zote
 host-new-device = Kifaa cha mwenyeji { $number }

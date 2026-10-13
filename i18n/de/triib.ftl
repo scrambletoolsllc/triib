@@ -722,7 +722,7 @@ common-decimal-separator = {","}
 
 ## This computer's own devices
 
-host-add-device = Gerät hinzufügen
+host-add-endpoint = Endpunkt hinzufügen
 host-show-mine = Nur die eigenen Geräte dieses Computers anzeigen
 host-show-all = Alle Entitäten anzeigen
 host-new-device = Host-Gerät { $number }

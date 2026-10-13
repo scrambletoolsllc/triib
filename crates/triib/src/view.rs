@@ -2733,7 +2733,7 @@ pub(crate) mod tests {
         let messages: Vec<Message> = {
             let mut simulator = simulate(&triib, size);
             assert!(simulator.find("Add talker").is_err());
-            simulator.click("Add device").expect("the button");
+            simulator.click("Add endpoint").expect("the button");
             simulator.into_messages().collect()
         };
         assert!(
@@ -2809,7 +2809,7 @@ pub(crate) mod tests {
             assert!(simulator.find("Virtual device").is_ok());
             assert!(simulator.find("Nowhere").is_err());
             assert!(simulator.find("Remove stream").is_ok());
-            assert!(simulator.find("Add device").is_ok());
+            assert!(simulator.find("Add endpoint").is_ok());
             simulator.click("Add stream").expect("the button");
             let messages: Vec<Message> = simulator.into_messages().collect();
             assert!(

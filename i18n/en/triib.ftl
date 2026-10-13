@@ -933,7 +933,7 @@ common-decimal-separator = {"."}
 ## This computer's own devices
 
 # This computer as one device with stream outputs and inputs.
-host-add-device = Add device
+host-add-endpoint = Add endpoint
 host-show-mine = Show only this computer's own devices
 host-show-all = Show every entity
 host-new-device = Host device { $number }

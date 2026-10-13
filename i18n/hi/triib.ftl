@@ -712,7 +712,7 @@ common-decimal-separator = {"."}
 
 ## This computer's own devices
 
-host-add-device = Device जोड़ें
+host-add-endpoint = Endpoint जोड़ें
 host-show-mine = केवल इस कंप्यूटर के अपने Device दिखाएँ
 host-show-all = सभी entities दिखाएँ
 host-new-device = होस्ट Device { $number }

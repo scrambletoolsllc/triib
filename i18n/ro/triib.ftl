@@ -792,7 +792,7 @@ matrix-stream-format-state = { $format }. { $state }.
 
 ## This computer's own devices
 
-host-add-device = Adaugă dispozitiv
+host-add-endpoint = Adaugă dispozitiv terminal
 host-show-mine = Arată doar dispozitivele proprii ale acestui computer
 host-show-all = Arată toate entitățile
 host-new-device = Dispozitiv gazdă { $number }

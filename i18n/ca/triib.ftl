@@ -776,7 +776,7 @@ matrix-stream-format-state = { $format }. { $state }.
 
 ## This computer's own devices
 
-host-add-device = Afegeix un dispositiu
+host-add-endpoint = Afegeix un terminal
 host-show-mine = Mostra només els dispositius propis d’aquest ordinador
 host-show-all = Mostra totes les entitats
 host-new-device = Dispositiu de l’amfitrió { $number }

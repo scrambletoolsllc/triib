@@ -731,7 +731,7 @@ common-decimal-separator = {","}
 
 ## This computer's own devices
 
-host-add-device = Lägg till enhet
+host-add-endpoint = Lägg till slutpunkt
 host-show-mine = Visa bara den här datorns egna enheter
 host-show-all = Visa alla entiteter
 host-new-device = Värdenhet { $number }

@@ -735,7 +735,7 @@ common-decimal-separator = {","}
 
 ## This computer's own devices
 
-host-add-device = Προσθήκη συσκευής
+host-add-endpoint = Προσθήκη τελικού σημείου
 host-show-mine = Εμφάνιση μόνο των συσκευών αυτού του υπολογιστή
 host-show-all = Εμφάνιση όλων των οντοτήτων
 host-new-device = Συσκευή κεντρικού υπολογιστή { $number }

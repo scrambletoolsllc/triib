@@ -803,7 +803,7 @@ common-decimal-separator = {","}
 
 ## This computer's own devices
 
-host-add-device = Додати пристрій
+host-add-endpoint = Додати кінцевий пристрій
 host-show-mine = Показувати лише власні пристрої цього комп'ютера
 host-show-all = Показувати всі сутності
 host-new-device = Пристрій хоста { $number }

@@ -750,7 +750,7 @@ common-decimal-separator = {"."}
 
 ## This computer's own devices
 
-host-add-device = הוספת התקן
+host-add-endpoint = הוספת נקודת קצה
 host-show-mine = הצגת ההתקנים של המחשב הזה בלבד
 host-show-all = הצגת כל הישויות
 host-new-device = התקן מארח { $number }

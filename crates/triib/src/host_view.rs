@@ -47,7 +47,7 @@ pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
     } else {
         None
     };
-    let add = button::with_icon(Kind::Tonal, Icon::Computer, fl!("host-add-device"))
+    let add = button::with_icon(Kind::Tonal, Icon::Computer, fl!("host-add-endpoint"))
         .size(Size::ExtraSmall)
         .on_press_maybe(able.then_some(Message::HostAdded));
     let text: Element<'_, Message> = match note {

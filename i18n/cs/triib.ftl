@@ -805,7 +805,7 @@ common-decimal-separator = {","}
 
 ## This computer's own devices
 
-host-add-device = Přidat zařízení
+host-add-endpoint = Přidat koncové zařízení
 host-show-mine = Zobrazit jen vlastní zařízení tohoto počítače
 host-show-all = Zobrazit všechny entity
 host-new-device = Zařízení hostitele { $number }

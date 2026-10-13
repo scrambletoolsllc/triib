@@ -856,7 +856,7 @@ common-decimal-separator = {"."}
 
 ## This computer's own devices
 
-host-add-device = إضافة جهاز
+host-add-endpoint = إضافة نقطة طرفية
 host-show-mine = عرض أجهزة هذا الحاسوب الخاصة فقط
 host-show-all = عرض كل الكيانات
 host-new-device = جهاز المضيف { $number }

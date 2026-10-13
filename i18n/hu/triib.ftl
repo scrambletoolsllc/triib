@@ -714,7 +714,7 @@ common-decimal-separator = {","}
 
 ## This computer's own devices
 
-host-add-device = Eszköz hozzáadása
+host-add-endpoint = Végpont hozzáadása
 host-show-mine = Csak a számítógép saját eszközeinek megjelenítése
 host-show-all = Az összes entitás megjelenítése
 host-new-device = Gazda eszköz { $number }

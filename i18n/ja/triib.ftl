@@ -616,7 +616,7 @@ matrix-stream-format-state = { $format }。{ $state }。
 
 ## This computer's own devices
 
-host-add-device = デバイスを追加
+host-add-endpoint = エンドポイントを追加
 host-show-mine = このコンピューター自身のデバイスだけを表示
 host-show-all = すべてのエンティティを表示
 host-new-device = ホストのデバイス { $number }

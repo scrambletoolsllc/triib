@@ -714,7 +714,7 @@ common-decimal-separator = {","}
 
 ## This computer's own devices
 
-host-add-device = Cihaz ekle
+host-add-endpoint = Uç nokta ekle
 host-show-mine = Yalnızca bu bilgisayarın kendi cihazlarını göster
 host-show-all = Tüm varlıkları göster
 host-new-device = Ana bilgisayar cihazı { $number }

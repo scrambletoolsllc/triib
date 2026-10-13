@@ -712,7 +712,7 @@ common-decimal-separator = {"٫"}
 
 ## This computer's own devices
 
-host-add-device = افزودن دستگاه
+host-add-endpoint = افزودن نقطه پایانی
 host-show-mine = فقط دستگاه‌های خود این رایانه نمایش داده شود
 host-show-all = نمایش همه موجودیت‌ها
 host-new-device = دستگاه میزبان { $number }
