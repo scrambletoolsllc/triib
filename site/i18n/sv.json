@@ -191,7 +191,6 @@
  "2aee1b9d4885": "Processorer",
  "0a999012ffb8": "Paket",
  "83ad8510bbd3": "Linux",
- "3c814587403b": "Wayland och X11; glibc 2.35 eller senare för paketen",
  "ae5ba4af13a1": "x86_64, ARM64, RISC-V",
  "f59b14d917cc": ".deb, .rpm, PKGBUILD för Arch, tarball",
  "26d9c28d789c": "Windows",
@@ -288,5 +287,6 @@
  "6eef6648406c": "Inga",
  "3a51e6a07fd5": "Se <a1>integritetsinformationen</a1> och <a2>policyn för kodsignering</a2>.",
  "799e2f4712be": "triibs specifikationer: systemen det körs på, standarderna och profilerna det talar, dess egna talkers och listeners, dess språk, programvaran det bygger på, och var det sparar sina inställningar.",
- "extra:policy-note": "Den här översättningen tillhandahålls som en service; det är den engelska versionen av denna policy som gäller."
+ "extra:policy-note": "Den här översättningen tillhandahålls som en service; det är den engelska versionen av denna policy som gäller.",
+ "6e218eb530cf": "Wayland och X11; glibc 2.39 eller senare för paketen"
 }

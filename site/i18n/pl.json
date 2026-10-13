@@ -191,7 +191,6 @@
  "2aee1b9d4885": "Procesory",
  "0a999012ffb8": "Pakiety",
  "83ad8510bbd3": "Linux",
- "3c814587403b": "Wayland i X11; dla pakietów glibc 2.35 lub nowsza",
  "ae5ba4af13a1": "x86_64, ARM64, RISC-V",
  "f59b14d917cc": ".deb, .rpm, PKGBUILD dla Arch, archiwum tar",
  "26d9c28d789c": "Windows",
@@ -288,5 +287,6 @@
  "6eef6648406c": "Brak",
  "3a51e6a07fd5": "Zobacz <a1>informację o prywatności</a1> i <a2>zasady podpisywania kodu</a2>.",
  "799e2f4712be": "Specyfikacja triib: systemy, na których działa, obsługiwane standardy i profile, jego własne talkery i listenery, języki, oprogramowanie, na którym jest zbudowany, i miejsce przechowywania ustawień.",
- "extra:policy-note": "To tłumaczenie udostępniono dla wygody; wiążąca jest angielska wersja tych zasad."
+ "extra:policy-note": "To tłumaczenie udostępniono dla wygody; wiążąca jest angielska wersja tych zasad.",
+ "6e218eb530cf": "Wayland i X11; dla pakietów glibc 2.39 lub nowsza"
 }

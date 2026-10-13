@@ -790,9 +790,9 @@
   "page": "specs.html",
   "text": "Linux"
  },
- "3c814587403b": {
+ "6e218eb530cf": {
   "page": "specs.html",
-  "text": "Wayland and X11; glibc 2.35 or newer for the packages"
+  "text": "Wayland and X11; glibc 2.39 or newer for the packages"
  },
  "ae5ba4af13a1": {
   "page": "specs.html",

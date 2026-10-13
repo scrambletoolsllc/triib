@@ -191,7 +191,6 @@
  "2aee1b9d4885": "Procesoare",
  "0a999012ffb8": "Pachete",
  "83ad8510bbd3": "Linux",
- "3c814587403b": "Wayland și X11; glibc 2.35 sau mai nou pentru pachete",
  "ae5ba4af13a1": "x86_64, ARM64, RISC-V",
  "f59b14d917cc": ".deb, .rpm, PKGBUILD pentru Arch, arhivă tar",
  "26d9c28d789c": "Windows",
@@ -288,5 +287,6 @@
  "6eef6648406c": "Nu există",
  "3a51e6a07fd5": "Vezi <a1>nota de confidențialitate</a1> și <a2>politica de semnare a codului</a2>.",
  "799e2f4712be": "Specificațiile triib: sistemele pe care rulează, standardele și profilurile pe care le implementează, talkerele și listenerele proprii, limbile, software-ul pe care este construit și unde își păstrează setările.",
- "extra:policy-note": "Această traducere este oferită pentru comoditate; versiunea în limba engleză a acestei politici este cea care se aplică."
+ "extra:policy-note": "Această traducere este oferită pentru comoditate; versiunea în limba engleză a acestei politici este cea care se aplică.",
+ "6e218eb530cf": "Wayland și X11; glibc 2.39 sau mai nou pentru pachete"
 }

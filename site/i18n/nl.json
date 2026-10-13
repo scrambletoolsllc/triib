@@ -191,7 +191,6 @@
  "2aee1b9d4885": "Processors",
  "0a999012ffb8": "Pakketten",
  "83ad8510bbd3": "Linux",
- "3c814587403b": "Wayland en X11; glibc 2.35 of nieuwer voor de pakketten",
  "ae5ba4af13a1": "x86_64, ARM64, RISC-V",
  "f59b14d917cc": ".deb, .rpm, PKGBUILD voor Arch, tarball",
  "26d9c28d789c": "Windows",
@@ -288,5 +287,6 @@
  "6eef6648406c": "Geen",
  "3a51e6a07fd5": "Zie de <a1>privacyverklaring</a1> en het <a2>beleid voor codeondertekening</a2>.",
  "799e2f4712be": "De specificaties van triib: de systemen waarop het draait, de standaarden en profielen die het spreekt, de eigen talkers en listeners, de talen, de software waarop het is gebouwd, en waar het zijn instellingen bewaart.",
- "extra:policy-note": "Deze vertaling wordt gegeven voor het gemak; de Engelse versie van dit beleid is degene die geldt."
+ "extra:policy-note": "Deze vertaling wordt gegeven voor het gemak; de Engelse versie van dit beleid is degene die geldt.",
+ "6e218eb530cf": "Wayland en X11; glibc 2.39 of nieuwer voor de pakketten"
 }
