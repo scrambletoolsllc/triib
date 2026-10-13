@@ -48,7 +48,7 @@ use crate::status::{DaemonStatus, EndpointStatus, StreamStatus, status_path};
 /// talkers and listeners had `0x8c1f_6436_c000_0002` and `_0004`.
 const DEVICE_MODELS: u64 = 0x8c1f_6436_c001_0000;
 /// The revision of every device's model, in its hash.
-const MODEL_REVISION: u8 = 1;
+const MODEL_REVISION: u8 = 2;
 /// Class A's priority; its VLAN is the port's.
 const PRIORITY: u8 = 3;
 /// Class B's priority.
@@ -339,7 +339,8 @@ fn model_id(outputs: &[StreamModel], inputs: &[StreamModel]) -> EntityModelId {
         }
     };
     // The model's revision, for what the streams leave the same: 1 since
-    // the inputs stopped being clock sources.
+    // the inputs stopped being clock sources, 2 since the model name is
+    // "triib entity" and media clock inputs are clock sources.
     take(&[MODEL_REVISION]);
     for (way, streams) in [(0u8, outputs), (1, inputs)] {
         for stream in streams {
@@ -508,7 +509,7 @@ impl Endpoint {
             entity_name: config.name.clone(),
             group_name: String::new(),
             vendor_name: "Scramble Tools".into(),
-            model_name: "triib device".into(),
+            model_name: "triib entity".into(),
             firmware_version: env!("CARGO_PKG_VERSION").into(),
             serial_number: String::new(),
             mac,
@@ -3833,7 +3834,7 @@ mod tests {
             },
         ]);
         let model = device.entity.model();
-        assert_eq!(model.model_name, "triib device");
+        assert_eq!(model.model_name, "triib entity");
         let names: Vec<&str> = model
             .outputs
             .iter()
