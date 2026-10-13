@@ -1,4 +1,5 @@
-//! The endpoints to run, from `endpoints.toml` in triib's data folder:
+//! The entities to run, from `entities.toml` in triib's data folder, or
+//! the file the app names:
 //! the interface, then each of this computer's entities with its streams,
 //! their channels and where their audio comes from or goes.
 
@@ -370,7 +371,7 @@ impl EndpointConfig {
     }
 }
 
-/// A source as endpoints.toml names it.
+/// A source as entities.toml names it.
 fn source_of(audio: Option<&str>, first_channel: u16) -> Source {
     match audio {
         None | Some("silence" | VIRTUAL) => Source::Silence,
@@ -389,7 +390,7 @@ fn source_of(audio: Option<&str>, first_channel: u16) -> Source {
     }
 }
 
-/// A sink as endpoints.toml names it.
+/// A sink as entities.toml names it.
 fn sink_of(audio: Option<&str>, first_channel: u16) -> Sink {
     match audio {
         None | Some("discard" | VIRTUAL) => Sink::Discard,
@@ -404,9 +405,30 @@ fn sink_of(audio: Option<&str>, first_channel: u16) -> Sink {
     }
 }
 
-/// Where the endpoints are listed: `endpoints.toml` in the data folder.
+/// Where the entities are listed unless the app names another file:
+/// `entities.toml` in the data folder.
 pub fn path() -> Option<PathBuf> {
-    triib_store::paths::data_dir().map(|dir| dir.join("endpoints.toml"))
+    triib_store::paths::data_dir().map(|dir| dir.join("entities.toml"))
+}
+
+/// Moves triib 1.0's `endpoints.toml` in the data folder to
+/// `entities.toml`, where that is not there yet; the daemon and the app
+/// do as they start.
+pub fn move_endpoints_file() {
+    if let Some(dir) = triib_store::paths::data_dir() {
+        entities_in(&dir);
+    }
+}
+
+/// `entities.toml` in `dir`, `endpoints.toml` moved to it when that is
+/// there alone.
+fn entities_in(dir: &std::path::Path) -> PathBuf {
+    let path = dir.join("entities.toml");
+    let before = dir.join("endpoints.toml");
+    if !path.exists() && before.exists() {
+        let _ = std::fs::rename(&before, &path);
+    }
+    path
 }
 
 #[cfg(test)]
@@ -509,6 +531,22 @@ mod tests {
         })
         .expect("writes");
         assert_eq!(entry(&text), device);
+    }
+
+    /// triib 1.0's endpoints.toml moves to entities.toml, where that is
+    /// not there yet; one there already stays as it is.
+    #[test]
+    fn the_endpoints_file_moves_to_entities() {
+        let dir = std::env::temp_dir().join(format!("triib-entities-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("endpoints.toml"), "interface = \"enp2s0\"\n").unwrap();
+        let path = entities_in(&dir);
+        assert_eq!(path, dir.join("entities.toml"));
+        assert!(path.exists() && !dir.join("endpoints.toml").exists());
+        std::fs::write(dir.join("endpoints.toml"), "interface = \"enp6s0\"\n").unwrap();
+        entities_in(&dir);
+        assert!(std::fs::read_to_string(&path).unwrap().contains("enp2s0"));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// A media clock stream says so, and an audio stream says nothing of

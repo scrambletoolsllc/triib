@@ -3,8 +3,9 @@
 //! audio from and to the computer's audio.
 //!
 //! It takes gPTP from ptp4l, which must run on the interface, and needs
-//! `CAP_NET_RAW`. The devices are listed in `endpoints.toml` in triib's
-//! data folder, written with one device the first time.
+//! `CAP_NET_RAW`. The entities are listed in `entities.toml` in triib's
+//! data folder, or the file `--config` names, written with one entity
+//! the first time.
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -52,8 +53,9 @@ fn main() -> ExitCode {
             }
         }
     }
+    config::move_endpoints_file();
     let Some(path) = path.or_else(config::path) else {
-        eprintln!("no data folder for endpoints.toml; give one with --config");
+        eprintln!("no data folder for entities.toml; give a file with --config");
         return ExitCode::FAILURE;
     };
     let mut config = if path.exists() {

@@ -2579,6 +2579,7 @@ pub(crate) mod tests {
                     interface: "enp6s0".into(),
                     gptp: "grandmaster 0x0001f2fffeff3b14, asCapable".into(),
                     foreign_mrp: false,
+                    config: None,
                     endpoints: vec![EndpointStatus {
                         entity_id: triib.selected.map(|id| id.to_string()).unwrap_or_default(),
                         name: "Host device 1".into(),
@@ -2806,6 +2807,7 @@ pub(crate) mod tests {
             interface: "enp6s0".into(),
             gptp: "grandmaster 0x0001f2fffeff3b14, asCapable".into(),
             foreign_mrp: false,
+            config: None,
             endpoints: vec![EndpointStatus {
                 entity_id: WIRED_ESP.to_string(),
                 name: "Host device 1".into(),
@@ -3024,6 +3026,44 @@ pub(crate) mod tests {
             }
             assert_eq!(triib.settings.log_height, height);
         }
+    }
+
+    /// Settings take the entities file's path, typed: a full one is kept,
+    /// a leading ~ the home folder, and one that is not full is refused.
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn settings_take_the_entities_file() {
+        let mut triib = logging(View::Matrix, false);
+        triib.settings_open = true;
+        {
+            let mut simulator = simulate(&triib, Size::new(1280.0, 1400.0));
+            assert!(simulator.find("Entities file").is_ok());
+        }
+        let _ = triib.update(Message::EntitiesFileEdited("triib/entities.toml".into()));
+        let _ = triib.update(Message::EntitiesFileSubmitted);
+        assert_eq!(
+            triib.entities_file_error.as_deref(),
+            Some("Give a full path, such as ~/entities.toml.")
+        );
+        assert_eq!(triib.settings.entities_file, None);
+        let _ = triib.update(Message::EntitiesFileEdited("~/studio/entities.toml".into()));
+        let _ = triib.update(Message::EntitiesFileSubmitted);
+        let home = std::env::home_dir().unwrap();
+        assert_eq!(
+            triib.settings.entities_file,
+            Some(home.join("studio/entities.toml"))
+        );
+        assert_eq!(
+            crate::host::entities_path(),
+            Some(home.join("studio/entities.toml"))
+        );
+        assert!(triib.entities_file_error.is_none());
+        let _ = triib.update(Message::EntitiesFileReset);
+        assert_eq!(triib.settings.entities_file, None);
+        assert_eq!(
+            crate::host::entities_path(),
+            triib_endpointd::config::path()
+        );
     }
 
     /// The interface picker leaves out virtual and wireless interfaces and

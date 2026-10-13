@@ -507,6 +507,7 @@ mod tests {
             interface: "enp2s0".into(),
             gptp: String::new(),
             foreign_mrp: false,
+            config: None,
             endpoints: vec![endpoint(EntityId(0x1234)), endpoint(WIRED_ESP)],
         };
         triib.endpoints = Some(status.clone());

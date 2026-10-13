@@ -1123,9 +1123,9 @@ impl Runtime {
                 self.write_status();
                 if let Some(config) = self.changed_config() {
                     if self.apply(&config) {
-                        log("endpoints.toml changed, applied");
+                        log("entities.toml changed, applied");
                     } else {
-                        log("endpoints.toml changed, starting again");
+                        log("entities.toml changed, starting again");
                         self.shut_down();
                         return Ok(Exit::Reload(config));
                     }
@@ -1405,7 +1405,7 @@ impl Runtime {
             Ok(config) if config != self.config => Some(config),
             Ok(_) => None,
             Err(error) => {
-                log(format!("endpoints.toml: {error}"));
+                log(format!("entities.toml: {error}"));
                 None
             }
         }
@@ -1484,12 +1484,12 @@ impl Runtime {
                 && keep(&mut now.endpoints[found])
                 && let Err(error) = triib_store::save(&path, &now)
             {
-                log(format!("endpoints.toml: {error}"));
+                log(format!("entities.toml: {error}"));
             }
             return;
         }
         if let Err(error) = triib_store::save(&path, &self.config) {
-            log(format!("endpoints.toml: {error}"));
+            log(format!("entities.toml: {error}"));
         }
         self.modified = modified(Some(&path));
     }
@@ -1507,12 +1507,12 @@ impl Runtime {
             };
             now.multicast_escalation = self.config.multicast_escalation;
             if let Err(error) = triib_store::save(&path, &now) {
-                log(format!("endpoints.toml: {error}"));
+                log(format!("entities.toml: {error}"));
             }
             return;
         }
         if let Err(error) = triib_store::save(&path, &self.config) {
-            log(format!("endpoints.toml: {error}"));
+            log(format!("entities.toml: {error}"));
         }
         self.modified = modified(Some(&path));
     }
@@ -1557,6 +1557,7 @@ impl Runtime {
             interface: self.interface.clone(),
             gptp: self.gptp_text.clone(),
             foreign_mrp: self.foreign_mrp_heard(),
+            config: self.path.as_ref().map(|file| file.display().to_string()),
             endpoints,
         };
         let _ = triib_store::save(&path, &status);

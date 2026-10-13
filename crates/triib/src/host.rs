@@ -1,7 +1,8 @@
 //! This computer's own entities, which triib-endpointd runs: adding,
-//! changing and removing them and their streams in its `endpoints.toml`,
+//! changing and removing them and their streams in its `entities.toml`,
 //! starting it, and what it says each is doing.
 
+use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Mutex, PoisonError};
 use std::time::{Duration, Instant};
@@ -20,11 +21,84 @@ pub static RECALLING: AtomicBool = AtomicBool::new(false);
 /// How long a daemon just started has to say it runs, before the app
 /// would start another; the daemon's lock turns that one away anyway.
 const STARTING: Duration = Duration::from_secs(5);
+/// How long a daemon asked to stop has to go, before one on another file
+/// starts anyway.
+const STOPPING: Duration = Duration::from_secs(5);
+
+/// The file the settings name for this computer's entities, if any.
+static ENTITIES_FILE: Mutex<Option<PathBuf>> = Mutex::new(None);
+
+/// Lists this computer's entities in `file`, or in the default file when
+/// none.
+pub fn set_entities_file(file: Option<PathBuf>) {
+    *ENTITIES_FILE.lock().unwrap_or_else(PoisonError::into_inner) = file;
+}
+
+/// Where this computer's entities are listed: the file the settings
+/// name, else `entities.toml` in the data folder.
+pub fn entities_path() -> Option<PathBuf> {
+    ENTITIES_FILE
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .clone()
+        .or_else(config::path)
+}
+
+/// A path typed in Settings, a leading `~` the home folder: `None` but
+/// for a full path.
+pub fn typed_path(text: &str) -> Option<PathBuf> {
+    let text = text.trim();
+    let path = match text.strip_prefix("~/") {
+        Some(rest) => std::env::home_dir()?.join(rest),
+        None => PathBuf::from(text),
+    };
+    path.is_absolute().then_some(path)
+}
+
+/// Moves this computer's entities to `to`: a file that is not there yet
+/// starts as a copy of the one in use, and the daemon, when it runs on
+/// another file, starts again on it. `None` is the default file.
+pub fn move_entities(to: Option<PathBuf>) -> Result<(), String> {
+    let from = entities_path();
+    set_entities_file(to);
+    if cfg!(test) {
+        return Ok(());
+    }
+    let to = entities_path().ok_or("no data folder")?;
+    if !to.exists()
+        && let Some(from) = from.filter(|from| from.exists() && *from != to)
+    {
+        if let Some(folder) = to.parent() {
+            std::fs::create_dir_all(folder).map_err(|error| error.to_string())?;
+        }
+        std::fs::copy(&from, &to).map_err(|error| error.to_string())?;
+    }
+    let Some(status) = triib_endpointd::status::read() else {
+        return Ok(());
+    };
+    if status.config.as_deref() == Some(&to.display().to_string()) {
+        return Ok(());
+    }
+    // Stops it, then starts one on the new file once it has gone.
+    std::process::Command::new("kill")
+        .arg("-TERM")
+        .arg(status.pid.to_string())
+        .status()
+        .map_err(|error| error.to_string())?;
+    std::thread::spawn(|| {
+        let asked = Instant::now();
+        while triib_endpointd::status::read().is_some() && asked.elapsed() < STOPPING {
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        let _ = start();
+    });
+    Ok(())
+}
 
 /// The endpoints file, or a new one for `interface`, with the interface
 /// set to it either way.
 fn load(interface: &str) -> Result<(std::path::PathBuf, Config), String> {
-    let path = config::path().ok_or("no data folder")?;
+    let path = entities_path().ok_or("no data folder")?;
     let mut config = if path.exists() {
         triib_store::load::<Config>(&path).map_err(|error| error.to_string())?
     } else {
@@ -145,7 +219,7 @@ pub fn endpoints(interface: &str) -> Vec<EndpointConfig> {
     if cfg!(test) {
         return Vec::new();
     }
-    let Some(config) = config::path().and_then(|path| triib_store::load::<Config>(&path).ok())
+    let Some(config) = entities_path().and_then(|path| triib_store::load::<Config>(&path).ok())
     else {
         return Vec::new();
     };
@@ -169,7 +243,7 @@ pub fn restore(interface: &str, endpoints: &[EndpointConfig]) -> Result<bool, St
     if cfg!(test) {
         return Ok(false);
     }
-    let path = config::path().ok_or("no data folder")?;
+    let path = entities_path().ok_or("no data folder")?;
     let running = triib_endpointd::status::read().is_some();
     let now = triib_store::load::<Config>(&path).ok();
     let same = now.as_ref().is_some_and(|config| {
@@ -188,7 +262,7 @@ pub fn restore(interface: &str, endpoints: &[EndpointConfig]) -> Result<bool, St
 /// user's or root's daemon holds it: a daemon of this user's would be
 /// turned away.
 pub fn elsewhere() -> Option<String> {
-    let interface = triib_store::load::<Config>(&config::path()?)
+    let interface = triib_store::load::<Config>(&entities_path()?)
         .ok()?
         .interface;
     (!interface.is_empty() && triib_endpointd::status::interface_claimed(&interface))
@@ -235,7 +309,11 @@ fn start() -> Result<(), String> {
         },
         None => (Stdio::null(), Stdio::null()),
     };
-    Command::new(program)
+    let mut command = Command::new(program);
+    if let Some(file) = entities_path() {
+        command.arg("--config").arg(file);
+    }
+    command
         .stdin(Stdio::null())
         .stdout(out)
         .stderr(error)

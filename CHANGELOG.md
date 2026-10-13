@@ -42,7 +42,7 @@ computer's talkers and listeners folded into its entities.
   streams, as one of one stream does what they did. The Entities view's
   one button, Add entity, adds an entity with a stream each way, and its
   Streams tab adds and removes streams. triib 1.0's talker and listener
-  entries, in `endpoints.toml` and in presets, read as entities of their
+  entries, in `entities.toml` and in presets, read as entities of their
   one stream, named as the entity is, with their audio, format, binding,
   transit time and class. Their entity IDs stay; their model IDs change,
   so controllers read them again once.
@@ -57,18 +57,22 @@ computer's talkers and listeners folded into its entities.
   The choice is kept, and the clock domain's counters count each lock
   and loss.
 - Controllers map an entity's inputs: their ports have dynamic
-  mappings, as Milan has them, kept in `endpoints.toml` and played as
+  mappings, as Milan has them, kept in `entities.toml` and played as
   mapped.
 - An entity's input binds to its own output, which the matrix offers on
   this computer's entities.
 - The max transit times controllers set on an entity's outputs are kept
-  in `endpoints.toml`.
+  in `entities.toml`.
 - Adding, removing or changing an entity's stream keeps the entity on
   the network, where controllers read it again in place, and leaves its
   other streams running as they were, their stream addresses, bindings
   and reservations with them. A stream added runs at the entity's rate.
 - The entities' model name is triib entity, and their model IDs change
   once for it.
+- The entities are listed in `entities.toml`, to which 1.0's
+  `endpoints.toml` moves, or in the file Settings name; the daemon
+  starts again on a file named there, one not there yet starting as a
+  copy of the one in use.
 
 ### Fixed
 

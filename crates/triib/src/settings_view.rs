@@ -4,7 +4,7 @@
 
 use std::fmt;
 
-use iced::widget::{container, mouse_area, opaque, space, toggler};
+use iced::widget::{container, mouse_area, opaque, space, text_input, toggler};
 use iced::{Center, Color, Element, Fill, Length, Theme};
 use scramble_ui::appearance::{Appearance, hex_to_color};
 use scramble_ui::button::{self, Kind};
@@ -167,8 +167,54 @@ fn general(triib: &Triib) -> iced::widget::Column<'_, Message> {
             Message::OutsideControlToggled,
         ),
         allowed_agents(triib),
+        entities_file(triib),
     ]
     .spacing(12)
+}
+
+/// The file this computer's entities are listed in, where it runs
+/// entities of its own: its path, typed and taken with Enter, and a button
+/// back to the default.
+fn entities_file(triib: &Triib) -> Element<'_, Message> {
+    if !crate::host::SUPPORTED {
+        return space().into();
+    }
+    let shown = triib.entities_file_edit.clone().unwrap_or_else(|| {
+        crate::host::entities_path()
+            .map(|path| path.display().to_string())
+            .unwrap_or_default()
+    });
+    let note: Element<'_, Message> = match &triib.entities_file_error {
+        Some(error) => aligned(styled(error.clone(), Type::BodySmall).style(style::error_text)),
+        None => aligned(
+            styled(fl!("settings-entities-file-note"), Type::BodySmall)
+                .style(style::on_surface_variant),
+        ),
+    };
+    scramble_ui::column![
+        component::section(fl!("netmap-this-computer")),
+        styled(fl!("settings-entities-file"), Type::BodyLarge),
+        scramble_ui::row![
+            text_input("", &shown)
+                .on_input(Message::EntitiesFileEdited)
+                .on_submit(Message::EntitiesFileSubmitted)
+                .padding([6, 10])
+                .style(style::outlined_field)
+                .width(Fill),
+            button::button(Kind::Text, fl!("settings-entities-file-default")).on_press_maybe(
+                triib
+                    .settings
+                    .entities_file
+                    .is_some()
+                    .then_some(Message::EntitiesFileReset)
+            ),
+        ]
+        .spacing(8)
+        .align_y(Center),
+        note,
+    ]
+    .spacing(8)
+    .into()
 }
 
 /// The agents the user allowed to control triib, and forgetting them.

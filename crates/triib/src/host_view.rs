@@ -86,7 +86,7 @@ pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
 /// frame up to 60.
 const CHANNEL_COUNTS: [u16; 11] = [1, 2, 4, 6, 8, 12, 16, 24, 32, 48, 56];
 
-/// One choice for a stream's audio: what endpoints.toml says, and the
+/// One choice for a stream's audio: what entities.toml says, and the
 /// words for it.
 #[derive(Debug, Clone)]
 struct Audio {

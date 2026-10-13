@@ -1051,6 +1051,7 @@ mod tests {
             interface: "enp6s0".into(),
             gptp: String::new(),
             foreign_mrp: false,
+            config: None,
             endpoints: vec![EndpointStatus {
                 entity_id: host.to_string(),
                 name: "Host entity 1".into(),

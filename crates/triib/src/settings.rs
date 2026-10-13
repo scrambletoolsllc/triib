@@ -68,6 +68,10 @@ pub struct Settings {
     pub hide_wireless_interfaces: bool,
     /// Leave interfaces without a PTP hardware clock out of it.
     pub hide_unclocked_interfaces: bool,
+    /// The file this computer's entities are listed in, `entities.toml`
+    /// in the data folder when not given.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub entities_file: Option<std::path::PathBuf>,
     /// The Entities view lists only this computer's own talkers and
     /// listeners.
     pub host_entities_only: bool,
@@ -111,6 +115,7 @@ impl Default for Settings {
             hide_virtual_interfaces: true,
             hide_wireless_interfaces: false,
             hide_unclocked_interfaces: false,
+            entities_file: None,
             host_entities_only: false,
             view: View::Matrix,
             inspector: false,

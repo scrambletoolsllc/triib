@@ -70,11 +70,12 @@ of CRF, a media clock input being a clock source the entity can follow.
 Talkers take their stream addresses with MAAP, and the stream threads
 ask RealtimeKit for real-time scheduling, as PipeWire does.
 
-The entities are listed in `endpoints.toml` in triib's data folder
-(`~/.local/share/triib` on Linux), which the app writes and the daemon
-reads again whenever it changes; the names, formats, bindings and clock
-sources controllers give are kept in it, so an input binds again after
-a restart, and presets keep it too:
+The entities are listed in `entities.toml` in triib's data folder
+(`~/.local/share/triib` on Linux), or in another file Settings name,
+which the app writes and the daemon reads again whenever it changes;
+the names, formats, bindings, clock sources and mappings controllers
+give are kept in it, so an input binds again after a restart, and
+presets keep it too:
 
 ```toml
 interface = "enp2s0"
@@ -99,8 +100,9 @@ clock = true          # a media clock stream
 clock_source = true   # which the entity follows
 ```
 
-triib 1.0's talkers and listeners, `kind = "talker"` and
-`kind = "listener"` entries, read as entities of their one stream.
+triib 1.0's `endpoints.toml` moves to `entities.toml`, and its talkers
+and listeners, `kind = "talker"` and `kind = "listener"` entries, read
+as entities of their one stream.
 
 Where no AVB bridge answers on the interface, the endpoints fall back to
 [AVB Lite](https://github.com/avbcommunity/profiles/blob/main/avb_lite.md),
@@ -193,7 +195,7 @@ cargo run -p triib-cli -- wireless <interface> <entity-id>
 cargo run -p triib-cli -- transit <interface> <entity-id> <output> [nanoseconds]
 cargo run -p triib-cli -- descriptor <interface> <entity-id> <type:index>
 cargo run -p triib-cli -- harvest <interface> <entity-id> [repeat]
-cargo run -p triib-endpointd -- [--config <endpoints.toml>] [--interface <interface>]
+cargo run -p triib-endpointd -- [--config <entities.toml>] [--interface <interface>]
 ```
 
 triib uses [scramble-ui](https://github.com/scrambletools/scramble-ui)

@@ -210,10 +210,10 @@ Intel's i210, i225 and i226 are the known choices with launch time.
 - 1.0's talkers and listeners, entities of one stream each, are folded
   into the entities of any streams: one of one stream does what they
   did, and two kinds of entity doing the same were confusing. Their
-  `endpoints.toml` entries and presets read as entities of their one
+  `entities.toml` entries and presets read as entities of their one
   stream, named as the entity is. The app calls them entities, as AEM
   does.
-- `triib-endpointd` runs them from `endpoints.toml`, which the app writes
+- `triib-endpointd` runs them from `entities.toml`, which the app writes
   and the daemon reads again when it changes, keeping the names, formats
   and bindings controllers give.
 - Audio to and from any cpal device, a test tone or nothing. The device's
@@ -240,7 +240,7 @@ Per the AVB Lite profile in avbcommunity/profiles:
 - Its own endpoints do all of the profile's endpoint side: the fallback and
   beacon, the Endpoint Declaration TLV, CVU SRP, admission against their
   link, escalation to multicast only where allowed (SET_LITE_CONFIG, or
-  `endpoints.toml`), the media VLAN, the link-speed correction, and
+  `entities.toml`), the media VLAN, the link-speed correction, and
   GET_LITE_STATUS answers.
 - The profile's informative 2.5 gives the start-up sequences that triib's
   fallback follows.
@@ -424,7 +424,7 @@ budgets: 240 instances, 75% of the link, and the real-time threads.
   outputs, with a cluster for each channel and a fixed audio map for
   each stream. Its stream IDs come from its instance and each output's
   index, as today's do.
-- **endpoints.toml.** An entry gains `inputs` and `outputs`, 0 and 1 for
+- **entities.toml.** An entry gains `inputs` and `outputs`, 0 and 1 for
   a talker and 1 and 0 for a listener when not given, so today's files
   read as before; `kind = "device"` takes both, with one `source` for
   all its outputs and one `sink` for all its inputs. Stream k carries
@@ -461,7 +461,7 @@ budgets: 240 instances, 75% of the link, and the real-time threads.
   its streams from Hive and from the Mac mini, with today's endpoints
   running beside it.
 - **As built, revised:** a device lists its streams, `[[endpoint.stream]]`
-  in `endpoints.toml`, each with its way, name, channels and audio, and
+  in `entities.toml`, each with its way, name, channels and audio, and
   its format, binding and class as controllers set them. Each stream's
   audio is by default its own virtual audio device on PipeWire, a
   playback device apps play into for an output and a recording device
@@ -489,7 +489,7 @@ budgets: 240 instances, 75% of the link, and the real-time threads.
   bench following the Mac's clock at -5 ppm.
 - **Since.** Any input, audio or media clock, can be the clock source,
   an audio input's clock recovered from its presentation times. Inputs'
-  mappings are dynamic, as Milan has them, kept in `endpoints.toml`;
+  mappings are dynamic, as Milan has them, kept in `entities.toml`;
   outputs keep static maps. An input binds to its own entity's output,
   the daemon handing its entities their own frames, and the matrix
   offers it on this computer's entities. A change to an entity's streams

@@ -37,7 +37,7 @@ pub struct Preset {
     pub host: Option<HostPreset>,
 }
 
-/// This computer's own entities as `endpoints.toml` had them, and the
+/// This computer's own entities as `entities.toml` had them, and the
 /// address of the interface their entity IDs came from.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct HostPreset {
@@ -846,6 +846,7 @@ mod tests {
             interface: "enp6s0".to_owned(),
             gptp: String::new(),
             foreign_mrp: false,
+            config: None,
             endpoints: Vec::new(),
         });
         assert!(!host_ready(&triib, &preset, 2_000));

@@ -97,6 +97,10 @@ pub struct Triib {
     pub overflow_open: bool,
     /// The menu of the interface picker's filters is open.
     pub interface_filters_open: bool,
+    /// The entities file's path while it is typed in Settings, and why
+    /// the one given could not be used.
+    pub entities_file_edit: Option<String>,
+    pub entities_file_error: Option<String>,
     /// On a narrow window, the network view shows its list instead of the map.
     pub network_list: bool,
     /// The name being edited in the inspector, and its text so far.
@@ -274,6 +278,12 @@ pub enum Message {
     AgentPromptReady,
     OutsideControlToggled(bool),
     ForgetAgents,
+    /// The entities file's path, as typed in Settings.
+    EntitiesFileEdited(String),
+    /// Lists this computer's entities in the file typed.
+    EntitiesFileSubmitted,
+    /// Lists them in the default file again.
+    EntitiesFileReset,
     Nothing,
 }
 
@@ -321,6 +331,8 @@ impl Triib {
             network_focus: None,
             overflow_open: false,
             interface_filters_open: false,
+            entities_file_edit: None,
+            entities_file_error: None,
             network_list: false,
             editing: None,
             tree_open: BTreeSet::new(),
@@ -344,6 +356,8 @@ impl Triib {
 
     pub fn boot(omarchy_dir: Option<PathBuf>) -> (Self, Task<Message>) {
         let (settings, settings_error) = Settings::load();
+        triib_endpointd::config::move_endpoints_file();
+        crate::host::set_entities_file(settings.entities_file.clone());
         crate::i18n::set_language(settings.chosen_language());
         let mut triib = Self {
             settings,
@@ -377,6 +391,8 @@ impl Triib {
             network_focus: None,
             overflow_open: false,
             interface_filters_open: false,
+            entities_file_edit: None,
+            entities_file_error: None,
             network_list: false,
             editing: None,
             tree_open: BTreeSet::new(),
@@ -496,6 +512,26 @@ impl Triib {
             return self.update(Message::ActInOrder(recall.actions));
         }
         Task::none()
+    }
+
+    /// Lists this computer's entities in `file`, or the default one, and
+    /// keeps that in the settings.
+    fn move_entities(&mut self, file: Option<PathBuf>) {
+        // The default file, named, is the default.
+        let file = file.filter(|file| Some(file) != triib_endpointd::config::path().as_ref());
+        if file == self.settings.entities_file {
+            return;
+        }
+        match crate::host::move_entities(file.clone()) {
+            Ok(()) => {
+                self.settings.entities_file = file;
+                self.save_settings();
+            }
+            Err(error) => {
+                crate::host::set_entities_file(self.settings.entities_file.clone());
+                self.entities_file_error = Some(error);
+            }
+        }
     }
 
     fn add_host(&mut self) {
@@ -963,6 +999,27 @@ impl Triib {
             Message::ForgetAgents => {
                 self.settings.allowed_agents.clear();
                 self.save_settings();
+            }
+            Message::EntitiesFileEdited(text) => {
+                self.entities_file_edit = Some(text);
+                self.entities_file_error = None;
+            }
+            Message::EntitiesFileSubmitted => {
+                if let Some(text) = self.entities_file_edit.take() {
+                    match crate::host::typed_path(&text) {
+                        Some(file) => self.move_entities(Some(file)),
+                        None => {
+                            self.entities_file_error =
+                                Some(crate::fl!("settings-entities-file-full"));
+                            self.entities_file_edit = Some(text);
+                        }
+                    }
+                }
+            }
+            Message::EntitiesFileReset => {
+                self.entities_file_edit = None;
+                self.entities_file_error = None;
+                self.move_entities(None);
             }
             Message::Nothing => {}
         }

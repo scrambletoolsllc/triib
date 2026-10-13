@@ -23,6 +23,9 @@ pub struct DaemonStatus {
     /// computer's address, which can withdraw what the endpoints need.
     #[serde(default)]
     pub foreign_mrp: bool,
+    /// The file it lists its entities in.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub config: Option<String>,
     #[serde(rename = "endpoint", default)]
     pub endpoints: Vec<EndpointStatus>,
 }
@@ -49,7 +52,7 @@ pub struct StreamStatus {
     pub clock: bool,
     pub name: String,
     pub channels: u16,
-    /// Where its audio comes from or goes, as endpoints.toml says it:
+    /// Where its audio comes from or goes, as entities.toml says it:
     /// "virtual" for its own virtual audio device.
     pub audio: String,
     /// What it is doing: streaming, waiting, listening, bound or unbound.
