@@ -59,6 +59,9 @@ computer's talkers and listeners folded into its entities.
 - Media clock streams: CRF in Milan's format, 48 kHz with a timestamp
   every 96 samples, sent on the same timeline as the entity's audio,
   without channels, audio or mappings.
+- An entity advertises the kinds of stream it has: a media clock source
+  or sink for its media clock streams, an audio source or sink for its
+  audio streams, rather than audio whatever it had.
 - Any input can be the entity's clock source: its talkers then follow
   the clock recovered from a media clock's timestamps or an audio
   stream's presentation times, and gPTP time while it is not recovered.

@@ -678,20 +678,43 @@ impl Entity {
         }
     }
 
+    /// A talker, if it has outputs, of the kinds they send: audio, media
+    /// clock or both.
     fn talker_capabilities(&self) -> TalkerCapabilities {
-        if self.model.outputs.is_empty() {
-            TalkerCapabilities::default()
-        } else {
-            TalkerCapabilities::IMPLEMENTED | TalkerCapabilities::AUDIO_SOURCE
+        let outputs = &self.model.outputs;
+        let mut capabilities = TalkerCapabilities::default();
+        if !outputs.is_empty() {
+            capabilities |= TalkerCapabilities::IMPLEMENTED;
         }
+        if outputs
+            .iter()
+            .any(|output| !output.current_format.is_clock())
+        {
+            capabilities |= TalkerCapabilities::AUDIO_SOURCE;
+        }
+        if outputs
+            .iter()
+            .any(|output| output.current_format.is_clock())
+        {
+            capabilities |= TalkerCapabilities::MEDIA_CLOCK_SOURCE;
+        }
+        capabilities
     }
 
+    /// A listener, if it has inputs, of the kinds they take.
     fn listener_capabilities(&self) -> ListenerCapabilities {
-        if self.model.inputs.is_empty() {
-            ListenerCapabilities::default()
-        } else {
-            ListenerCapabilities::IMPLEMENTED | ListenerCapabilities::AUDIO_SINK
+        let inputs = &self.model.inputs;
+        let mut capabilities = ListenerCapabilities::default();
+        if !inputs.is_empty() {
+            capabilities |= ListenerCapabilities::IMPLEMENTED;
         }
+        if inputs.iter().any(|input| !input.current_format.is_clock()) {
+            capabilities |= ListenerCapabilities::AUDIO_SINK;
+        }
+        if inputs.iter().any(|input| input.current_format.is_clock()) {
+            capabilities |= ListenerCapabilities::MEDIA_CLOCK_SINK;
+        }
+        capabilities
     }
 
     fn adpdu(&self) -> Adpdu {

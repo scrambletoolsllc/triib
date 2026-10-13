@@ -509,6 +509,7 @@ fn the_sampling_rate_and_stream_formats_move_together() {
 /// a new rate moves the audio alone.
 #[test]
 fn a_media_clock_stream_has_no_port_and_keeps_its_rate() {
+    use atdecc::adp::TalkerCapabilities;
     use atdecc::descriptor::SamplingRate;
 
     const CRF_48K: StreamFormat = StreamFormat(0x0410_6001_0000_bb80);
@@ -537,6 +538,14 @@ fn a_media_clock_stream_has_no_port_and_keeps_its_rate() {
     let read = network.controller.model(TALKER).expect("read");
     assert_eq!(read.state, EnumerationState::Complete);
     assert_eq!(read.streams(false).count(), 2);
+    // It advertises both kinds it sends.
+    let advertised = network.controller.entity(TALKER).expect("discovered");
+    assert_eq!(
+        advertised.adp.talker_capabilities,
+        TalkerCapabilities::IMPLEMENTED
+            | TalkerCapabilities::AUDIO_SOURCE
+            | TalkerCapabilities::MEDIA_CLOCK_SOURCE
+    );
     let ports: Vec<_> = read.stream_ports(false).collect();
     assert_eq!(ports.len(), 1, "the audio output's alone");
     let streams: Vec<u16> = read
@@ -566,6 +575,7 @@ fn a_media_clock_stream_has_no_port_and_keeps_its_rate() {
 /// and picking it tells the entity.
 #[test]
 fn a_media_clock_input_is_a_clock_source() {
+    use atdecc::adp::ListenerCapabilities;
     use atdecc::descriptor::{ClockSourceType, StreamFlags};
 
     const CRF_48K: StreamFormat = StreamFormat(0x0410_6001_0000_bb80);
@@ -585,6 +595,13 @@ fn a_media_clock_input_is_a_clock_source() {
     network.controller.discover(None);
     network.run(3000);
 
+    let advertised = network.controller.entity(LISTENER).expect("discovered");
+    assert_eq!(
+        advertised.adp.listener_capabilities,
+        ListenerCapabilities::IMPLEMENTED
+            | ListenerCapabilities::AUDIO_SINK
+            | ListenerCapabilities::MEDIA_CLOCK_SINK
+    );
     let read = network.controller.model(LISTENER).expect("read");
     let sources: Vec<(String, ClockSourceType, DescriptorType, u16)> = read
         .clock_sources()
