@@ -1,15 +1,17 @@
-//! The two ways a stream carries samples, AAF and AM824, behind one
-//! layout: building a talker's PDUs and reading a listener's.
+//! The ways a stream carries samples, AAF and AM824, and a media clock,
+//! CRF, behind one layout: building a talker's PDUs and reading a
+//! listener's.
 
 use atdecc::stream_format::StreamFormat;
 
-use crate::{aaf, am824};
+use crate::{aaf, am824, crf};
 
-/// How a stream format packs its samples.
+/// How a stream format packs its samples, or its clock.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Media {
     Aaf(aaf::Layout),
     Am824(am824::Layout),
+    Crf(crf::Layout),
 }
 
 impl Media {
@@ -18,6 +20,7 @@ impl Media {
         aaf::Layout::of(format)
             .map(Media::Aaf)
             .or_else(|| am824::Layout::of(format).map(Media::Am824))
+            .or_else(|| crf::Layout::of(format).map(Media::Crf))
     }
 
     /// The AVTP subtype of its PDUs.
@@ -25,27 +28,53 @@ impl Media {
         match self {
             Media::Aaf(_) => aaf::SUBTYPE,
             Media::Am824(_) => am824::SUBTYPE,
+            Media::Crf(_) => crf::SUBTYPE,
         }
     }
 
+    /// Its sampling rate; a media clock's base frequency.
     pub fn sample_rate(&self) -> u32 {
         match self {
             Media::Aaf(layout) => layout.sample_rate,
             Media::Am824(layout) => layout.sample_rate,
+            Media::Crf(layout) => layout.base_frequency,
         }
     }
 
+    /// Its audio channels, none for a media clock.
     pub fn channels(&self) -> u16 {
         match self {
             Media::Aaf(layout) => layout.channels,
             Media::Am824(layout) => layout.channels,
+            Media::Crf(_) => 0,
         }
     }
 
+    /// Whether it carries a media clock rather than audio.
+    pub fn is_clock(&self) -> bool {
+        matches!(self, Media::Crf(_))
+    }
+
+    /// The samples each frame carries; none for a media clock.
     pub fn samples_per_frame(&self) -> u16 {
         match self {
             Media::Aaf(layout) => layout.samples_per_frame,
             Media::Am824(layout) => layout.samples_per_frame,
+            Media::Crf(_) => 0,
+        }
+    }
+
+    /// How many samples at `rate` each frame spans: an audio stream's own
+    /// at its rate alone; a media clock's events counted at `rate`, where
+    /// they come to whole samples.
+    pub fn frame_samples_at(&self, rate: u32) -> Option<u64> {
+        match self {
+            Media::Crf(layout) => {
+                let spanned = layout.events_per_frame() * u64::from(rate);
+                let base = u64::from(layout.base_frequency);
+                (spanned.is_multiple_of(base) && spanned > 0).then(|| spanned / base)
+            }
+            _ => (self.sample_rate() == rate).then(|| u64::from(self.samples_per_frame().max(1))),
         }
     }
 
@@ -54,6 +83,7 @@ impl Media {
         match self {
             Media::Aaf(layout) => layout.pdu_length(),
             Media::Am824(layout) => layout.pdu_length(),
+            Media::Crf(layout) => layout.pdu_length(),
         }
     }
 
@@ -62,6 +92,7 @@ impl Media {
         match self {
             Media::Aaf(layout) => layout.interval_nanos(),
             Media::Am824(layout) => layout.interval_nanos(),
+            Media::Crf(layout) => layout.interval_nanos(),
         }
     }
 }
@@ -88,7 +119,8 @@ impl Packetizer {
 
     /// Writes the next PDU into `out`, `media`'s PDU length: `samples`
     /// interleaved, the first presented at `presentation` (gPTP
-    /// nanoseconds).
+    /// nanoseconds); for a media clock, its timestamps from
+    /// `presentation` on, without samples.
     pub fn write(&mut self, presentation: i64, media_reset: bool, samples: &[f32], out: &mut [u8]) {
         match self.media {
             Media::Aaf(layout) => {
@@ -132,6 +164,13 @@ impl Packetizer {
                 am824::write_samples(samples, &mut out[start..]);
                 self.dbc = self.dbc.wrapping_add(layout.samples_per_frame as u8);
             }
+            Media::Crf(layout) => {
+                let mut encoded = [0; crf::HEADER_LEN];
+                crf::Header::of(&layout, self.sequence, self.stream_id, media_reset)
+                    .encode(&mut encoded);
+                out[..crf::HEADER_LEN].copy_from_slice(&encoded);
+                crf::write_timestamps(presentation, &layout, &mut out[crf::HEADER_LEN..]);
+            }
         }
         self.sequence = self.sequence.wrapping_add(1);
     }
@@ -152,7 +191,7 @@ pub struct Received {
 }
 
 /// Reads a PDU of `media`'s kind, its samples into `out` when it carries
-/// what `media` describes.
+/// what `media` describes; a media clock's has none.
 pub fn read(pdu: &[u8], media: &Media, out: &mut Vec<f32>) -> Option<Received> {
     match media {
         Media::Aaf(layout) => {
@@ -186,6 +225,17 @@ pub fn read(pdu: &[u8], media: &Media, out: &mut Vec<f32>) -> Option<Received> {
                     .timestamp
                     .map(|timestamp| timestamp.wrapping_sub(before as u32)),
                 matches,
+            })
+        }
+        Media::Crf(layout) => {
+            let (header, timestamps) = crf::Header::decode(pdu)?;
+            let first = crf::first_timestamp(timestamps).map(|time| time as u32);
+            Some(Received {
+                sequence: header.sequence,
+                stream_id: header.stream_id,
+                timestamp: first,
+                first_presented: first,
+                matches: header.matches(layout),
             })
         }
     }
@@ -233,8 +283,30 @@ mod tests {
                     stamps,
                     [Some(1_000_000), Some(1_166_666), Some(1_333_333), None]
                 ),
+                Media::Crf(_) => unreachable!("audio formats only"),
             }
         }
+    }
+
+    /// A media clock's frame spans whole samples at the audio's rates:
+    /// 96 events at 48 kHz are 384 samples at 192 kHz; an audio stream
+    /// spans its own frame at its own rate alone.
+    #[test]
+    fn a_media_clock_spans_samples_at_any_audio_rate() {
+        let clock = Media::of(StreamFormat(0x0410_6001_0000_bb80)).unwrap();
+        assert!(clock.is_clock());
+        assert_eq!(clock.channels(), 0);
+        assert_eq!(clock.frame_samples_at(48_000), Some(96));
+        assert_eq!(clock.frame_samples_at(192_000), Some(384));
+        assert_eq!(clock.frame_samples_at(44_100), None);
+        let audio = Media::of(AAF_48K_8CH_32).unwrap();
+        assert_eq!(audio.frame_samples_at(48_000), Some(6));
+        assert_eq!(audio.frame_samples_at(96_000), None);
+        let mut pdu = vec![0; clock.pdu_length()];
+        Packetizer::new(clock, 1).write(3_000_000_000, false, &[], &mut pdu);
+        let received = read(&pdu, &clock, &mut Vec::new()).unwrap();
+        assert!(received.matches);
+        assert_eq!(received.timestamp, Some(3_000_000_000));
     }
 
     #[test]

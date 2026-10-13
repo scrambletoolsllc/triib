@@ -128,8 +128,9 @@ pub fn set_audio(
 /// A change to one of a device's streams.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StreamChange {
-    /// A new stream of this way at the end, with its own virtual device.
-    Add(Direction),
+    /// A new stream of this way at the end: audio, with its own virtual
+    /// device, or a media clock.
+    Add { direction: Direction, clock: bool },
     /// The stream at this place goes.
     Remove(usize),
     /// The stream at this place has this many channels.
@@ -156,7 +157,7 @@ pub fn change_stream(
     // A device's streams as they are, written down once one changes.
     let mut streams = endpoint.stream_configs();
     match change {
-        StreamChange::Add(direction) => {
+        StreamChange::Add { direction, clock } => {
             let same = streams
                 .iter()
                 .filter(|stream| stream.direction == direction)
@@ -164,7 +165,11 @@ pub fn change_stream(
             if same >= triib_endpointd::config::MOST_STREAMS {
                 return Err("no room for another".into());
             }
-            streams.push(StreamConfig::new(direction));
+            streams.push(if clock {
+                StreamConfig::clock(direction)
+            } else {
+                StreamConfig::new(direction)
+            });
         }
         StreamChange::Remove(at) if at < streams.len() => {
             streams.remove(at);

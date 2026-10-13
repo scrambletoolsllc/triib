@@ -1,6 +1,6 @@
 //! Listeners of AAF or AM824: the frames of a stream, their samples
 //! played on the sink, counted as Milan's stream input counters count
-//! them.
+//! them; and of a media clock, CRF, its frames counted alike.
 //!
 //! A group takes several streams on one thread, each with its own
 //! socket, sink and counters, waiting on all of their sockets at once. A
@@ -105,12 +105,13 @@ impl Default for Counters {
     }
 }
 
-/// A stream opened for the thread to take: its socket and its sink.
+/// A stream opened for the thread to take: its socket and its sink, none
+/// for a media clock.
 struct Opened {
     config: ListenerConfig,
     media: Media,
     receiver: FrameReceiver,
-    output: Output,
+    output: Option<Output>,
 }
 
 /// What the group's owner and its thread share.
@@ -165,12 +166,20 @@ impl ListenerGroup {
                 let media = Media::of(config.format).ok_or_else(|| {
                     io::Error::new(
                         io::ErrorKind::Unsupported,
-                        "not an AAF or AM824 format this listener takes",
+                        "not an AAF, AM824 or CRF format this listener takes",
                     )
                 })?;
                 let receiver =
                     FrameReceiver::open(&config.interface, media.subtype(), &config.destinations)?;
-                let output = Output::open(&config.sink, media.channels(), media.sample_rate())?;
+                let output = if media.is_clock() {
+                    None
+                } else {
+                    Some(Output::open(
+                        &config.sink,
+                        media.channels(),
+                        media.sample_rate(),
+                    )?)
+                };
                 Some(Opened {
                     config,
                     media,
@@ -467,7 +476,9 @@ fn take_frame(stream: &mut Running, frame: &[u8], samples: &mut Vec<f32>, clock:
             first: now + ahead(first),
             offset: clock.offset(),
         });
-    let output = &opened.output;
+    let Some(output) = &opened.output else {
+        return;
+    };
     output.write(samples, presented);
     if header.sequence == 0 {
         counters

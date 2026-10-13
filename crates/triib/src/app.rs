@@ -130,6 +130,8 @@ pub struct Triib {
     /// The stream the Streams tab shows: the entity, whether it is an
     /// input, and its index. The entity's first stream when it is another.
     pub stream_selected: Option<(EntityId, bool, u16)>,
+    /// Whether the Streams tab's menu of streams a device adds is open.
+    pub add_stream_open: bool,
 }
 
 /// What the network thread for the chosen interface is doing.
@@ -225,6 +227,8 @@ pub enum Message {
         crate::entity_table::ListPart,
         iced::widget::scrollable::Viewport,
     ),
+    /// Open or close the menu of streams a device adds.
+    AddStreamMenu(bool),
     /// Offer the formats both ends of a matrix cell take.
     MatrixFormatsOpened(FormatMenu),
     MatrixFormatsClosed,
@@ -332,6 +336,7 @@ impl Triib {
             settings_error: None,
             agents: crate::agents::Agents::default(),
             stream_selected: None,
+            add_stream_open: false,
         }
     }
 
@@ -386,6 +391,7 @@ impl Triib {
             settings_error,
             agents: crate::agents::Agents::default(),
             stream_selected: None,
+            add_stream_open: false,
         };
         triib.reload_omarchy();
         triib.apply_motion();
@@ -721,6 +727,7 @@ impl Triib {
             }
             Message::MatrixFormatsOpened(menu) => self.format_menu = Some(menu),
             Message::MatrixFormatsClosed => self.format_menu = None,
+            Message::AddStreamMenu(open) => self.add_stream_open = open,
             Message::NetworkShows(shows) => {
                 self.settings.network_shows = shows;
                 self.save_settings();
@@ -934,7 +941,8 @@ impl Triib {
             Message::HostStream(entity_id, change) => {
                 // A new stream is picked in the Streams tab, so its details
                 // show once the device has it: the next index its way.
-                if let crate::host::StreamChange::Add(direction) = &change {
+                if let crate::host::StreamChange::Add { direction, .. } = &change {
+                    self.add_stream_open = false;
                     let input = *direction == triib_endpointd::config::Direction::In;
                     let next = self
                         .models

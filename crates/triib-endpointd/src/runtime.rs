@@ -137,6 +137,10 @@ const CLASS_B_FRAMES: u32 = 4000;
 /// The most octets an AVTPDU takes in one Ethernet frame.
 const MOST_PDU: usize = 1500;
 
+/// Milan's media clock stream format: CRF, an audio sample clock at
+/// 48 kHz, a timestamp each 96 samples, one a frame.
+const MEDIA_CLOCK: StreamFormat = StreamFormat(0x0410_6001_0000_bb80);
+
 /// AAF at `rate`, sent `frames` times a second, 32-bit, in `bits` of
 /// them.
 fn aaf(rate: u32, channels: u16, bits: u8, frames: u32) -> StreamFormat {
@@ -421,10 +425,35 @@ impl Endpoint {
         };
         let (out_streams, in_streams) = (place_of(Direction::Out), place_of(Direction::In));
         // Stream k of a direction: its name, and the format chosen last,
-        // with the channels it has now.
-        let model = |direction: Direction, index: usize, place: usize| {
+        // with the channels it has now; a media clock's one format.
+        let model = |direction: Direction, place: usize| {
             let stream = &streams[place];
             let output = direction == Direction::Out;
+            // Numbered among the streams of its way and kind.
+            let number = streams[..place]
+                .iter()
+                .filter(|other| other.direction == direction && other.clock == stream.clock)
+                .count()
+                + 1;
+            let name = if !stream.name.is_empty() {
+                stream.name.clone()
+            } else {
+                let way = if output { "Out" } else { "In" };
+                if stream.clock {
+                    format!("Media Clock {way} {number}")
+                } else {
+                    format!("{way} {number}")
+                }
+            };
+            if stream.clock {
+                return StreamModel {
+                    name,
+                    formats: vec![MEDIA_CLOCK],
+                    current_format: MEDIA_CLOCK,
+                    channels: 0,
+                    class_b: false,
+                };
+            }
             // As many as six samples of each fit in one Ethernet frame,
             // at 48 kHz; fewer offer the higher rates too.
             let channels = stream.channels.clamp(1, 60);
@@ -440,11 +469,7 @@ impl Endpoint {
                 })
                 .unwrap_or(formats[0]);
             StreamModel {
-                name: if !stream.name.is_empty() {
-                    stream.name.clone()
-                } else {
-                    format!("{} {}", if output { "Out" } else { "In" }, index + 1)
-                },
+                name,
                 current_format,
                 formats,
                 channels,
@@ -453,16 +478,17 @@ impl Endpoint {
         };
         let outputs: Vec<StreamModel> = out_streams
             .iter()
-            .enumerate()
-            .map(|(index, place)| model(Direction::Out, index, *place))
+            .map(|place| model(Direction::Out, *place))
             .collect();
         let inputs: Vec<StreamModel> = in_streams
             .iter()
-            .enumerate()
-            .map(|(index, place)| model(Direction::In, index, *place))
+            .map(|place| model(Direction::In, *place))
             .collect();
-        // The streams share the audio unit's rate: the first one's.
-        let first = outputs.iter().chain(&inputs).next();
+        // The audio streams share the audio unit's rate: the first one's.
+        let first = outputs
+            .iter()
+            .chain(&inputs)
+            .find(|stream| !stream.current_format.is_clock());
         let mut sampling_rates: Vec<u32> = first
             .map(|stream| {
                 stream
@@ -472,10 +498,16 @@ impl Endpoint {
                     .collect()
             })
             .unwrap_or_default();
+        // Each rate once, as the class B formats offer them again.
+        sampling_rates.sort_unstable();
         sampling_rates.dedup();
         let current_sampling_rate = first
             .and_then(|stream| stream.current_format.sample_rate())
             .unwrap_or(48_000);
+        // Media clocks alone run at the rate they count.
+        if sampling_rates.is_empty() {
+            sampling_rates.push(current_sampling_rate);
+        }
         let model = EndpointModel {
             entity_id: entity_id(mac, instance),
             entity_model_id: model_id(config.kind, &outputs, &inputs),
@@ -2007,14 +2039,21 @@ impl Runtime {
         let format = stream.current_format;
         let source = match &self.output(out).device {
             Some(device) => Source::Shared(device.shared()),
+            None if endpoint.out_config(out.1).clock => Source::Silence,
             None => endpoint.out_config(out.1).source(),
         };
-        let Some(rate) = triib_stream::media::Media::of(format).map(|media| media.sample_rate())
-        else {
+        let Some(media) = triib_stream::media::Media::of(format) else {
             log(format!(
                 "{name}: could not start the stream: not a format it sends"
             ));
             return;
+        };
+        // A media clock goes out on the entity's audio clock, from its
+        // group.
+        let rate = if media.is_clock() {
+            endpoint.entity.model().current_sampling_rate
+        } else {
+            media.sample_rate()
         };
         let wanted = GroupStream {
             stream_id: stream_id.0,
@@ -2189,6 +2228,7 @@ impl Runtime {
             format: model.current_format,
             sink: match &self.input(input).device {
                 Some(device) => Sink::Shared(device.shared()),
+                None if endpoint.in_config(input.1).clock => Sink::Discard,
                 None => endpoint.in_config(input.1).sink(),
             },
         };
@@ -3548,6 +3588,7 @@ fn stream_statuses(endpoint: &Endpoint) -> Vec<StreamStatus> {
             };
             StreamStatus {
                 direction: stream.direction,
+                clock: stream.clock,
                 name: name.unwrap_or_default(),
                 channels: stream.channels,
                 audio: stream
@@ -3782,6 +3823,42 @@ mod tests {
             ],
         );
         assert_eq!(again.entity.model().entity_model_id, id);
+    }
+
+    /// A device's media clock streams are CRF, named apart from its audio
+    /// streams, without channels or a virtual device, and leave the
+    /// rates to the audio.
+    #[test]
+    fn media_clock_streams_carry_crf_alone() {
+        let device = endpoint(
+            Kind::Device,
+            vec![
+                StreamConfig::clock(Direction::Out),
+                stream(Direction::Out, 2),
+                StreamConfig::clock(Direction::In),
+            ],
+        );
+        let model = device.entity.model();
+        let names: Vec<&str> = model
+            .outputs
+            .iter()
+            .chain(&model.inputs)
+            .map(|stream| stream.name.as_str())
+            .collect();
+        assert_eq!(names, ["Media Clock Out 1", "Out 1", "Media Clock In 1"]);
+        assert_eq!(model.outputs[0].current_format, MEDIA_CLOCK);
+        assert_eq!(model.outputs[0].formats, [MEDIA_CLOCK]);
+        assert_eq!(model.outputs[0].channels, 0);
+        assert_eq!(model.inputs[0].current_format, MEDIA_CLOCK);
+        assert_eq!(model.sampling_rates, [48_000, 96_000, 192_000]);
+        assert!(!device.out_config(0).is_virtual());
+        assert!(device.out_config(1).is_virtual());
+        // Its talker takes no more than its frames' share.
+        let media = triib_stream::media::Media::of(MEDIA_CLOCK).unwrap();
+        assert_eq!(media.pdu_length(), 28);
+        // Media clocks alone run at the rate they count.
+        let clocks = endpoint(Kind::Device, vec![StreamConfig::clock(Direction::Out)]);
+        assert_eq!(clocks.entity.model().sampling_rates, [48_000]);
     }
 
     /// A max transit time a controller set, kept in the configuration,

@@ -1072,10 +1072,15 @@ fn stream_sections<'a>(
         }
         items.extend(crate::host_view::add_buttons(triib, entity_id));
     }
-    if let Some(stream) = picked.and_then(|at| streams.get(at)) {
+    let picked = picked.and_then(|at| streams.get(at));
+    if let Some(stream) = picked {
         items.extend(stream_details(triib, entity_id, model, stream));
     }
-    items.extend(mapping_view::mapping_details(triib, entity_id, model));
+    // A media clock stream carries no channels, so the audio's mappings
+    // are not its.
+    if !picked.is_some_and(|stream| stream.current_format.is_clock()) {
+        items.extend(mapping_view::mapping_details(triib, entity_id, model));
+    }
     items
 }
 
@@ -2512,6 +2517,7 @@ pub(crate) mod tests {
                 use triib_endpointd::status::{DaemonStatus, EndpointStatus, StreamStatus};
                 let stream = |direction, name: &str, state: &str| StreamStatus {
                     direction,
+                    clock: false,
                     name: name.into(),
                     channels: 8,
                     audio: "virtual".into(),
@@ -2796,6 +2802,7 @@ pub(crate) mod tests {
             endpoint.streams = vec![
                 StreamStatus {
                     direction: Direction::Out,
+                    clock: false,
                     name: "Out 1".into(),
                     channels: 8,
                     audio: "virtual".into(),
@@ -2803,6 +2810,7 @@ pub(crate) mod tests {
                 },
                 StreamStatus {
                     direction: Direction::In,
+                    clock: false,
                     name: "In 1".into(),
                     channels: 2,
                     audio: "discard".into(),
@@ -2817,20 +2825,54 @@ pub(crate) mod tests {
             assert!(simulator.find("Virtual device").is_ok());
             assert!(simulator.find("Nowhere").is_err());
             assert!(simulator.find("Remove stream").is_ok());
-            assert!(simulator.find("Add output stream").is_ok());
             assert!(simulator.find("Add device").is_ok());
-            simulator.click("Add input stream").expect("the button");
+            simulator.click("Add stream").expect("the button");
+            let messages: Vec<Message> = simulator.into_messages().collect();
+            assert!(
+                messages
+                    .iter()
+                    .any(|message| matches!(message, Message::AddStreamMenu(true))),
+                "{messages:?}"
+            );
+        }
+        // Its menu adds audio or a media clock, either way.
+        triib.add_stream_open = true;
+        {
+            let mut simulator = simulate(&triib, Size::new(1280.0, 1400.0));
+            for kind in ["Audio input", "Audio output", "Media clock input"] {
+                assert!(simulator.find(kind).is_ok(), "{kind}");
+            }
+            simulator
+                .click("Media clock output")
+                .expect("the menu's entry");
             let messages: Vec<Message> = simulator.into_messages().collect();
             assert!(
                 messages.iter().any(|message| matches!(
                     message,
                     Message::HostStream(
                         _,
-                        crate::host::StreamChange::Add(triib_endpointd::config::Direction::In)
+                        crate::host::StreamChange::Add {
+                            direction: triib_endpointd::config::Direction::Out,
+                            clock: true,
+                        }
                     )
                 )),
                 "{messages:?}"
             );
+        }
+        triib.add_stream_open = false;
+        // A media clock stream has no audio or channels to set.
+        if let Some(status) = &mut triib.endpoints {
+            status.endpoints[0].streams[0].clock = true;
+        }
+        {
+            let mut simulator = simulate(&triib, Size::new(1280.0, 1400.0));
+            assert!(simulator.find("Virtual device").is_err());
+            assert!(simulator.find("Channels").is_err());
+            assert!(simulator.find("Remove stream").is_ok());
+        }
+        if let Some(status) = &mut triib.endpoints {
+            status.endpoints[0].streams[0].clock = false;
         }
         // Its input picked, the details are that stream's; a row of the
         // list picks another.
@@ -2987,6 +3029,47 @@ pub(crate) mod tests {
         triib.stream_selected = Some((WIRED_ESP, true, 1));
         let mut simulator = simulate(&triib, Size::new(1280.0, 1600.0));
         assert!(simulator.find("Stream ID").is_err());
+    }
+
+    /// A media clock stream carries no channels, so the Streams tab shows
+    /// the entity's channel mappings with its audio streams alone.
+    #[test]
+    fn a_media_clock_stream_shows_no_channel_mappings() {
+        let (entities, models) = bench();
+        let interface = Interface {
+            name: "enp6s0".to_owned(),
+            mac: MacAddress(HOST_MAC),
+            up: true,
+            speed: Some(1000),
+            physical: true,
+            wireless: false,
+            hardware_clock: Some(0),
+        };
+        let settings = Settings {
+            interface: Some(interface.name.clone()),
+            view: View::Entities,
+            inspector: true,
+            ..Settings::default()
+        };
+        let mut triib = Triib::sample(settings, interface, entities, models);
+        let model = &triib.models[&MAC_MINI];
+        let clock = model
+            .streams(true)
+            .find(|stream| stream.current_format.is_clock())
+            .expect("the Mac's media clock input")
+            .index;
+        let audio = model
+            .streams(true)
+            .find(|stream| !stream.current_format.is_clock())
+            .expect("an audio input")
+            .index;
+        triib.selected = Some(MAC_MINI);
+        triib.inspector_tab = InspectorTab::Streams;
+        let size = Size::new(1280.0, 1600.0);
+        triib.stream_selected = Some((MAC_MINI, true, audio));
+        assert!(simulate(&triib, size).find("Channel mappings").is_ok());
+        triib.stream_selected = Some((MAC_MINI, true, clock));
+        assert!(simulate(&triib, size).find("Channel mappings").is_err());
     }
 
     #[test]

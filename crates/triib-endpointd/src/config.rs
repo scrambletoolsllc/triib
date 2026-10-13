@@ -91,7 +91,11 @@ pub enum Direction {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StreamConfig {
     pub direction: Direction,
-    /// Its name, "Out 1", "In 1" and on when empty.
+    /// A media clock stream, CRF, rather than audio: it has no channels
+    /// and no audio.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub clock: bool,
+    /// Its name, "Out 1", "In 1", "Media Clock Out 1" and on when empty.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub name: String,
     #[serde(default = "eight")]
@@ -108,11 +112,11 @@ pub struct StreamConfig {
     /// The stream format a controller last chose, in hex.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<String>,
-    /// For an input, the talker's stream output it is bound to, as
     /// The max transit time a controller set for an output, in
     /// nanoseconds; its class's default when left out.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub transit: Option<u32>,
+    /// For an input, the talker's stream output it is bound to, as
     /// `bound` keeps it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bound: Option<String>,
@@ -130,6 +134,7 @@ impl StreamConfig {
     pub fn new(direction: Direction) -> Self {
         StreamConfig {
             direction,
+            clock: false,
             name: String::new(),
             channels: 8,
             audio: None,
@@ -138,6 +143,15 @@ impl StreamConfig {
             transit: None,
             bound: None,
             class: SrClass::A,
+        }
+    }
+
+    /// A new media clock stream of `direction`.
+    pub fn clock(direction: Direction) -> Self {
+        StreamConfig {
+            clock: true,
+            channels: 0,
+            ..StreamConfig::new(direction)
         }
     }
 
@@ -151,9 +165,10 @@ impl StreamConfig {
         parse_binding(self.bound.as_deref()?)
     }
 
-    /// Whether its audio is its own virtual device.
+    /// Whether its audio is its own virtual device; never a media
+    /// clock's.
     pub fn is_virtual(&self) -> bool {
-        self.audio.as_deref().is_none_or(|audio| audio == VIRTUAL)
+        !self.clock && self.audio.as_deref().is_none_or(|audio| audio == VIRTUAL)
     }
 
     /// Where an output's audio comes from, but for a virtual device.
@@ -411,6 +426,27 @@ mod tests {
             ..Config::default()
         })
         .expect("writes");
+        assert_eq!(entry(&text), device);
+    }
+
+    /// A media clock stream says so, and an audio stream says nothing of
+    /// it.
+    #[test]
+    fn a_media_clock_stream_is_marked() {
+        let device = entry(
+            "[[endpoint]]\nkind = \"device\"\nname = \"D\"\n\
+             [[endpoint.stream]]\ndirection = \"out\"\nclock = true\n\
+             [[endpoint.stream]]\ndirection = \"in\"\n",
+        );
+        let streams = device.stream_configs();
+        assert!(streams[0].clock && !streams[0].is_virtual());
+        assert!(!streams[1].clock && streams[1].is_virtual());
+        let text = toml::to_string(&Config {
+            endpoints: vec![device.clone()],
+            ..Config::default()
+        })
+        .expect("writes");
+        assert_eq!(text.matches("clock = true").count(), 1, "{text}");
         assert_eq!(entry(&text), device);
     }
 }

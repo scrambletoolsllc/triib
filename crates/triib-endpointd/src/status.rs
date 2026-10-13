@@ -50,6 +50,9 @@ pub struct EndpointStatus {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StreamStatus {
     pub direction: Direction,
+    /// A media clock stream rather than audio.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub clock: bool,
     pub name: String,
     pub channels: u16,
     /// Where its audio comes from or goes, as endpoints.toml says it:

@@ -8,8 +8,10 @@ use atdecc::EntityId;
 use iced::widget::{container, space};
 use iced::{Center, Element, Fill};
 use scramble_ui::button::{self, Kind, Size};
+use scramble_ui::dropdown::Entry;
 use scramble_ui::font::{Type, styled};
 use scramble_ui::icon::Icon;
+use scramble_ui::popover::popover;
 use scramble_ui::{component, dir, dropdown, style};
 use triib_endpointd::config::{Direction, Kind as EndpointKind, VIRTUAL};
 
@@ -142,21 +144,37 @@ pub fn is_device(triib: &Triib, entity_id: EntityId) -> bool {
         .is_some_and(|endpoint| endpoint.kind == EndpointKind::Device)
 }
 
-/// A device's buttons that add a stream output or input, each on its own
-/// line, as two side by side are wider than the inspector.
+/// A device's button that adds a stream, with a menu of the kinds it
+/// adds: audio or a media clock, either way.
 pub fn add_buttons(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>> {
     if !is_device(triib, entity_id) {
         return Vec::new();
     }
-    let add = |direction, label: String| {
-        button::with_icon(Kind::Tonal, Icon::Add, label)
-            .size(Size::ExtraSmall)
-            .on_press(Message::HostStream(entity_id, StreamChange::Add(direction)))
-            .into()
+    let open = triib.add_stream_open;
+    let entry = |label: String, direction, clock| {
+        Entry::item(
+            label,
+            Message::HostStream(entity_id, StreamChange::Add { direction, clock }),
+        )
     };
+    let menu = open.then(|| {
+        dropdown::surface(
+            vec![
+                entry(fl!("host-add-audio-input"), Direction::In, false),
+                entry(fl!("host-add-audio-output"), Direction::Out, false),
+                entry(fl!("host-add-clock-input"), Direction::In, true),
+                entry(fl!("host-add-clock-output"), Direction::Out, true),
+            ],
+            0.0,
+        )
+    });
+    let add = button::with_icon(Kind::Tonal, Icon::Add, fl!("host-add-stream"))
+        .size(Size::ExtraSmall)
+        .on_press(Message::AddStreamMenu(!open));
     vec![
-        add(Direction::Out, fl!("host-add-output-stream")),
-        add(Direction::In, fl!("host-add-input-stream")),
+        popover(add, menu, Message::AddStreamMenu(false))
+            .close_on_choice()
+            .into(),
     ]
 }
 
@@ -204,6 +222,10 @@ pub fn stream_rows(
     else {
         return Vec::new();
     };
+    // A media clock has no audio and no channels.
+    if stream.clock {
+        return Vec::new();
+    }
     vec![
         stacked(
             audio_label,

@@ -503,3 +503,60 @@ fn the_sampling_rate_and_stream_formats_move_together() {
         Some(AAF_48K_8CH)
     );
 }
+
+/// A media clock output, CRF, has no stream port, clusters or map: the
+/// audio output after it has the one port, mapped to its own stream, and
+/// a new rate moves the audio alone.
+#[test]
+fn a_media_clock_stream_has_no_port_and_keeps_its_rate() {
+    use atdecc::descriptor::SamplingRate;
+
+    const CRF_48K: StreamFormat = StreamFormat(0x0410_6001_0000_bb80);
+    const AAF_96K_8CH: StreamFormat = StreamFormat(0x0207_0220_0200_c000);
+    let mut network = Network::new();
+    let mut model = model(TALKER, "Talker", true);
+    model.sampling_rates = vec![48_000, 96_000];
+    model.outputs[0].formats = vec![AAF_48K_8CH, AAF_96K_8CH];
+    model.outputs.insert(
+        0,
+        StreamModel {
+            name: "Media Clock Out 1".into(),
+            formats: vec![CRF_48K],
+            current_format: CRF_48K,
+            channels: 0,
+            class_b: false,
+        },
+    );
+    let clock_stream = StreamId(0x9c6b_0030_9a2b_0001);
+    let mut talker = Entity::new(model, &[(clock_stream, DESTINATION), (STREAM, DESTINATION)]);
+    talker.start(network.now);
+    network.talker = talker;
+    network.controller.discover(None);
+    network.run(3000);
+
+    let read = network.controller.model(TALKER).expect("read");
+    assert_eq!(read.state, EnumerationState::Complete);
+    assert_eq!(read.streams(false).count(), 2);
+    let ports: Vec<_> = read.stream_ports(false).collect();
+    assert_eq!(ports.len(), 1, "the audio output's alone");
+    let streams: Vec<u16> = read
+        .static_mappings(&ports[0])
+        .map(|mapping| mapping.stream_index)
+        .collect();
+    assert_eq!(streams, [1; 8]);
+
+    let now = network.now;
+    network.controller.set_sampling_rate(
+        now,
+        TALKER,
+        DescriptorType::AUDIO_UNIT,
+        0,
+        SamplingRate(96_000),
+    );
+    network.run(1000);
+    let outputs = &network.talker.model().outputs;
+    assert_eq!(
+        (outputs[0].current_format, outputs[1].current_format),
+        (CRF_48K, AAF_96K_8CH)
+    );
+}

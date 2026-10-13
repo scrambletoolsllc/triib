@@ -963,8 +963,11 @@ host-channels = Channels
 # One of a device's streams with an audio device of its own on this
 # computer, which apps play into or record from.
 host-virtual-device = Virtual device
-host-add-output-stream = Add output stream
-host-add-input-stream = Add input stream
+host-add-stream = Add stream
+host-add-audio-input = Audio input
+host-add-audio-output = Audio output
+host-add-clock-input = Media clock input
+host-add-clock-output = Media clock output
 host-remove-stream = Remove stream
 host-silence = Silence
 host-tone = Test tone

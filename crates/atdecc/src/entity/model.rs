@@ -4,10 +4,11 @@
 //! rate and clock source.
 //!
 //! One configuration with one audio unit, one AVB interface and one clock
-//! domain. Each stream has a stream port of its own on the audio unit,
-//! with an audio cluster of one channel for each of the stream's channels
-//! and a static map between them. The clock sources are the internal
-//! clock, then each stream input where the model offers them.
+//! domain. Each audio stream has a stream port of its own on the audio
+//! unit, with an audio cluster of one channel for each of the stream's
+//! channels and a static map between them; a media clock stream, CRF, has
+//! none. The clock sources are the internal clock, then each stream input
+//! where the model offers them.
 
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -37,7 +38,7 @@ pub struct StreamModel {
     /// The formats it can take, the first the default.
     pub formats: Vec<StreamFormat>,
     pub current_format: StreamFormat,
-    /// Its channels, each an audio cluster.
+    /// Its channels, each an audio cluster; none for a media clock.
     pub channels: u16,
     /// Sent in SR class B rather than A, as a stream crossing a Wi-Fi hop
     /// must be (AVB Wireless profile, 4).
@@ -136,13 +137,15 @@ impl Writer {
     }
 }
 
-/// Which stream port, cluster and map belong to which stream: inputs'
-/// ports first, then outputs'.
+/// Which stream port, cluster and map belong to which audio stream:
+/// inputs' ports first, then outputs'.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Port {
     input: bool,
-    /// The stream and stream port index.
+    /// The stream port's index, counting its way's audio streams.
     index: u16,
+    /// The stream's index.
+    stream: u16,
     base_cluster: u16,
     channels: u16,
     /// Its map, by AUDIO_MAP index.
@@ -155,15 +158,20 @@ impl EndpointModel {
         let mut cluster = 0;
         let mut map = 0;
         for (input, streams) in [(true, &self.inputs), (false, &self.outputs)] {
-            for (index, stream) in streams.iter().enumerate() {
+            let audio = streams
+                .iter()
+                .enumerate()
+                .filter(|(_, stream)| !stream.current_format.is_clock() && stream.channels > 0);
+            for (index, (stream, model)) in audio.enumerate() {
                 ports.push(Port {
                     input,
                     index: index as u16,
+                    stream: stream as u16,
                     base_cluster: cluster,
-                    channels: stream.channels,
+                    channels: model.channels,
                     map,
                 });
-                cluster += stream.channels;
+                cluster += model.channels;
                 map += 1;
             }
         }
@@ -248,8 +256,8 @@ impl EndpointModel {
                 writer.done()
             }
             DescriptorType::AUDIO_UNIT if index == 0 => {
-                let inputs = self.inputs.len() as u16;
-                let outputs = self.outputs.len() as u16;
+                let inputs = ports.iter().filter(|port| port.input).count() as u16;
+                let outputs = ports.iter().filter(|port| !port.input).count() as u16;
                 writer
                     .name("Audio")
                     .u16(NO_STRING)
@@ -405,7 +413,7 @@ impl EndpointModel {
                 let port = ports.iter().find(|port| port.map == index)?;
                 writer.u16(8).u16(port.channels);
                 for channel in 0..port.channels {
-                    writer.u16(port.index).u16(channel).u16(channel).u16(0);
+                    writer.u16(port.stream).u16(channel).u16(channel).u16(0);
                 }
                 writer.pad_to(24).done()
             }

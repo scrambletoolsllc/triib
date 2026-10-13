@@ -69,9 +69,9 @@ commands:
                                      make an entity identify itself, for 5
                                      seconds by default
   streams <interface> <entity-id>    print each stream's state: binding, stream
-                                     ID, destination, VLAN, latency, and for
-                                     outputs what the talker sends and their
-                                     max transit time
+                                     ID, destination, VLAN, latency, inputs'
+                                     counters, and for outputs what the
+                                     talker sends and their max transit time
   lite-config <interface> <entity-id> <avb-interface> <on|off>
                                      allow or disallow an interface's talkers
                                      escalating streams to multicast in AVB
@@ -796,6 +796,24 @@ fn streams(interface: &str, entity: EntityId) -> std::io::Result<()> {
                         "      {} us accumulated latency",
                         info.msrp_accumulated_latency / 1000
                     );
+                }
+            }
+            if input && let Some(counters) = model.stream_input_counters(stream.index) {
+                let kept: Vec<String> = [
+                    ("frames", counters.frames_rx),
+                    ("locked", counters.media_locked),
+                    ("unlocked", counters.media_unlocked),
+                    ("interrupted", counters.stream_interrupted),
+                    ("out of sequence", counters.seq_num_mismatch),
+                    ("late", counters.late_timestamp),
+                    ("early", counters.early_timestamp),
+                    ("unsupported", counters.unsupported_format),
+                ]
+                .into_iter()
+                .filter_map(|(name, count)| count.map(|count| format!("{count} {name}")))
+                .collect();
+                if !kept.is_empty() {
+                    println!("      counters: {}", kept.join(", "));
                 }
             }
             if !input {

@@ -4,7 +4,9 @@
 //! A group sends several streams on one thread, each from its own source.
 //! Their samples are counted on one clock, sample `s` going out at the
 //! group's origin plus `s` sample periods, so the streams present
-//! together, sample for sample. A [`Talker`] is a group of one.
+//! together, sample for sample. A media clock stream, CRF, is counted on
+//! the same clock, its timestamps the presentation times of the samples
+//! they fall on. A [`Talker`] is a group of one.
 
 use std::io;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU64, Ordering};
@@ -126,7 +128,8 @@ struct Shared {
     /// the thread compares with what it last took.
     streams: Mutex<Vec<Option<GroupStream>>>,
     changes: AtomicU64,
-    /// Each new stream's source, opened for the thread to take.
+    /// Each new stream's source, opened for the thread to take; none for
+    /// a media clock.
     inputs: Mutex<Vec<Option<Input>>>,
     counters: Vec<StreamCounters>,
     group: GroupCounters,
@@ -188,16 +191,20 @@ impl TalkerGroup {
                 let media = Media::of(stream.format).ok_or_else(|| {
                     io::Error::new(
                         io::ErrorKind::Unsupported,
-                        "not an AAF or AM824 format this talker sends",
+                        "not an AAF, AM824 or CRF format this talker sends",
                     )
                 })?;
-                if media.sample_rate() != self.rate {
+                if media.frame_samples_at(self.rate).is_none() {
                     return Err(io::Error::new(
                         io::ErrorKind::InvalidInput,
                         "a stream at another rate than its group's",
                     ));
                 }
-                Some(Input::open(&stream.source, media.channels(), self.rate)?)
+                if media.is_clock() {
+                    None
+                } else {
+                    Some(Input::open(&stream.source, media.channels(), self.rate)?)
+                }
             }
             None => None,
         };
@@ -313,7 +320,7 @@ impl Talker {
         let media = Media::of(config.format).ok_or_else(|| {
             io::Error::new(
                 io::ErrorKind::Unsupported,
-                "not an AAF or AM824 format this talker sends",
+                "not an AAF, AM824 or CRF format this talker sends",
             )
         })?;
         let group = TalkerGroup::start(
@@ -366,17 +373,25 @@ fn ethernet_header(mac: MacAddress, stream: &GroupStream) -> [u8; ETHERNET_LEN] 
 /// A stream the thread sends.
 struct Running {
     stream: GroupStream,
-    input: Input,
-    media: Media,
+    /// Where its samples come from; none for a media clock.
+    input: Option<Input>,
     packetizer: Packetizer,
     frame: Vec<u8>,
     samples: Vec<f32>,
+    /// The group's samples each of its frames spans.
+    frame_samples: u64,
     /// The first sample of its next frame.
     next: u64,
 }
 
 impl Running {
-    fn new(mac: MacAddress, stream: GroupStream, media: Media, input: Input) -> Self {
+    fn new(
+        mac: MacAddress,
+        stream: GroupStream,
+        media: Media,
+        input: Option<Input>,
+        frame_samples: u64,
+    ) -> Self {
         let mut frame = vec![0u8; ETHERNET_LEN + media.pdu_length()];
         frame[..ETHERNET_LEN].copy_from_slice(&ethernet_header(mac, &stream));
         let samples =
@@ -385,15 +400,15 @@ impl Running {
             packetizer: Packetizer::new(media, stream.stream_id),
             stream,
             input,
-            media,
             frame,
             samples,
+            frame_samples: frame_samples.max(1),
             next: 0,
         }
     }
 
     fn frame_samples(&self) -> u64 {
-        u64::from(self.media.samples_per_frame().max(1))
+        self.frame_samples
     }
 
     /// Its next frame's first sample at or after sample `from`.
@@ -459,13 +474,18 @@ fn take_changes(
                 }
             }
             (Some(stream), _) => {
-                let (Some(media), Some(input)) = (
-                    Media::of(stream.format),
-                    inputs.get_mut(place).and_then(Option::take),
-                ) else {
+                let input = inputs.get_mut(place).and_then(Option::take);
+                let Some((media, frame_samples)) = Media::of(stream.format)
+                    .and_then(|media| Some((media, media.frame_samples_at(config.rate)?)))
+                else {
                     *slot = None;
                     continue;
                 };
+                // An audio stream needs its source; a media clock has none.
+                if input.is_none() && !media.is_clock() {
+                    *slot = None;
+                    continue;
+                }
                 // The first stream after none starts the clock again.
                 let start = *from.get_or_insert_with(|| {
                     let now = clock.now();
@@ -475,7 +495,7 @@ fn take_changes(
                         timeline.sample_at(now + 1_000_000)
                     }
                 });
-                let mut made = Running::new(config.mac, stream, media, input);
+                let mut made = Running::new(config.mac, stream, media, input, frame_samples);
                 made.next = made.first_from(start);
                 *slot = Some(made);
             }
@@ -565,7 +585,9 @@ fn run(
             shared.group.media_resets.fetch_add(1, Ordering::Relaxed);
             continue;
         }
-        stream.input.read(&mut stream.samples);
+        if let Some(input) = &mut stream.input {
+            input.read(&mut stream.samples);
+        }
         stream.packetizer.write(
             due + transit,
             media_reset,
@@ -586,12 +608,16 @@ fn run(
             // Each tenth of a second at 8000 frames a second, the sources'
             // own counts.
             let (mut made, mut empty, mut drift) = (0, 0, 0);
-            for stream in running.iter().flatten() {
-                let (adjusted, short) = stream.input.counts();
+            for input in running
+                .iter()
+                .flatten()
+                .filter_map(|stream| stream.input.as_ref())
+            {
+                let (adjusted, short) = input.counts();
                 made += adjusted;
                 empty += short;
                 if drift == 0 {
-                    drift = stream.input.drift_ppm();
+                    drift = input.drift_ppm();
                 }
             }
             shared.group.adjustments.store(made, Ordering::Relaxed);

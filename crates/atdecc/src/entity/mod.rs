@@ -1310,8 +1310,10 @@ impl Entity {
                     format,
                 });
                 // A format at another rate takes the entity to that rate,
-                // and its other streams with it.
+                // and its other streams with it; a media clock's base
+                // frequency is no audio rate.
                 if let Some(rate) = format.sample_rate()
+                    && !format.is_clock()
                     && rate != self.model.current_sampling_rate
                     && self.model.sampling_rates.contains(&rate)
                 {
