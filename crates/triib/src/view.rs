@@ -2251,7 +2251,7 @@ pub(crate) mod tests {
     }
 
     const MAC_MINI: EntityId = EntityId(0xd111_e597_f544_8000);
-    const WIRED_ESP: EntityId = EntityId(0xe8f6_0ae0_9220_0000);
+    pub(crate) const WIRED_ESP: EntityId = EntityId(0xe8f6_0ae0_9220_0000);
     const WIFI_ESP: EntityId = EntityId(0xfc01_2cfd_fe80_0000);
 
     /// The bench's Mac mini as if its stream port input took dynamic

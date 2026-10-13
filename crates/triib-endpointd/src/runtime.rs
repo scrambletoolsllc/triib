@@ -1656,25 +1656,24 @@ impl Runtime {
         let now = self.now();
         let mut handed = false;
         // The socket never brings back its own frames, so our entities'
-        // frames for each other go to them here as well as on the wire.
+        // frames go to them here as well as on the wire, the sender's own
+        // among them: an input bound to its own entity's output probes it.
         loop {
             let mut sent = Vec::new();
-            for (index, endpoint) in self.endpoints.iter_mut().enumerate() {
+            for endpoint in &mut self.endpoints {
                 while let Some((destination, bytes)) = endpoint.entity.poll_transmit() {
                     let _ = self.avtp.send(destination, &bytes);
                     if destination == ADP_ACMP_MULTICAST || destination == self.mac {
-                        sent.push((index, bytes));
+                        sent.push(bytes);
                     }
                 }
             }
-            if sent.is_empty() || self.endpoints.len() < 2 {
+            if sent.is_empty() {
                 break;
             }
-            for (from, bytes) in sent {
-                for (index, endpoint) in self.endpoints.iter_mut().enumerate() {
-                    if index != from {
-                        endpoint.entity.handle_frame(now, self.mac, &bytes);
-                    }
+            for bytes in sent {
+                for endpoint in &mut self.endpoints {
+                    endpoint.entity.handle_frame(now, self.mac, &bytes);
                 }
             }
             handed = true;

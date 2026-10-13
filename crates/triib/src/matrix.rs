@@ -176,6 +176,9 @@ struct Stream<'a> {
     /// For an input, the formats it takes.
     supported: Vec<StreamFormat>,
     model: &'a EntityModel,
+    /// One of this computer's entities, whose inputs bind to its own
+    /// outputs.
+    host: bool,
 }
 
 impl Stream<'_> {
@@ -184,10 +187,11 @@ impl Stream<'_> {
     }
 
     /// For an input, whether `output` is its own entity's and not bound to
-    /// it: a connection triib does not offer. One made elsewhere still
+    /// it: a connection triib does not offer, as most entities refuse it,
+    /// but on this computer's own, which take it. One made elsewhere still
     /// shows, so it can be undone.
     fn own(&self, output: &Stream<'_>) -> bool {
-        self.entity_id == output.entity_id && self.bound_to() != Some(output.key())
+        self.entity_id == output.entity_id && !self.host && self.bound_to() != Some(output.key())
     }
 
     /// For an input, the talker's stream output it is bound to.
@@ -377,6 +381,7 @@ fn groups(triib: &Triib, side: Side) -> Vec<Group<'_>> {
                         Vec::new()
                     },
                     model,
+                    host: triib.is_host(entity_id),
                 })
                 .collect();
             (!shown.is_empty()).then(|| Group {
@@ -521,9 +526,10 @@ fn grid(triib: &Triib, talkers: &[Group<'_>], listeners: &[Group<'_>]) -> Grid {
                             })
                             .count();
                         let same = inputs.iter().all(|input| {
-                            outputs
-                                .iter()
-                                .all(|output| output.entity_id == input.entity_id)
+                            !input.host
+                                && outputs
+                                    .iter()
+                                    .all(|output| output.entity_id == input.entity_id)
                         });
                         if same && count == 0 {
                             Cell::Own
@@ -1020,6 +1026,60 @@ fn legend<'a>() -> Element<'a, Message> {
 mod tests {
     use super::*;
     use crate::settings::Settings;
+
+    /// One of this computer's entities connects to itself, as it takes
+    /// the binding; any other's own cells stay blank.
+    #[test]
+    fn this_computers_entities_connect_to_themselves() {
+        use triib_endpointd::status::{DaemonStatus, EndpointStatus};
+
+        let (entities, models) = crate::view::tests::bench();
+        let interface = avb_net::Interface {
+            name: "enp6s0".to_owned(),
+            mac: avb_net::MacAddress([0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b]),
+            up: true,
+            speed: None,
+            physical: true,
+            wireless: false,
+            hardware_clock: None,
+        };
+        let mut triib = Triib::sample(Settings::default(), interface, entities, models);
+        let host = crate::view::tests::WIRED_ESP;
+        triib.endpoints = Some(DaemonStatus {
+            pid: 1,
+            started: 0,
+            interface: "enp6s0".into(),
+            gptp: String::new(),
+            foreign_mrp: false,
+            endpoints: vec![EndpointStatus {
+                entity_id: host.to_string(),
+                name: "Host entity 1".into(),
+                state: "waiting".into(),
+                streams: Vec::new(),
+            }],
+        });
+        let talkers = groups(&triib, Side::Talker);
+        let listeners = groups(&triib, Side::Listener);
+        let built = grid(&triib, &talkers, &listeners);
+        let (mut own, mut offered) = (0, 0);
+        for (row, row_heading) in built.rows.iter().enumerate() {
+            for (column, column_heading) in built.columns.iter().enumerate() {
+                if let (Line::Stream(listener, _), Line::Stream(talker, _)) =
+                    (row_heading.line, column_heading.line)
+                    && listener == talker
+                {
+                    let cell = built.cell(row, column);
+                    if listener == host {
+                        assert_ne!(cell, Cell::Own, "{row}, {column}");
+                        offered += 1;
+                    } else {
+                        own += usize::from(cell == Cell::Own);
+                    }
+                }
+            }
+        }
+        assert!(offered > 0 && own > 0, "{offered} {own}");
+    }
 
     /// A media clock output sending its clock as audio, as the Mac's
     /// Media Clock Output Streams 2 and 3 send one channel of AAF, is a

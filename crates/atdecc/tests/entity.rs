@@ -665,3 +665,37 @@ fn a_talker_taking_over_from_itself_is_read_again_in_place() {
     assert_eq!(read.state, EnumerationState::Complete);
     assert_eq!(read.streams(false).count(), 2);
 }
+
+/// An entity's input bound to its own output probes its own talker and
+/// finds its stream, when its frames come back to it, as the daemon hands
+/// them.
+#[test]
+fn an_input_bound_to_its_own_output_settles() {
+    let mut network = Network::new();
+    let mut model = model(TALKER, "Talker", true);
+    model.inputs.push(stream("Host in"));
+    model.clock_source_inputs = vec![0];
+    let mut talker = Entity::new(model, &[(STREAM, DESTINATION)]);
+    talker.start(network.now);
+    network.talker = talker;
+    network.controller.discover(None);
+    network.run(3000);
+    let now = network.now;
+    let bind = network.controller.connect(now, (TALKER, 0), (TALKER, 0));
+    network.run(1000);
+    assert!(
+        network
+            .controller_events
+            .contains(&Event::CommandFinished(bind, Outcome::Done)),
+        "{:?}",
+        network.controller_events
+    );
+    let settled = network.entity_events.iter().find_map(|event| match event {
+        EntityEvent::InputSettled { index: 0, stream } => Some(*stream),
+        _ => None,
+    });
+    assert_eq!(
+        settled.map(|stream| (stream.stream_id, stream.destination)),
+        Some((STREAM, DESTINATION))
+    );
+}
