@@ -154,6 +154,11 @@ impl Maap {
         self.probe(now, PROBES);
     }
 
+    /// How many addresses the claim is for.
+    pub fn count(&self) -> u16 {
+        self.count
+    }
+
     /// The block's addresses, once acquired.
     pub fn address(&self, index: u16) -> Option<MacAddress> {
         (matches!(self.state, State::Defending { .. }) && index < self.count)

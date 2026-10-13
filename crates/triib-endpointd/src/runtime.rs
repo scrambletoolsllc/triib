@@ -70,6 +70,10 @@ const REPORT: Duration = Duration::from_secs(30);
 /// let the old go, as a bridge can keep the old frame size when a
 /// declaration changes in place, and drop what no longer fits.
 const REDECLARE: Duration = Duration::from_secs(2);
+
+/// The fewest stream addresses MAAP claims, so talkers added while the
+/// daemon runs take theirs from the same block.
+const MAAP_BLOCK: u16 = 32;
 /// AVB Lite's media priority (profile 7), the unicast copies a talker
 /// sends before it falls back to multicast, how often CVU SRP declarations
 /// AVB Lite's priority for streams and CVU SRP, and the broadcast
@@ -236,6 +240,21 @@ pub fn entity_id(mac: MacAddress, instance: u8) -> EntityId {
     EntityId(u64::from_be_bytes([a, b, c, 0xff, instance, d, e, f]))
 }
 
+/// What one of this daemon's entity models is: a talker, a listener or
+/// a device, telling them apart before the status says which; `None` for
+/// any other model.
+pub fn kind_of_model(model: EntityModelId) -> Option<Kind> {
+    match model {
+        TALKER_MODEL => Some(Kind::Talker),
+        LISTENER_MODEL => Some(Kind::Listener),
+        // A device's: the block's high bits and the bit its hash always
+        // carries, which the app's controller and the one-stream models
+        // lack.
+        EntityModelId(id) if id & 0xffff_ffff_ff01_0000 == DEVICE_MODELS => Some(Kind::Device),
+        _ => None,
+    }
+}
+
 /// The stream a talker's output sends.
 fn output_stream(mac: MacAddress, instance: u8, index: u16) -> StreamId {
     StreamId::new(mac, (u16::from(instance) << 8) | index)
@@ -256,6 +275,9 @@ struct OutputState {
     talker: Option<GroupTalker>,
     /// The virtual audio device apps play into for it, where it has one.
     device: Option<VirtualDevice>,
+    /// Its place in the MAAP block, kept while it runs, so endpoints
+    /// coming and going leave its stream's address as it is.
+    slot: u16,
     /// When a talker whose stream changed declares it again.
     redeclare_at: Option<Duration>,
     /// When it last withdrew its declaration.
@@ -339,6 +361,42 @@ fn model_id(kind: Kind, outputs: &[StreamModel], inputs: &[StreamModel]) -> Enti
 }
 
 impl Endpoint {
+    /// Starts advertising, and binds its inputs again to what they were
+    /// bound to.
+    fn begin(&mut self, now: Instant) {
+        self.entity.start(now);
+        // Inputs bind again to what they were bound to.
+        for input in 0..self.inputs.len() as u16 {
+            if let Some((talker, output)) = self.in_config(input).bound_to() {
+                self.entity.restore_binding(
+                    now,
+                    input,
+                    InputBinding {
+                        talker,
+                        talker_unique_id: output,
+                        controller: EntityId(0),
+                        flags: AcmpFlags::empty(),
+                    },
+                );
+            }
+        }
+        let streams = if self.config.kind == Kind::Device {
+            format!(", {} out and {} in", self.outputs.len(), self.inputs.len())
+        } else {
+            String::new()
+        };
+        log(format!(
+            "{} {} as {}{streams}",
+            match self.config.kind {
+                Kind::Talker => "talker",
+                Kind::Listener => "listener",
+                Kind::Device => "device",
+            },
+            self.config.name,
+            self.entity.entity_id()
+        ));
+    }
+
     fn new(
         config: EndpointConfig,
         instance: u8,
@@ -843,7 +901,14 @@ impl Runtime {
         for endpoint in &mut endpoints {
             endpoint.make_devices(audio.as_ref());
         }
-        let maap = (talkers > 0).then(|| Maap::new(mac, talkers as u16));
+        for (slot, output) in endpoints
+            .iter_mut()
+            .flat_map(|endpoint| endpoint.outputs.iter_mut())
+            .enumerate()
+        {
+            output.slot = slot as u16;
+        }
+        let maap = (talkers > 0).then(|| Maap::new(mac, (talkers as u16).max(MAAP_BLOCK)));
         let fallback = Fallback::new(
             own_clock.0,
             config.avb_lite == LiteChoice::On,
@@ -911,41 +976,7 @@ impl Runtime {
         let now = self.now();
         let since = self.elapsed();
         for endpoint in &mut self.endpoints {
-            endpoint.entity.start(now);
-            // Inputs bind again to what they were bound to.
-            for input in 0..endpoint.inputs.len() as u16 {
-                if let Some((talker, output)) = endpoint.in_config(input).bound_to() {
-                    endpoint.entity.restore_binding(
-                        now,
-                        input,
-                        InputBinding {
-                            talker,
-                            talker_unique_id: output,
-                            controller: EntityId(0),
-                            flags: AcmpFlags::empty(),
-                        },
-                    );
-                }
-            }
-            let streams = if endpoint.config.kind == Kind::Device {
-                format!(
-                    ", {} out and {} in",
-                    endpoint.outputs.len(),
-                    endpoint.inputs.len()
-                )
-            } else {
-                String::new()
-            };
-            log(format!(
-                "{} {} as {}{streams}",
-                match endpoint.config.kind {
-                    Kind::Talker => "talker",
-                    Kind::Listener => "listener",
-                    Kind::Device => "device",
-                },
-                endpoint.config.name,
-                endpoint.entity.entity_id()
-            ));
+            endpoint.begin(now);
         }
         // Every endpoint takes part in class A on VLAN 2, declared once for
         // the port; talkers declare their streams once MAAP gives them
@@ -966,9 +997,13 @@ impl Runtime {
                 self.last_look = Clock::now();
                 self.write_status();
                 if let Some(config) = self.changed_config() {
-                    log("endpoints.toml changed, starting again");
-                    self.shut_down();
-                    return Ok(Exit::Reload(config));
+                    if self.apply(&config) {
+                        log("endpoints.toml changed, applied");
+                    } else {
+                        log("endpoints.toml changed, starting again");
+                        self.shut_down();
+                        return Ok(Exit::Reload(config));
+                    }
                 }
             }
         }
@@ -977,6 +1012,174 @@ impl Runtime {
             let _ = std::fs::remove_file(path);
         }
         Ok(Exit::Stop)
+    }
+
+    /// Takes a changed configuration in place where only its endpoints
+    /// changed: those it no longer has, or has set up otherwise, stop,
+    /// and those new to it start, while the rest go on as they are.
+    /// `false` when the daemon must start again, as for another interface
+    /// or more talkers than the MAAP block holds.
+    fn apply(&mut self, config: &Config) -> bool {
+        let port = |config: &Config| Config {
+            endpoints: Vec::new(),
+            ..config.clone()
+        };
+        if port(config) != port(&self.config) {
+            return false;
+        }
+        let instances: Vec<u8> = config
+            .endpoints
+            .iter()
+            .enumerate()
+            .map(|(place, entry)| entry.instance_at(place))
+            .collect();
+        if (1..instances.len()).any(|at| instances[..at].contains(&instances[at])) {
+            return false;
+        }
+        // An entry as it stands, with its instance written down, so one
+        // left implicit compares equal to the same one made explicit.
+        let settled = |entry: &EndpointConfig, instance: u8| EndpointConfig {
+            instance: Some(instance),
+            ..entry.clone()
+        };
+        let mac = self.mac;
+        // Where each endpoint goes on, by its place in the new entries.
+        let goes_on: Vec<Option<usize>> = self
+            .endpoints
+            .iter()
+            .map(|endpoint| {
+                let id = endpoint.entity.entity_id();
+                let held = self.config.endpoints.get(endpoint.place)?;
+                let place = instances
+                    .iter()
+                    .position(|&instance| entity_id(mac, instance) == id)?;
+                let instance = instances[place];
+                (settled(&config.endpoints[place], instance) == settled(held, instance))
+                    .then_some(place)
+            })
+            .collect();
+        let started: Vec<Endpoint> = config
+            .endpoints
+            .iter()
+            .enumerate()
+            .filter(|(place, _)| !goes_on.contains(&Some(*place)))
+            .map(|(place, entry)| {
+                let mut made = Endpoint::new(
+                    entry.clone(),
+                    instances[place],
+                    mac,
+                    &self.interface,
+                    self.own_clock,
+                );
+                made.place = place;
+                made
+            })
+            .collect();
+        // The new talkers' places in the MAAP block, from those free.
+        let taken: Vec<u16> = self
+            .endpoints
+            .iter()
+            .zip(&goes_on)
+            .filter(|(_, place)| place.is_some())
+            .flat_map(|(endpoint, _)| endpoint.outputs.iter().map(|output| output.slot))
+            .collect();
+        let wanted: usize = started.iter().map(|endpoint| endpoint.outputs.len()).sum();
+        let block = self
+            .maap
+            .as_ref()
+            .map_or(wanted.max(usize::from(MAAP_BLOCK)), |maap| {
+                usize::from(maap.count())
+            });
+        let free: Vec<u16> = (0..block as u16)
+            .filter(|slot| !taken.contains(slot))
+            .take(wanted)
+            .collect();
+        if free.len() < wanted {
+            return false;
+        }
+
+        for index in (0..self.endpoints.len()).rev() {
+            if goes_on[index].is_none() {
+                self.stop_endpoint(index);
+            }
+        }
+        for (endpoint, place) in self.endpoints.iter_mut().zip(goes_on.into_iter().flatten()) {
+            endpoint.place = place;
+        }
+        if self.audio.is_none()
+            && started
+                .iter()
+                .any(|endpoint| endpoint.streams.iter().any(StreamConfig::is_virtual))
+        {
+            match VirtualAudio::start() {
+                Ok(audio) => self.audio = Some(audio),
+                Err(error) => log(format!("no virtual audio devices: {error}")),
+            }
+        }
+        let now = self.now();
+        let since = self.elapsed();
+        let mut free = free.into_iter();
+        // What ptp4l last said, so a new endpoint advertises the network's
+        // grandmaster from the start rather than at the next poll.
+        let gptp = self
+            .ptp_status
+            .as_ref()
+            .map(|status| status.gptp.clone())
+            .unwrap_or_default();
+        for mut endpoint in started {
+            endpoint.entity.set_gptp(now, gptp.clone());
+            endpoint.make_devices(self.audio.as_ref());
+            for (index, output) in endpoint.outputs.iter_mut().enumerate() {
+                output.slot = free.next().unwrap_or_default();
+                if let Some(address) = self
+                    .maap
+                    .as_ref()
+                    .and_then(|maap| maap.address(output.slot))
+                {
+                    endpoint
+                        .entity
+                        .set_output_destination(index as u16, address);
+                    output.redeclare_at = Some(since);
+                }
+            }
+            endpoint.begin(now);
+            self.endpoints.push(endpoint);
+        }
+        self.endpoints.sort_by_key(|endpoint| endpoint.place);
+        if self.maap.is_none() && wanted > 0 {
+            let mut maap = Maap::new(mac, block as u16);
+            maap.start(now);
+            self.maap = Some(maap);
+        }
+        self.config = config.clone();
+        true
+    }
+
+    /// Stops one endpoint while the others go on: its streams'
+    /// declarations withdrawn, its threads and virtual audio devices
+    /// ended, and its departure said.
+    fn stop_endpoint(&mut self, index: usize) {
+        for out in self.outs().into_iter().filter(|out| out.0 == index) {
+            self.output_mut(out).talker = None;
+            self.withdraw_talker(out);
+        }
+        for input in self.ins().into_iter().filter(|input| input.0 == index) {
+            self.stop_listener(input);
+        }
+        let mut endpoint = self.endpoints.remove(index);
+        endpoint.entity.depart();
+        let now = self.now();
+        while let Some((destination, bytes)) = endpoint.entity.poll_transmit() {
+            let _ = self.avtp.send(destination, &bytes);
+            // Our other entities hear it too, as the socket never brings
+            // our own frames back.
+            if destination == ADP_ACMP_MULTICAST || destination == self.mac {
+                for other in &mut self.endpoints {
+                    other.entity.handle_frame(now, self.mac, &bytes);
+                }
+            }
+        }
+        log(format!("{} stopped", endpoint.config.name));
     }
 
     /// The configuration file, when it changed into something else.
@@ -1588,11 +1791,9 @@ impl Runtime {
         match event {
             MaapEvent::Acquired(first) => {
                 log(format!("MAAP: streams go to {first} on"));
-                for (place, out) in talkers.into_iter().enumerate() {
-                    let Some(address) = self
-                        .maap
-                        .as_ref()
-                        .and_then(|maap| maap.address(place as u16))
+                for out in talkers {
+                    let slot = self.output(out).slot;
+                    let Some(address) = self.maap.as_ref().and_then(|maap| maap.address(slot))
                     else {
                         continue;
                     };
@@ -3566,6 +3767,19 @@ mod tests {
 
     /// One talker or listener stays as it was: its model, and its stream
     /// named as the entity is.
+    #[test]
+    fn its_models_tell_what_each_endpoint_is() {
+        assert_eq!(kind_of_model(TALKER_MODEL), Some(Kind::Talker));
+        assert_eq!(kind_of_model(LISTENER_MODEL), Some(Kind::Listener));
+        assert_eq!(
+            kind_of_model(EntityModelId(DEVICE_MODELS | 0x6d_5b25)),
+            Some(Kind::Device)
+        );
+        // The app's own controller, and anyone else's model.
+        assert_eq!(kind_of_model(EntityModelId(0x8c1f_6436_c000_0001)), None);
+        assert_eq!(kind_of_model(EntityModelId(0x0000_0074_6869_6e67)), None);
+    }
+
     #[test]
     fn one_stream_endpoints_keep_their_models() {
         let talker = endpoint(Kind::Talker, Vec::new());
