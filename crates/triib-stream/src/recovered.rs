@@ -247,6 +247,22 @@ mod tests {
         assert_eq!(sub, i128::from(fit.event) * 4 + 1);
     }
 
+    /// An audio stream's presentation times, one a frame of 6 samples at
+    /// 48 kHz, 8000 a second, recover its talker's clock as a media
+    /// clock's timestamps do.
+    #[test]
+    fn an_audio_streams_clock_is_recovered() {
+        let clock = RecoveredClock::new();
+        let period = 125_000.0 / (1.0 + 20e-6);
+        for frame in 0..4000u64 {
+            let time = 2_000_000_000 + (frame as f64 * period) as u64;
+            clock.take([time], 6, 48_000, false);
+        }
+        let fit = clock.fit().expect("locked");
+        assert!((fit.ppm() - 20.0).abs() < 0.05, "{}", fit.ppm());
+        assert_eq!(fit.event, 3999 * 6);
+    }
+
     /// Lost frames leave the count of events as it was; a jump, a media
     /// reset or silence start it again.
     #[test]

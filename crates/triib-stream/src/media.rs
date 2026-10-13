@@ -186,6 +186,9 @@ pub struct Received {
     pub timestamp: Option<u32>,
     /// The presentation time of its first sample, where it carries one.
     pub first_presented: Option<u32>,
+    /// Its media reset bit, which the talker toggles as its media clock
+    /// starts again.
+    pub media_reset: bool,
     /// It carries what the media describes.
     pub matches: bool,
 }
@@ -205,6 +208,7 @@ pub fn read(pdu: &[u8], media: &Media, out: &mut Vec<f32>) -> Option<Received> {
                 stream_id: header.stream_id,
                 timestamp: header.timestamp,
                 first_presented: header.timestamp,
+                media_reset: header.media_reset,
                 matches,
             })
         }
@@ -224,6 +228,7 @@ pub fn read(pdu: &[u8], media: &Media, out: &mut Vec<f32>) -> Option<Received> {
                 first_presented: header
                     .timestamp
                     .map(|timestamp| timestamp.wrapping_sub(before as u32)),
+                media_reset: header.media_reset,
                 matches,
             })
         }
@@ -235,6 +240,7 @@ pub fn read(pdu: &[u8], media: &Media, out: &mut Vec<f32>) -> Option<Received> {
                 stream_id: header.stream_id,
                 timestamp: first,
                 first_presented: first,
+                media_reset: header.media_reset,
                 matches: header.matches(layout),
             })
         }

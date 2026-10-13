@@ -797,6 +797,16 @@ fn streams(interface: &str, entity: EntityId) -> std::io::Result<()> {
                         info.msrp_accumulated_latency / 1000
                     );
                 }
+                if input && let Some((state, status)) = info.probing {
+                    let state = match state {
+                        0 => "disabled",
+                        1 => "passive",
+                        2 => "active",
+                        3 => "completed",
+                        _ => "unknown",
+                    };
+                    println!("      probing {state}, last answer {status:?}");
+                }
             }
             if input && let Some(counters) = model.stream_input_counters(stream.index) {
                 let kept: Vec<String> = [

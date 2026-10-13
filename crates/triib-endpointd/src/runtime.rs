@@ -48,7 +48,7 @@ use crate::status::{DaemonStatus, EndpointStatus, StreamStatus, status_path};
 /// talkers and listeners had `0x8c1f_6436_c000_0002` and `_0004`.
 const DEVICE_MODELS: u64 = 0x8c1f_6436_c001_0000;
 /// The revision of every device's model, in its hash.
-const MODEL_REVISION: u8 = 2;
+const MODEL_REVISION: u8 = 3;
 /// Class A's priority; its VLAN is the port's.
 const PRIORITY: u8 = 3;
 /// Class B's priority.
@@ -298,8 +298,8 @@ struct InputState {
     /// In AVB Lite, the stream it declares itself for, the talker it
     /// tells and what.
     cvu_to: Option<(u64, MacAddress, ListenerState)>,
-    /// For a media clock input, the clock its stream carries, which the
-    /// device's talkers follow while it is the clock source.
+    /// The clock its stream carries, which the entity's talkers follow
+    /// while it is the clock source.
     recovered: RecoveredClock,
 }
 
@@ -340,7 +340,8 @@ fn model_id(outputs: &[StreamModel], inputs: &[StreamModel]) -> EntityModelId {
     };
     // The model's revision, for what the streams leave the same: 1 since
     // the inputs stopped being clock sources, 2 since the model name is
-    // "triib entity" and media clock inputs are clock sources.
+    // "triib entity" and media clock inputs are clock sources, 3 since
+    // every input is.
     take(&[MODEL_REVISION]);
     for (way, streams) in [(0u8, outputs), (1, inputs)] {
         for stream in streams {
@@ -487,14 +488,9 @@ impl Endpoint {
         let current_sampling_rate = first
             .and_then(|stream| stream.current_format.sample_rate())
             .unwrap_or(48_000);
-        // Its media clock inputs are clock sources after the internal
-        // clock, the one kept as the source chosen.
-        let clock_source_inputs: Vec<u16> = in_streams
-            .iter()
-            .enumerate()
-            .filter(|(_, place)| streams[**place].clock)
-            .map(|(at, _)| at as u16)
-            .collect();
+        // Its inputs are clock sources after the internal clock, media
+        // clock and audio alike, the one kept as the source chosen.
+        let clock_source_inputs: Vec<u16> = (0..in_streams.len() as u16).collect();
         let clock_source = clock_source_inputs
             .iter()
             .position(|&at| streams[in_streams[usize::from(at)]].clock_source)
@@ -2242,10 +2238,7 @@ impl Runtime {
                 None if endpoint.in_config(input.1).clock => Sink::Discard,
                 None => endpoint.in_config(input.1).sink(),
             },
-            recovered: endpoint
-                .in_config(input.1)
-                .clock
-                .then(|| self.input(input).recovered.clone()),
+            recovered: Some(self.input(input).recovered.clone()),
         };
         // Every input takes its stream on the endpoint's one listening
         // thread, which the first to listen starts.
@@ -2541,13 +2534,12 @@ impl Runtime {
                     continue;
                 };
                 let stats = listener.stats();
-                // A media clock's rate, as recovered.
-                let clock = match endpoint.in_config(at as u16).clock {
-                    true => match input.recovered.fit() {
-                        Some(fit) => format!(", clock {:+.2} ppm", fit.ppm()),
-                        None => ", clock not recovered".into(),
-                    },
-                    false => String::new(),
+                // The stream's clock, as recovered: a media clock's always
+                // said, an audio stream's once it is.
+                let clock = match (input.recovered.fit(), endpoint.in_config(at as u16).clock) {
+                    (Some(fit), _) => format!(", clock {:+.2} ppm", fit.ppm()),
+                    (None, true) => ", clock not recovered".into(),
+                    (None, false) => String::new(),
                 };
                 log(format!(
                     "{}: received {} frames, {} out of sequence, {} late, {} early, peak {:.3}, device {:+} ppm, {} short{}{}{clock}",
@@ -3897,11 +3889,11 @@ mod tests {
         assert_eq!(clocks.entity.model().sampling_rates, [48_000]);
     }
 
-    /// A device's media clock inputs are its clock sources after the
-    /// internal clock, flagged as such; the one kept as its source is the
+    /// An entity's inputs are its clock sources after the internal clock,
+    /// media clock and audio alike; the one kept as its source is the
     /// source it starts on, and its talkers follow that input's clock.
     #[test]
-    fn media_clock_inputs_are_clock_sources() {
+    fn its_inputs_are_clock_sources() {
         let device = endpoint(vec![
             stream(Direction::In, 2),
             StreamConfig::clock(Direction::In),
@@ -3912,12 +3904,23 @@ mod tests {
             },
         ]);
         let model = device.entity.model();
-        assert_eq!(model.clock_source_inputs, [1, 2]);
-        assert_eq!(model.clock_source, 2, "the second media clock input");
-        assert_eq!(model.clock_source_input(2), Some(2));
+        assert_eq!(model.clock_source_inputs, [0, 1, 2]);
+        assert_eq!(model.clock_source, 3, "the second media clock input");
+        assert_eq!(model.clock_source_input(3), Some(2));
         assert_eq!(model.clock_source_input(0), None);
         assert_eq!(device.clock_source_name(), "Studio Media Clock In 2");
         assert_eq!(device.followed(), Some(device.inputs[2].recovered.clone()));
+        // An audio input, kept as the source.
+        let audio = endpoint(vec![
+            stream(Direction::Out, 2),
+            StreamConfig {
+                clock_source: true,
+                ..stream(Direction::In, 2)
+            },
+        ]);
+        assert_eq!(audio.entity.model().clock_source, 1);
+        assert_eq!(audio.clock_source_name(), "Studio In 1");
+        assert_eq!(audio.followed(), Some(audio.inputs[0].recovered.clone()));
         // Without one kept, the internal clock, which nothing follows.
         let plain = endpoint(vec![
             StreamConfig::clock(Direction::In),

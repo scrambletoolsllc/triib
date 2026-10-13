@@ -2,6 +2,7 @@
 
 use avb_net::MacAddress;
 
+use crate::acmp::AcmpStatus;
 use crate::aecp::{AecpHeader, AecpMessageType, AemCommandType, AemPdu, AemStatus};
 use crate::avtp::{read_array, read_u16, read_u32, read_u64};
 use crate::descriptor::{DescriptorType, SamplingRate};
@@ -1016,6 +1017,10 @@ pub struct StreamInfo {
     pub msrp_failure_code: u8,
     pub msrp_failure_bridge_id: u64,
     pub stream_vlan_id: u16,
+    /// Milan's extension, for a stream input, where the entity gives it:
+    /// its probe's state (0 disabled, 1 passive, 2 active, 3 completed)
+    /// and the status of the ACMP answer it last had.
+    pub probing: Option<(u8, AcmpStatus)>,
 }
 
 impl StreamInfo {
@@ -1038,6 +1043,9 @@ impl StreamInfo {
             msrp_failure_code: payload[34],
             msrp_failure_bridge_id: read_u64(payload, 36),
             stream_vlan_id: read_u16(payload, 44),
+            probing: payload
+                .get(52)
+                .map(|&octet| (octet >> 5, AcmpStatus(octet & 0x1f))),
         })
     }
 

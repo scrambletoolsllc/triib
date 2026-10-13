@@ -38,8 +38,9 @@ pub struct ListenerConfig {
     pub destinations: Vec<MacAddress>,
     pub format: StreamFormat,
     pub sink: Sink,
-    /// For a media clock stream, the clock it recovers, for talkers to
-    /// follow.
+    /// The clock the stream carries, which it recovers for talkers to
+    /// follow: a media clock's from its timestamps, an audio stream's
+    /// from its presentation times.
     pub recovered: Option<RecoveredClock>,
 }
 
@@ -457,21 +458,42 @@ fn take_frame(stream: &mut Running, frame: &[u8], samples: &mut Vec<f32>, clock:
         counters.unsupported_formats.fetch_add(1, Ordering::Relaxed);
         return;
     }
-    // A media clock's timestamps, for the clock it recovers.
-    if let (Media::Crf(layout), Some(recovered)) = (&opened.media, &opened.config.recovered)
-        && let Some((crf, timestamps)) = crf::Header::decode(pdu)
-    {
-        let times = timestamps
-            .as_chunks::<8>()
-            .0
-            .iter()
-            .map(|time| u64::from_be_bytes(*time));
-        recovered.take(
-            times,
-            layout.timestamp_interval,
-            layout.base_frequency,
-            crf.media_reset,
-        );
+    let now = clock.now();
+    // How far ahead a presentation time is, from the low 32 bits of gPTP
+    // time.
+    let ahead = |timestamp: u32| i64::from(timestamp.wrapping_sub(now as u32) as i32);
+    // The clock the stream carries: a media clock's timestamps, or an
+    // audio stream's first sample's presentation time, each frame its
+    // samples on, made whole from gPTP time, which a hardware clock must
+    // give for its high bits to be right.
+    if let Some(recovered) = &opened.config.recovered {
+        match &opened.media {
+            Media::Crf(layout) => {
+                if let Some((crf, timestamps)) = crf::Header::decode(pdu) {
+                    let times = timestamps
+                        .as_chunks::<8>()
+                        .0
+                        .iter()
+                        .map(|time| u64::from_be_bytes(*time));
+                    recovered.take(
+                        times,
+                        layout.timestamp_interval,
+                        layout.base_frequency,
+                        crf.media_reset,
+                    );
+                }
+            }
+            media => {
+                if let Some(first) = header.first_presented.filter(|_| clock.locked()) {
+                    recovered.take(
+                        [(now + ahead(first)) as u64],
+                        media.samples_per_frame(),
+                        media.sample_rate(),
+                        header.media_reset,
+                    );
+                }
+            }
+        }
     }
     *last = Instant::now();
     counters.frames_received.fetch_add(1, Ordering::Relaxed);
@@ -483,10 +505,6 @@ fn take_frame(stream: &mut Running, frame: &[u8], samples: &mut Vec<f32>, clock:
         counters.locked.store(true, Ordering::Relaxed);
         counters.media_locked.fetch_add(1, Ordering::Relaxed);
     }
-    let now = clock.now();
-    // How far ahead a presentation time is, from the low 32 bits of gPTP
-    // time.
-    let ahead = |timestamp: u32| i64::from(timestamp.wrapping_sub(now as u32) as i32);
     if let Some(timestamp) = header.timestamp {
         let ahead = ahead(timestamp);
         if ahead < 0 {

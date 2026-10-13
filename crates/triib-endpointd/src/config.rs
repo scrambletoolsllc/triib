@@ -85,8 +85,8 @@ pub struct StreamConfig {
     /// and no audio.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub clock: bool,
-    /// For a media clock input, the entity's clock source: its talkers
-    /// follow the clock the input carries.
+    /// For an input, the entity's clock source: its talkers follow the
+    /// clock the input's stream carries.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub clock_source: bool,
     /// Its name, "Out 1", "In 1", "Media Clock Out 1" and on when empty.
