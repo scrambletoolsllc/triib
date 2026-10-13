@@ -600,9 +600,9 @@ presets-nothing-differs = Tidak ada yang berbeda dari "{ $name }".
 presets-recalling = Memanggil "{ $name }": { $count } perubahan.
 presets-missing = { $report } Tidak ada atau belum dibaca: { $missing }.
 presets-deleted = "{ $name }" dihapus.
-presets-host-note = Preset juga menyimpan talker dan listener milik komputer ini, dan menjalankannya lagi saat dipanggil.
+presets-host-note = Preset juga menyimpan perangkat milik komputer ini, dan menjalankannya lagi saat dipanggil.
 presets-host-endpoints = { $count } di komputer ini
-presets-starting-host = Menjalankan talker dan listener komputer ini untuk "{ $name }"; sisanya menyusul setelah semuanya kembali.
+presets-starting-host = Menjalankan perangkat komputer ini untuk "{ $name }"; sisanya menyusul setelah semuanya kembali.
 
 ## Controls
 
@@ -619,20 +619,16 @@ network-npcap-administrators = Npcap hanya mengizinkan administrator mengirim da
 matrix-stream-format = { $format }.
 matrix-stream-format-state = { $format }. { $state }.
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = Tambah talker
-host-add-listener = Tambah listener
 host-add-device = Tambah perangkat
-host-show-mine = Tampilkan hanya talker dan listener milik komputer ini
+host-show-mine = Tampilkan hanya perangkat milik komputer ini
 host-show-all = Tampilkan semua entitas
-host-new-talker = Talker host { $number }
-host-new-listener = Listener host { $number }
 host-new-device = Perangkat host { $number }
 host-failed = Tidak dapat menambahkannya ke komputer ini: { $reason }
-host-needs-clock = Talker dan listener milik komputer ini memerlukan antarmuka kabel dengan clock hardware PTP
+host-needs-clock = Perangkat milik komputer ini memerlukan antarmuka kabel dengan clock hardware PTP
 host-no-ptp4l = ptp4l tidak menjawab, jadi stream komputer ini tidak dapat menjaga waktu gPTP
-host-elsewhere = triib-endpointd berjalan di { $interface } untuk pengguna lain atau sebagai root, jadi talker dan listener milik komputer ini berjalan di sana, bukan di sini
+host-elsewhere = triib-endpointd berjalan di { $interface } untuk pengguna lain atau sebagai root, jadi perangkat milik komputer ini berjalan di sana, bukan di sini
 host-foreign-mrp = Program lain membuat deklarasi MSRP atau MVRP di { $interface } dari alamat komputer ini, yang dapat menarik kembali apa yang dibutuhkan stream komputer ini
 host-alarm-foreign-mrp = Program lain di komputer ini membuat deklarasi MSRP atau MVRP di { $interface }
 host-state = Status

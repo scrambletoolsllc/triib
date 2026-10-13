@@ -755,9 +755,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Entitats absents o no llegides: { $missing }.
 presets-deleted = S’ha suprimit «{ $name }».
-presets-host-note = També desa els talkers i listeners propis d’aquest ordinador, i els torna a iniciar en recuperar-lo.
+presets-host-note = També desa els dispositius propis d’aquest ordinador, i els torna a iniciar en recuperar-lo.
 presets-host-endpoints = { $count } en aquest ordinador
-presets-starting-host = S’estan iniciant els talkers i listeners d’aquest ordinador per a «{ $name }»; la resta seguirà quan tornin.
+presets-starting-host = S’estan iniciant els dispositius d’aquest ordinador per a «{ $name }»; la resta seguirà quan tornin.
 
 ## Controls
 
@@ -774,20 +774,16 @@ network-npcap-administrators = Npcap només permet als administradors enviar i r
 matrix-stream-format = { $format }.
 matrix-stream-format-state = { $format }. { $state }.
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = Afegeix un talker
-host-add-listener = Afegeix un listener
 host-add-device = Afegeix un dispositiu
-host-show-mine = Mostra només els talkers i listeners propis d’aquest ordinador
+host-show-mine = Mostra només els dispositius propis d’aquest ordinador
 host-show-all = Mostra totes les entitats
-host-new-talker = Talker de l’amfitrió { $number }
-host-new-listener = Listener de l’amfitrió { $number }
 host-new-device = Dispositiu de l’amfitrió { $number }
 host-failed = No s’ha pogut afegir a aquest ordinador: { $reason }
-host-needs-clock = Els talkers i listeners propis d’aquest ordinador necessiten una interfície amb fil amb rellotge de maquinari PTP
+host-needs-clock = Els dispositius propis d’aquest ordinador necessiten una interfície amb fil amb rellotge de maquinari PTP
 host-no-ptp4l = ptp4l no respon, de manera que els fluxos d’aquest ordinador no poden mantenir l’hora gPTP
-host-elsewhere = triib-endpointd s’executa a { $interface } per a un altre usuari o com a root, de manera que els talkers i listeners d’aquest ordinador s’executen allà, no aquí
+host-elsewhere = triib-endpointd s’executa a { $interface } per a un altre usuari o com a root, de manera que els dispositius d’aquest ordinador s’executen allà, no aquí
 host-foreign-mrp = Un altre programa emet declaracions MSRP o MVRP a { $interface } des de l’adreça d’aquest ordinador i pot retirar el que necessiten els fluxos d’aquest ordinador
 host-alarm-foreign-mrp = Un altre programa d’aquest ordinador emet declaracions MSRP o MVRP a { $interface }
 host-state = Estat

@@ -691,9 +691,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Burada olmayan veya okunmamış: { $missing }.
 presets-deleted = “{ $name }” silindi.
-presets-host-note = Bu bilgisayarın kendi talker ve listener'larını da saklar ve geri çağrıldığında yeniden başlatır.
+presets-host-note = Bu bilgisayarın kendi cihazlarını da saklar ve geri çağrıldığında yeniden başlatır.
 presets-host-endpoints = bu bilgisayarda { $count }
-presets-starting-host = “{ $name }” için bu bilgisayarın talker ve listener'ları başlatılıyor; geri kalanı onlar dönünce gelecek.
+presets-starting-host = “{ $name }” için bu bilgisayarın cihazları başlatılıyor; geri kalanı onlar dönünce gelecek.
 
 ## Controls
 
@@ -712,20 +712,16 @@ matrix-stream-format-state = { $format }. { $state }.
 
 common-decimal-separator = {","}
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = Talker ekle
-host-add-listener = Listener ekle
 host-add-device = Cihaz ekle
-host-show-mine = Yalnızca bu bilgisayarın kendi talker ve listener'larını göster
+host-show-mine = Yalnızca bu bilgisayarın kendi cihazlarını göster
 host-show-all = Tüm varlıkları göster
-host-new-talker = Ana bilgisayar talker { $number }
-host-new-listener = Ana bilgisayar listener { $number }
 host-new-device = Ana bilgisayar cihazı { $number }
 host-failed = Bu bilgisayara eklenemedi: { $reason }
-host-needs-clock = Bu bilgisayarın kendi talker ve listener'ları PTP donanım saati olan kablolu bir arayüze ihtiyaç duyar
+host-needs-clock = Bu bilgisayarın kendi cihazları PTP donanım saati olan kablolu bir arayüze ihtiyaç duyar
 host-no-ptp4l = ptp4l yanıt vermiyor, bu yüzden bu bilgisayarın akışları gPTP zamanını tutamıyor
-host-elsewhere = triib-endpointd { $interface } üzerinde başka bir kullanıcı için ya da root olarak çalışıyor, bu yüzden bu bilgisayarın talker ve listener'ları burada değil, orada çalışıyor
+host-elsewhere = triib-endpointd { $interface } üzerinde başka bir kullanıcı için ya da root olarak çalışıyor, bu yüzden bu bilgisayarın cihazları burada değil, orada çalışıyor
 host-foreign-mrp = Başka bir program { $interface } üzerinde bu bilgisayarın adresinden MSRP veya MVRP bildirimleri yapıyor ve bu bilgisayarın akışlarının ihtiyaç duyduğu şeyleri geri çekebilir
 host-alarm-foreign-mrp = Bu bilgisayardaki başka bir program { $interface } üzerinde MSRP veya MVRP bildirimleri yapıyor
 host-state = Durum

@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use crate::config::{Direction, Kind};
+use crate::config::Direction;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DaemonStatus {
@@ -27,21 +27,15 @@ pub struct DaemonStatus {
     pub endpoints: Vec<EndpointStatus>,
 }
 
+/// One of this computer's devices.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EndpointStatus {
     /// As text, `0x` and sixteen hex digits.
     pub entity_id: String,
     pub name: String,
-    pub kind: Kind,
     /// What it is doing: streaming, waiting, listening, bound or unbound.
     pub state: String,
-    /// Where its audio comes from or goes, as endpoints.toml says it.
-    #[serde(default)]
-    pub audio: String,
-    /// Its stream's channels.
-    #[serde(default = "eight")]
-    pub channels: u16,
-    /// A device's streams, in order.
+    /// Its streams, in order.
     #[serde(rename = "stream", default, skip_serializing_if = "Vec::is_empty")]
     pub streams: Vec<StreamStatus>,
 }
@@ -60,10 +54,6 @@ pub struct StreamStatus {
     pub audio: String,
     /// What it is doing: streaming, waiting, listening, bound or unbound.
     pub state: String,
-}
-
-fn eight() -> u16 {
-    8
 }
 
 /// Where the daemon says what it is doing.

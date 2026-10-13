@@ -51,44 +51,56 @@ On macOS the Mac's own AVB entity cannot be read from the same Mac, as
 the system never hands it the commands triib writes; triib says so.
 [docs/RELEASING.md](docs/RELEASING.md) has the details.
 
-## This computer's talkers and listeners
+## This computer's devices
 
-On Linux, the Entities view adds talkers and listeners of the computer's
-own, which `triib-endpointd` runs, on a wired interface with a PTP
-hardware clock (`ethtool -T <interface>` shows one). They need
+On Linux, the Entities view adds devices of the computer's own, which
+`triib-endpointd` runs, on a wired interface with a PTP hardware clock
+(`ethtool -T <interface>` shows one). They need
 [linuxptp](https://linuxptp.nwtime.org)'s `ptp4l` running gPTP on that
 interface, as with its `configs/gPTP.cfg`, so the clock keeps the
 network's time; triib reads ptp4l's state through its read-only socket,
-`/var/run/ptp4lro`, and says when ptp4l isn't there. Each endpoint is a
-Milan entity with one stream of AAF or AM824 at 48, 96 or 192 kHz, 8
-channels unless the inspector picks another count, which controllers,
-triib among them, bind like any other; the inspector picks the audio
-device a talker sends from or a listener plays to. Talkers take their stream addresses
-with MAAP, and the stream threads ask RealtimeKit for real-time
-scheduling, as PipeWire does.
+`/var/run/ptp4lro`, and says when ptp4l isn't there. Each device is a
+Milan entity with any number of streams each way, which controllers,
+triib among them, bind like any other. The inspector's Streams tab adds
+and removes them: audio streams of AAF or AM824 at 48, 96 or 192 kHz, 8
+channels unless it picks another count, each by default with a virtual
+audio device of its own that apps play into or record from, or a test
+tone, silence or one of the computer's devices; and media clock streams
+of CRF, a media clock input being a clock source the device can follow.
+Talkers take their stream addresses with MAAP, and the stream threads
+ask RealtimeKit for real-time scheduling, as PipeWire does.
 
-The endpoints are listed in `endpoints.toml` in triib's data folder
+The devices are listed in `endpoints.toml` in triib's data folder
 (`~/.local/share/triib` on Linux), which the app writes and the daemon
-reads again whenever it changes; the names, formats and bindings
-controllers give are kept in it, so a listener binds again after a
-restart, and presets keep it too:
+reads again whenever it changes; the names, formats, bindings and clock
+sources controllers give are kept in it, so an input binds again after
+a restart, and presets keep it too:
 
 ```toml
 interface = "enp2s0"
 ptp4l_socket = "/var/run/ptp4lro"
 
 [[endpoint]]
-kind = "talker"
 instance = 0
-name = "Host talker 1"
-source = "default"   # or "silence", "tone", or an input's name
+name = "Host device 1"
 
-[[endpoint]]
-kind = "listener"
-instance = 1
-name = "Host listener 1"
-sink = "default"     # or "discard", or an output's name
+[[endpoint.stream]]
+direction = "out"
+channels = 8          # audio "virtual" when left out: its own virtual device
+
+[[endpoint.stream]]
+direction = "in"
+channels = 2
+audio = "default"     # or "discard", or an output's name
+
+[[endpoint.stream]]
+direction = "in"
+clock = true          # a media clock stream
+clock_source = true   # which the device follows
 ```
+
+triib 1.0's talkers and listeners, `kind = "talker"` and
+`kind = "listener"` entries, read as devices of their one stream.
 
 Where no AVB bridge answers on the interface, the endpoints fall back to
 [AVB Lite](https://github.com/avbcommunity/profiles/blob/main/avb_lite.md),
@@ -230,7 +242,7 @@ whether raw Ethernet is ready.
 |---|---|
 | `triib` | The app |
 | `triib-cli` | Headless controller |
-| `triib-endpointd` | Runs this computer's talkers and listeners |
+| `triib-endpointd` | Runs this computer's devices |
 | `triib-stream` | AAF streams, the media clock and audio devices |
 | `triib-pipewire` | Virtual audio devices as PipeWire nodes |
 | `triib-store` | Settings and cache files |

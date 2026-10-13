@@ -781,9 +781,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Brak w sieci lub nie odczytano: { $missing }.
 presets-deleted = Usunięto „{ $name }”.
-presets-host-note = Zachowuje też własne talkery i listenery tego komputera i uruchamia je ponownie przy przywołaniu.
+presets-host-note = Zachowuje też własne urządzenia tego komputera i uruchamia je ponownie przy przywołaniu.
 presets-host-endpoints = { $count } na tym komputerze
-presets-starting-host = Uruchamianie talkerów i listenerów tego komputera dla „{ $name }”; reszta nastąpi, gdy wrócą.
+presets-starting-host = Uruchamianie urządzeń tego komputera dla „{ $name }”; reszta nastąpi, gdy wrócą.
 
 ## Controls
 
@@ -802,20 +802,16 @@ matrix-stream-format-state = { $format }. { $state }.
 
 common-decimal-separator = {","}
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = Dodaj talker
-host-add-listener = Dodaj listener
 host-add-device = Dodaj urządzenie
-host-show-mine = Pokaż tylko własne talkery i listenery tego komputera
+host-show-mine = Pokaż tylko własne urządzenia tego komputera
 host-show-all = Pokaż wszystkie encje
-host-new-talker = Talker hosta { $number }
-host-new-listener = Listener hosta { $number }
 host-new-device = Urządzenie hosta { $number }
 host-failed = Nie można dodać do tego komputera: { $reason }
-host-needs-clock = Własne talkery i listenery tego komputera wymagają przewodowego interfejsu ze sprzętowym zegarem PTP
+host-needs-clock = Własne urządzenia tego komputera wymagają przewodowego interfejsu ze sprzętowym zegarem PTP
 host-no-ptp4l = ptp4l nie odpowiada, więc strumienie tego komputera nie mogą trzymać czasu gPTP
-host-elsewhere = triib-endpointd działa na { $interface } dla innego użytkownika lub jako root, więc talkery i listenery tego komputera działają tam, nie tutaj
+host-elsewhere = triib-endpointd działa na { $interface } dla innego użytkownika lub jako root, więc urządzenia tego komputera działają tam, nie tutaj
 host-foreign-mrp = Inny program deklaruje MSRP lub MVRP na { $interface } z adresu tego komputera i może wycofać to, czego potrzebują strumienie tego komputera
 host-alarm-foreign-mrp = Inny program na tym komputerze deklaruje MSRP lub MVRP na { $interface }
 host-state = Stan

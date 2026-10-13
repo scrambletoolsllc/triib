@@ -782,9 +782,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Není v síti nebo nenačteno: { $missing }.
 presets-deleted = Smazáno „{ $name }“.
-presets-host-note = Uchovává také vlastní talkery a listenery tohoto počítače a při vyvolání je znovu spustí.
+presets-host-note = Uchovává také vlastní zařízení tohoto počítače a při vyvolání je znovu spustí.
 presets-host-endpoints = { $count } na tomto počítači
-presets-starting-host = Spouštějí se talkery a listenery tohoto počítače pro „{ $name }“; zbytek následuje, až budou zpět.
+presets-starting-host = Spouštějí se zařízení tohoto počítače pro „{ $name }“; zbytek následuje, až budou zpět.
 
 ## Controls
 
@@ -803,20 +803,16 @@ matrix-stream-format-state = { $format }. { $state }.
 
 common-decimal-separator = {","}
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = Přidat talker
-host-add-listener = Přidat listener
 host-add-device = Přidat zařízení
-host-show-mine = Zobrazit jen vlastní talkery a listenery tohoto počítače
+host-show-mine = Zobrazit jen vlastní zařízení tohoto počítače
 host-show-all = Zobrazit všechny entity
-host-new-talker = Talker hostitele { $number }
-host-new-listener = Listener hostitele { $number }
 host-new-device = Zařízení hostitele { $number }
 host-failed = Nepodařilo se přidat do tohoto počítače: { $reason }
-host-needs-clock = Vlastní talkery a listenery tohoto počítače potřebují kabelové rozhraní s hardwarovými hodinami PTP
+host-needs-clock = Vlastní zařízení tohoto počítače potřebují kabelové rozhraní s hardwarovými hodinami PTP
 host-no-ptp4l = ptp4l neodpovídá, takže streamy tohoto počítače nemohou držet čas gPTP
-host-elsewhere = triib-endpointd běží na { $interface } pro jiného uživatele nebo jako root, takže talkery a listenery tohoto počítače běží tam, ne tady
+host-elsewhere = triib-endpointd běží na { $interface } pro jiného uživatele nebo jako root, takže zařízení tohoto počítače běží tam, ne tady
 host-foreign-mrp = Jiný program deklaruje MSRP nebo MVRP na { $interface } z adresy tohoto počítače a může tak odvolat to, co potřebují streamy tohoto počítače
 host-alarm-foreign-mrp = Jiný program na tomto počítači deklaruje MSRP nebo MVRP na { $interface }
 host-state = Stav

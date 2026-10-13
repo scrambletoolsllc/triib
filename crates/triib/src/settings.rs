@@ -132,7 +132,7 @@ pub enum View {
     #[default]
     #[serde(alias = "log")]
     Matrix,
-    // Host talkers and listeners are entities like any other, and each
+    // This computer's devices are entities like any other, and each
     // entity's media clock is picked in its row.
     #[serde(alias = "host", alias = "clocks")]
     Entities,

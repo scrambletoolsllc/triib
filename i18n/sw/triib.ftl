@@ -698,9 +698,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Haipo hapa au haijasomwa: { $missing }.
 presets-deleted = Imefuta "{ $name }".
-presets-host-note = Pia huhifadhi talker na listener za kompyuta hii, na kuziwasha tena inaporejeshwa.
+presets-host-note = Pia huhifadhi vifaa vya kompyuta hii, na kuviwasha tena inaporejeshwa.
 presets-host-endpoints = { $count } kwenye kompyuta hii
-presets-starting-host = Inawasha talker na listener za kompyuta hii kwa "{ $name }"; mengine yatafuata zitakaporudi.
+presets-starting-host = Inawasha vifaa vya kompyuta hii kwa "{ $name }"; mengine yatafuata vitakaporudi.
 
 ## Controls
 
@@ -717,20 +717,16 @@ network-npcap-administrators = Npcap inaruhusu wasimamizi pekee kutuma na kupoke
 matrix-stream-format = { $format }.
 matrix-stream-format-state = { $format }. { $state }.
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = Ongeza talker
-host-add-listener = Ongeza listener
 host-add-device = Ongeza kifaa
-host-show-mine = Onyesha talker na listener za kompyuta hii pekee
+host-show-mine = Onyesha vifaa vya kompyuta hii pekee
 host-show-all = Onyesha huluki zote
-host-new-talker = Talker ya mwenyeji { $number }
-host-new-listener = Listener ya mwenyeji { $number }
 host-new-device = Kifaa cha mwenyeji { $number }
 host-failed = Haikuweza kuongezwa kwenye kompyuta hii: { $reason }
-host-needs-clock = Talker na listener za kompyuta hii zinahitaji kiolesura cha waya chenye saa ya maunzi ya PTP
+host-needs-clock = Vifaa vya kompyuta hii vinahitaji kiolesura cha waya chenye saa ya maunzi ya PTP
 host-no-ptp4l = ptp4l haijibu, kwa hiyo mitiririko ya kompyuta hii haiwezi kushika muda wa gPTP
-host-elsewhere = triib-endpointd inaendeshwa kwenye { $interface } kwa mtumiaji mwingine au kama root, kwa hiyo talker na listener za kompyuta hii zinaendeshwa huko, si hapa
+host-elsewhere = triib-endpointd inaendeshwa kwenye { $interface } kwa mtumiaji mwingine au kama root, kwa hiyo vifaa vya kompyuta hii vinaendeshwa huko, si hapa
 host-foreign-mrp = Programu nyingine inatoa matamko ya MSRP au MVRP kwenye { $interface } kutoka anwani ya kompyuta hii, jambo linaloweza kuondoa kile ambacho mitiririko ya kompyuta hii inahitaji
 host-alarm-foreign-mrp = Programu nyingine kwenye kompyuta hii inatoa matamko ya MSRP au MVRP kwenye { $interface }
 host-state = Hali

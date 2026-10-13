@@ -84,8 +84,8 @@ pub struct Triib {
     /// Why this computer cannot listen for the bridge's gPTP messages,
     /// when it cannot.
     pub cannot_listen: Option<String>,
-    /// What triib-endpointd says this computer's talkers and listeners
-    /// are doing, while it runs.
+    /// What triib-endpointd says this computer's devices are doing, while
+    /// it runs.
     pub endpoints: Option<triib_endpointd::status::DaemonStatus>,
     /// The interface another user's or root's triib-endpointd holds.
     pub endpoints_elsewhere: Option<String>,
@@ -185,17 +185,12 @@ pub enum Message {
     Copy(String),
     /// Opens a link in the browser.
     OpenLink(String),
-    /// Adds a talker or listener on this computer.
-    HostAdded(triib_endpointd::config::Kind),
-    /// Removes one of this computer's talkers or listeners.
+    /// Adds a device on this computer.
+    HostAdded,
+    /// Removes one of this computer's devices.
     HostRemoved(EntityId),
-    /// Takes one of this computer's endpoints' audio from or to a device,
-    /// a tone, silence or nowhere.
-    HostAudio(EntityId, String),
     /// One of this computer's devices changes one of its streams.
     HostStream(EntityId, crate::host::StreamChange),
-    /// One of this computer's endpoints is to have this many channels.
-    HostChannels(EntityId, u16),
     Act(Action),
     /// Several actions, sent in order, such as removing a channel's mapping
     /// before mapping it anew.
@@ -437,28 +432,24 @@ impl Triib {
             })
     }
 
-    /// Whether `entity_id` is one of this computer's talkers or listeners.
+    /// Whether `entity_id` is one of this computer's devices.
     pub fn is_host(&self, entity_id: EntityId) -> bool {
         crate::host::status_of(self.endpoints.as_ref(), entity_id).is_some()
     }
 
-    /// The icon of one of this computer's endpoints, telling a talker,
-    /// a listener and a device apart; `None` for others' entities.
+    /// The icon of one of this computer's devices, the computer's; `None`
+    /// for others' entities.
     pub fn host_icon(&self, entity_id: EntityId) -> Option<scramble_ui::icon::Icon> {
-        let kind = crate::host::status_of(self.endpoints.as_ref(), entity_id)
-            .map(|endpoint| endpoint.kind)
-            // Until the daemon's status names it, as it does a moment after
-            // the entity advertises: one of its models, from this
-            // computer's address.
-            .or_else(|| {
-                let entity = self.entities.get(&entity_id)?;
-                let own = self.interface()?.mac;
-                if entity.mac != own {
-                    return None;
-                }
-                triib_endpointd::runtime::kind_of_model(entity.adp.entity_model_id)
-            })?;
-        Some(crate::host_view::icon(kind))
+        // Until the daemon's status names it, as it does a moment after the
+        // entity advertises: one of its models, from this computer's
+        // address.
+        let ours = self.is_host(entity_id)
+            || self.entities.get(&entity_id).is_some_and(|entity| {
+                self.interface()
+                    .is_some_and(|interface| interface.mac == entity.mac)
+                    && triib_endpointd::runtime::is_device_model(entity.adp.entity_model_id)
+            });
+        ours.then_some(scramble_ui::icon::Icon::Computer)
     }
 
     /// Goes on with a preset recalled while this computer's endpoints
@@ -499,26 +490,18 @@ impl Triib {
         Task::none()
     }
 
-    fn add_host(&mut self, kind: triib_endpointd::config::Kind) {
+    fn add_host(&mut self) {
         let Some(interface) = self.interface().map(|interface| interface.name.clone()) else {
             return;
         };
-        let count = self.endpoints.as_ref().map_or(0, |status| {
-            status
-                .endpoints
-                .iter()
-                .filter(|endpoint| endpoint.kind == kind)
-                .count()
-        }) + 1;
-        let name = match kind {
-            triib_endpointd::config::Kind::Talker => crate::fl!("host-new-talker", number = count),
-            triib_endpointd::config::Kind::Listener => {
-                crate::fl!("host-new-listener", number = count)
-            }
-            triib_endpointd::config::Kind::Device => crate::fl!("host-new-device", number = count),
-        };
+        let count = self
+            .endpoints
+            .as_ref()
+            .map_or(0, |status| status.endpoints.len())
+            + 1;
+        let name = crate::fl!("host-new-device", number = count);
         let result =
-            crate::host::add(&interface, kind, name).and_then(|()| crate::host::ensure_running());
+            crate::host::add(&interface, name).and_then(|()| crate::host::ensure_running());
         if let Err(error) = result {
             self.notice = Some(crate::fl!("host-failed", reason = error));
         }
@@ -917,23 +900,13 @@ impl Triib {
             Message::External(External::AudioDevices(inputs, outputs)) => {
                 self.audio_devices = (inputs, outputs);
             }
-            Message::HostAdded(kind) => self.add_host(kind),
+            Message::HostAdded => self.add_host(),
             Message::HostRemoved(entity_id) => {
                 let done = self
                     .interface()
                     .map(|interface| (interface.name.clone(), interface.mac));
                 if let Some((name, mac)) = done
                     && let Err(error) = crate::host::remove(&name, mac, entity_id)
-                {
-                    self.notice = Some(error);
-                }
-            }
-            Message::HostAudio(entity_id, audio) => {
-                let done = self
-                    .interface()
-                    .map(|interface| (interface.name.clone(), interface.mac));
-                if let Some((name, mac)) = done
-                    && let Err(error) = crate::host::set_audio(&name, mac, entity_id, audio)
                 {
                     self.notice = Some(error);
                 }
@@ -955,16 +928,6 @@ impl Triib {
                     .map(|interface| (interface.name.clone(), interface.mac));
                 if let Some((name, mac)) = done
                     && let Err(error) = crate::host::change_stream(&name, mac, entity_id, change)
-                {
-                    self.notice = Some(error);
-                }
-            }
-            Message::HostChannels(entity_id, channels) => {
-                let done = self
-                    .interface()
-                    .map(|interface| (interface.name.clone(), interface.mac));
-                if let Some((name, mac)) = done
-                    && let Err(error) = crate::host::set_channels(&name, mac, entity_id, channels)
                 {
                     self.notice = Some(error);
                 }

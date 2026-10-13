@@ -899,13 +899,13 @@ presets-recalling = { $count ->
 # holds that are not on the network or not read yet.
 presets-missing = { $report } Not here or not read: { $missing }.
 presets-deleted = Deleted "{ $name }".
-# Follows presets-note where this computer can run talkers and listeners
+# Follows presets-note where this computer can run devices of its own
 # of its own.
-presets-host-note = It also keeps this computer's own talkers and listeners, and starts them again on recall.
+presets-host-note = It also keeps this computer's own devices, and starts them again on recall.
 # Beside the counts of entities and connections in a preset's row.
 presets-host-endpoints = { $count } on this computer
 # While a recalled preset waits for this computer's endpoints to start.
-presets-starting-host = Starting this computer's talkers and listeners for "{ $name }"; the rest follows once they are back.
+presets-starting-host = Starting this computer's devices for "{ $name }"; the rest follows once they are back.
 
 ## Controls
 # An entity's CONTROL descriptors, such as gain or mute.
@@ -930,23 +930,19 @@ matrix-stream-format-state = { $format }. { $state }.
 # {","}.
 common-decimal-separator = {"."}
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = Add talker
-host-add-listener = Add listener
 # This computer as one device with stream outputs and inputs.
 host-add-device = Add device
-host-show-mine = Show only this computer's own talkers and listeners
+host-show-mine = Show only this computer's own devices
 host-show-all = Show every entity
-host-new-talker = Host talker { $number }
-host-new-listener = Host listener { $number }
 host-new-device = Host device { $number }
 host-failed = Could not add it to this computer: { $reason }
-host-needs-clock = This computer's own talkers and listeners need a wired interface with a PTP hardware clock
+host-needs-clock = This computer's own devices need a wired interface with a PTP hardware clock
 host-no-ptp4l = ptp4l does not answer, so this computer's streams cannot keep gPTP time
-# Another user's triib-endpointd, or root's, runs this computer's talkers
-# and listeners on the interface; this user's cannot run beside it.
-host-elsewhere = triib-endpointd runs on { $interface } for another user or as root, so this computer's talkers and listeners run there, not here
+# Another user's triib-endpointd, or root's, runs this computer's devices
+# on the interface; this user's cannot run beside it.
+host-elsewhere = triib-endpointd runs on { $interface } for another user or as root, so this computer's devices run there, not here
 # MSRP and MVRP are protocols that reserve bandwidth and VLANs; keep them as
 # written. Another program on this computer runs them on the same port.
 host-foreign-mrp = Another program declares MSRP or MVRP on { $interface } from this computer's address, which can withdraw what this computer's streams need

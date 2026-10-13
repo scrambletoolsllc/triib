@@ -35,7 +35,7 @@ use triib_stream::{
 use triib_pipewire::{DeviceSpec, VirtualAudio, VirtualDevice};
 
 use crate::config::{
-    Config, Direction, EndpointConfig, Kind, LiteChoice, SrClass, StreamConfig, binding_text,
+    Config, Direction, EndpointConfig, LiteChoice, SrClass, StreamConfig, binding_text,
 };
 use crate::gptp;
 use crate::lite::{self, Declared, Fallback, Ptp4l};
@@ -43,12 +43,9 @@ use crate::port::{Port, VLAN};
 use crate::profile::{self, Profile};
 use crate::status::{DaemonStatus, EndpointStatus, StreamStatus, status_path};
 
-/// Entity model IDs under Scramble Tools' MA-S `8C-1F-64-36-C`.
-const TALKER_MODEL: EntityModelId = EntityModelId(0x8c1f_6436_c000_0002);
-/// A listener's model since its input stopped being a clock source; it
-/// was `0x8c1f_6436_c000_0003` before.
-const LISTENER_MODEL: EntityModelId = EntityModelId(0x8c1f_6436_c000_0004);
-/// The entity models of devices: this, and a hash of their streams.
+/// The entity models of devices, under Scramble Tools' MA-S
+/// `8C-1F-64-36-C`: this, and a hash of their streams. triib 1.0's
+/// talkers and listeners had `0x8c1f_6436_c000_0002` and `_0004`.
 const DEVICE_MODELS: u64 = 0x8c1f_6436_c001_0000;
 /// The revision of every device's model, in its hash.
 const MODEL_REVISION: u8 = 1;
@@ -244,19 +241,11 @@ pub fn entity_id(mac: MacAddress, instance: u8) -> EntityId {
     EntityId(u64::from_be_bytes([a, b, c, 0xff, instance, d, e, f]))
 }
 
-/// What one of this daemon's entity models is: a talker, a listener or
-/// a device, telling them apart before the status says which; `None` for
-/// any other model.
-pub fn kind_of_model(model: EntityModelId) -> Option<Kind> {
-    match model {
-        TALKER_MODEL => Some(Kind::Talker),
-        LISTENER_MODEL => Some(Kind::Listener),
-        // A device's: the block's high bits and the bit its hash always
-        // carries, which the app's controller and the one-stream models
-        // lack.
-        EntityModelId(id) if id & 0xffff_ffff_ff01_0000 == DEVICE_MODELS => Some(Kind::Device),
-        _ => None,
-    }
+/// Whether an entity model is one of this daemon's devices', telling
+/// them apart before the status names them: the block's high bits and the
+/// bit their hash always carries, which the app's controller lacks.
+pub fn is_device_model(model: EntityModelId) -> bool {
+    model.0 & 0xffff_ffff_ff01_0000 == DEVICE_MODELS
 }
 
 /// The stream a talker's output sends.
@@ -339,37 +328,30 @@ struct Endpoint {
     clock_unlocks: u32,
 }
 
-/// The entity model of a talker or listener of one stream, as before; of
-/// a device, one for its streams' every static detail, as controllers
-/// keep a model's descriptors by its ID: FNV-1a of each stream's way,
-/// channels and formats, in the low 24 bits.
-fn model_id(kind: Kind, outputs: &[StreamModel], inputs: &[StreamModel]) -> EntityModelId {
-    match kind {
-        Kind::Talker => TALKER_MODEL,
-        Kind::Listener => LISTENER_MODEL,
-        Kind::Device => {
-            let mut hash: u32 = 0x811c_9dc5;
-            let mut take = |bytes: &[u8]| {
-                for byte in bytes {
-                    hash = (hash ^ u32::from(*byte)).wrapping_mul(0x0100_0193);
-                }
-            };
-            // The model's revision, for what the streams leave the same:
-            // 1 since the inputs stopped being clock sources.
-            take(&[MODEL_REVISION]);
-            for (way, streams) in [(0u8, outputs), (1, inputs)] {
-                for stream in streams {
-                    take(&[way]);
-                    take(&stream.channels.to_be_bytes());
-                    take(&[u8::from(stream.class_b)]);
-                    for format in &stream.formats {
-                        take(&format.0.to_be_bytes());
-                    }
-                }
+/// A device's entity model, one for its streams' every static detail, as
+/// controllers keep a model's descriptors by its ID: FNV-1a of each
+/// stream's way, channels and formats, in the low 24 bits.
+fn model_id(outputs: &[StreamModel], inputs: &[StreamModel]) -> EntityModelId {
+    let mut hash: u32 = 0x811c_9dc5;
+    let mut take = |bytes: &[u8]| {
+        for byte in bytes {
+            hash = (hash ^ u32::from(*byte)).wrapping_mul(0x0100_0193);
+        }
+    };
+    // The model's revision, for what the streams leave the same: 1 since
+    // the inputs stopped being clock sources.
+    take(&[MODEL_REVISION]);
+    for (way, streams) in [(0u8, outputs), (1, inputs)] {
+        for stream in streams {
+            take(&[way]);
+            take(&stream.channels.to_be_bytes());
+            take(&[u8::from(stream.class_b)]);
+            for format in &stream.formats {
+                take(&format.0.to_be_bytes());
             }
-            EntityModelId(DEVICE_MODELS | u64::from(hash & 0x00ff_ffff))
         }
     }
+    EntityModelId(DEVICE_MODELS | u64::from(hash & 0x00ff_ffff))
 }
 
 impl Endpoint {
@@ -398,20 +380,12 @@ impl Endpoint {
                 );
             }
         }
-        let streams = if self.config.kind == Kind::Device {
-            format!(", {} out and {} in", self.outputs.len(), self.inputs.len())
-        } else {
-            String::new()
-        };
         log(format!(
-            "{} {} as {}{streams}",
-            match self.config.kind {
-                Kind::Talker => "talker",
-                Kind::Listener => "listener",
-                Kind::Device => "device",
-            },
+            "device {} as {}, {} out and {} in",
             self.config.name,
-            self.entity.entity_id()
+            self.entity.entity_id(),
+            self.outputs.len(),
+            self.inputs.len()
         ));
     }
 
@@ -530,16 +504,11 @@ impl Endpoint {
         }
         let model = EndpointModel {
             entity_id: entity_id(mac, instance),
-            entity_model_id: model_id(config.kind, &outputs, &inputs),
+            entity_model_id: model_id(&outputs, &inputs),
             entity_name: config.name.clone(),
             group_name: String::new(),
             vendor_name: "Scramble Tools".into(),
-            model_name: match config.kind {
-                Kind::Talker => "triib talker",
-                Kind::Listener => "triib listener",
-                Kind::Device => "triib device",
-            }
-            .into(),
+            model_name: "triib device".into(),
             firmware_version: env!("CARGO_PKG_VERSION").into(),
             serial_number: String::new(),
             mac,
@@ -601,23 +570,20 @@ impl Endpoint {
         &self.streams[self.in_streams[usize::from(index)]]
     }
 
-    /// The name its log lines give a stream: a talker's or listener's own,
-    /// else the device's and the stream's.
+    /// The name its log lines give a stream: the device's and the
+    /// stream's, once where they are the same, as a stream of 1.0's
+    /// talkers and listeners is named.
     fn stream_name(&self, input: bool, index: u16) -> String {
-        if self.config.kind != Kind::Device {
-            return self.config.name.clone();
-        }
         let streams = &self.entity.model();
         let stream = if input {
             streams.inputs.get(usize::from(index))
         } else {
             streams.outputs.get(usize::from(index))
         };
-        format!(
-            "{} {}",
-            self.config.name,
-            stream.map_or("", |stream| stream.name.as_str())
-        )
+        match stream.map(|stream| stream.name.as_str()) {
+            Some(name) if name != self.config.name => format!("{} {name}", self.config.name),
+            _ => self.config.name.clone(),
+        }
     }
 
     /// The virtual devices its streams use, made anew for the entity's
@@ -1304,21 +1270,12 @@ impl Runtime {
                 .input_binding(at as u16)
                 .map(|binding| binding_text(binding.talker, binding.talker_unique_id));
         }
-        let device = endpoint.config.kind == Kind::Device;
         let instance = endpoint.config.instance_at(endpoint.place);
         let place = endpoint.place;
-        // A talker or listener keeps its stream's in `format` and `bound`,
-        // as before; a device in its streams.
         let keep = |entry: &mut EndpointConfig| {
             let before = entry.clone();
             entry.name.clone_from(&name);
-            if device {
-                entry.streams.clone_from(&streams);
-            } else if let Some(stream) = streams.first() {
-                entry.format.clone_from(&stream.format);
-                entry.transit = stream.transit;
-                entry.bound.clone_from(&stream.bound);
-            }
+            entry.streams.clone_from(&streams);
             *entry != before
         };
         let Some(entry) = self.config.endpoints.get_mut(place) else {
@@ -1387,20 +1344,6 @@ impl Runtime {
             .endpoints
             .iter()
             .map(|endpoint| {
-                let source = || {
-                    endpoint
-                        .config
-                        .source
-                        .clone()
-                        .unwrap_or_else(|| "silence".into())
-                };
-                let sink = || {
-                    endpoint
-                        .config
-                        .sink
-                        .clone()
-                        .unwrap_or_else(|| "discard".into())
-                };
                 let streaming = endpoint
                     .outputs
                     .iter()
@@ -1411,24 +1354,7 @@ impl Runtime {
                 EndpointStatus {
                     entity_id: endpoint.entity.entity_id().to_string(),
                     name: endpoint.entity.model().entity_name.clone(),
-                    kind: endpoint.config.kind,
-                    audio: match endpoint.config.kind {
-                        Kind::Talker | Kind::Device => source(),
-                        Kind::Listener => sink(),
-                    },
-                    channels: endpoint
-                        .entity
-                        .model()
-                        .outputs
-                        .iter()
-                        .chain(&endpoint.entity.model().inputs)
-                        .next()
-                        .map_or(0, |stream| stream.channels),
-                    streams: if endpoint.config.kind == Kind::Device {
-                        stream_statuses(endpoint)
-                    } else {
-                        Vec::new()
-                    },
+                    streams: stream_statuses(endpoint),
                     state: if streaming {
                         "streaming"
                     } else if listening {
@@ -1779,7 +1705,7 @@ impl Runtime {
     fn priority(&self, out: Out) -> u8 {
         if self.lite.is_some() {
             LITE_PRIORITY
-        } else if self.endpoints[out.0].config.class == SrClass::B {
+        } else if self.endpoints[out.0].out_config(out.1).class == SrClass::B {
             CLASS_B_PRIORITY
         } else {
             PRIORITY
@@ -1809,7 +1735,7 @@ impl Runtime {
             max_frame_size: media.pdu_length() as u16,
             // A class B interval holds as many of the stream's frames as
             // go out in 250 µs, two at 6 samples a frame and 48 kHz.
-            max_interval_frames: if endpoint.config.class == SrClass::B {
+            max_interval_frames: if endpoint.out_config(out.1).class == SrClass::B {
                 (CLASS_B_INTERVAL / media.interval_nanos().max(1)).max(1) as u16
             } else {
                 1
@@ -3835,30 +3761,13 @@ mod tests {
         assert_eq!(output_stream(mac, 2, 0), StreamId(0xf0a7_31f4_0f14_0200));
     }
 
-    fn endpoint(kind: Kind, streams: Vec<StreamConfig>) -> Endpoint {
-        made(endpoint_config(kind, streams))
-    }
-
-    fn made(config: EndpointConfig) -> Endpoint {
+    fn endpoint(streams: Vec<StreamConfig>) -> Endpoint {
+        let config = EndpointConfig {
+            streams,
+            ..EndpointConfig::new("Studio", Some(4))
+        };
         let mac = MacAddress([0xf0, 0xa7, 0x31, 0xf4, 0x0f, 0x14]);
         Endpoint::new(config, 4, mac, "enp2s0", ClockIdentity(1))
-    }
-
-    fn endpoint_config(kind: Kind, streams: Vec<StreamConfig>) -> EndpointConfig {
-        EndpointConfig {
-            kind,
-            instance: Some(4),
-            name: "Studio".into(),
-            channels: 8,
-            source: Some("tone".into()),
-            sink: None,
-            first_channel: 2,
-            format: None,
-            transit: None,
-            bound: None,
-            class: SrClass::A,
-            streams,
-        }
     }
 
     fn stream(direction: Direction, channels: u16) -> StreamConfig {
@@ -3874,17 +3783,14 @@ mod tests {
     /// its own for its streams.
     #[test]
     fn a_device_has_streams_of_its_own() {
-        let device = endpoint(
-            Kind::Device,
-            vec![
-                stream(Direction::Out, 8),
-                stream(Direction::In, 2),
-                StreamConfig {
-                    name: "Mix".into(),
-                    ..stream(Direction::Out, 2)
-                },
-            ],
-        );
+        let device = endpoint(vec![
+            stream(Direction::Out, 8),
+            stream(Direction::In, 2),
+            StreamConfig {
+                name: "Mix".into(),
+                ..stream(Direction::Out, 2)
+            },
+        ]);
         let model = device.entity.model();
         assert_eq!(model.model_name, "triib device");
         let names: Vec<&str> = model
@@ -3907,19 +3813,13 @@ mod tests {
         // same streams, the same.
         let id = model.entity_model_id;
         assert_eq!(id.0 >> 24, DEVICE_MODELS >> 24);
-        let other = endpoint(
-            Kind::Device,
-            vec![stream(Direction::Out, 8), stream(Direction::In, 8)],
-        );
+        let other = endpoint(vec![stream(Direction::Out, 8), stream(Direction::In, 8)]);
         assert_ne!(other.entity.model().entity_model_id, id);
-        let again = endpoint(
-            Kind::Device,
-            vec![
-                stream(Direction::Out, 8),
-                stream(Direction::In, 2),
-                stream(Direction::Out, 2),
-            ],
-        );
+        let again = endpoint(vec![
+            stream(Direction::Out, 8),
+            stream(Direction::In, 2),
+            stream(Direction::Out, 2),
+        ]);
         assert_eq!(again.entity.model().entity_model_id, id);
     }
 
@@ -3928,14 +3828,11 @@ mod tests {
     /// rates to the audio.
     #[test]
     fn media_clock_streams_carry_crf_alone() {
-        let device = endpoint(
-            Kind::Device,
-            vec![
-                StreamConfig::clock(Direction::Out),
-                stream(Direction::Out, 2),
-                StreamConfig::clock(Direction::In),
-            ],
-        );
+        let device = endpoint(vec![
+            StreamConfig::clock(Direction::Out),
+            stream(Direction::Out, 2),
+            StreamConfig::clock(Direction::In),
+        ]);
         let model = device.entity.model();
         let names: Vec<&str> = model
             .outputs
@@ -3955,7 +3852,7 @@ mod tests {
         let media = triib_stream::media::Media::of(MEDIA_CLOCK).unwrap();
         assert_eq!(media.pdu_length(), 28);
         // Media clocks alone run at the rate they count.
-        let clocks = endpoint(Kind::Device, vec![StreamConfig::clock(Direction::Out)]);
+        let clocks = endpoint(vec![StreamConfig::clock(Direction::Out)]);
         assert_eq!(clocks.entity.model().sampling_rates, [48_000]);
     }
 
@@ -3964,18 +3861,15 @@ mod tests {
     /// source it starts on, and its talkers follow that input's clock.
     #[test]
     fn media_clock_inputs_are_clock_sources() {
-        let device = endpoint(
-            Kind::Device,
-            vec![
-                stream(Direction::In, 2),
-                StreamConfig::clock(Direction::In),
-                stream(Direction::Out, 2),
-                StreamConfig {
-                    clock_source: true,
-                    ..StreamConfig::clock(Direction::In)
-                },
-            ],
-        );
+        let device = endpoint(vec![
+            stream(Direction::In, 2),
+            StreamConfig::clock(Direction::In),
+            stream(Direction::Out, 2),
+            StreamConfig {
+                clock_source: true,
+                ..StreamConfig::clock(Direction::In)
+            },
+        ]);
         let model = device.entity.model();
         assert_eq!(model.clock_source_inputs, [1, 2]);
         assert_eq!(model.clock_source, 2, "the second media clock input");
@@ -3984,13 +3878,10 @@ mod tests {
         assert_eq!(device.clock_source_name(), "Studio Media Clock In 2");
         assert_eq!(device.followed(), Some(device.inputs[2].recovered.clone()));
         // Without one kept, the internal clock, which nothing follows.
-        let plain = endpoint(
-            Kind::Device,
-            vec![
-                StreamConfig::clock(Direction::In),
-                stream(Direction::Out, 2),
-            ],
-        );
+        let plain = endpoint(vec![
+            StreamConfig::clock(Direction::In),
+            stream(Direction::Out, 2),
+        ]);
         assert_eq!(plain.entity.model().clock_source, 0);
         assert_eq!(plain.followed(), None);
         assert_eq!(plain.clock_source_name(), "the internal clock");
@@ -4001,49 +3892,51 @@ mod tests {
     /// device's in its stream's. Without one, the class's default stays.
     #[test]
     fn a_kept_max_transit_time_comes_back() {
-        let mut talker = made(EndpointConfig {
-            transit: Some(5_000_000),
-            ..endpoint_config(Kind::Talker, Vec::new())
-        });
-        talker.begin(Instant::from_nanos(0));
-        assert_eq!(talker.entity.max_transit_time(0), Some(5_000_000));
-        assert!(!talker.entity.max_transit_time_is_default(0));
-        let mut device = endpoint(
-            Kind::Device,
-            vec![
-                stream(Direction::Out, 8),
-                StreamConfig {
-                    transit: Some(1_000_000),
-                    ..stream(Direction::Out, 2)
-                },
-            ],
-        );
+        let mut device = endpoint(vec![
+            stream(Direction::Out, 8),
+            StreamConfig {
+                transit: Some(1_000_000),
+                ..stream(Direction::Out, 2)
+            },
+        ]);
         device.begin(Instant::from_nanos(0));
         assert_eq!(device.entity.max_transit_time(0), Some(2_000_000));
         assert!(device.entity.max_transit_time_is_default(0));
         assert_eq!(device.entity.max_transit_time(1), Some(1_000_000));
     }
 
-    /// One talker or listener stays as it was: its model, and its stream
-    /// named as the entity is.
+    /// Its models tell this daemon's devices from the app's controller and
+    /// anyone else's.
     #[test]
-    fn its_models_tell_what_each_endpoint_is() {
-        assert_eq!(kind_of_model(TALKER_MODEL), Some(Kind::Talker));
-        assert_eq!(kind_of_model(LISTENER_MODEL), Some(Kind::Listener));
-        assert_eq!(
-            kind_of_model(EntityModelId(DEVICE_MODELS | 0x6d_5b25)),
-            Some(Kind::Device)
-        );
-        // The app's own controller, and anyone else's model.
-        assert_eq!(kind_of_model(EntityModelId(0x8c1f_6436_c000_0001)), None);
-        assert_eq!(kind_of_model(EntityModelId(0x0000_0074_6869_6e67)), None);
+    fn its_models_tell_its_devices() {
+        assert!(is_device_model(EntityModelId(DEVICE_MODELS | 0x6d_5b25)));
+        assert!(!is_device_model(EntityModelId(0x8c1f_6436_c000_0001)));
+        assert!(!is_device_model(EntityModelId(0x0000_0074_6869_6e67)));
+        // triib 1.0's talkers' and listeners'.
+        assert!(!is_device_model(EntityModelId(0x8c1f_6436_c000_0002)));
     }
 
+    /// A stream of 1.0's talker, read as a device's, keeps its name, its
+    /// audio and its class, which its declaration takes.
     #[test]
-    fn one_stream_endpoints_keep_their_models() {
-        let talker = endpoint(Kind::Talker, Vec::new());
-        assert_eq!(talker.entity.model().entity_model_id, TALKER_MODEL);
-        assert_eq!(talker.entity.model().outputs[0].name, "Studio");
+    fn a_talker_of_old_is_a_device_of_one_stream() {
+        let config: Config = toml::from_str(
+            "[[endpoint]]\nkind = \"talker\"\nname = \"Studio\"\nsource = \"tone\"\nclass = \"B\"\n",
+        )
+        .expect("parses");
+        let mac = MacAddress([0xf0, 0xa7, 0x31, 0xf4, 0x0f, 0x14]);
+        let talker = Endpoint::new(
+            config.endpoints[0].clone(),
+            4,
+            mac,
+            "enp2s0",
+            ClockIdentity(1),
+        );
+        let model = talker.entity.model();
+        assert!(is_device_model(model.entity_model_id));
+        assert_eq!((model.outputs.len(), model.inputs.len()), (1, 0));
+        assert_eq!(model.outputs[0].name, "Studio");
+        assert!(model.outputs[0].class_b);
         assert_eq!(talker.stream_name(false, 0), "Studio");
         assert_eq!(
             talker.out_config(0).source(),
@@ -4051,18 +3944,6 @@ mod tests {
                 hertz: 1000.0,
                 level: 0.1
             }
-        );
-        let listener = endpoint(Kind::Listener, Vec::new());
-        assert_eq!(listener.entity.model().entity_model_id, LISTENER_MODEL);
-        assert!(listener.outputs.is_empty());
-        // Its input is no clock source: the internal clock is the only
-        // one, as the streams run on gPTP time whatever is chosen.
-        assert!(
-            listener
-                .entity
-                .model()
-                .descriptor_counts()
-                .contains(&(atdecc::DescriptorType::CLOCK_SOURCE, 1))
         );
     }
 }

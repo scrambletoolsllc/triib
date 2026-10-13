@@ -771,9 +771,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Entități absente sau necitite: { $missing }.
 presets-deleted = S-a șters „{ $name }”.
-presets-host-note = Păstrează și talkerele și listenerele proprii ale acestui computer și le pornește din nou la încărcare.
+presets-host-note = Păstrează și dispozitivele proprii ale acestui computer și le pornește din nou la încărcare.
 presets-host-endpoints = { $count } pe acest computer
-presets-starting-host = Se pornesc talkerele și listenerele acestui computer pentru „{ $name }”; restul urmează când revin.
+presets-starting-host = Se pornesc dispozitivele acestui computer pentru „{ $name }”; restul urmează când revin.
 
 ## Controls
 
@@ -790,20 +790,16 @@ network-npcap-administrators = Npcap permite doar administratorilor să trimită
 matrix-stream-format = { $format }.
 matrix-stream-format-state = { $format }. { $state }.
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = Adaugă talker
-host-add-listener = Adaugă listener
 host-add-device = Adaugă dispozitiv
-host-show-mine = Arată doar talkerele și listenerele proprii ale acestui computer
+host-show-mine = Arată doar dispozitivele proprii ale acestui computer
 host-show-all = Arată toate entitățile
-host-new-talker = Talker gazdă { $number }
-host-new-listener = Listener gazdă { $number }
 host-new-device = Dispozitiv gazdă { $number }
 host-failed = Nu a putut fi adăugat pe acest computer: { $reason }
-host-needs-clock = Talkerele și listenerele proprii ale acestui computer au nevoie de o interfață cu fir cu ceas hardware PTP
+host-needs-clock = Dispozitivele proprii ale acestui computer au nevoie de o interfață cu fir cu ceas hardware PTP
 host-no-ptp4l = ptp4l nu răspunde, așa că fluxurile acestui computer nu pot păstra ora gPTP
-host-elsewhere = triib-endpointd rulează pe { $interface } pentru alt utilizator sau ca root, așa că talkerele și listenerele acestui computer rulează acolo, nu aici
+host-elsewhere = triib-endpointd rulează pe { $interface } pentru alt utilizator sau ca root, așa că dispozitivele acestui computer rulează acolo, nu aici
 host-foreign-mrp = Alt program trimite declarații MSRP sau MVRP pe { $interface } de la adresa acestui computer și poate retrage ce le trebuie fluxurilor acestui computer
 host-alarm-foreign-mrp = Alt program de pe acest computer trimite declarații MSRP sau MVRP pe { $interface }
 host-state = Stare

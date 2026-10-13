@@ -780,9 +780,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Нет в сети или не прочитаны: { $missing }.
 presets-deleted = Пресет «{ $name }» удалён.
-presets-host-note = Он также хранит собственные Talker и Listener этого компьютера и перезапускает их при вызове.
+presets-host-note = Он также хранит собственные устройства этого компьютера и перезапускает их при вызове.
 presets-host-endpoints = { $count } на этом компьютере
-presets-starting-host = Запускаются Talker и Listener этого компьютера для «{ $name }»; остальное последует, когда они вернутся.
+presets-starting-host = Запускаются устройства этого компьютера для «{ $name }»; остальное последует, когда они вернутся.
 
 ## Controls
 
@@ -801,20 +801,16 @@ matrix-stream-format-state = { $format }. { $state }.
 
 common-decimal-separator = {","}
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = Добавить Talker
-host-add-listener = Добавить Listener
 host-add-device = Добавить устройство
-host-show-mine = Показывать только собственные Talker и Listener этого компьютера
+host-show-mine = Показывать только собственные устройства этого компьютера
 host-show-all = Показывать все сущности
-host-new-talker = Talker хоста { $number }
-host-new-listener = Listener хоста { $number }
 host-new-device = Устройство хоста { $number }
 host-failed = Не удалось добавить на этот компьютер: { $reason }
-host-needs-clock = Собственным Talker и Listener этого компьютера нужен проводной интерфейс с аппаратными часами PTP
+host-needs-clock = Собственным устройствам этого компьютера нужен проводной интерфейс с аппаратными часами PTP
 host-no-ptp4l = ptp4l не отвечает, поэтому потоки этого компьютера не могут держать время gPTP
-host-elsewhere = triib-endpointd работает на { $interface } от имени другого пользователя или root, поэтому Talker и Listener этого компьютера работают там, а не здесь
+host-elsewhere = triib-endpointd работает на { $interface } от имени другого пользователя или root, поэтому устройства этого компьютера работают там, а не здесь
 host-foreign-mrp = Другая программа отправляет декларации MSRP или MVRP на { $interface } с адреса этого компьютера и может отозвать то, что нужно потокам этого компьютера
 host-alarm-foreign-mrp = Другая программа на этом компьютере отправляет декларации MSRP или MVRP на { $interface }
 host-state = Состояние

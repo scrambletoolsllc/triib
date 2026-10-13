@@ -718,9 +718,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Ei paikalla tai ei luettu: { $missing }.
 presets-deleted = Poistettu ”{ $name }”.
-presets-host-note = Se tallentaa myös tämän tietokoneen omat talkerit ja listenerit ja käynnistää ne uudelleen palautettaessa.
+presets-host-note = Se tallentaa myös tämän tietokoneen omat laitteet ja käynnistää ne uudelleen palautettaessa.
 presets-host-endpoints = { $count } tässä tietokoneessa
-presets-starting-host = Käynnistetään tämän tietokoneen talkerit ja listenerit esiasetukselle ”{ $name }”; muu seuraa, kun ne ovat taas käytössä.
+presets-starting-host = Käynnistetään tämän tietokoneen laitteet esiasetukselle ”{ $name }”; muu seuraa, kun ne ovat taas käytössä.
 
 ## Controls
 
@@ -739,20 +739,16 @@ matrix-stream-format-state = { $format }. { $state }.
 
 common-decimal-separator = {","}
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = Lisää talker
-host-add-listener = Lisää listener
 host-add-device = Lisää laite
-host-show-mine = Näytä vain tämän tietokoneen omat talkerit ja listenerit
+host-show-mine = Näytä vain tämän tietokoneen omat laitteet
 host-show-all = Näytä kaikki entiteetit
-host-new-talker = Isännän talker { $number }
-host-new-listener = Isännän listener { $number }
 host-new-device = Isännän laite { $number }
 host-failed = Lisääminen tähän tietokoneeseen ei onnistunut: { $reason }
-host-needs-clock = Tämän tietokoneen omat talkerit ja listenerit tarvitsevat langallisen liitännän, jossa on PTP-laitteistokello
+host-needs-clock = Tämän tietokoneen omat laitteet tarvitsevat langallisen liitännän, jossa on PTP-laitteistokello
 host-no-ptp4l = ptp4l ei vastaa, joten tämän tietokoneen striimit eivät pysy gPTP-ajassa
-host-elsewhere = triib-endpointd on käynnissä liitännässä { $interface } toisen käyttäjän tai root-käyttäjän oikeuksin, joten tämän tietokoneen talkerit ja listenerit toimivat siellä, eivät täällä
+host-elsewhere = triib-endpointd on käynnissä liitännässä { $interface } toisen käyttäjän tai root-käyttäjän oikeuksin, joten tämän tietokoneen laitteet toimivat siellä, eivät täällä
 host-foreign-mrp = Toinen ohjelma tekee MSRP- tai MVRP-ilmoituksia liitännässä { $interface } tämän tietokoneen osoitteesta ja voi siten perua sen, mitä tämän tietokoneen striimit tarvitsevat
 host-alarm-foreign-mrp = Toinen ohjelma tällä tietokoneella tekee MSRP- tai MVRP-ilmoituksia liitännässä { $interface }
 host-state = Tila

@@ -195,16 +195,23 @@ tenth of a second, so the media clock takes the median of a burst of
 readings and follows a jump only once three measurements in a row show it.
 Intel's i210, i225 and i226 are the known choices with launch time.
 
-## Virtual endpoints: this computer's talkers and listeners
+## Virtual endpoints: this computer's devices
 
 - Added and removed in the Entities view, on interfaces with a PTP
-  hardware clock and a wired link; the inspector picks each one's audio
-  device, channels and format. They show as this computer's in the list,
-  the matrix and the network view, and presets keep them.
+  hardware clock and a wired link; the inspector adds each one's streams
+  and picks their audio, channels and format. They show as this
+  computer's in the list, the matrix and the network view, and presets
+  keep them.
 - Each is a Milan entity with an entity ID from the interface's address
   and an instance number, advertised on the wire, so Hive and other
-  controllers see and bind them too: one stream of AAF or AM824 at 48, 96
-  or 192 kHz, 8 channels unless another count is picked.
+  controllers see and bind them too: any number of streams each way, of
+  AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless another count is
+  picked, or of CRF.
+- 1.0's talkers and listeners, entities of one stream each, are folded
+  into devices: a device of one stream does what they did, and two kinds
+  of entity doing the same were confusing. Their `endpoints.toml`
+  entries and presets read as devices of their one stream, named as the
+  entity is.
 - `triib-endpointd` runs them from `endpoints.toml`, which the app writes
   and the daemon reads again when it changes, keeping the names, formats
   and bindings controllers give.

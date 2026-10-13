@@ -1,16 +1,16 @@
-//! This computer's own talkers and listeners, which triib-endpointd runs:
-//! adding, changing and removing them in its `endpoints.toml`, starting
-//! it, and what it says each is doing.
+//! This computer's own devices, which triib-endpointd runs: adding,
+//! changing and removing them and their streams in its `endpoints.toml`,
+//! starting it, and what it says each is doing.
 
 use std::sync::atomic::AtomicBool;
 use std::sync::{Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
 use atdecc::{EntityId, MacAddress};
-use triib_endpointd::config::{self, Config, Direction, EndpointConfig, Kind, StreamConfig};
+use triib_endpointd::config::{self, Config, Direction, EndpointConfig, StreamConfig};
 use triib_endpointd::status::{DaemonStatus, EndpointStatus};
 
-/// Whether this system runs host talkers and listeners.
+/// Whether this system runs devices of its own.
 pub const SUPPORTED: bool = cfg!(target_os = "linux");
 /// A preset waits for this computer's endpoints, so the app hears what
 /// the daemon says every time it looks, changed or not, to keep its
@@ -52,9 +52,9 @@ fn place_of(config: &Config, mac: MacAddress, entity_id: EntityId) -> Option<usi
         })
 }
 
-/// Adds a talker or listener named `name`, with the default device for
-/// its audio.
-pub fn add(interface: &str, kind: Kind, name: String) -> Result<(), String> {
+/// Adds a device named `name`, with a stream each way, each with its own
+/// virtual audio device; its inspector adds more and sets each up.
+pub fn add(interface: &str, name: String) -> Result<(), String> {
     let (path, mut config) = load(interface)?;
     let taken: Vec<u8> = config
         .endpoints
@@ -65,34 +65,7 @@ pub fn add(interface: &str, kind: Kind, name: String) -> Result<(), String> {
     let free = (0..240u8)
         .find(|candidate| !taken.contains(candidate))
         .ok_or("no room")?;
-    let (source, sink) = match kind {
-        Kind::Talker => (Some("default".to_owned()), None),
-        Kind::Listener => (None, Some("default".to_owned())),
-        Kind::Device => (None, None),
-    };
-    // A device starts with a stream each way, each with its own virtual
-    // audio device; its inspector adds more and sets each up.
-    let streams = match kind {
-        Kind::Device => vec![
-            StreamConfig::new(Direction::Out),
-            StreamConfig::new(Direction::In),
-        ],
-        _ => Vec::new(),
-    };
-    config.endpoints.push(EndpointConfig {
-        kind,
-        instance: Some(free),
-        name,
-        channels: 8,
-        source,
-        sink,
-        first_channel: 0,
-        format: None,
-        transit: None,
-        bound: None,
-        class: Default::default(),
-        streams,
-    });
+    config.endpoints.push(EndpointConfig::new(name, Some(free)));
     save(&path, &config)
 }
 
@@ -103,25 +76,6 @@ pub fn remove(interface: &str, mac: MacAddress, entity_id: EntityId) -> Result<(
     let place = place_of(&config, mac, entity_id).ok_or("not one of this computer's")?;
     config.endpoints = pinned(std::mem::take(&mut config.endpoints));
     config.endpoints.remove(place);
-    save(&path, &config)
-}
-
-/// Sends the endpoint's audio from or to `audio`: "silence", "tone",
-/// "discard", "default" or a device's name.
-pub fn set_audio(
-    interface: &str,
-    mac: MacAddress,
-    entity_id: EntityId,
-    audio: String,
-) -> Result<(), String> {
-    let (path, mut config) = load(interface)?;
-    let place = place_of(&config, mac, entity_id).ok_or("not one of this computer's")?;
-    let endpoint = &mut config.endpoints[place];
-    match endpoint.kind {
-        Kind::Talker => endpoint.source = Some(audio),
-        Kind::Listener => endpoint.sink = Some(audio),
-        Kind::Device => {}
-    }
     save(&path, &config)
 }
 
@@ -151,9 +105,6 @@ pub fn change_stream(
     let (path, mut config) = load(interface)?;
     let place = place_of(&config, mac, entity_id).ok_or("not one of this computer's")?;
     let endpoint = &mut config.endpoints[place];
-    if endpoint.kind != Kind::Device {
-        return Err("not a device".into());
-    }
     // A device's streams as they are, written down once one changes.
     let mut streams = endpoint.stream_configs();
     match change {
@@ -231,19 +182,6 @@ pub fn restore(interface: &str, endpoints: &[EndpointConfig]) -> Result<bool, St
     }
     ensure_running()?;
     Ok(!same || !running)
-}
-
-/// Gives the endpoint whose entity is `entity_id` `channels` channels.
-pub fn set_channels(
-    interface: &str,
-    mac: MacAddress,
-    entity_id: EntityId,
-    channels: u16,
-) -> Result<(), String> {
-    let (path, mut config) = load(interface)?;
-    let place = place_of(&config, mac, entity_id).ok_or("not one of this computer's")?;
-    config.endpoints[place].channels = channels;
-    save(&path, &config)
 }
 
 /// The interface this user's endpoints would run on, when another

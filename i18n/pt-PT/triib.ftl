@@ -743,9 +743,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Ausentes ou não lidas: { $missing }.
 presets-deleted = «{ $name }» eliminado.
-presets-host-note = Também guarda os talkers e listeners deste computador e reinicia-os ao recuperar.
+presets-host-note = Também guarda os dispositivos deste computador e reinicia-os ao recuperar.
 presets-host-endpoints = { $count } neste computador
-presets-starting-host = A iniciar os talkers e listeners deste computador para «{ $name }»; o resto segue quando voltarem.
+presets-starting-host = A iniciar os dispositivos deste computador para «{ $name }»; o resto segue quando voltarem.
 
 ## Controls
 
@@ -762,20 +762,16 @@ network-npcap-administrators = O Npcap só permite que os administradores enviem
 matrix-stream-format = { $format }.
 matrix-stream-format-state = { $format }. { $state }.
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = Adicionar talker
-host-add-listener = Adicionar listener
 host-add-device = Adicionar dispositivo
-host-show-mine = Mostrar apenas os talkers e listeners deste computador
+host-show-mine = Mostrar apenas os dispositivos deste computador
 host-show-all = Mostrar todas as entidades
-host-new-talker = Talker do anfitrião { $number }
-host-new-listener = Listener do anfitrião { $number }
 host-new-device = Dispositivo do anfitrião { $number }
 host-failed = Não foi possível adicionar a este computador: { $reason }
-host-needs-clock = Os talkers e listeners deste computador precisam de uma interface com fios com relógio de hardware PTP
+host-needs-clock = Os dispositivos deste computador precisam de uma interface com fios com relógio de hardware PTP
 host-no-ptp4l = O ptp4l não responde, pelo que os fluxos deste computador não conseguem manter a hora gPTP
-host-elsewhere = O triib-endpointd é executado em { $interface } para outro utilizador ou como root, pelo que os talkers e listeners deste computador são executados lá, não aqui
+host-elsewhere = O triib-endpointd é executado em { $interface } para outro utilizador ou como root, pelo que os dispositivos deste computador são executados lá, não aqui
 host-foreign-mrp = Outro programa faz declarações MSRP ou MVRP em { $interface } a partir do endereço deste computador e pode retirar aquilo de que os fluxos deste computador precisam
 host-alarm-foreign-mrp = Outro programa neste computador faz declarações MSRP ou MVRP em { $interface }
 host-state = Estado

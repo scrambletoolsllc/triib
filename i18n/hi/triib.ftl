@@ -689,9 +689,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } यहाँ नहीं हैं या पढ़ी नहीं गईं: { $missing }।
 presets-deleted = “{ $name }” हटाया गया।
-presets-host-note = यह इस कंप्यूटर के अपने Talker और Listener भी सहेजता है, और recall करने पर उन्हें फिर से शुरू करता है।
+presets-host-note = यह इस कंप्यूटर के अपने Device भी सहेजता है, और recall करने पर उन्हें फिर से शुरू करता है।
 presets-host-endpoints = इस कंप्यूटर पर { $count }
-presets-starting-host = “{ $name }” के लिए इस कंप्यूटर के Talker और Listener शुरू हो रहे हैं; उनके लौटने पर बाकी होगा।
+presets-starting-host = “{ $name }” के लिए इस कंप्यूटर के Device शुरू हो रहे हैं; उनके लौटने पर बाकी होगा।
 
 ## Controls
 
@@ -710,20 +710,16 @@ matrix-stream-format-state = { $format }। { $state }।
 
 common-decimal-separator = {"."}
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = Talker जोड़ें
-host-add-listener = Listener जोड़ें
 host-add-device = Device जोड़ें
-host-show-mine = केवल इस कंप्यूटर के अपने Talker और Listener दिखाएँ
+host-show-mine = केवल इस कंप्यूटर के अपने Device दिखाएँ
 host-show-all = सभी entities दिखाएँ
-host-new-talker = होस्ट Talker { $number }
-host-new-listener = होस्ट Listener { $number }
 host-new-device = होस्ट Device { $number }
 host-failed = इस कंप्यूटर में नहीं जोड़ा जा सका: { $reason }
-host-needs-clock = इस कंप्यूटर के अपने Talker और Listener को PTP hardware clock वाले तारयुक्त interface की ज़रूरत है
+host-needs-clock = इस कंप्यूटर के अपने Device को PTP hardware clock वाले तारयुक्त interface की ज़रूरत है
 host-no-ptp4l = ptp4l जवाब नहीं दे रहा, इसलिए इस कंप्यूटर की stream gPTP समय नहीं रख सकतीं
-host-elsewhere = triib-endpointd { $interface } पर किसी दूसरे उपयोगकर्ता के लिए या root के रूप में चल रहा है, इसलिए इस कंप्यूटर के Talker और Listener वहीं चलते हैं, यहाँ नहीं
+host-elsewhere = triib-endpointd { $interface } पर किसी दूसरे उपयोगकर्ता के लिए या root के रूप में चल रहा है, इसलिए इस कंप्यूटर के Device वहीं चलते हैं, यहाँ नहीं
 host-foreign-mrp = कोई दूसरा प्रोग्राम इस कंप्यूटर के पते से { $interface } पर MSRP या MVRP declarations भेज रहा है, और इससे इस कंप्यूटर की streams के लिए ज़रूरी चीज़ें वापस ली जा सकती हैं
 host-alarm-foreign-mrp = इस कंप्यूटर पर कोई दूसरा प्रोग्राम { $interface } पर MSRP या MVRP declarations भेज रहा है
 host-state = स्थिति

@@ -763,9 +763,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Entità assenti o non lette: { $missing }.
 presets-deleted = Eliminato “{ $name }”.
-presets-host-note = Conserva anche i talker e i listener di questo computer e li riavvia quando viene richiamato.
+presets-host-note = Conserva anche i dispositivi di questo computer e li riavvia quando viene richiamato.
 presets-host-endpoints = { $count } su questo computer
-presets-starting-host = Avvio dei talker e dei listener di questo computer per “{ $name }”; il resto segue quando tornano disponibili.
+presets-starting-host = Avvio dei dispositivi di questo computer per “{ $name }”; il resto segue quando tornano disponibili.
 
 ## Controls
 
@@ -782,20 +782,16 @@ network-npcap-administrators = Npcap consente solo agli amministratori di inviar
 matrix-stream-format = { $format }.
 matrix-stream-format-state = { $format }. { $state }.
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = Aggiungi talker
-host-add-listener = Aggiungi listener
 host-add-device = Aggiungi dispositivo
-host-show-mine = Mostra solo i talker e i listener di questo computer
+host-show-mine = Mostra solo i dispositivi di questo computer
 host-show-all = Mostra tutte le entità
-host-new-talker = Talker dell’host { $number }
-host-new-listener = Listener dell’host { $number }
 host-new-device = Dispositivo dell’host { $number }
 host-failed = Impossibile aggiungerlo a questo computer: { $reason }
-host-needs-clock = I talker e i listener di questo computer richiedono un’interfaccia cablata con un clock hardware PTP
+host-needs-clock = I dispositivi di questo computer richiedono un’interfaccia cablata con un clock hardware PTP
 host-no-ptp4l = ptp4l non risponde, quindi gli stream di questo computer non possono mantenere l’ora gPTP
-host-elsewhere = triib-endpointd è in esecuzione su { $interface } per un altro utente o come root, quindi i talker e i listener di questo computer funzionano lì, non qui
+host-elsewhere = triib-endpointd è in esecuzione su { $interface } per un altro utente o come root, quindi i dispositivi di questo computer funzionano lì, non qui
 host-foreign-mrp = Un altro programma invia dichiarazioni MSRP o MVRP su { $interface } dall’indirizzo di questo computer e può ritirare ciò di cui hanno bisogno i flussi di questo computer
 host-alarm-foreign-mrp = Un altro programma di questo computer invia dichiarazioni MSRP o MVRP su { $interface }
 host-state = Stato

@@ -32,13 +32,13 @@ pub struct Preset {
     pub name: String,
     #[serde(default)]
     pub entities: Vec<EntityPreset>,
-    /// This computer's own talkers and listeners, when it had any.
+    /// This computer's own devices, when it had any.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub host: Option<HostPreset>,
 }
 
-/// This computer's own talkers and listeners as `endpoints.toml` had
-/// them, and the address of the interface their entity IDs came from.
+/// This computer's own devices as `endpoints.toml` had them, and the
+/// address of the interface their entity IDs came from.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct HostPreset {
     pub mac: String,
@@ -225,7 +225,7 @@ pub fn capture(triib: &Triib, name: &str) -> Preset {
     }
 }
 
-/// `preset` with the entity IDs of its own talkers and listeners, in its
+/// `preset` with the entity IDs of this computer's own devices, in its
 /// entities and their bindings, made this computer's on the interface
 /// with `mac`, for one saved on another computer or interface.
 pub fn moved_to(preset: &Preset, mac: MacAddress) -> Preset {
@@ -260,12 +260,16 @@ pub fn moved_to(preset: &Preset, mac: MacAddress) -> Preset {
         }
     }
     if let Some(host) = &mut moved.host {
-        for endpoint in &mut host.endpoints {
-            if let Some((talker, output)) = endpoint.bound_to() {
+        for stream in host
+            .endpoints
+            .iter_mut()
+            .flat_map(|endpoint| &mut endpoint.streams)
+        {
+            if let Some((talker, output)) = stream.bound_to() {
                 let mut id = hex(talker.0);
                 rename(&mut id);
                 if let Some(talker) = number(&id) {
-                    endpoint.bound = Some(triib_endpointd::config::binding_text(
+                    stream.bound = Some(triib_endpointd::config::binding_text(
                         EntityId(talker),
                         output,
                     ));
@@ -276,7 +280,7 @@ pub fn moved_to(preset: &Preset, mac: MacAddress) -> Preset {
     moved
 }
 
-/// Whether the talkers and listeners `preset` runs on this computer are
+/// Whether the devices `preset` runs on this computer are
 /// back after recalling it: the daemon started on them after `since`
 /// (milliseconds since the Unix epoch), and each is here and read.
 pub fn host_ready(triib: &Triib, preset: &Preset, since: u64) -> bool {
@@ -729,37 +733,28 @@ mod tests {
         assert!(triib.presets.is_empty());
     }
 
+    /// A device that talks and one that listens to it.
     fn host_endpoints() -> Vec<EndpointConfig> {
-        use triib_endpointd::config::Kind;
+        use triib_endpointd::config::{Direction, StreamConfig};
         vec![
             EndpointConfig {
-                kind: Kind::Talker,
-                instance: Some(0),
-                name: "Host talker 1".to_owned(),
-                channels: 8,
-                source: Some("default".to_owned()),
-                sink: None,
-                first_channel: 0,
-                format: None,
-                transit: None,
-                bound: None,
-                class: Default::default(),
-                streams: Vec::new(),
+                streams: vec![StreamConfig {
+                    audio: Some("default".to_owned()),
+                    ..StreamConfig::new(Direction::Out)
+                }],
+                ..EndpointConfig::new("Host device 1", Some(0))
             },
             EndpointConfig {
-                kind: Kind::Listener,
-                instance: Some(3),
-                name: "Host listener 1".to_owned(),
-                channels: 8,
-                source: None,
-                sink: Some("Speakers".to_owned()),
-                first_channel: 2,
-                format: Some("0x00a0020840000800".to_owned()),
-                transit: None,
-                // Bound to the talker above, on the computer it was saved on.
-                bound: Some("0xf0a731ff00f40f14:0".to_owned()),
-                class: Default::default(),
-                streams: Vec::new(),
+                streams: vec![StreamConfig {
+                    audio: Some("Speakers".to_owned()),
+                    first_channel: 2,
+                    format: Some("0x00a0020840000800".to_owned()),
+                    // Bound to the device above, on the computer it was
+                    // saved on.
+                    bound: Some("0xf0a731ff00f40f14:0".to_owned()),
+                    ..StreamConfig::new(Direction::In)
+                }],
+                ..EndpointConfig::new("Host device 2", Some(3))
             },
         ]
     }
@@ -785,7 +780,7 @@ mod tests {
             entities: vec![
                 EntityPreset {
                     entity: hex(listener.0),
-                    name: "Host listener 1".to_owned(),
+                    name: "Host device 2".to_owned(),
                     bindings: vec![bound_to_talker()],
                     ..EntityPreset::default()
                 },
@@ -818,9 +813,9 @@ mod tests {
             moved.entities[1].bindings[0].talker,
             Some(hex(talker_here.0))
         );
-        // So is the listener's own record of its binding.
+        // So is the listening device's own record of its binding.
         assert_eq!(
-            moved.host.as_ref().unwrap().endpoints[1].bound_to(),
+            moved.host.as_ref().unwrap().endpoints[1].streams[0].bound_to(),
             Some((talker_here, 0))
         );
         // On the computer it was saved on, nothing changes.

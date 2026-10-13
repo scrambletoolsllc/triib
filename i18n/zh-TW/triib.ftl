@@ -595,9 +595,9 @@ presets-nothing-differs = 與「{ $name }」沒有差異。
 presets-recalling = 正在套用「{ $name }」：{ $count } 項變更。
 presets-missing = { $report }以下實體不在此處或尚未讀取：{ $missing }。
 presets-deleted = 已刪除「{ $name }」。
-presets-host-note = 也會保存本機自己的發送端和接收端，並在套用時重新啟動它們。
+presets-host-note = 也會保存本機自己的裝置，並在套用時重新啟動它們。
 presets-host-endpoints = 本機 { $count } 個
-presets-starting-host = 正在為「{ $name }」啟動本機的發送端和接收端；它們恢復後再套用其餘部分。
+presets-starting-host = 正在為「{ $name }」啟動本機的裝置；它們恢復後再套用其餘部分。
 
 ## Controls
 
@@ -614,20 +614,16 @@ network-npcap-administrators = Npcap 僅允許系統管理員傳送與接收原�
 matrix-stream-format = { $format }。
 matrix-stream-format-state = { $format }。{ $state }。
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = 新增發送端
-host-add-listener = 新增接收端
 host-add-device = 新增裝置
-host-show-mine = 只顯示本機自己的發送端和接收端
+host-show-mine = 只顯示本機自己的裝置
 host-show-all = 顯示所有實體
-host-new-talker = 主機發送端 { $number }
-host-new-listener = 主機接收端 { $number }
 host-new-device = 主機裝置 { $number }
 host-failed = 無法新增到本機：{ $reason }
-host-needs-clock = 本機自己的發送端和接收端需要具備 PTP 硬體時鐘的有線介面
+host-needs-clock = 本機自己的裝置需要具備 PTP 硬體時鐘的有線介面
 host-no-ptp4l = ptp4l 沒有回應，本機的串流無法保持 gPTP 時間
-host-elsewhere = triib-endpointd 正以其他使用者或 root 身分在 { $interface } 上執行，因此本機的發送端和接收端在那裡執行，而不是在這裡
+host-elsewhere = triib-endpointd 正以其他使用者或 root 身分在 { $interface } 上執行，因此本機的裝置在那裡執行，而不是在這裡
 host-foreign-mrp = 另一個程式正從本機的位址在 { $interface } 上發出 MSRP 或 MVRP 宣告，可能撤回本機串流所需的內容
 host-alarm-foreign-mrp = 本機上的另一個程式在 { $interface } 上發出 MSRP 或 MVRP 宣告
 host-state = 狀態

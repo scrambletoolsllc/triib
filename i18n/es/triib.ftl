@@ -743,9 +743,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Ausentes o sin leer: { $missing }.
 presets-deleted = Se eliminó «{ $name }».
-presets-host-note = También guarda los talkers y listeners propios de este equipo, y los vuelve a iniciar al recuperarlo.
+presets-host-note = También guarda los dispositivos propios de este equipo, y los vuelve a iniciar al recuperarlo.
 presets-host-endpoints = { $count } en este equipo
-presets-starting-host = Iniciando los talkers y listeners de este equipo para «{ $name }»; el resto seguirá cuando vuelvan.
+presets-starting-host = Iniciando los dispositivos de este equipo para «{ $name }»; el resto seguirá cuando vuelvan.
 
 ## Controls
 
@@ -762,20 +762,16 @@ network-npcap-administrators = Npcap solo permite a los administradores enviar y
 matrix-stream-format = { $format }.
 matrix-stream-format-state = { $format }. { $state }.
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = Añadir talker
-host-add-listener = Añadir listener
 host-add-device = Añadir dispositivo
-host-show-mine = Mostrar solo los talkers y listeners propios de este equipo
+host-show-mine = Mostrar solo los dispositivos propios de este equipo
 host-show-all = Mostrar todas las entidades
-host-new-talker = Talker del equipo { $number }
-host-new-listener = Listener del equipo { $number }
 host-new-device = Dispositivo del equipo { $number }
 host-failed = No se pudo añadir a este equipo: { $reason }
-host-needs-clock = Los talkers y listeners propios de este equipo necesitan una interfaz cableada con reloj de hardware PTP
+host-needs-clock = Los dispositivos propios de este equipo necesitan una interfaz cableada con reloj de hardware PTP
 host-no-ptp4l = ptp4l no responde, así que los flujos de este equipo no pueden mantener la hora gPTP
-host-elsewhere = triib-endpointd se ejecuta en { $interface } para otro usuario o como root, así que los talkers y listeners de este equipo se ejecutan allí, no aquí
+host-elsewhere = triib-endpointd se ejecuta en { $interface } para otro usuario o como root, así que los dispositivos de este equipo se ejecutan allí, no aquí
 host-foreign-mrp = Otro programa emite declaraciones MSRP o MVRP en { $interface } desde la dirección de este equipo y puede retirar lo que necesitan los flujos de este equipo
 host-alarm-foreign-mrp = Otro programa de este equipo emite declaraciones MSRP o MVRP en { $interface }
 host-state = Estado

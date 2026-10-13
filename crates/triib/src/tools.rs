@@ -300,7 +300,7 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
             Kind::Read,
             "Says what triib runs on: the network interface it controls, whether its \
              network is running, its own controller entity ID, how many entities it has \
-             found, and this computer's own talkers, listeners and devices.",
+             found, and this computer's own devices.",
             |app, _: Nothing, answer| reply(&answer, Ok(Output::Json(status(app)))),
         ),
         tool(

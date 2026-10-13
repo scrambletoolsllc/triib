@@ -1,6 +1,6 @@
 //! The endpoints to run, from `endpoints.toml` in triib's data folder:
-//! the interface, then each talker or listener with its channels and
-//! where its audio comes from or goes.
+//! the interface, then each of this computer's devices with its streams,
+//! their channels and where their audio comes from or goes.
 
 use std::path::PathBuf;
 
@@ -67,16 +67,6 @@ impl SrClass {
     fn is_a(&self) -> bool {
         *self == SrClass::A
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Kind {
-    Talker,
-    Listener,
-    /// This computer as one device with any number of stream outputs and
-    /// inputs, as hardware presents itself, each set up on its own.
-    Device,
 }
 
 /// Which way a device's stream goes.
@@ -190,46 +180,90 @@ impl StreamConfig {
 /// The audio of a stream's own virtual device.
 pub const VIRTUAL: &str = "virtual";
 
+/// This computer as one device, with any number of stream outputs and
+/// inputs, as hardware presents itself, each set up on its own.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(from = "EndpointEntry")]
 pub struct EndpointConfig {
-    pub kind: Kind,
     /// Kept apart from the others' to keep its entity ID stable, from 0 to
     /// 239; its place in the list when left out.
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub instance: Option<u8>,
     pub name: String,
-    #[serde(default = "eight")]
-    pub channels: u16,
-    /// A talker's audio: "silence", "tone", "default" for the default
-    /// input, or an input's name.
-    #[serde(default)]
-    pub source: Option<String>,
-    /// A listener's audio: "discard", "default" for the default output,
-    /// or an output's name.
-    #[serde(default)]
-    pub sink: Option<String>,
-    /// The device channel the stream's first channel goes to or comes from.
-    #[serde(default)]
-    pub first_channel: u16,
-    /// The stream format a controller last chose, in hex; the first one
-    /// offered when left out.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<String>,
-    /// The max transit time a controller set for a talker's stream, in
-    /// nanoseconds; its class's default when left out.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub transit: Option<u32>,
-    /// The talker's stream output a listener is bound to, as
-    /// `<entity ID>:<output>`, bound again when it starts.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub bound: Option<String>,
-    /// A talker's SR class, `"A"` when left out.
-    #[serde(default, skip_serializing_if = "SrClass::is_a")]
-    pub class: SrClass,
-    /// A device's streams, in order; one output and one input, each with
-    /// its own virtual audio device, when there are none.
-    #[serde(rename = "stream", default, skip_serializing_if = "Vec::is_empty")]
+    /// Its streams, in order; one output and one input, each with its own
+    /// virtual audio device, when there are none.
+    #[serde(rename = "stream", skip_serializing_if = "Vec::is_empty")]
     pub streams: Vec<StreamConfig>,
+}
+
+/// An endpoint as files have it: a device, or triib 1.0's talker or
+/// listener of one stream, whose stream's settings are the entry's own.
+#[derive(Deserialize)]
+struct EndpointEntry {
+    #[serde(default)]
+    kind: EntryKind,
+    #[serde(default)]
+    instance: Option<u8>,
+    name: String,
+    #[serde(default = "eight")]
+    channels: u16,
+    #[serde(default)]
+    source: Option<String>,
+    #[serde(default)]
+    sink: Option<String>,
+    #[serde(default)]
+    first_channel: u16,
+    #[serde(default)]
+    format: Option<String>,
+    #[serde(default)]
+    transit: Option<u32>,
+    #[serde(default)]
+    bound: Option<String>,
+    #[serde(default)]
+    class: SrClass,
+    #[serde(rename = "stream", default)]
+    streams: Vec<StreamConfig>,
+}
+
+#[derive(Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+enum EntryKind {
+    Talker,
+    Listener,
+    #[default]
+    Device,
+}
+
+impl From<EndpointEntry> for EndpointConfig {
+    /// A talker or listener is a device of its one stream, named as the
+    /// device is, with the audio, format, binding and class it had.
+    fn from(entry: EndpointEntry) -> Self {
+        let one = |direction, audio: Option<String>, otherwise: &str| StreamConfig {
+            name: entry.name.clone(),
+            channels: entry.channels,
+            audio: Some(audio.unwrap_or_else(|| otherwise.into())),
+            first_channel: entry.first_channel,
+            format: entry.format.clone(),
+            ..StreamConfig::new(direction)
+        };
+        let streams = match entry.kind {
+            EntryKind::Talker => vec![StreamConfig {
+                transit: entry.transit,
+                class: entry.class,
+                ..one(Direction::Out, entry.source.clone(), "silence")
+            }],
+            EntryKind::Listener => vec![StreamConfig {
+                bound: entry.bound.clone(),
+                ..one(Direction::In, entry.sink.clone(), "discard")
+            }],
+            EntryKind::Device => entry.streams,
+        };
+        EndpointConfig {
+            instance: entry.instance,
+            name: entry.name,
+            streams,
+        }
+    }
 }
 
 /// A binding as `bound` keeps it.
@@ -256,35 +290,25 @@ fn parse_format(text: &str) -> Option<StreamFormat> {
 }
 
 impl EndpointConfig {
-    /// Its streams: a talker's one output and a listener's one input from
-    /// their own settings, a device's as listed, no more than the most
-    /// each way.
-    pub fn stream_configs(&self) -> Vec<StreamConfig> {
-        let streams = match self.kind {
-            Kind::Talker => vec![StreamConfig {
-                name: self.name.clone(),
-                channels: self.channels,
-                audio: Some(self.source.clone().unwrap_or_else(|| "silence".into())),
-                first_channel: self.first_channel,
-                format: self.format.clone(),
-                transit: self.transit,
-                class: self.class,
-                ..StreamConfig::new(Direction::Out)
-            }],
-            Kind::Listener => vec![StreamConfig {
-                name: self.name.clone(),
-                channels: self.channels,
-                audio: Some(self.sink.clone().unwrap_or_else(|| "discard".into())),
-                first_channel: self.first_channel,
-                format: self.format.clone(),
-                bound: self.bound.clone(),
-                ..StreamConfig::new(Direction::In)
-            }],
-            Kind::Device if self.streams.is_empty() => vec![
+    /// A device named `name` with a stream each way, each with its own
+    /// virtual audio device.
+    pub fn new(name: impl Into<String>, instance: Option<u8>) -> Self {
+        EndpointConfig {
+            instance,
+            name: name.into(),
+            streams: vec![
                 StreamConfig::new(Direction::Out),
                 StreamConfig::new(Direction::In),
             ],
-            Kind::Device => self.streams.clone(),
+        }
+    }
+
+    /// Its streams as listed, a stream each way when none are, no more
+    /// than the most each way.
+    pub fn stream_configs(&self) -> Vec<StreamConfig> {
+        let streams = match self.streams.is_empty() {
+            true => EndpointConfig::new("", None).streams,
+            false => self.streams.clone(),
         };
         let (mut outputs, mut inputs) = (0, 0);
         streams
@@ -300,30 +324,10 @@ impl EndpointConfig {
             .collect()
     }
 
-    /// The talker and stream output a talker's or listener's input is
-    /// bound to.
-    pub fn bound_to(&self) -> Option<(EntityId, u16)> {
-        parse_binding(self.bound.as_deref()?)
-    }
-
-    /// The stream format a controller last chose for a talker's or
-    /// listener's stream.
-    pub fn stream_format(&self) -> Option<StreamFormat> {
-        parse_format(self.format.as_deref()?)
-    }
-
     /// Its instance, as its entity ID takes it, when it is `place` in the
     /// list.
     pub fn instance_at(&self, place: usize) -> u8 {
         self.instance.unwrap_or(place as u8).min(239)
-    }
-
-    pub fn source(&self) -> Source {
-        source_of(self.source.as_deref(), self.first_channel)
-    }
-
-    pub fn sink(&self) -> Sink {
-        sink_of(self.sink.as_deref(), self.first_channel)
     }
 }
 
@@ -375,19 +379,53 @@ mod tests {
         config.endpoints.into_iter().next().expect("an endpoint")
     }
 
-    /// Today's talkers and listeners read as one stream each, from their
-    /// own settings; a device without streams has one each way, virtual.
+    /// triib 1.0's talkers and listeners read as devices of their one
+    /// stream, named as they are, with their audio, format, binding,
+    /// transit time and class; written again as devices. A device without
+    /// streams has one each way, virtual.
     #[test]
-    fn talkers_and_listeners_are_one_stream() {
-        let talker = entry("[[endpoint]]\nkind = \"talker\"\nname = \"T\"\nsource = \"tone\"\n");
-        let streams = talker.stream_configs();
-        assert_eq!(streams.len(), 1);
-        assert_eq!(
-            (streams[0].direction, streams[0].name.as_str()),
-            (Direction::Out, "T")
+    fn talkers_and_listeners_read_as_devices() {
+        let talker = entry(
+            "[[endpoint]]\nkind = \"talker\"\ninstance = 3\nname = \"T\"\nsource = \"tone\"\n\
+             channels = 2\nformat = \"0x0205022002006000\"\ntransit = 5000000\nclass = \"B\"\n",
         );
-        assert!(!streams[0].is_virtual());
-        let device = entry("[[endpoint]]\nkind = \"device\"\nname = \"D\"\n");
+        assert_eq!((talker.instance, talker.name.as_str()), (Some(3), "T"));
+        let [stream] = talker.streams.as_slice() else {
+            panic!("{talker:?}");
+        };
+        assert_eq!(
+            (stream.direction, stream.name.as_str(), stream.channels),
+            (Direction::Out, "T", 2)
+        );
+        assert_eq!(stream.audio.as_deref(), Some("tone"));
+        assert_eq!(
+            stream.stream_format(),
+            Some(StreamFormat(0x0205_0220_0200_6000))
+        );
+        assert_eq!(
+            (stream.transit, stream.class),
+            (Some(5_000_000), SrClass::B)
+        );
+        let listener = entry(
+            "[[endpoint]]\nkind = \"listener\"\nname = \"L\"\nbound = \"0xf0a731ff00f40f14:0\"\n",
+        );
+        let [stream] = listener.streams.as_slice() else {
+            panic!("{listener:?}");
+        };
+        assert_eq!(stream.direction, Direction::In);
+        assert_eq!(stream.sink(), Sink::Discard);
+        assert_eq!(
+            stream.bound_to(),
+            Some((EntityId(0xf0a7_31ff_00f4_0f14), 0))
+        );
+        let text = toml::to_string(&Config {
+            endpoints: vec![talker.clone()],
+            ..Config::default()
+        })
+        .expect("writes");
+        assert!(!text.contains("kind"), "{text}");
+        assert_eq!(entry(&text), talker);
+        let device = entry("[[endpoint]]\nname = \"D\"\n");
         let streams = device.stream_configs();
         assert_eq!(
             streams

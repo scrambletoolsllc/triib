@@ -1,6 +1,6 @@
-//! This computer's own talkers and listeners in the views: the Entities
-//! view's bar that adds them, and their section in the inspector, with
-//! their audio, channels and a button that removes them.
+//! This computer's own devices in the views: the Entities view's bar
+//! that adds them, their section in the inspector with a button that
+//! removes them, and their streams' audio and channels.
 
 use std::fmt;
 
@@ -13,7 +13,7 @@ use scramble_ui::font::{Type, styled};
 use scramble_ui::icon::Icon;
 use scramble_ui::popover::popover;
 use scramble_ui::{component, dir, dropdown, style};
-use triib_endpointd::config::{Direction, Kind as EndpointKind, VIRTUAL};
+use triib_endpointd::config::{Direction, VIRTUAL};
 
 use crate::app::{Message, Triib};
 use crate::fl;
@@ -21,7 +21,7 @@ use crate::host::StreamChange;
 use crate::view::{property, stacked};
 
 /// The bar above the Entities view's table: why this computer cannot add
-/// talkers and listeners, or the buttons that add them.
+/// devices of its own, or the button that adds one.
 pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
     if !crate::host::SUPPORTED || triib.interface().is_none() {
         return None;
@@ -47,11 +47,9 @@ pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
     } else {
         None
     };
-    let add = |kind, label: String| {
-        button::with_icon(Kind::Tonal, icon(kind), label)
-            .size(Size::ExtraSmall)
-            .on_press_maybe(able.then_some(Message::HostAdded(kind)))
-    };
+    let add = button::with_icon(Kind::Tonal, Icon::Computer, fl!("host-add-device"))
+        .size(Size::ExtraSmall)
+        .on_press_maybe(able.then_some(Message::HostAdded));
     let text: Element<'_, Message> = match note {
         Some(note) => styled(note, Type::BodySmall)
             .style(style::on_surface_variant)
@@ -74,9 +72,7 @@ pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
                     triib.settings.host_entities_only,
                     Message::HostEntitiesOnlyToggled,
                 ),
-                add(EndpointKind::Talker, fl!("host-add-talker")),
-                add(EndpointKind::Listener, fl!("host-add-listener")),
-                add(EndpointKind::Device, fl!("host-add-device")),
+                add,
             ]
             .spacing(8)
             .align_y(Center),
@@ -86,21 +82,11 @@ pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
     )
 }
 
-/// The icon of this computer's talkers, listeners and devices: output's,
-/// input's, and the computer's.
-pub fn icon(kind: EndpointKind) -> Icon {
-    match kind {
-        EndpointKind::Talker => Icon::Output,
-        EndpointKind::Listener => Icon::Input,
-        EndpointKind::Device => Icon::Computer,
-    }
-}
-
 /// The channel counts the inspector offers; six samples of each fit in a
 /// frame up to 60.
 const CHANNEL_COUNTS: [u16; 11] = [1, 2, 4, 6, 8, 12, 16, 24, 32, 48, 56];
 
-/// One choice for an endpoint's audio: what endpoints.toml says, and the
+/// One choice for a stream's audio: what endpoints.toml says, and the
 /// words for it.
 #[derive(Debug, Clone)]
 struct Audio {
@@ -120,7 +106,7 @@ impl fmt::Display for Audio {
     }
 }
 
-/// The inspector's section for one of this computer's endpoints: its
+/// The inspector's section for one of this computer's devices: its
 /// state, and a button that removes it. Its streams are on the Streams
 /// tab.
 pub fn sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>> {
@@ -137,17 +123,10 @@ pub fn sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>>
     ]
 }
 
-/// Whether the entity is one of this computer's devices, whose streams
-/// are added and removed.
-pub fn is_device(triib: &Triib, entity_id: EntityId) -> bool {
-    crate::host::status_of(triib.endpoints.as_ref(), entity_id)
-        .is_some_and(|endpoint| endpoint.kind == EndpointKind::Device)
-}
-
 /// A device's button that adds a stream, with a menu of the kinds it
 /// adds: audio or a media clock, either way.
 pub fn add_buttons(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>> {
-    if !is_device(triib, entity_id) {
+    if !triib.is_host(entity_id) {
         return Vec::new();
     }
     let open = triib.add_stream_open;
@@ -178,7 +157,7 @@ pub fn add_buttons(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Messag
     ]
 }
 
-/// What this computer sets for one of its endpoint's streams, the stream
+/// What this computer sets for one of its device's streams, the stream
 /// input or output `index`: where its audio comes from or goes, and its
 /// channels. Nothing for others' entities.
 pub fn stream_rows(
@@ -195,22 +174,6 @@ pub fn stream_rows(
     } else {
         fl!("host-audio-from")
     };
-    if endpoint.kind != EndpointKind::Device {
-        return vec![
-            stacked(
-                audio_label,
-                audio_picker(triib, input, false, &endpoint.audio, move |spec| {
-                    Message::HostAudio(entity_id, spec)
-                }),
-            ),
-            stacked(
-                fl!("host-channels"),
-                channel_picker(endpoint.channels, move |count| {
-                    Message::HostChannels(entity_id, count)
-                }),
-            ),
-        ];
-    }
     // The device's streams one way, in the order the entity numbers them.
     let direction = if input { Direction::In } else { Direction::Out };
     let Some((at, stream)) = endpoint
@@ -229,7 +192,7 @@ pub fn stream_rows(
     vec![
         stacked(
             audio_label,
-            audio_picker(triib, input, true, &stream.audio, move |spec| {
+            audio_picker(triib, input, &stream.audio, move |spec| {
                 Message::HostStream(entity_id, StreamChange::Audio(at, spec))
             }),
         ),
@@ -250,8 +213,7 @@ pub fn remove_stream(
     input: bool,
     index: u16,
 ) -> Option<Element<'_, Message>> {
-    let endpoint = crate::host::status_of(triib.endpoints.as_ref(), entity_id)
-        .filter(|endpoint| endpoint.kind == EndpointKind::Device)?;
+    let endpoint = crate::host::status_of(triib.endpoints.as_ref(), entity_id)?;
     let direction = if input { Direction::In } else { Direction::Out };
     let at = endpoint
         .streams
@@ -283,11 +245,11 @@ fn state_label(state: &str) -> String {
 }
 
 /// A picker of where inputs play, or outputs' audio comes from, with
-/// `current` picked, offering a virtual audio device where `virtual_device`.
+/// `current` picked: the stream's own virtual audio device, the
+/// computer's devices, or a tone, silence or nowhere.
 fn audio_picker<'a>(
     triib: &'a Triib,
     inputs: bool,
-    virtual_device: bool,
     current: &str,
     pick: impl Fn(String) -> Message + 'a,
 ) -> Element<'a, Message> {
@@ -295,10 +257,7 @@ fn audio_picker<'a>(
         spec: spec.to_owned(),
         label,
     };
-    let mut choices = Vec::new();
-    if virtual_device {
-        choices.push(audio(VIRTUAL, fl!("host-virtual-device")));
-    }
+    let mut choices = vec![audio(VIRTUAL, fl!("host-virtual-device"))];
     let devices = if inputs {
         choices.push(audio("discard", fl!("host-nowhere")));
         &triib.audio_devices.1

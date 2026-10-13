@@ -434,7 +434,7 @@ fn content(triib: &Triib) -> Element<'_, Message> {
                     state => return network_state_view(triib, state),
                 }
             };
-            // This computer's own talkers and listeners are added here.
+            // This computer's own devices are added here.
             match crate::host_view::bar(triib) {
                 Some(bar) => scramble_ui::column![bar, body].into(),
                 None => body,
@@ -1062,7 +1062,7 @@ fn stream_sections<'a>(
 ) -> Vec<Element<'a, Message>> {
     let streams: Vec<StreamDescriptor<'a>> =
         model.streams(false).chain(model.streams(true)).collect();
-    let device = crate::host_view::is_device(triib, entity_id);
+    let device = triib.is_host(entity_id);
     let picked = picked_stream(triib, entity_id, &streams);
     let mut items = Vec::new();
     if streams.len() > 1 || device {
@@ -2513,7 +2513,7 @@ pub(crate) mod tests {
                 };
             }
             if suffix.contains("device") {
-                use triib_endpointd::config::{Direction, Kind};
+                use triib_endpointd::config::Direction;
                 use triib_endpointd::status::{DaemonStatus, EndpointStatus, StreamStatus};
                 let stream = |direction, name: &str, state: &str| StreamStatus {
                     direction,
@@ -2532,10 +2532,7 @@ pub(crate) mod tests {
                     endpoints: vec![EndpointStatus {
                         entity_id: triib.selected.map(|id| id.to_string()).unwrap_or_default(),
                         name: "Host device 1".into(),
-                        kind: Kind::Device,
                         state: "streaming".into(),
-                        audio: String::new(),
-                        channels: 8,
                         streams: vec![
                             stream(Direction::Out, "Out 1", "streaming"),
                             stream(Direction::In, "In 1", "unbound"),
@@ -2726,31 +2723,28 @@ pub(crate) mod tests {
     #[test]
     #[cfg(target_os = "linux")]
     fn this_computers_endpoints_are_added_and_shown_as_its_own() {
-        use triib_endpointd::config::Kind as EndpointKind;
-        use triib_endpointd::status::{DaemonStatus, EndpointStatus};
+        use triib_endpointd::config::Direction;
+        use triib_endpointd::status::{DaemonStatus, EndpointStatus, StreamStatus};
 
         let mut triib = logging(View::Entities, true);
         triib.settings.log = false;
         let size = Size::new(1280.0, 800.0);
-        // On an interface with a hardware clock the bar offers both kinds.
-        {
-            let mut simulator = simulate(&triib, size);
-            assert!(simulator.find("Add talker").is_ok());
-            assert!(simulator.find("Add listener").is_ok());
-        }
+        // On an interface with a hardware clock the bar adds a device.
         let messages: Vec<Message> = {
             let mut simulator = simulate(&triib, size);
-            simulator.click("Add listener").expect("the button");
+            assert!(simulator.find("Add talker").is_err());
+            simulator.click("Add device").expect("the button");
             simulator.into_messages().collect()
         };
         assert!(
             messages
                 .iter()
-                .any(|message| matches!(message, Message::HostAdded(EndpointKind::Listener))),
+                .any(|message| matches!(message, Message::HostAdded)),
             "{messages:?}"
         );
-        // The wired ESP, as if this computer ran it: the inspector shows
-        // its state and audio, and a button that removes it.
+        // The wired ESP, as if this computer ran it as a device with a
+        // stream each way: the inspector shows its state, and a button
+        // that removes it.
         triib.endpoints = Some(DaemonStatus {
             pid: 1,
             started: 0,
@@ -2759,12 +2753,26 @@ pub(crate) mod tests {
             foreign_mrp: false,
             endpoints: vec![EndpointStatus {
                 entity_id: WIRED_ESP.to_string(),
-                name: "Host listener 1".into(),
-                kind: EndpointKind::Listener,
+                name: "Host device 1".into(),
                 state: "listening".into(),
-                audio: "discard".into(),
-                channels: 8,
-                streams: Vec::new(),
+                streams: vec![
+                    StreamStatus {
+                        direction: Direction::Out,
+                        clock: false,
+                        name: "Out 1".into(),
+                        channels: 8,
+                        audio: "virtual".into(),
+                        state: "streaming".into(),
+                    },
+                    StreamStatus {
+                        direction: Direction::In,
+                        clock: false,
+                        name: "In 1".into(),
+                        channels: 2,
+                        audio: "discard".into(),
+                        state: "unbound".into(),
+                    },
+                ],
             }],
         });
         triib.inspector_tab = InspectorTab::Entity;
@@ -2791,33 +2799,9 @@ pub(crate) mod tests {
             assert!(simulator.find("Channels").is_ok());
             assert!(simulator.find("Format").is_ok());
         }
-        // As a device, the list's picked stream shows its own audio and
-        // channels and a button that removes it, with buttons under the
-        // list that add streams.
-        if let Some(status) = &mut triib.endpoints {
-            use triib_endpointd::config::Direction;
-            use triib_endpointd::status::StreamStatus;
-            let endpoint = &mut status.endpoints[0];
-            endpoint.kind = EndpointKind::Device;
-            endpoint.streams = vec![
-                StreamStatus {
-                    direction: Direction::Out,
-                    clock: false,
-                    name: "Out 1".into(),
-                    channels: 8,
-                    audio: "virtual".into(),
-                    state: "streaming".into(),
-                },
-                StreamStatus {
-                    direction: Direction::In,
-                    clock: false,
-                    name: "In 1".into(),
-                    channels: 2,
-                    audio: "discard".into(),
-                    state: "unbound".into(),
-                },
-            ];
-        }
+        // With nothing picked, the list's first stream shows its own audio
+        // and channels and a button that removes it, with the button under
+        // the list that adds streams.
         triib.stream_selected = None;
         {
             let mut simulator = simulate(&triib, Size::new(1280.0, 1400.0));
@@ -2905,7 +2889,9 @@ pub(crate) mod tests {
         let mut simulator = simulate(&triib, size);
         assert!(
             simulator
-                .find("This computer's own talkers and listeners need a wired interface with a PTP hardware clock")
+                .find(
+                    "This computer's own devices need a wired interface with a PTP hardware clock"
+                )
                 .is_ok()
         );
     }

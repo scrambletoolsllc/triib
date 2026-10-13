@@ -595,9 +595,9 @@ presets-nothing-differs = Không có gì khác với “{ $name }”.
 presets-recalling = Đang gọi lại “{ $name }”: { $count } thay đổi.
 presets-missing = { $report } Không có ở đây hoặc chưa đọc: { $missing }.
 presets-deleted = Đã xóa “{ $name }”.
-presets-host-note = Preset cũng lưu Talker và Listener của chính máy tính này, và khởi động lại chúng khi gọi lại.
+presets-host-note = Preset cũng lưu các thiết bị của chính máy tính này, và khởi động lại chúng khi gọi lại.
 presets-host-endpoints = { $count } trên máy tính này
-presets-starting-host = Đang khởi động Talker và Listener của máy tính này cho “{ $name }”; phần còn lại sẽ tiếp tục khi chúng hoạt động trở lại.
+presets-starting-host = Đang khởi động các thiết bị của máy tính này cho “{ $name }”; phần còn lại sẽ tiếp tục khi chúng hoạt động trở lại.
 
 ## Controls
 
@@ -614,20 +614,16 @@ network-npcap-administrators = Npcap chỉ cho phép quản trị viên gửi v�
 matrix-stream-format = { $format }.
 matrix-stream-format-state = { $format }. { $state }.
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = Thêm Talker
-host-add-listener = Thêm Listener
 host-add-device = Thêm thiết bị
-host-show-mine = Chỉ hiện Talker và Listener của chính máy tính này
+host-show-mine = Chỉ hiện các thiết bị của chính máy tính này
 host-show-all = Hiện mọi thực thể
-host-new-talker = Talker máy chủ { $number }
-host-new-listener = Listener máy chủ { $number }
 host-new-device = Thiết bị máy chủ { $number }
 host-failed = Không thể thêm vào máy tính này: { $reason }
-host-needs-clock = Talker và Listener của chính máy tính này cần giao diện có dây với đồng hồ phần cứng PTP
+host-needs-clock = Các thiết bị của chính máy tính này cần giao diện có dây với đồng hồ phần cứng PTP
 host-no-ptp4l = ptp4l không phản hồi nên các luồng của máy tính này không thể giữ thời gian gPTP
-host-elsewhere = triib-endpointd đang chạy trên { $interface } cho một người dùng khác hoặc dưới quyền root, nên Talker và Listener của máy tính này chạy ở đó, không phải ở đây
+host-elsewhere = triib-endpointd đang chạy trên { $interface } cho một người dùng khác hoặc dưới quyền root, nên các thiết bị của máy tính này chạy ở đó, không phải ở đây
 host-foreign-mrp = Một chương trình khác khai báo MSRP hoặc MVRP trên { $interface } từ địa chỉ của máy tính này, điều này có thể rút lại những gì các luồng của máy tính này cần
 host-alarm-foreign-mrp = Một chương trình khác trên máy tính này khai báo MSRP hoặc MVRP trên { $interface }
 host-state = Trạng thái

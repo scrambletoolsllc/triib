@@ -604,19 +604,17 @@ mod tests {
             entity.mac = mac;
             triib.entities.insert(EntityId(id), entity);
         };
-        advertise(0x9c6b_00ff_0030_9a2b, own, 0x8c1f_6436_c000_0002);
-        advertise(0x9c6b_00ff_0130_9a2b, own, 0x8c1f_6436_c000_0004);
-        // Another computer's talker of the same model.
+        advertise(0x9c6b_00ff_0030_9a2b, own, 0x8c1f_6436_c0f3_59f0);
+        // The app's own controller, from the same address.
+        advertise(0x9c6b_00ff_fe30_9a2b, own, 0x8c1f_6436_c000_0001);
+        // Another computer's device of the same model.
         let other = avb_net::MacAddress([0xf0, 0xa7, 0x31, 0xf4, 0x0f, 0x14]);
-        advertise(0xf0a7_31ff_00f4_0f14, other, 0x8c1f_6436_c000_0002);
+        advertise(0xf0a7_31ff_00f4_0f14, other, 0x8c1f_6436_c0f3_59f0);
         assert_eq!(
             triib.host_icon(EntityId(0x9c6b_00ff_0030_9a2b)),
-            Some(Icon::Output)
+            Some(Icon::Computer)
         );
-        assert_eq!(
-            triib.host_icon(EntityId(0x9c6b_00ff_0130_9a2b)),
-            Some(Icon::Input)
-        );
+        assert_eq!(triib.host_icon(EntityId(0x9c6b_00ff_fe30_9a2b)), None);
         assert_eq!(triib.host_icon(EntityId(0xf0a7_31ff_00f4_0f14)), None);
     }
 

@@ -1,23 +1,23 @@
-//! triib-endpointd: triib's talker and listener entities on an AVB
-//! network, each its own ATDECC entity that any controller can connect,
-//! with audio from and to the computer's devices.
+//! triib-endpointd: this computer's devices on an AVB network, each its
+//! own ATDECC entity with streams that any controller can connect, with
+//! audio from and to the computer's audio.
 //!
 //! It takes gPTP from ptp4l, which must run on the interface, and needs
-//! `CAP_NET_RAW`. The endpoints are listed in `endpoints.toml` in triib's
-//! data folder, written with a talker and a listener the first time.
+//! `CAP_NET_RAW`. The devices are listed in `endpoints.toml` in triib's
+//! data folder, written with one device the first time.
 
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use triib_endpointd::config::{self, Config, EndpointConfig, Kind};
+use triib_endpointd::config::{self, Config, EndpointConfig};
 use triib_endpointd::runtime;
 
 const USAGE: &str = "usage: triib-endpointd [--config FILE] [--interface NAME]";
 
-/// A first configuration: a talker and a listener on the first wired
-/// interface with a PTP hardware clock.
+/// A first configuration: a device with a stream each way on the first
+/// wired interface with a PTP hardware clock.
 fn first_config() -> Config {
     let interface = avb_net::interfaces()
         .into_iter()
@@ -26,27 +26,10 @@ fn first_config() -> Config {
         })
         .map(|interface| interface.name)
         .unwrap_or_default();
-    let endpoint = |kind, name: &str| EndpointConfig {
-        kind,
-        instance: None,
-        name: name.into(),
-        channels: 8,
-        source: None,
-        sink: None,
-        first_channel: 0,
-        format: None,
-        transit: None,
-        bound: None,
-        class: Default::default(),
-        streams: Vec::new(),
-    };
     Config {
         interface,
         ptp4l_socket: "/var/run/ptp4lro".into(),
-        endpoints: vec![
-            endpoint(Kind::Talker, "triib talker"),
-            endpoint(Kind::Listener, "triib listener"),
-        ],
+        endpoints: vec![EndpointConfig::new("triib device", None)],
         ..Config::default()
     }
 }

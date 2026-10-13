@@ -595,9 +595,9 @@ presets-nothing-differs = 「{ $name }」と異なる点はありません。
 presets-recalling = 「{ $name }」をリコール中：変更 { $count } 件。
 presets-missing = { $report } ネットワーク上にないか未読み込み：{ $missing }。
 presets-deleted = 「{ $name }」を削除しました。
-presets-host-note = このコンピューター自身のトーカーとリスナーも保存し、リコール時に再起動します。
+presets-host-note = このコンピューター自身のデバイスも保存し、リコール時に再起動します。
 presets-host-endpoints = このコンピューター上に { $count } 件
-presets-starting-host = 「{ $name }」のために、このコンピューターのトーカーとリスナーを起動しています。戻り次第、残りを適用します。
+presets-starting-host = 「{ $name }」のために、このコンピューターのデバイスを起動しています。戻り次第、残りを適用します。
 
 ## Controls
 
@@ -614,20 +614,16 @@ network-npcap-administrators = Npcap は管理者にのみ raw イーサネッ�
 matrix-stream-format = { $format }。
 matrix-stream-format-state = { $format }。{ $state }。
 
-## This computer's own talkers and listeners
+## This computer's own devices
 
-host-add-talker = トーカーを追加
-host-add-listener = リスナーを追加
 host-add-device = デバイスを追加
-host-show-mine = このコンピューター自身のトーカーとリスナーだけを表示
+host-show-mine = このコンピューター自身のデバイスだけを表示
 host-show-all = すべてのエンティティを表示
-host-new-talker = ホストのトーカー { $number }
-host-new-listener = ホストのリスナー { $number }
 host-new-device = ホストのデバイス { $number }
 host-failed = このコンピューターに追加できませんでした：{ $reason }
-host-needs-clock = このコンピューター自身のトーカーとリスナーには、PTP ハードウェアクロックを備えた有線インターフェイスが必要です
+host-needs-clock = このコンピューター自身のデバイスには、PTP ハードウェアクロックを備えた有線インターフェイスが必要です
 host-no-ptp4l = ptp4l が応答しないため、このコンピューターのストリームは gPTP 時刻を保てません
-host-elsewhere = triib-endpointd が { $interface } 上で別のユーザーまたは root として動作しているため、このコンピューターのトーカーとリスナーはここではなくそちらで動作します
+host-elsewhere = triib-endpointd が { $interface } 上で別のユーザーまたは root として動作しているため、このコンピューターのデバイスはここではなくそちらで動作します
 host-foreign-mrp = 別のプログラムがこのコンピューターのアドレスから { $interface } 上で MSRP または MVRP を宣言しているため、このコンピューターのストリームに必要なものが取り下げられる可能性があります
 host-alarm-foreign-mrp = このコンピューター上の別のプログラムが { $interface } で MSRP または MVRP を宣言中
 host-state = 状態
