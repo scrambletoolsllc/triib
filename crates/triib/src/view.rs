@@ -1651,6 +1651,12 @@ pub(crate) mod tests {
     /// kb/s sent of a gigabit, and the Mac mini declaring a stream over
     /// CVU SRP.
     pub(crate) fn lite_frames(offset: i32, egress: u32) -> Vec<Vec<u8>> {
+        lite_frames_in(true, offset, egress)
+    }
+
+    /// As [`lite_frames`], with the wired ESP running AVB Lite or, when
+    /// not `active`, only capable of it.
+    pub(crate) fn lite_frames_in(active: bool, offset: i32, egress: u32) -> Vec<Vec<u8>> {
         use atdecc::aecp::{AecpHeader, AecpMessageType, VendorUniquePdu};
         use atdecc::id::ClockIdentity;
         use atdecc::lite::{
@@ -1661,7 +1667,11 @@ pub(crate) mod tests {
         let status = LiteStatus {
             interface: 0,
             flags: LiteFlags::CAPABLE
-                | LiteFlags::ACTIVE
+                | if active {
+                    LiteFlags::ACTIVE
+                } else {
+                    LiteFlags::empty()
+                }
                 | LiteFlags::OFFSET_VALID
                 | LiteFlags::EGRESS_VALID,
             fallback_reason: FallbackReason::MULTIPLE_RESPONDERS,

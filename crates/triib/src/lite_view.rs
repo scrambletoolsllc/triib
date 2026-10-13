@@ -192,7 +192,7 @@ pub fn entity_section<'a>(model: &EntityModel) -> Vec<Element<'a, Message>> {
                     offset = duration(offset),
                     grandmaster = status.grandmaster.to_string()
                 ),
-                offset.abs() > OFFSET_ALARM,
+                active && offset.abs() > OFFSET_ALARM,
             ));
         }
         if active {
@@ -327,8 +327,9 @@ pub struct Alarm {
     pub text: String,
 }
 
-/// Every entity's alarms: a PTP offset past 50 µs, egress past 75% of a
-/// link, and AVB Wireless's (see [`crate::wireless_view::alarms`]).
+/// Every entity's alarms: a PTP offset past 50 µs on an interface running
+/// AVB Lite, egress past 75% of a link, and AVB Wireless's (see
+/// [`crate::wireless_view::alarms`]).
 pub fn alarms(triib: &Triib) -> Vec<Alarm> {
     let mut alarms = Vec::new();
     for (&entity, model) in &triib.models {
@@ -338,6 +339,7 @@ pub fn alarms(triib: &Triib) -> Vec<Alarm> {
         for (interface, _) in model.descriptors(DescriptorType::AVB_INTERFACE) {
             if let Some(offset) = model
                 .lite_status(interface)
+                .filter(|status| status.flags.contains(LiteFlags::ACTIVE))
                 .and_then(LiteStatus::offset)
                 .filter(|offset| offset.abs() > OFFSET_ALARM)
             {
@@ -412,8 +414,12 @@ mod tests {
     /// The bench, after the wired ESP reports AVB Lite with `offset` and
     /// `egress` and the Mac mini declares a stream over CVU SRP.
     fn lite_bench(offset: i32, egress: u32) -> Triib {
-        let (entities, models) =
-            crate::view::tests::bench_then(&crate::view::tests::lite_frames(offset, egress));
+        bench_of(&crate::view::tests::lite_frames(offset, egress))
+    }
+
+    /// The bench after `frames`.
+    fn bench_of(frames: &[Vec<u8>]) -> Triib {
+        let (entities, models) = crate::view::tests::bench_then(frames);
         let interface = Interface {
             name: "enp6s0".to_owned(),
             mac: MacAddress([0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b]),
@@ -471,6 +477,12 @@ mod tests {
                 },
             ]
         );
+        // An offset past the limit on an interface that does not run AVB
+        // Lite is not the profile's to judge.
+        let capable = bench_of(&crate::view::tests::lite_frames_in(
+            false, -2_643_000, 6_336,
+        ));
+        assert!(super::alarms(&capable).is_empty());
         // An entity gone from the network raises none.
         let mut gone = lite_bench(-72_400, 800_000);
         gone.entities.remove(&WIRED_ESP);
