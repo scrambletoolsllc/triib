@@ -449,6 +449,19 @@ impl Entity {
         }
     }
 
+    /// Takes over from `earlier`, this entity before its model changed,
+    /// in place of starting: its advertisements count on from that one's,
+    /// so controllers read the new model rather than see it leave or
+    /// restart; it advertises at once, and keeps the controllers
+    /// registered with it, its lock and the entities it heard.
+    pub fn take_over(&mut self, now: Instant, earlier: &Entity) {
+        self.available_index = earlier.available_index;
+        self.registered.clone_from(&earlier.registered);
+        self.lock = earlier.lock;
+        self.known.clone_from(&earlier.known);
+        self.advertise_at = Some(now);
+    }
+
     /// Says the entity is leaving and stops advertising.
     pub fn depart(&mut self) {
         self.advertise_at = None;

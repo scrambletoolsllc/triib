@@ -2971,6 +2971,51 @@ pub(crate) mod tests {
         }
     }
 
+    /// An entity read again, as one of this computer's devices is when a
+    /// stream is added, keeps the model read before until the new one is
+    /// read, so the list and the inspector do not empty meanwhile; one
+    /// seen for the first time shows that it is being read.
+    #[test]
+    fn an_entity_read_again_keeps_its_model_until_read() {
+        use crate::network::{Report, ReportKind};
+        use atdecc::model::EnumerationState;
+
+        let (entities, models) = bench();
+        let interface = Interface {
+            name: "enp6s0".to_owned(),
+            mac: MacAddress(HOST_MAC),
+            up: true,
+            speed: Some(1000),
+            physical: true,
+            wireless: false,
+            hardware_clock: Some(0),
+        };
+        let mut triib = Triib::sample(Settings::default(), interface, entities, models);
+        let report = |kind| {
+            Message::External(crate::External::Network(Report {
+                generation: 0,
+                kind,
+            }))
+        };
+        let before = triib.models[&WIRED_ESP].clone();
+        assert_eq!(before.state, EnumerationState::Complete);
+        let mut reading = atdecc::model::EntityModel::default();
+        reading.state = EnumerationState::Reading;
+        let _ = triib.update(report(ReportKind::Model(
+            WIRED_ESP,
+            Box::new(reading.clone()),
+        )));
+        assert_eq!(triib.models[&WIRED_ESP], before, "the model read before");
+        let read = triib.models[&MAC_MINI].clone();
+        let _ = triib.update(report(ReportKind::Model(WIRED_ESP, Box::new(read.clone()))));
+        assert_eq!(triib.models[&WIRED_ESP], read, "the new one, once read");
+        let _ = triib.update(report(ReportKind::Model(EntityId(0x42), Box::new(reading))));
+        assert_eq!(
+            triib.models[&EntityId(0x42)].state,
+            EnumerationState::Reading
+        );
+    }
+
     #[test]
     fn the_picked_stream_shows_its_id_destination_and_vlan() {
         let (entities, mut models) = bench();

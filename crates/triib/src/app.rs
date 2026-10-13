@@ -1023,7 +1023,16 @@ impl Triib {
                 self.models.remove(&entity_id);
             }
             ReportKind::Model(entity_id, model) => {
-                self.models.insert(entity_id, *model);
+                // An entity read again, as one whose model changed, keeps
+                // showing what was read before until the new read is done,
+                // so the list and the inspector stay as they are.
+                let rereading = model.state == atdecc::model::EnumerationState::Reading
+                    && self.models.get(&entity_id).is_some_and(|known| {
+                        known.state == atdecc::model::EnumerationState::Complete
+                    });
+                if !rereading {
+                    self.models.insert(entity_id, *model);
+                }
             }
             ReportKind::Neighbor(neighbor) => self.neighbor = neighbor,
             ReportKind::CannotListen(reason) => self.cannot_listen = Some(reason),

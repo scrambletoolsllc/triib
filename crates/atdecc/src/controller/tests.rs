@@ -851,6 +851,25 @@ fn changes_and_restarts_are_reported() {
     );
 }
 
+/// An entity advertising another model while it stays, as one whose
+/// streams changed, is read again, as its descriptors are another
+/// model's.
+#[test]
+fn another_model_is_read_again() {
+    let (mut controller, _) = enumerated();
+    events(&mut controller);
+    let mut remodeled = aem_available(2);
+    remodeled.entity_model_id = crate::EntityModelId(0x8c1f_6436_c0f3_59f0);
+    controller.handle_adpdu(at(1), TALKER_MAC, &remodeled);
+    assert_eq!(
+        events(&mut controller),
+        [
+            Event::EntityChanged(TALKER),
+            Event::EnumerationStarted(TALKER)
+        ]
+    );
+}
+
 #[test]
 fn expiry_happens_at_the_deadline_and_not_before() {
     let mut controller = controller();

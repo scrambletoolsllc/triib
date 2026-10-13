@@ -712,6 +712,9 @@ impl Controller {
             && adpdu
                 .entity_capabilities
                 .contains(EntityCapabilities::AEM_CONFIGURATION_INDEX_VALID);
+        // Another model, as when an entity's streams change while it
+        // stays, has other descriptors to read.
+        let remodeled = adpdu.entity_model_id != known.adp.entity_model_id;
         known.adp = *adpdu;
         known.mac = source;
         known.last_seen = now;
@@ -722,7 +725,7 @@ impl Controller {
         if changed {
             self.events.push_back(Event::EntityChanged(entity_id));
         }
-        if (restarted || reconfigured) && self.wants_model(adpdu) {
+        if (restarted || reconfigured || remodeled) && self.wants_model(adpdu) {
             self.start_enumeration(now, entity_id);
         } else if moved {
             self.read_network_info(now, entity_id);

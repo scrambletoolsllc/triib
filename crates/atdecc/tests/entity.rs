@@ -624,3 +624,44 @@ fn a_media_clock_input_is_a_clock_source() {
     );
     assert_eq!(network.listener.model().clock_source, 1);
 }
+
+/// A talker whose streams change takes over from itself: the controller
+/// reads its new model without it ever going offline or restarting.
+#[test]
+fn a_talker_taking_over_from_itself_is_read_again_in_place() {
+    let mut network = Network::new();
+    network.controller.discover(None);
+    network.run(3000);
+    assert_eq!(
+        network
+            .controller
+            .model(TALKER)
+            .unwrap()
+            .streams(false)
+            .count(),
+        1
+    );
+    network.controller_events.clear();
+
+    let mut model = model(TALKER, "Talker", true);
+    model.entity_model_id = EntityModelId(0x8c1f_6436_c0f3_59f0);
+    model.outputs.push(stream("Host out 2"));
+    let second = StreamId(0x9c6b_0030_9a2b_0001);
+    let mut talker = Entity::new(model, &[(STREAM, DESTINATION), (second, DESTINATION)]);
+    talker.take_over(network.now, &network.talker);
+    talker.start(network.now);
+    network.talker = talker;
+    network.run(2000);
+
+    let events = &network.controller_events;
+    assert!(
+        !events
+            .iter()
+            .any(|event| matches!(event, Event::EntityOffline(..) | Event::EntityRestarted(_))),
+        "{events:?}"
+    );
+    assert!(events.contains(&Event::EntityChanged(TALKER)), "{events:?}");
+    let read = network.controller.model(TALKER).unwrap();
+    assert_eq!(read.state, EnumerationState::Complete);
+    assert_eq!(read.streams(false).count(), 2);
+}

@@ -1116,15 +1116,40 @@ impl Runtime {
                 made
             })
             .collect();
-        // The new talkers' places in the MAAP block, from those free.
+        // A device whose entry changed, as when a stream was added, takes
+        // over from itself rather than leaving: its outputs keep their
+        // places in the MAAP block, in order, so their streams' addresses
+        // stay where listeners take them.
+        let kept: HashMap<EntityId, Vec<u16>> = self
+            .endpoints
+            .iter()
+            .zip(&goes_on)
+            .filter(|(endpoint, place)| {
+                let id = endpoint.entity.entity_id();
+                place.is_none() && started.iter().any(|made| made.entity.entity_id() == id)
+            })
+            .map(|(endpoint, _)| {
+                let slots = endpoint.outputs.iter().map(|output| output.slot);
+                (endpoint.entity.entity_id(), slots.collect())
+            })
+            .collect();
+        // The other new talkers' places, from those free.
         let taken: Vec<u16> = self
             .endpoints
             .iter()
             .zip(&goes_on)
             .filter(|(_, place)| place.is_some())
             .flat_map(|(endpoint, _)| endpoint.outputs.iter().map(|output| output.slot))
+            .chain(kept.values().flatten().copied())
             .collect();
-        let wanted: usize = started.iter().map(|endpoint| endpoint.outputs.len()).sum();
+        let reused = |endpoint: &Endpoint| {
+            kept.get(&endpoint.entity.entity_id())
+                .map_or(0, |slots| slots.len().min(endpoint.outputs.len()))
+        };
+        let wanted: usize = started
+            .iter()
+            .map(|endpoint| endpoint.outputs.len() - reused(endpoint))
+            .sum();
         let block = self
             .maap
             .as_ref()
@@ -1139,9 +1164,14 @@ impl Runtime {
             return false;
         }
 
+        let mut earlier: Vec<Entity> = Vec::new();
         for index in (0..self.endpoints.len()).rev() {
             if goes_on[index].is_none() {
-                self.stop_endpoint(index);
+                let replaced = kept.contains_key(&self.endpoints[index].entity.entity_id());
+                let entity = self.stop_endpoint(index, !replaced);
+                if replaced {
+                    earlier.push(entity);
+                }
             }
         }
         for (endpoint, place) in self.endpoints.iter_mut().zip(goes_on.into_iter().flatten()) {
@@ -1168,10 +1198,12 @@ impl Runtime {
             .map(|status| status.gptp.clone())
             .unwrap_or_default();
         for mut endpoint in started {
+            let id = endpoint.entity.entity_id();
             endpoint.entity.set_gptp(now, gptp.clone());
             endpoint.make_devices(self.audio.as_ref());
+            let mut slots = kept.get(&id).cloned().unwrap_or_default().into_iter();
             for (index, output) in endpoint.outputs.iter_mut().enumerate() {
-                output.slot = free.next().unwrap_or_default();
+                output.slot = slots.next().or_else(|| free.next()).unwrap_or_default();
                 if let Some(address) = self
                     .maap
                     .as_ref()
@@ -1182,6 +1214,9 @@ impl Runtime {
                         .set_output_destination(index as u16, address);
                     output.redeclare_at = Some(since);
                 }
+            }
+            if let Some(before) = earlier.iter().find(|entity| entity.entity_id() == id) {
+                endpoint.entity.take_over(now, before);
             }
             endpoint.begin(now);
             self.endpoints.push(endpoint);
@@ -1198,8 +1233,9 @@ impl Runtime {
 
     /// Stops one endpoint while the others go on: its streams'
     /// declarations withdrawn, its threads and virtual audio devices
-    /// ended, and its departure said.
-    fn stop_endpoint(&mut self, index: usize) {
+    /// ended, and, where it `departs`, its departure said, rather than
+    /// handing its entity on to the one taking over. Gives its entity.
+    fn stop_endpoint(&mut self, index: usize, departs: bool) -> Entity {
         for out in self.outs().into_iter().filter(|out| out.0 == index) {
             self.output_mut(out).talker = None;
             self.withdraw_talker(out);
@@ -1208,7 +1244,9 @@ impl Runtime {
             self.stop_listener(input);
         }
         let mut endpoint = self.endpoints.remove(index);
-        endpoint.entity.depart();
+        if departs {
+            endpoint.entity.depart();
+        }
         let now = self.now();
         while let Some((destination, bytes)) = endpoint.entity.poll_transmit() {
             let _ = self.avtp.send(destination, &bytes);
@@ -1220,7 +1258,10 @@ impl Runtime {
                 }
             }
         }
-        log(format!("{} stopped", endpoint.config.name));
+        if departs {
+            log(format!("{} stopped", endpoint.config.name));
+        }
+        endpoint.entity
     }
 
     /// The configuration file, when it changed into something else.
