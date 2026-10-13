@@ -3,6 +3,82 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+The Streams tab, max transit times, media clock streams on this
+computer's entities with one chosen as their clock source, and this
+computer's talkers and listeners folded into its entities.
+
+### Controller
+
+- The Streams tab lists an entity's streams, outputs then inputs, five
+  before it scrolls, and shows the picked one's details under the list:
+  its name, format, state, stream ID, destination and VLAN, and for this
+  computer's entities its audio and channels. The Entity tab no longer
+  shows streams.
+- An output's max transit time is picked in its details, from 0.25 ms to
+  50 ms, on any entity that answers GET_MAX_TRANSIT_TIME, Milan or not,
+  the Mac's AVB entity among them. A running stream's refusal says to
+  disconnect it first.
+- While a media clock stream is picked, the Streams tab leaves out the
+  entity's channel mappings, which are its audio streams'.
+- The matrix remembers which entities are folded, across restarts.
+- The interface picker's filter opens a menu that hides virtual
+  interfaces, as before by default, wireless interfaces, and interfaces
+  without a PTP hardware clock, each checked on its own.
+- An entity advertising another model is read again in place: the list
+  and the inspector keep showing what was read before until the new
+  read is done.
+- `triib-cli streams` prints each input's counters.
+- The new app icon.
+
+### This computer's entities (Linux)
+
+- Talkers and listeners are folded into entities of any number of
+  streams, as one of one stream does what they did. The Entities view's
+  one button, Add entity, adds an entity with a stream each way, and its
+  Streams tab adds and removes streams. triib 1.0's talker and listener
+  entries, in `endpoints.toml` and in presets, read as entities of their
+  one stream, named as the entity is, with their audio, format, binding,
+  transit time and class. Their entity IDs stay; their model IDs change,
+  so controllers read them again once.
+- One Add stream button, whose menu adds an audio input or output, or a
+  media clock input or output.
+- Media clock streams: CRF in Milan's format, 48 kHz with a timestamp
+  every 96 samples, sent on the same timeline as the entity's audio,
+  without channels, audio or mappings.
+- A media clock input can be the entity's clock source: its talkers then
+  follow the clock recovered from its timestamps, and gPTP time while it
+  is not recovered. The choice is kept, and the clock domain's counters
+  count each lock and loss.
+- The max transit times controllers set on an entity's outputs are kept
+  in `endpoints.toml`.
+- Adding or removing an entity's stream keeps the entity on the network,
+  where controllers read it again in place, and its outputs keep their
+  stream addresses.
+- The entities' model name is triib entity, and their model IDs change
+  once for it.
+
+### Fixed
+
+- An entity advertising a new gPTP grandmaster or domain has its gPTP
+  state and path read again, so one read while it was its own
+  grandmaster joins the network view's tree.
+- The AVB Lite offset alarm shows only where an interface runs AVB Lite,
+  not where it is only capable of it, as an AVB Wireless station is.
+- An entity running AVB that could run AVB Lite shows "AVB (AVB Lite
+  capable)".
+- Adding or removing one of this computer's entities leaves the others
+  running, their stream addresses as they were.
+- This computer's entities show as its own from the moment they
+  advertise.
+- A refused SET_MAX_TRANSIT_TIME no longer shows the time asked for.
+- A stream's own SR class sets its priority and its reservation, so an
+  entity's class B stream is reserved as class B.
+- A preset moved to another computer renames the talkers its entities'
+  inputs are bound to.
+- An entity lists each sampling rate once.
+
 ## [1.0.0] - 2026-10-12
 
 AVB Wireless, devices of the computer's own with several streams each

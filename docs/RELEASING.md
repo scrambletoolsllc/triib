@@ -74,6 +74,8 @@ triib sends and receives raw Ethernet, which each system guards:
    metainfo.
 2. Write the version's section in `CHANGELOG.md`, as `## [X.Y.Z]`; the
    release notes are taken from it, or made by GitHub when there is none.
+   Changes go under `## [Unreleased]` as they land, which the release
+   renames to `## [X.Y.Z] - YYYY-MM-DD`.
 3. Try the packaging without releasing: run the Release workflow by hand
    (Actions, Release, Run workflow), which builds every package as an
    artifact, or with "Packages to build" only one system's, such as
