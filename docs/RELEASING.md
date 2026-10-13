@@ -6,7 +6,7 @@ Everything a release ships is built from this repository:
 |---|---|
 | `data/io.github.scrambletools.triib.desktop` | Desktop entry |
 | `data/io.github.scrambletools.triib.metainfo.xml` | AppStream metadata, with the release history |
-| `data/icons/hicolor/` | App icon, which every package picks up |
+| `data/icons/triib-icon.svg` | The app icon, which `scripts/make-icons.sh` renders into `data/icons/hicolor/` (which every package picks up), `data/icons/triib-1024.png` for macOS and `packaging/windows/triib.ico` |
 | `packaging/licenses/` | The licenses of the fonts triib carries, from scramble-ui |
 | `scripts/cross-setup.sh` | Sets up an x86_64 Ubuntu to cross-compile for RISC-V |
 | `scripts/dist-install.sh` | Installs a build of triib, triib-cli and triib-endpointd and the files above into a system layout; the Linux packages use it |
