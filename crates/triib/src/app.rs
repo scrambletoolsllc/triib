@@ -62,6 +62,8 @@ pub struct Triib {
     pub network_state: NetworkState,
     /// The entities online on the chosen interface.
     pub entities: BTreeMap<EntityId, DiscoveredEntity>,
+    /// Controllers that do not advertise, heard in their commands.
+    pub heard: BTreeMap<EntityId, crate::heard::Heard>,
     /// What has been read of each.
     pub models: BTreeMap<EntityId, EntityModel>,
     pub selected: Option<EntityId>,
@@ -289,6 +291,14 @@ pub enum Message {
     Nothing,
 }
 
+/// Where a controller with no model of its own runs.
+enum Computer<'a> {
+    This,
+    /// The computer an entity of this name runs on.
+    Of(&'a str),
+    Unknown,
+}
+
 impl Triib {
     /// The app with these entities and settings, discovering on `interface`
     /// without a network thread, for drawing it in tests.
@@ -317,6 +327,7 @@ impl Triib {
                 controller: EntityId(0x9c6b_00ff_fe30_9a2b),
             },
             entities,
+            heard: BTreeMap::new(),
             models,
             selected: None,
             pending: Vec::new(),
@@ -378,6 +389,7 @@ impl Triib {
             generation: 0,
             network_state: NetworkState::Idle,
             entities: BTreeMap::new(),
+            heard: BTreeMap::new(),
             models: BTreeMap::new(),
             selected: None,
             pending: Vec::new(),
@@ -1083,6 +1095,7 @@ impl Triib {
     fn start_network(&mut self, fresh: bool) {
         self.network = None;
         self.entities.clear();
+        self.heard.clear();
         self.models.clear();
         self.selected = None;
         self.pending.clear();
@@ -1116,6 +1129,8 @@ impl Triib {
             ReportKind::Online(entity)
             | ReportKind::Changed(entity)
             | ReportKind::Restarted(entity) => {
+                // A controller heard that now advertises is listed as such.
+                self.heard.remove(&entity.entity_id());
                 self.entities.insert(entity.entity_id(), entity);
             }
             ReportKind::Offline(entity_id, _) => {
@@ -1137,6 +1152,14 @@ impl Triib {
             ReportKind::Neighbor(neighbor) => self.neighbor = neighbor,
             ReportKind::CannotListen(reason) => self.cannot_listen = Some(reason),
             ReportKind::Frames(frames) => {
+                let own = match self.network_state {
+                    NetworkState::Running { controller } => Some(controller),
+                    _ => None,
+                };
+                let entities = &self.entities;
+                crate::heard::note(&mut self.heard, &frames, |controller| {
+                    own == Some(controller) || entities.contains_key(&controller)
+                });
                 if !self.log.paused {
                     let described = frames
                         .into_iter()
@@ -1210,10 +1233,32 @@ impl Triib {
 
     /// The name to show for an entity by ID.
     pub fn entity_name_of(&self, entity_id: EntityId) -> String {
-        match self.entities.get(&entity_id) {
+        match self.entity_or_heard(entity_id) {
             Some(entity) => self.entity_name(entity),
             None => entity_id.to_string(),
         }
+    }
+
+    /// An entity that advertises, else a controller heard.
+    pub fn entity_or_heard(&self, entity_id: EntityId) -> Option<&DiscoveredEntity> {
+        self.entities
+            .get(&entity_id)
+            .or_else(|| self.heard.get(&entity_id).map(|heard| &heard.entity))
+    }
+
+    /// The entities the entity list shows: those shown, and the
+    /// controllers heard that the search finds, by name.
+    pub fn listed_entities(&self) -> Vec<&DiscoveredEntity> {
+        let search = self.search_text();
+        let mut listed = self.shown_entities();
+        listed.extend(
+            self.heard
+                .values()
+                .map(|heard| &heard.entity)
+                .filter(|entity| search.is_empty() || self.entity_matches(entity, &search)),
+        );
+        listed.sort_by_key(|entity| (self.entity_name(entity).to_lowercase(), entity.entity_id()));
+        listed
     }
 
     /// "Entity name: stream name" for a stream of an entity.
@@ -1364,23 +1409,34 @@ impl Triib {
         {
             return name.to_owned();
         }
-        if entity.adp.entity_model_id == crate::network::ENTITY_MODEL_ID {
-            return self.triib_name(entity);
+        let triib = entity.adp.entity_model_id == crate::network::ENTITY_MODEL_ID;
+        let heard = self.heard.contains_key(&entity.entity_id());
+        if !triib && !heard {
+            return entity.entity_id().to_string();
         }
-        entity.entity_id().to_string()
+        match (self.computer_of(entity), triib) {
+            (Computer::This, true) => crate::fl!("entity-triib-here"),
+            (Computer::Of(host), true) => crate::fl!("entity-triib-on", host = host),
+            (Computer::Unknown, true) => crate::fl!("entity-triib-controller"),
+            (Computer::This, false) => crate::fl!("entity-controller-here"),
+            (Computer::Of(host), false) => crate::fl!("entity-controller-on", host = host),
+            (Computer::Unknown, false) => {
+                crate::fl!("entity-controller-at", mac = entity.mac.to_string())
+            }
+        }
     }
 
-    /// "triib on Mac mini": triib's controller named after an entity from
-    /// the same address, which runs on the same computer.
-    fn triib_name(&self, controller: &DiscoveredEntity) -> String {
+    /// The computer a controller with no model of its own runs on: this
+    /// one, or the one an entity read from the same address names, as the
+    /// Mac's AVB entity is named for the Mac.
+    fn computer_of(&self, controller: &DiscoveredEntity) -> Computer<'_> {
         if self
             .interface()
             .is_some_and(|interface| interface.mac == controller.mac)
         {
-            return crate::fl!("entity-triib-here");
+            return Computer::This;
         }
-        let host = self
-            .entities
+        self.entities
             .values()
             .filter(|entity| {
                 entity.mac == controller.mac
@@ -1390,11 +1446,8 @@ impl Triib {
                 self.models
                     .get(&entity.entity_id())
                     .and_then(EntityModel::entity_name)
-            });
-        match host {
-            Some(host) => crate::fl!("entity-triib-on", host = host),
-            None => crate::fl!("entity-triib-controller"),
-        }
+            })
+            .map_or(Computer::Unknown, Computer::Of)
     }
 
     /// Saves the settings, keeping why when that fails.

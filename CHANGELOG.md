@@ -23,6 +23,12 @@ computer's talkers and listeners folded into its entities.
 - While a media clock stream is picked, the Streams tab leaves out the
   entity's channel mappings, which are its audio streams'.
 - The matrix remembers which entities are folded, across restarts.
+- Controllers that do not advertise, as the Mac's own does not, are
+  listed from the commands triib hears them send: their connection
+  commands, which reach every station, and their commands to this
+  computer's entities. Each is named for the computer it runs on, as
+  "Controller on Mac mini", and stays listed for 5 minutes after its
+  last command.
 - Controllers have an icon of their own, a traffic light, rather than
   this computer's. triib's controller, which has no model to read, is
   named for the computer it runs on: "triib on Mac mini" after an entity

@@ -500,9 +500,10 @@ fn inspector(triib: &Triib, width: Length) -> Element<'_, Message> {
     let open = triib.inspector_tab;
     let body: Element<'_, Message> = match triib.selected {
         None => note(fl!("inspector-select")),
-        Some(entity_id) => match triib.entities.get(&entity_id) {
-            None => note(fl!("inspector-offline", entity = entity_id.to_string())),
-            Some(entity) => entity_details(triib, entity, triib.models.get(&entity_id), open),
+        Some(entity_id) => match (triib.entities.get(&entity_id), triib.heard.get(&entity_id)) {
+            (Some(entity), _) => entity_details(triib, entity, triib.models.get(&entity_id), open),
+            (None, Some(heard)) => heard_details(&heard.entity),
+            (None, None) => note(fl!("inspector-offline", entity = entity_id.to_string())),
         },
     };
     let tab = |label: String, glyph, tab: InspectorTab| component::Tab {
@@ -976,6 +977,18 @@ fn entity_details<'a>(
         InspectorTab::Descriptors => descriptor_tree(triib, entity_id, model),
     };
     column.extend(items).into()
+}
+
+/// A controller heard in its commands, which say only who and where it is.
+fn heard_details(entity: &DiscoveredEntity) -> Element<'_, Message> {
+    scramble_ui::column![
+        note(fl!("inspector-heard")),
+        component::section(fl!("advert-identity")),
+        property(fl!("advert-entity-id"), entity.entity_id().to_string()),
+        property(fl!("common-mac-address"), entity.mac.to_string()),
+    ]
+    .spacing(6)
+    .into()
 }
 
 /// `items`, or `text` when there are none.
@@ -2769,7 +2782,7 @@ pub(crate) mod tests {
         triib
     }
 
-    fn simulate(triib: &Triib, size: Size) -> iced_test::Simulator<'_, Message> {
+    pub fn simulate(triib: &Triib, size: Size) -> iced_test::Simulator<'_, Message> {
         iced_test::Simulator::with_size(
             iced::Settings {
                 fonts: scramble_ui::font::files().collect(),

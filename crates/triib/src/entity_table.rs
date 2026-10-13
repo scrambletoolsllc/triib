@@ -205,7 +205,7 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
     let columns: &[EntityField] = &triib.settings.entity_columns;
     let only_host = triib.settings.host_entities_only && triib.hosts_endpoints();
     let rows: Vec<Row<'_>> = triib
-        .shown_entities()
+        .listed_entities()
         .into_iter()
         .filter(|entity| !only_host || triib.is_host(entity.entity_id()))
         .map(|entity| {
@@ -659,6 +659,57 @@ mod tests {
             crate::describe::glyph(&triib.entities[&alone].adp),
             Icon::Traffic
         );
+    }
+
+    /// A controller that does not advertise is listed once its command is
+    /// heard, named for the computer it runs on, and the inspector says
+    /// what is known of it.
+    #[test]
+    fn controllers_heard_are_listed() {
+        use crate::network::{Report, ReportKind};
+        use atdecc::EntityId;
+
+        let mut triib = sample();
+        let mac_mini = *triib
+            .entities
+            .values()
+            .find(|entity| triib.entity_name(entity) == "Mac mini")
+            .expect("the bench's Mac mini");
+        let apple = EntityId(0xd111_e597_f544_0000);
+        // LOCK_ENTITY, as the Mac's controller sends it.
+        let mut bytes = vec![0xfb, 0x00, 0x00, 0x1c];
+        bytes.extend(0x9c6b_00ff_0030_9a2bu64.to_be_bytes());
+        bytes.extend(apple.0.to_be_bytes());
+        bytes.extend([0x00, 0x01, 0x00, 0x01]);
+        bytes.resize(40, 0);
+        let frame = atdecc::blocking::Frame {
+            at: std::time::SystemTime::now(),
+            sent: false,
+            peer: mac_mini.mac,
+            bytes,
+        };
+        let _ = triib.update(Message::External(crate::External::Network(Report {
+            generation: 0,
+            kind: ReportKind::Frames(vec![frame]),
+        })));
+        assert!(
+            triib
+                .listed_entities()
+                .iter()
+                .any(|entity| entity.entity_id() == apple)
+        );
+        assert!(
+            !triib
+                .shown_entities()
+                .iter()
+                .any(|entity| entity.entity_id() == apple),
+            "the matrix and the map leave it out"
+        );
+        assert_eq!(triib.entity_name_of(apple), "Controller on Mac mini");
+        let _ = triib.update(Message::EntitySelected(apple));
+        let mut simulator = crate::view::tests::simulate(&triib, iced::Size::new(1280.0, 800.0));
+        assert!(simulator.find("Controller on Mac mini").is_ok());
+        assert!(simulator.find(mac_mini.mac.to_string().as_str()).is_ok());
     }
 
     fn sample() -> Triib {

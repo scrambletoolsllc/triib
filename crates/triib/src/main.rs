@@ -11,6 +11,7 @@ mod diagnostics_view;
 mod dialog;
 mod entity_table;
 mod header_band;
+mod heard;
 mod host;
 mod host_view;
 mod i18n;

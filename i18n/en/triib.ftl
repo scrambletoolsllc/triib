@@ -168,6 +168,7 @@ inspector-descriptors = Descriptors
 inspector-select = Select an entity to see its details.
 # $entity is an entity ID, such as 0xe8f60ae092200000.
 inspector-offline = { $entity } is offline.
+inspector-heard = It does not advertise: triib heard it in the commands it sent, and lists it until 5 minutes pass without one.
 inspector-rename = Rename
 inspector-name = Name
 # Makes the entity show itself, such as by blinking a light.
@@ -187,6 +188,11 @@ entity-triib-controller = triib controller
 # $host is the name of an entity on the same computer, such as Mac mini.
 entity-triib-on = triib on { $host }
 entity-triib-here = triib on this computer
+# A controller that does not advertise, heard in its commands; $host as above.
+entity-controller-on = Controller on { $host }
+entity-controller-here = Controller on this computer
+# $mac is its MAC address.
+entity-controller-at = Controller at { $mac }
 entity-group = Group
 entity-product = Product
 entity-firmware = Firmware
