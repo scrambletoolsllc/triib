@@ -127,6 +127,9 @@ pub struct Triib {
     pub settings_error: Option<String>,
     /// Agents asking to control triib, and the changes they wait on.
     pub agents: crate::agents::Agents,
+    /// The stream the Streams tab shows: the entity, whether it is an
+    /// input, and its index. The entity's first stream when it is another.
+    pub stream_selected: Option<(EntityId, bool, u16)>,
 }
 
 /// What the network thread for the chosen interface is doing.
@@ -162,6 +165,9 @@ pub enum Message {
     AlarmOpened(EntityId),
     /// Open one of the inspector's tabs.
     InspectorTab(InspectorTab),
+    /// A stream picked in the Streams tab's list: the entity, whether it
+    /// is an input, and its index.
+    StreamSelected(EntityId, bool, u16),
     Log(LogMessage),
     /// A control's slider moved, not yet let go.
     ControlDragged(ControlDrag),
@@ -325,6 +331,7 @@ impl Triib {
             settings_tab: SettingsTab::default(),
             settings_error: None,
             agents: crate::agents::Agents::default(),
+            stream_selected: None,
         }
     }
 
@@ -378,6 +385,7 @@ impl Triib {
             settings_tab: SettingsTab::default(),
             settings_error,
             agents: crate::agents::Agents::default(),
+            stream_selected: None,
         };
         triib.reload_omarchy();
         triib.apply_motion();
@@ -589,6 +597,9 @@ impl Triib {
                 }
             }
             Message::InspectorTab(tab) => self.inspector_tab = tab,
+            Message::StreamSelected(entity, input, index) => {
+                self.stream_selected = Some((entity, input, index));
+            }
             Message::Log(message) => self.log.update(message),
             Message::ControlDragged(drag) => self.control_drag = Some(drag),
             Message::ControlReleased => {
@@ -921,6 +932,16 @@ impl Triib {
                 }
             }
             Message::HostStream(entity_id, change) => {
+                // A new stream is picked in the Streams tab, so its details
+                // show once the device has it: the next index its way.
+                if let crate::host::StreamChange::Add(direction) = &change {
+                    let input = *direction == triib_endpointd::config::Direction::In;
+                    let next = self
+                        .models
+                        .get(&entity_id)
+                        .map_or(0, |model| model.streams(input).count());
+                    self.stream_selected = Some((entity_id, input, next as u16));
+                }
                 let done = self
                     .interface()
                     .map(|interface| (interface.name.clone(), interface.mac));

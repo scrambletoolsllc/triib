@@ -129,8 +129,7 @@ entity-sampling-rate = Частота дискретизации
 clock-source-numbered = Источник { $index }
 rate-pull = pull { $pull }
 
-stream-inputs = Входы потоков
-stream-outputs = Выходы потоков
+stream-format = Формат
 stream-max-transit-time = Макс. время прохождения { $time }
 
 avb-interfaces = Интерфейсы AVB

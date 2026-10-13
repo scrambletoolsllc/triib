@@ -129,8 +129,7 @@ entity-sampling-rate = קצב דגימה
 clock-source-numbered = מקור { $index }
 rate-pull = משיכה { $pull }
 
-stream-inputs = כניסות זרם
-stream-outputs = יציאות זרם
+stream-format = פורמט
 stream-max-transit-time = זמן מעבר מרבי { $time }
 
 avb-interfaces = ממשקי AVB

@@ -131,8 +131,7 @@ entity-sampling-rate = Abtastrate
 clock-source-numbered = Quelle { $index }
 rate-pull = Pull { $pull }
 
-stream-inputs = Stream-Eingänge
-stream-outputs = Stream-Ausgänge
+stream-format = Format
 stream-max-transit-time = Max. Laufzeit { $time }
 
 avb-interfaces = AVB-Schnittstellen

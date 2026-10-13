@@ -435,7 +435,7 @@ fn connectable_only<'a>(talkers: &mut Vec<Group<'a>>, listeners: &mut Vec<Group<
 }
 
 /// A stream format in a few characters, such as "48k 8ch" or "48k CRF".
-fn short(format: StreamFormat) -> String {
+pub(crate) fn short(format: StreamFormat) -> String {
     let rate = format.sample_rate().map(|hertz| {
         if hertz.is_multiple_of(1000) {
             format!("{}k", hertz / 1000)

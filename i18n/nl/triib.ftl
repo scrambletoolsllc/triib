@@ -131,8 +131,7 @@ entity-sampling-rate = Samplefrequentie
 clock-source-numbered = Bron { $index }
 rate-pull = pull { $pull }
 
-stream-inputs = Stream-ingangen
-stream-outputs = Stream-uitgangen
+stream-format = Formaat
 stream-max-transit-time = Max. doorlooptijd { $time }
 
 avb-interfaces = AVB-interfaces

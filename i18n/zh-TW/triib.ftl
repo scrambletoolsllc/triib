@@ -132,8 +132,7 @@ entity-sampling-rate = 取樣率
 clock-source-numbered = 時鐘源 { $index }
 rate-pull = pull 係數 { $pull }
 
-stream-inputs = 串流輸入
-stream-outputs = 串流輸出
+stream-format = 格式
 stream-max-transit-time = 最大傳輸時間 { $time }
 
 avb-interfaces = AVB 介面

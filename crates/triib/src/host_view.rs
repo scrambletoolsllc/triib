@@ -12,7 +12,6 @@ use scramble_ui::font::{Type, styled};
 use scramble_ui::icon::Icon;
 use scramble_ui::{component, dir, dropdown, style};
 use triib_endpointd::config::{Direction, Kind as EndpointKind, VIRTUAL};
-use triib_endpointd::status::StreamStatus;
 
 use crate::app::{Message, Triib};
 use crate::fl;
@@ -119,91 +118,96 @@ impl fmt::Display for Audio {
     }
 }
 
-/// The inspector's section for one of this computer's endpoints.
+/// The inspector's section for one of this computer's endpoints: its
+/// state, and a button that removes it. Its streams are on the Streams
+/// tab.
 pub fn sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>> {
     let Some(endpoint) = crate::host::status_of(triib.endpoints.as_ref(), entity_id) else {
         return Vec::new();
     };
-    let mut rows = vec![
+    vec![
         component::section(fl!("netmap-this-computer")),
         property(fl!("host-state"), state_label(&endpoint.state)),
-    ];
-    match endpoint.kind {
-        EndpointKind::Talker | EndpointKind::Listener => {
-            let inputs = endpoint.kind == EndpointKind::Listener;
-            rows.push(stacked(
-                if inputs {
-                    fl!("host-audio-to")
-                } else {
-                    fl!("host-audio-from")
-                },
-                audio_picker(triib, inputs, false, &endpoint.audio, move |spec| {
-                    Message::HostAudio(entity_id, spec)
-                }),
-            ));
-            rows.push(stacked(
-                fl!("host-channels"),
-                channel_picker(endpoint.channels, move |count| {
-                    Message::HostChannels(entity_id, count)
-                }),
-            ));
-        }
-        EndpointKind::Device => {
-            let last = endpoint.streams.len() <= 1;
-            for (at, stream) in endpoint.streams.iter().enumerate() {
-                rows.extend(stream_rows(triib, entity_id, at, stream, last));
-            }
-            let add = |direction, label: String| {
-                button::with_icon(Kind::Tonal, Icon::Add, label)
-                    .size(Size::ExtraSmall)
-                    .on_press(Message::HostStream(entity_id, StreamChange::Add(direction)))
-            };
-            // Each on its own line, as two side by side are wider than
-            // the inspector.
-            rows.push(add(Direction::Out, fl!("host-add-output-stream")).into());
-            rows.push(add(Direction::In, fl!("host-add-input-stream")).into());
-        }
-    }
-    rows.push(
         button::with_icon(Kind::Outlined, Icon::Delete, fl!("host-remove"))
             .size(Size::ExtraSmall)
             .on_press(Message::HostRemoved(entity_id))
             .into(),
-    );
-    rows
+    ]
 }
 
-/// What an endpoint's or stream's state says.
-fn state_label(state: &str) -> String {
-    match state {
-        "streaming" => fl!("host-streaming"),
-        "waiting" => fl!("host-waiting"),
-        "listening" => fl!("host-listening"),
-        "bound" => fl!("host-bound"),
-        _ => fl!("host-unbound"),
+/// Whether the entity is one of this computer's devices, whose streams
+/// are added and removed.
+pub fn is_device(triib: &Triib, entity_id: EntityId) -> bool {
+    crate::host::status_of(triib.endpoints.as_ref(), entity_id)
+        .is_some_and(|endpoint| endpoint.kind == EndpointKind::Device)
+}
+
+/// A device's buttons that add a stream output or input, each on its own
+/// line, as two side by side are wider than the inspector.
+pub fn add_buttons(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>> {
+    if !is_device(triib, entity_id) {
+        return Vec::new();
     }
+    let add = |direction, label: String| {
+        button::with_icon(Kind::Tonal, Icon::Add, label)
+            .size(Size::ExtraSmall)
+            .on_press(Message::HostStream(entity_id, StreamChange::Add(direction)))
+            .into()
+    };
+    vec![
+        add(Direction::Out, fl!("host-add-output-stream")),
+        add(Direction::In, fl!("host-add-input-stream")),
+    ]
 }
 
-/// One of a device's streams: its name and state, its audio and channels,
-/// and a button that removes it, but from the device's last stream.
-fn stream_rows<'a>(
-    triib: &'a Triib,
+/// What this computer sets for one of its endpoint's streams, the stream
+/// input or output `index`: where its audio comes from or goes, and its
+/// channels. Nothing for others' entities.
+pub fn stream_rows(
+    triib: &Triib,
     entity_id: EntityId,
-    at: usize,
-    stream: &StreamStatus,
-    last: bool,
-) -> Vec<Element<'a, Message>> {
-    let inputs = stream.direction == Direction::In;
+    input: bool,
+    index: u16,
+) -> Vec<Element<'_, Message>> {
+    let Some(endpoint) = crate::host::status_of(triib.endpoints.as_ref(), entity_id) else {
+        return Vec::new();
+    };
+    let audio_label = if input {
+        fl!("host-audio-to")
+    } else {
+        fl!("host-audio-from")
+    };
+    if endpoint.kind != EndpointKind::Device {
+        return vec![
+            stacked(
+                audio_label,
+                audio_picker(triib, input, false, &endpoint.audio, move |spec| {
+                    Message::HostAudio(entity_id, spec)
+                }),
+            ),
+            stacked(
+                fl!("host-channels"),
+                channel_picker(endpoint.channels, move |count| {
+                    Message::HostChannels(entity_id, count)
+                }),
+            ),
+        ];
+    }
+    // The device's streams one way, in the order the entity numbers them.
+    let direction = if input { Direction::In } else { Direction::Out };
+    let Some((at, stream)) = endpoint
+        .streams
+        .iter()
+        .enumerate()
+        .filter(|(_, stream)| stream.direction == direction)
+        .nth(usize::from(index))
+    else {
+        return Vec::new();
+    };
     vec![
-        component::section(stream.name.clone()),
-        property(fl!("host-state"), state_label(&stream.state)),
         stacked(
-            if inputs {
-                fl!("host-audio-to")
-            } else {
-                fl!("host-audio-from")
-            },
-            audio_picker(triib, inputs, true, &stream.audio, move |spec| {
+            audio_label,
+            audio_picker(triib, input, true, &stream.audio, move |spec| {
                 Message::HostStream(entity_id, StreamChange::Audio(at, spec))
             }),
         ),
@@ -213,13 +217,47 @@ fn stream_rows<'a>(
                 Message::HostStream(entity_id, StreamChange::Channels(at, count))
             }),
         ),
+    ]
+}
+
+/// The button that removes a device's stream input or output `index`,
+/// but not its last stream; none for others' entities.
+pub fn remove_stream(
+    triib: &Triib,
+    entity_id: EntityId,
+    input: bool,
+    index: u16,
+) -> Option<Element<'_, Message>> {
+    let endpoint = crate::host::status_of(triib.endpoints.as_ref(), entity_id)
+        .filter(|endpoint| endpoint.kind == EndpointKind::Device)?;
+    let direction = if input { Direction::In } else { Direction::Out };
+    let at = endpoint
+        .streams
+        .iter()
+        .enumerate()
+        .filter(|(_, stream)| stream.direction == direction)
+        .nth(usize::from(index))?
+        .0;
+    let last = endpoint.streams.len() <= 1;
+    Some(
         button::with_icon(Kind::Text, Icon::Delete, fl!("host-remove-stream"))
             .size(Size::ExtraSmall)
             .on_press_maybe(
                 (!last).then_some(Message::HostStream(entity_id, StreamChange::Remove(at))),
             )
             .into(),
-    ]
+    )
+}
+
+/// What an endpoint's state says.
+fn state_label(state: &str) -> String {
+    match state {
+        "streaming" => fl!("host-streaming"),
+        "waiting" => fl!("host-waiting"),
+        "listening" => fl!("host-listening"),
+        "bound" => fl!("host-bound"),
+        _ => fl!("host-unbound"),
+    }
 }
 
 /// A picker of where inputs play, or outputs' audio comes from, with

@@ -129,8 +129,7 @@ entity-sampling-rate = Kiwango cha sampuli
 clock-source-numbered = Chanzo { $index }
 rate-pull = pull { $pull }
 
-stream-inputs = Maingizo ya mtiririko
-stream-outputs = Matowe ya mtiririko
+stream-format = Muundo
 stream-max-transit-time = Muda wa juu wa kupita { $time }
 
 avb-interfaces = Violesura vya AVB

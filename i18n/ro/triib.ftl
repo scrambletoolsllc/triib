@@ -132,8 +132,7 @@ entity-sampling-rate = Frecvență de eșantionare
 clock-source-numbered = Sursa { $index }
 rate-pull = pull { $pull }
 
-stream-inputs = Intrări de flux
-stream-outputs = Ieșiri de flux
+stream-format = Format
 stream-max-transit-time = Timp maxim de tranzit { $time }
 
 avb-interfaces = Interfețe AVB

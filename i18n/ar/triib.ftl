@@ -129,8 +129,7 @@ entity-sampling-rate = معدل أخذ العينات
 clock-source-numbered = المصدر { $index }
 rate-pull = سحب { $pull }
 
-stream-inputs = مداخل التدفق
-stream-outputs = مخارج التدفق
+stream-format = التنسيق
 stream-max-transit-time = أقصى زمن عبور { $time }
 
 avb-interfaces = واجهات AVB

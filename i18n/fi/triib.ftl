@@ -131,8 +131,7 @@ entity-sampling-rate = Näytteenottotaajuus
 clock-source-numbered = Lähde { $index }
 rate-pull = pull { $pull }
 
-stream-inputs = Striimitulot
-stream-outputs = Striimilähdöt
+stream-format = Muoto
 stream-max-transit-time = Suurin läpikulkuaika { $time }
 
 avb-interfaces = AVB-liitännät

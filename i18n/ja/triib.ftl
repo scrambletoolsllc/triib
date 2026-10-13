@@ -132,8 +132,7 @@ entity-sampling-rate = サンプリングレート
 clock-source-numbered = ソース { $index }
 rate-pull = プル { $pull }
 
-stream-inputs = ストリーム入力
-stream-outputs = ストリーム出力
+stream-format = フォーマット
 stream-max-transit-time = 最大伝送時間 { $time }
 
 avb-interfaces = AVB インターフェイス

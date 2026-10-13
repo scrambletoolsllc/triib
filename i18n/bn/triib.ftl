@@ -129,8 +129,7 @@ entity-sampling-rate = Sampling rate
 clock-source-numbered = Source { $index }
 rate-pull = pull { $pull }
 
-stream-inputs = Stream inputs
-stream-outputs = Stream outputs
+stream-format = Format
 stream-max-transit-time = সর্বোচ্চ transit time { $time }
 
 avb-interfaces = AVB interfaces

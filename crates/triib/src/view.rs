@@ -997,54 +997,198 @@ fn entity_sections<'a>(
     items
 }
 
-/// The entity's streams with their formats and state, then its channel
-/// mappings.
+/// How tall each row of the Streams tab's list is, and how many show
+/// before it scrolls.
+const STREAM_ROW: f32 = 36.0;
+const STREAMS_SHOWN: usize = 5;
+
+/// The Streams tab: a list of the entity's streams, outputs then inputs,
+/// with the picked one's details under it, or for an entity of one
+/// stream its details alone; this computer's devices add streams under
+/// the list. The channel mappings follow.
 fn stream_sections<'a>(
     triib: &'a Triib,
     entity_id: EntityId,
     model: &'a EntityModel,
 ) -> Vec<Element<'a, Message>> {
+    let streams: Vec<StreamDescriptor<'a>> =
+        model.streams(false).chain(model.streams(true)).collect();
+    let device = crate::host_view::is_device(triib, entity_id);
+    let picked = picked_stream(triib, entity_id, &streams);
     let mut items = Vec::new();
-    for (input, title) in [(true, fl!("stream-inputs")), (false, fl!("stream-outputs"))] {
-        let streams: Vec<_> = model.streams(input).collect();
-        if streams.is_empty() {
-            continue;
+    if streams.len() > 1 || device {
+        items.push(component::section(fl!("inspector-streams")));
+        if !streams.is_empty() {
+            items.push(stream_list(triib, entity_id, model, &streams, picked));
         }
-        items.push(component::section(title));
-        for stream in streams {
-            let target = NameTarget {
+        items.extend(crate::host_view::add_buttons(triib, entity_id));
+    }
+    if let Some(stream) = picked.and_then(|at| streams.get(at)) {
+        items.extend(stream_details(triib, entity_id, model, stream));
+    }
+    items.extend(mapping_view::mapping_details(triib, entity_id, model));
+    items
+}
+
+/// Which of `streams` the Streams tab shows: the one picked, else the
+/// first.
+fn picked_stream(
+    triib: &Triib,
+    entity_id: EntityId,
+    streams: &[StreamDescriptor<'_>],
+) -> Option<usize> {
+    triib
+        .stream_selected
+        .filter(|(entity, ..)| *entity == entity_id)
+        .and_then(|(_, input, index)| {
+            streams
+                .iter()
+                .position(|stream| stream.is_input() == input && stream.index == index)
+        })
+        .or((!streams.is_empty()).then_some(0))
+}
+
+/// The streams as a compact list, each with its way, name and format in
+/// short, showing [`STREAMS_SHOWN`] before it scrolls; a name too long
+/// for the row ends in an ellipsis.
+fn stream_list<'a>(
+    triib: &'a Triib,
+    entity_id: EntityId,
+    model: &'a EntityModel,
+    streams: &[StreamDescriptor<'a>],
+    picked: Option<usize>,
+) -> Element<'a, Message> {
+    // What each row shows: its way, index, name and format in short.
+    let rows: Vec<(bool, u16, String, String)> = streams
+        .iter()
+        .map(|stream| {
+            let name = triib.current_name(NameTarget {
                 entity: entity_id,
                 descriptor_type: stream.descriptor_type,
                 index: stream.index,
                 name_index: 0,
+            });
+            let name = if name.is_empty() {
+                model
+                    .name_of(stream.descriptor_type, stream.index)
+                    .map_or_else(|| fl!("common-unnamed"), str::to_owned)
+            } else {
+                name
             };
-            let mut lines = scramble_ui::column![
-                name_line(triib, target, fl!("common-unnamed")),
-                format_picker(triib, entity_id, &stream),
-            ]
-            .spacing(2);
-            if let Some(state) = describe::stream_state(triib, entity_id, model, &stream) {
-                lines = lines.push(styled(state, Type::BodySmall).style(style::on_surface_variant));
-            }
-            if let Some(nanoseconds) = (!input)
-                .then(|| model.max_transit_time(stream.index))
-                .flatten()
-            {
-                lines = lines.push(
-                    styled(
-                        fl!(
-                            "stream-max-transit-time",
-                            time = describe::milliseconds(nanoseconds)
-                        ),
-                        Type::BodySmall,
-                    )
-                    .style(style::on_surface_variant),
-                );
-            }
-            items.push(lines.into());
-        }
+            (
+                stream.is_input(),
+                stream.index,
+                name,
+                crate::matrix::short(stream.current_format),
+            )
+        })
+        .collect();
+    let scrolls = rows.len() > STREAMS_SHOWN;
+    let height = STREAM_ROW * rows.len().min(STREAMS_SHOWN) as f32;
+    let list = iced::widget::responsive(move |size| {
+        // The row's padding, icon and gaps, and room for the scrollbar.
+        let around = 2.0 * 12.0 + 18.0 + 2.0 * 8.0 + if scrolls { 12.0 } else { 0.0 };
+        let column = iced::widget::column(rows.iter().enumerate().map(
+            |(at, (input, index, name, format))| {
+                let room = size.width
+                    - around
+                    - crate::text::measure(format, scramble_ui::font::TEXT, 12.0);
+                let name =
+                    crate::text::fit(name, scramble_ui::font::TEXT, 14.0, room.max(24.0)).name;
+                button::custom(
+                    Kind::Row,
+                    scramble_ui::row![
+                        icon::icon(if *input { Icon::Input } else { Icon::Output }, 18),
+                        styled(name, Type::BodyMedium)
+                            .width(Fill)
+                            .wrapping(iced::widget::text::Wrapping::None),
+                        styled(format.clone(), Type::BodySmall).style(style::on_surface_variant),
+                    ]
+                    .spacing(8)
+                    .align_y(Center),
+                )
+                .size(Size::ExtraSmall)
+                .width(Fill)
+                .height(STREAM_ROW)
+                .selected(picked == Some(at))
+                .on_press(Message::StreamSelected(entity_id, *input, *index))
+                .into()
+            },
+        ))
+        .padding(iced::Padding {
+            right: if scrolls { 12.0 } else { 0.0 },
+            ..iced::Padding::ZERO
+        });
+        iced::widget::scrollable(column)
+            .height(Fill)
+            .style(style::scrollbar)
+            .into()
+    });
+    container(list).height(height).width(Fill).into()
+}
+
+/// A stream's details: its name and format to change, what this computer
+/// sets for its own, and how it stands.
+fn stream_details<'a>(
+    triib: &'a Triib,
+    entity_id: EntityId,
+    model: &'a EntityModel,
+    stream: &StreamDescriptor<'a>,
+) -> Vec<Element<'a, Message>> {
+    let input = stream.is_input();
+    let target = NameTarget {
+        entity: entity_id,
+        descriptor_type: stream.descriptor_type,
+        index: stream.index,
+        name_index: 0,
+    };
+    let title = triib.current_name(target);
+    let title = if title.is_empty() {
+        model
+            .name_of(stream.descriptor_type, stream.index)
+            .map_or_else(|| fl!("common-unnamed"), str::to_owned)
+    } else {
+        title
+    };
+    let mut items = vec![
+        component::section(title),
+        name_property(triib, fl!("inspector-name"), target),
+    ];
+    items.extend(crate::host_view::stream_rows(
+        triib,
+        entity_id,
+        input,
+        stream.index,
+    ));
+    items.push(stacked(
+        fl!("stream-format"),
+        format_picker(triib, entity_id, stream),
+    ));
+    if let Some(state) = describe::stream_state(triib, entity_id, model, stream) {
+        items.push(property(fl!("host-state"), state));
     }
-    items.extend(mapping_view::mapping_details(triib, entity_id, model));
+    if let Some(nanoseconds) = (!input)
+        .then(|| model.max_transit_time(stream.index))
+        .flatten()
+    {
+        items.push(
+            styled(
+                fl!(
+                    "stream-max-transit-time",
+                    time = describe::milliseconds(nanoseconds)
+                ),
+                Type::BodySmall,
+            )
+            .style(style::on_surface_variant)
+            .into(),
+        );
+    }
+    items.extend(crate::host_view::remove_stream(
+        triib,
+        entity_id,
+        input,
+        stream.index,
+    ));
     items
 }
 
@@ -2190,7 +2334,7 @@ pub(crate) mod tests {
                 InspectorTab::Descriptors
             } else if suffix.contains("diagnostics") || suffix.contains("alarms") {
                 InspectorTab::Diagnostics
-            } else if suffix.contains("mappings") {
+            } else if suffix.contains("mappings") || suffix.contains("device") {
                 InspectorTab::Streams
             } else if suffix.contains("controls") {
                 InspectorTab::Controls
@@ -2493,8 +2637,8 @@ pub(crate) mod tests {
         triib.inspector_tab = InspectorTab::Entity;
         let mut simulator = simulate(&triib, size);
         assert!(simulator.find("Listening").is_ok());
-        assert!(simulator.find("Nowhere").is_ok());
-        assert!(simulator.find("Channels").is_ok());
+        // Its streams' settings are on the Streams tab, not here.
+        assert!(simulator.find("Channels").is_err());
         simulator
             .click("Remove from this computer")
             .expect("the button");
@@ -2505,8 +2649,18 @@ pub(crate) mod tests {
                 .any(|message| matches!(message, Message::HostRemoved(id) if *id == WIRED_ESP)),
             "{messages:?}"
         );
-        // As a device, each of its streams shows its own state, audio and
-        // channels, with buttons that add and remove streams.
+        // On the Streams tab, its input's audio, channels and format.
+        triib.inspector_tab = InspectorTab::Streams;
+        triib.stream_selected = Some((WIRED_ESP, true, 0));
+        {
+            let mut simulator = simulate(&triib, Size::new(1280.0, 1400.0));
+            assert!(simulator.find("Nowhere").is_ok());
+            assert!(simulator.find("Channels").is_ok());
+            assert!(simulator.find("Format").is_ok());
+        }
+        // As a device, the list's picked stream shows its own audio and
+        // channels and a button that removes it, with buttons under the
+        // list that add streams.
         if let Some(status) = &mut triib.endpoints {
             use triib_endpointd::config::Direction;
             use triib_endpointd::status::StreamStatus;
@@ -2529,14 +2683,13 @@ pub(crate) mod tests {
                 },
             ];
         }
+        triib.stream_selected = None;
         {
-            // Tall enough that the inspector shows every stream and the
-            // buttons under them.
             let mut simulator = simulate(&triib, Size::new(1280.0, 1400.0));
-            assert!(simulator.find("Out 1").is_ok());
-            assert!(simulator.find("In 1").is_ok());
+            // The first stream, an output, is picked.
             assert!(simulator.find("Virtual device").is_ok());
-            assert!(simulator.find("Nowhere").is_ok());
+            assert!(simulator.find("Nowhere").is_err());
+            assert!(simulator.find("Remove stream").is_ok());
             assert!(simulator.find("Add output stream").is_ok());
             assert!(simulator.find("Add device").is_ok());
             simulator.click("Add input stream").expect("the button");
@@ -2548,6 +2701,25 @@ pub(crate) mod tests {
                         _,
                         crate::host::StreamChange::Add(triib_endpointd::config::Direction::In)
                     )
+                )),
+                "{messages:?}"
+            );
+        }
+        // Its input picked, the details are that stream's; a row of the
+        // list picks another.
+        triib.stream_selected = Some((WIRED_ESP, true, 0));
+        {
+            let mut simulator = simulate(&triib, Size::new(1280.0, 1400.0));
+            assert!(simulator.find("Nowhere").is_ok());
+            assert!(simulator.find("Virtual device").is_err());
+            simulator
+                .click("Audio Stream Out")
+                .expect("the output's row");
+            let messages: Vec<Message> = simulator.into_messages().collect();
+            assert!(
+                messages.iter().any(|message| matches!(
+                    message,
+                    Message::StreamSelected(id, false, 0) if *id == WIRED_ESP
                 )),
                 "{messages:?}"
             );
@@ -2666,7 +2838,7 @@ pub(crate) mod tests {
         triib.selected = Some(WIRED_ESP);
         let tabs = [
             (InspectorTab::Entity, "Serial number"),
-            (InspectorTab::Streams, "Stream inputs"),
+            (InspectorTab::Streams, "Format"),
             (InspectorTab::Controls, "Speaker Volume"),
             (InspectorTab::Diagnostics, "AVB interfaces"),
             (InspectorTab::Descriptors, "Clock source"),

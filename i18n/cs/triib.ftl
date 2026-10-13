@@ -129,8 +129,7 @@ entity-sampling-rate = Vzorkovací frekvence
 clock-source-numbered = Zdroj { $index }
 rate-pull = pull { $pull }
 
-stream-inputs = Vstupy streamů
-stream-outputs = Výstupy streamů
+stream-format = Formát
 stream-max-transit-time = Max. doba průchodu { $time }
 
 avb-interfaces = Rozhraní AVB

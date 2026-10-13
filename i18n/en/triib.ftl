@@ -179,9 +179,8 @@ clock-source-numbered = Source { $index }
 # usual name.
 rate-pull = pull { $pull }
 
-stream-inputs = Stream inputs
-stream-outputs = Stream outputs
 # The most time a stream output's frames take through the network.
+stream-format = Format
 stream-max-transit-time = Max transit time { $time }
 
 avb-interfaces = AVB interfaces

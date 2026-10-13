@@ -131,8 +131,7 @@ entity-sampling-rate = Örnekleme hızı
 clock-source-numbered = Kaynak { $index }
 rate-pull = pull { $pull }
 
-stream-inputs = Akış girişleri
-stream-outputs = Akış çıkışları
+stream-format = Biçim
 stream-max-transit-time = Azami geçiş süresi { $time }
 
 avb-interfaces = AVB arayüzleri

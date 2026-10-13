@@ -131,8 +131,7 @@ entity-sampling-rate = Mintavételi frekvencia
 clock-source-numbered = Forrás { $index }
 rate-pull = pull { $pull }
 
-stream-inputs = Streambemenetek
-stream-outputs = Streamkimenetek
+stream-format = Formátum
 stream-max-transit-time = Max. átfutási idő: { $time }
 
 avb-interfaces = AVB-interfészek

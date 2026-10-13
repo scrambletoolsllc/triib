@@ -132,8 +132,7 @@ entity-sampling-rate = Tần số lấy mẫu
 clock-source-numbered = Nguồn { $index }
 rate-pull = hệ số pull { $pull }
 
-stream-inputs = Đầu vào luồng
-stream-outputs = Đầu ra luồng
+stream-format = Định dạng
 stream-max-transit-time = Thời gian truyền tối đa { $time }
 
 avb-interfaces = Giao diện AVB

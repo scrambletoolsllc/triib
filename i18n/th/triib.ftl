@@ -129,8 +129,7 @@ entity-sampling-rate = อัตราสุ่มตัวอย่าง
 clock-source-numbered = แหล่ง { $index }
 rate-pull = pull { $pull }
 
-stream-inputs = อินพุตสตรีม
-stream-outputs = เอาต์พุตสตรีม
+stream-format = รูปแบบ
 stream-max-transit-time = เวลาส่งผ่านสูงสุด { $time }
 
 avb-interfaces = อินเทอร์เฟซ AVB

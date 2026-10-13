@@ -129,8 +129,7 @@ entity-sampling-rate = سیمپلنگ ریٹ
 clock-source-numbered = سورس { $index }
 rate-pull = کھنچاؤ { $pull }
 
-stream-inputs = اسٹریم ان پٹس
-stream-outputs = اسٹریم آؤٹ پٹس
+stream-format = فارمیٹ
 stream-max-transit-time = زیادہ سے زیادہ ٹرانزٹ ٹائم { $time }
 
 avb-interfaces = AVB انٹرفیسز

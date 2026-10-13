@@ -131,8 +131,7 @@ entity-sampling-rate = Samplingsfrekvens
 clock-source-numbered = Kilde { $index }
 rate-pull = pull { $pull }
 
-stream-inputs = Stream-innganger
-stream-outputs = Stream-utganger
+stream-format = Format
 stream-max-transit-time = Maks. transittid { $time }
 
 avb-interfaces = AVB-grensesnitt

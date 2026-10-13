@@ -129,8 +129,7 @@ entity-sampling-rate = نرخ نمونه‌برداری
 clock-source-numbered = منبع { $index }
 rate-pull = کشش { $pull }
 
-stream-inputs = ورودی‌های جریان
-stream-outputs = خروجی‌های جریان
+stream-format = قالب
 stream-max-transit-time = بیشینه زمان عبور { $time }
 
 avb-interfaces = واسط‌های AVB

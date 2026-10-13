@@ -132,8 +132,7 @@ entity-sampling-rate = Frequência de amostragem
 clock-source-numbered = Fonte { $index }
 rate-pull = pull { $pull }
 
-stream-inputs = Entradas de fluxo
-stream-outputs = Saídas de fluxo
+stream-format = Formato
 stream-max-transit-time = Tempo de trânsito máx. { $time }
 
 avb-interfaces = Interfaces AVB

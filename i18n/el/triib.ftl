@@ -131,8 +131,7 @@ entity-sampling-rate = Συχνότητα δειγματοληψίας
 clock-source-numbered = Πηγή { $index }
 rate-pull = pull { $pull }
 
-stream-inputs = Είσοδοι ροής
-stream-outputs = Έξοδοι ροής
+stream-format = Μορφή
 stream-max-transit-time = Μέγ. χρόνος διέλευσης { $time }
 
 avb-interfaces = Διεπαφές AVB
