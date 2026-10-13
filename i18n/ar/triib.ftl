@@ -61,8 +61,10 @@ interface-virtual = افتراضية
 
 toolbar-choose-interface = اختر واجهة
 toolbar-interface = واجهة الشبكة
-toolbar-show-virtual = إظهار الواجهات الافتراضية
+toolbar-filter-interfaces = تصفية الواجهات
 toolbar-hide-virtual = إخفاء الواجهات الافتراضية
+toolbar-hide-wireless = إخفاء الواجهات اللاسلكية
+toolbar-hide-unclocked = إخفاء الواجهات التي بلا ساعة عتادية
 toolbar-connections = الاتصالات
 toolbar-network = الشبكة
 toolbar-entities = الكيانات

@@ -63,8 +63,10 @@ interface-virtual = sanal
 
 toolbar-choose-interface = Bir arayüz seçin
 toolbar-interface = Ağ arayüzü
-toolbar-show-virtual = Sanal arayüzleri göster
+toolbar-filter-interfaces = Arayüzleri filtrele
 toolbar-hide-virtual = Sanal arayüzleri gizle
+toolbar-hide-wireless = Kablosuz arayüzleri gizle
+toolbar-hide-unclocked = Donanım saati olmayan arayüzleri gizle
 toolbar-connections = Bağlantılar
 toolbar-network = Ağ
 toolbar-entities = Varlıklar

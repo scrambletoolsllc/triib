@@ -63,8 +63,10 @@ interface-virtual = εικονική
 
 toolbar-choose-interface = Επιλέξτε διεπαφή
 toolbar-interface = Διεπαφή δικτύου
-toolbar-show-virtual = Εμφάνιση εικονικών διεπαφών
+toolbar-filter-interfaces = Φιλτράρισμα διεπαφών
 toolbar-hide-virtual = Απόκρυψη εικονικών διεπαφών
+toolbar-hide-wireless = Απόκρυψη ασύρματων διεπαφών
+toolbar-hide-unclocked = Απόκρυψη διεπαφών χωρίς ρολόι υλικού
 toolbar-connections = Συνδέσεις
 toolbar-network = Δίκτυο
 toolbar-entities = Οντότητες

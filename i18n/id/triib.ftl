@@ -61,8 +61,10 @@ interface-virtual = virtual
 
 toolbar-choose-interface = Pilih antarmuka
 toolbar-interface = Antarmuka jaringan
-toolbar-show-virtual = Tampilkan antarmuka virtual
+toolbar-filter-interfaces = Saring antarmuka
 toolbar-hide-virtual = Sembunyikan antarmuka virtual
+toolbar-hide-wireless = Sembunyikan antarmuka nirkabel
+toolbar-hide-unclocked = Sembunyikan antarmuka tanpa clock hardware
 toolbar-connections = Koneksi
 toolbar-network = Jaringan
 toolbar-entities = Entitas

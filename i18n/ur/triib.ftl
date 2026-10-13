@@ -61,8 +61,10 @@ interface-virtual = ورچوئل
 
 toolbar-choose-interface = انٹرفیس منتخب کریں
 toolbar-interface = نیٹ ورک انٹرفیس
-toolbar-show-virtual = ورچوئل انٹرفیسز دکھائیں
+toolbar-filter-interfaces = انٹرفیسز فلٹر کریں
 toolbar-hide-virtual = ورچوئل انٹرفیسز چھپائیں
+toolbar-hide-wireless = وائرلیس انٹرفیسز چھپائیں
+toolbar-hide-unclocked = ہارڈویئر کلاک کے بغیر انٹرفیسز چھپائیں
 toolbar-connections = کنکشنز
 toolbar-network = نیٹ ورک
 toolbar-entities = اینٹیٹیز

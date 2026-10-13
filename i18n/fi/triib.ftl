@@ -63,8 +63,10 @@ interface-virtual = virtuaalinen
 
 toolbar-choose-interface = Valitse liitäntä
 toolbar-interface = Verkkoliitäntä
-toolbar-show-virtual = Näytä virtuaaliset liitännät
+toolbar-filter-interfaces = Suodata liitännät
 toolbar-hide-virtual = Piilota virtuaaliset liitännät
+toolbar-hide-wireless = Piilota langattomat liitännät
+toolbar-hide-unclocked = Piilota liitännät, joissa ei ole laitteistokelloa
 toolbar-connections = Yhteydet
 toolbar-network = Verkko
 toolbar-entities = Entiteetit

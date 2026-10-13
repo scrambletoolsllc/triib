@@ -61,8 +61,10 @@ interface-virtual = virtual
 
 toolbar-choose-interface = Interface-ஐத் தேர்ந்தெடு
 toolbar-interface = நெட்வொர்க் interface
-toolbar-show-virtual = Virtual interfaces-ஐக் காட்டு
+toolbar-filter-interfaces = Interfaces-ஐ வடிகட்டு
 toolbar-hide-virtual = Virtual interfaces-ஐ மறை
+toolbar-hide-wireless = வயர்லெஸ் interfaces-ஐ மறை
+toolbar-hide-unclocked = hardware clock இல்லாத interfaces-ஐ மறை
 toolbar-connections = இணைப்புகள்
 toolbar-network = நெட்வொர்க்
 toolbar-entities = Entities

@@ -64,8 +64,10 @@ interface-virtual = 가상
 
 toolbar-choose-interface = 인터페이스 선택
 toolbar-interface = 네트워크 인터페이스
-toolbar-show-virtual = 가상 인터페이스 표시
+toolbar-filter-interfaces = 인터페이스 필터
 toolbar-hide-virtual = 가상 인터페이스 숨기기
+toolbar-hide-wireless = 무선 인터페이스 숨기기
+toolbar-hide-unclocked = 하드웨어 클럭이 없는 인터페이스 숨기기
 toolbar-connections = 연결
 toolbar-network = 네트워크
 toolbar-entities = 엔티티

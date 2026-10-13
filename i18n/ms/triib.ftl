@@ -61,8 +61,10 @@ interface-virtual = maya
 
 toolbar-choose-interface = Pilih antara muka
 toolbar-interface = Antara muka rangkaian
-toolbar-show-virtual = Tunjukkan antara muka maya
+toolbar-filter-interfaces = Tapis antara muka
 toolbar-hide-virtual = Sembunyikan antara muka maya
+toolbar-hide-wireless = Sembunyikan antara muka wayarles
+toolbar-hide-unclocked = Sembunyikan antara muka tanpa jam perkakasan
 toolbar-connections = Sambungan
 toolbar-network = Rangkaian
 toolbar-entities = Entiti

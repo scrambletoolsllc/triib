@@ -61,8 +61,10 @@ interface-virtual = virtual
 
 toolbar-choose-interface = Interface चुनें
 toolbar-interface = नेटवर्क interface
-toolbar-show-virtual = Virtual interfaces दिखाएँ
+toolbar-filter-interfaces = Interfaces फ़िल्टर करें
 toolbar-hide-virtual = Virtual interfaces छिपाएँ
+toolbar-hide-wireless = वायरलेस interfaces छिपाएँ
+toolbar-hide-unclocked = बिना hardware clock वाले interfaces छिपाएँ
 toolbar-connections = कनेक्शन
 toolbar-network = नेटवर्क
 toolbar-entities = Entities

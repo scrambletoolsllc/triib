@@ -63,8 +63,10 @@ interface-virtual = virtuell
 
 toolbar-choose-interface = Schnittstelle wählen
 toolbar-interface = Netzwerkschnittstelle
-toolbar-show-virtual = Virtuelle Schnittstellen anzeigen
+toolbar-filter-interfaces = Schnittstellen filtern
 toolbar-hide-virtual = Virtuelle Schnittstellen ausblenden
+toolbar-hide-wireless = Drahtlose Schnittstellen ausblenden
+toolbar-hide-unclocked = Schnittstellen ohne Hardware-Clock ausblenden
 toolbar-connections = Verbindungen
 toolbar-network = Netzwerk
 toolbar-entities = Entitäten

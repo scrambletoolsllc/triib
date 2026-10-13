@@ -63,8 +63,10 @@ interface-virtual = virtuális
 
 toolbar-choose-interface = Válasszon interfészt
 toolbar-interface = Hálózati interfész
-toolbar-show-virtual = Virtuális interfészek megjelenítése
+toolbar-filter-interfaces = Interfészek szűrése
 toolbar-hide-virtual = Virtuális interfészek elrejtése
+toolbar-hide-wireless = Vezeték nélküli interfészek elrejtése
+toolbar-hide-unclocked = Hardveróra nélküli interfészek elrejtése
 toolbar-connections = Kapcsolatok
 toolbar-network = Hálózat
 toolbar-entities = Entitások

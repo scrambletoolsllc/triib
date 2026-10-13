@@ -61,8 +61,10 @@ interface-virtual = וירטואלי
 
 toolbar-choose-interface = בחירת ממשק
 toolbar-interface = ממשק רשת
-toolbar-show-virtual = הצגת ממשקים וירטואליים
+toolbar-filter-interfaces = סינון ממשקים
 toolbar-hide-virtual = הסתרת ממשקים וירטואליים
+toolbar-hide-wireless = הסתרת ממשקים אלחוטיים
+toolbar-hide-unclocked = הסתרת ממשקים ללא שעון חומרה
 toolbar-connections = חיבורים
 toolbar-network = רשת
 toolbar-entities = ישויות

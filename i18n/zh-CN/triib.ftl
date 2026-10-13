@@ -64,8 +64,10 @@ interface-virtual = 虚拟
 
 toolbar-choose-interface = 选择接口
 toolbar-interface = 网络接口
-toolbar-show-virtual = 显示虚拟接口
+toolbar-filter-interfaces = 筛选接口
 toolbar-hide-virtual = 隐藏虚拟接口
+toolbar-hide-wireless = 隐藏无线接口
+toolbar-hide-unclocked = 隐藏没有硬件时钟的接口
 toolbar-connections = 连接
 toolbar-network = 网络
 toolbar-entities = 实体

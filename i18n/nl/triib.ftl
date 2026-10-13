@@ -63,8 +63,10 @@ interface-virtual = virtueel
 
 toolbar-choose-interface = Kies een interface
 toolbar-interface = Netwerkinterface
-toolbar-show-virtual = Virtuele interfaces tonen
+toolbar-filter-interfaces = Interfaces filteren
 toolbar-hide-virtual = Virtuele interfaces verbergen
+toolbar-hide-wireless = Draadloze interfaces verbergen
+toolbar-hide-unclocked = Interfaces zonder hardwareklok verbergen
 toolbar-connections = Verbindingen
 toolbar-network = Netwerk
 toolbar-entities = Entiteiten

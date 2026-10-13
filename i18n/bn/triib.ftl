@@ -61,8 +61,10 @@ interface-virtual = virtual
 
 toolbar-choose-interface = Interface বেছে নিন
 toolbar-interface = নেটওয়ার্ক interface
-toolbar-show-virtual = Virtual interfaces দেখান
+toolbar-filter-interfaces = Interface ফিল্টার করুন
 toolbar-hide-virtual = Virtual interfaces লুকান
+toolbar-hide-wireless = ওয়্যারলেস interfaces লুকান
+toolbar-hide-unclocked = hardware clock ছাড়া interfaces লুকান
 toolbar-connections = সংযোগ
 toolbar-network = নেটওয়ার্ক
 toolbar-entities = Entities

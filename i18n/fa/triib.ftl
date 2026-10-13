@@ -61,8 +61,10 @@ interface-virtual = مجازی
 
 toolbar-choose-interface = یک واسط انتخاب کنید
 toolbar-interface = واسط شبکه
-toolbar-show-virtual = نمایش واسط‌های مجازی
+toolbar-filter-interfaces = پالایش واسط‌ها
 toolbar-hide-virtual = پنهان‌کردن واسط‌های مجازی
+toolbar-hide-wireless = پنهان‌کردن واسط‌های بی‌سیم
+toolbar-hide-unclocked = پنهان‌کردن واسط‌های بدون ساعت سخت‌افزاری
 toolbar-connections = اتصال‌ها
 toolbar-network = شبکه
 toolbar-entities = موجودیت‌ها

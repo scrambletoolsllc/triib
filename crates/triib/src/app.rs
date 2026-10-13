@@ -95,6 +95,8 @@ pub struct Triib {
     pub network_focus: Option<Focus>,
     /// The toolbar's "More" menu is open.
     pub overflow_open: bool,
+    /// The menu of the interface picker's filters is open.
+    pub interface_filters_open: bool,
     /// On a narrow window, the network view shows its list instead of the map.
     pub network_list: bool,
     /// The name being edited in the inspector, and its text so far.
@@ -156,7 +158,11 @@ pub enum Message {
     /// A drag of the log panel's top edge, with its height and the most
     /// it may take as shown.
     LogResized(resize::Drag, f32, f32),
-    VirtualInterfacesToggled,
+    /// The interface picker leaves out interfaces of a kind, or puts them
+    /// back.
+    InterfaceFilterToggled(crate::settings::InterfaceFilter),
+    /// Open or close the menu of the interface picker's filters.
+    InterfaceFiltersMenu(bool),
     /// The Entities view lists only this computer's endpoints, or all.
     HostEntitiesOnlyToggled,
     SearchChanged(String),
@@ -314,6 +320,7 @@ impl Triib {
             audio_devices: (Vec::new(), Vec::new()),
             network_focus: None,
             overflow_open: false,
+            interface_filters_open: false,
             network_list: false,
             editing: None,
             tree_open: BTreeSet::new(),
@@ -369,6 +376,7 @@ impl Triib {
             audio_devices: (Vec::new(), Vec::new()),
             network_focus: None,
             overflow_open: false,
+            interface_filters_open: false,
             network_list: false,
             editing: None,
             tree_open: BTreeSet::new(),
@@ -514,14 +522,19 @@ impl Triib {
             .find(|interface| interface.name == name)
     }
 
-    /// The interfaces the picker offers: physical ones, virtual ones too
-    /// unless the filter hides them, and the chosen one always.
+    /// The interfaces the picker offers: all but the kinds its filters
+    /// leave out, virtual, wireless or without a hardware clock, and the
+    /// chosen one always.
     pub fn listed_interfaces(&self) -> impl Iterator<Item = &Interface> {
+        use crate::settings::InterfaceFilter;
         let chosen = self.settings.interface.as_deref();
+        let settings = &self.settings;
         self.interfaces.iter().filter(move |interface| {
-            interface.physical
-                || !self.settings.hide_virtual_interfaces
-                || chosen == Some(interface.name.as_str())
+            let left_out = (settings.hides(InterfaceFilter::Virtual) && !interface.physical)
+                || (settings.hides(InterfaceFilter::Wireless) && interface.wireless)
+                || (settings.hides(InterfaceFilter::Unclocked)
+                    && interface.hardware_clock.is_none());
+            !left_out || chosen == Some(interface.name.as_str())
         })
     }
 
@@ -542,10 +555,11 @@ impl Triib {
                 self.settings.host_entities_only = !self.settings.host_entities_only;
                 self.save_settings();
             }
-            Message::VirtualInterfacesToggled => {
-                self.settings.hide_virtual_interfaces = !self.settings.hide_virtual_interfaces;
+            Message::InterfaceFilterToggled(filter) => {
+                self.settings.toggle_filter(filter);
                 self.save_settings();
             }
+            Message::InterfaceFiltersMenu(open) => self.interface_filters_open = open,
             Message::InspectorToggled => {
                 self.settings.inspector = !self.settings.inspector;
                 self.save_settings();

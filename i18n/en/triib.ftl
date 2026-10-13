@@ -98,8 +98,10 @@ interface-virtual = virtual
 
 toolbar-choose-interface = Choose an interface
 toolbar-interface = Network interface
-toolbar-show-virtual = Show virtual interfaces
+toolbar-filter-interfaces = Filter interfaces
 toolbar-hide-virtual = Hide virtual interfaces
+toolbar-hide-wireless = Hide wireless interfaces
+toolbar-hide-unclocked = Hide interfaces without a hardware clock
 # The view of streams that can connect: talker outputs against listener
 # inputs.
 toolbar-connections = Connections

@@ -64,8 +64,10 @@ interface-virtual = virtual
 
 toolbar-choose-interface = Tria una interfície
 toolbar-interface = Interfície de xarxa
-toolbar-show-virtual = Mostra les interfícies virtuals
+toolbar-filter-interfaces = Filtra les interfícies
 toolbar-hide-virtual = Amaga les interfícies virtuals
+toolbar-hide-wireless = Amaga les interfícies sense fil
+toolbar-hide-unclocked = Amaga les interfícies sense rellotge de maquinari
 toolbar-connections = Connexions
 toolbar-network = Xarxa
 toolbar-entities = Entitats

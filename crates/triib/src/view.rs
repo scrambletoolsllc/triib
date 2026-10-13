@@ -199,21 +199,7 @@ fn toolbar_at(triib: &Triib, width: f32) -> Element<'_, Message> {
             None,
             false,
         ),
-        (
-            component::toggle_tool(
-                Icon::FilterList,
-                if triib.settings.hide_virtual_interfaces {
-                    fl!("toolbar-show-virtual")
-                } else {
-                    fl!("toolbar-hide-virtual")
-                },
-                triib.settings.hide_virtual_interfaces,
-                Message::VirtualInterfacesToggled,
-            ),
-            TOOL_WIDTH,
-            Some(0),
-            false,
-        ),
+        (interface_filters(triib), TOOL_WIDTH, Some(0), false),
         (
             component::group([
                 view_tool(Icon::GridOn, fl!("toolbar-connections"), View::Matrix),
@@ -338,6 +324,47 @@ fn toolbar_at(triib: &Triib, width: f32) -> Element<'_, Message> {
         .height(TOOLBAR_HEIGHT)
         .align_y(Center)
         .into()
+}
+
+/// The interface picker's filters: a tool, shown as in use while any
+/// leaves interfaces out, whose menu checks each kind it leaves out, open
+/// while they are checked.
+fn interface_filters(triib: &Triib) -> Element<'_, Message> {
+    use crate::settings::InterfaceFilter;
+    use scramble_ui::dropdown::Entry;
+    let settings = &triib.settings;
+    let open = triib.interface_filters_open;
+    let filters = [
+        (InterfaceFilter::Virtual, fl!("toolbar-hide-virtual")),
+        (InterfaceFilter::Wireless, fl!("toolbar-hide-wireless")),
+        (InterfaceFilter::Unclocked, fl!("toolbar-hide-unclocked")),
+    ];
+    let menu = open.then(|| {
+        let entries = filters
+            .into_iter()
+            .map(|(filter, label)| {
+                Entry::item(label, Message::InterfaceFilterToggled(filter))
+                    .checked(settings.hides(filter))
+            })
+            .collect();
+        dropdown::surface(entries, 0.0)
+    });
+    let any = [
+        InterfaceFilter::Virtual,
+        InterfaceFilter::Wireless,
+        InterfaceFilter::Unclocked,
+    ]
+    .into_iter()
+    .any(|filter| settings.hides(filter));
+    let tool = button::icon_button(Icon::FilterList)
+        .selected(any)
+        .on_press(Message::InterfaceFiltersMenu(!open));
+    let anchor = if open {
+        tool.into()
+    } else {
+        component::tip(tool, fl!("toolbar-filter-interfaces"))
+    };
+    scramble_ui::popover::popover(anchor, menu, Message::InterfaceFiltersMenu(false)).into()
 }
 
 /// What to show instead of entities: no interface, starting, a failure,
@@ -2969,6 +2996,78 @@ pub(crate) mod tests {
             }
             assert_eq!(triib.settings.log_height, height);
         }
+    }
+
+    /// The interface picker leaves out virtual and wireless interfaces and
+    /// those without a hardware clock as its filters say, always keeping
+    /// the chosen one; its menu checks each filter.
+    #[test]
+    fn the_interface_filters_leave_out_each_kind() {
+        use crate::settings::InterfaceFilter;
+
+        let interface = |name: &str, physical, wireless, clock: Option<u32>| Interface {
+            name: name.to_owned(),
+            mac: MacAddress(HOST_MAC),
+            up: true,
+            speed: Some(1000),
+            physical,
+            wireless,
+            hardware_clock: clock,
+        };
+        let (entities, models) = bench();
+        let settings = Settings {
+            interface: Some("enp6s0".to_owned()),
+            ..Settings::default()
+        };
+        let mut triib = Triib::sample(
+            settings,
+            interface("enp6s0", true, false, None),
+            entities,
+            models,
+        );
+        triib.interfaces = vec![
+            interface("enp2s0", true, false, Some(0)),
+            interface("enp6s0", true, false, None),
+            interface("enp7s0", true, false, None),
+            interface("wlan0", true, true, None),
+            interface("br0", false, false, None),
+        ];
+        let listed = |triib: &Triib| {
+            triib
+                .listed_interfaces()
+                .map(|interface| interface.name.clone())
+                .collect::<Vec<_>>()
+        };
+        // Virtual ones are left out unless asked for.
+        assert_eq!(listed(&triib), ["enp2s0", "enp6s0", "enp7s0", "wlan0"]);
+        triib.settings.toggle_filter(InterfaceFilter::Wireless);
+        assert_eq!(listed(&triib), ["enp2s0", "enp6s0", "enp7s0"]);
+        // Without a hardware clock, all but the chosen one.
+        triib.settings.toggle_filter(InterfaceFilter::Unclocked);
+        assert_eq!(listed(&triib), ["enp2s0", "enp6s0"]);
+        triib.settings.toggle_filter(InterfaceFilter::Virtual);
+        triib.settings.toggle_filter(InterfaceFilter::Unclocked);
+        assert_eq!(listed(&triib), ["enp2s0", "enp6s0", "enp7s0", "br0"]);
+
+        triib.interface_filters_open = true;
+        let mut simulator = simulate(&triib, Size::new(1280.0, 800.0));
+        assert!(simulator.find("Hide virtual interfaces").is_ok());
+        assert!(
+            simulator
+                .find("Hide interfaces without a hardware clock")
+                .is_ok()
+        );
+        simulator
+            .click("Hide wireless interfaces")
+            .expect("the filter");
+        let messages: Vec<Message> = simulator.into_messages().collect();
+        assert!(
+            messages.iter().any(|message| matches!(
+                message,
+                Message::InterfaceFilterToggled(InterfaceFilter::Wireless)
+            )),
+            "{messages:?}"
+        );
     }
 
     /// An entity read again, as one of this computer's entities is when a

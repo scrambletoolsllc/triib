@@ -64,8 +64,10 @@ interface-virtual = virtuală
 
 toolbar-choose-interface = Alege o interfață
 toolbar-interface = Interfață de rețea
-toolbar-show-virtual = Afișează interfețele virtuale
+toolbar-filter-interfaces = Filtrează interfețele
 toolbar-hide-virtual = Ascunde interfețele virtuale
+toolbar-hide-wireless = Ascunde interfețele wireless
+toolbar-hide-unclocked = Ascunde interfețele fără ceas hardware
 toolbar-connections = Conexiuni
 toolbar-network = Rețea
 toolbar-entities = Entități

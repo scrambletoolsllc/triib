@@ -64,8 +64,10 @@ interface-virtual = 仮想
 
 toolbar-choose-interface = インターフェイスを選択
 toolbar-interface = ネットワークインターフェイス
-toolbar-show-virtual = 仮想インターフェイスを表示
+toolbar-filter-interfaces = インターフェイスを絞り込む
 toolbar-hide-virtual = 仮想インターフェイスを隠す
+toolbar-hide-wireless = 無線インターフェイスを隠す
+toolbar-hide-unclocked = ハードウェアクロックのないインターフェイスを隠す
 toolbar-connections = 接続
 toolbar-network = ネットワーク
 toolbar-entities = エンティティ

@@ -61,8 +61,10 @@ interface-virtual = เสมือน
 
 toolbar-choose-interface = เลือกอินเทอร์เฟซ
 toolbar-interface = อินเทอร์เฟซเครือข่าย
-toolbar-show-virtual = แสดงอินเทอร์เฟซเสมือน
+toolbar-filter-interfaces = กรองอินเทอร์เฟซ
 toolbar-hide-virtual = ซ่อนอินเทอร์เฟซเสมือน
+toolbar-hide-wireless = ซ่อนอินเทอร์เฟซไร้สาย
+toolbar-hide-unclocked = ซ่อนอินเทอร์เฟซที่ไม่มีคล็อกฮาร์ดแวร์
 toolbar-connections = การเชื่อมต่อ
 toolbar-network = เครือข่าย
 toolbar-entities = เอนทิตี

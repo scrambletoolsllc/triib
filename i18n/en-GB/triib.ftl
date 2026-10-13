@@ -55,7 +55,6 @@ interface-virtual = virtual
 
 toolbar-choose-interface = Choose an interface
 toolbar-interface = Network interface
-toolbar-show-virtual = Show virtual interfaces
 toolbar-hide-virtual = Hide virtual interfaces
 toolbar-connections = Connections
 toolbar-network = Network

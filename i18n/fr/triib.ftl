@@ -64,8 +64,10 @@ interface-virtual = virtuelle
 
 toolbar-choose-interface = Choisir une interface
 toolbar-interface = Interface réseau
-toolbar-show-virtual = Afficher les interfaces virtuelles
+toolbar-filter-interfaces = Filtrer les interfaces
 toolbar-hide-virtual = Masquer les interfaces virtuelles
+toolbar-hide-wireless = Masquer les interfaces sans fil
+toolbar-hide-unclocked = Masquer les interfaces sans horloge matérielle
 toolbar-connections = Connexions
 toolbar-network = Réseau
 toolbar-entities = Entités

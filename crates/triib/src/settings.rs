@@ -12,6 +12,41 @@ use crate::matrix::Side;
 /// The language setting's value for following the system's language.
 pub const SYSTEM_LANGUAGE: &str = "system";
 
+/// A kind of interface the interface picker can leave out.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InterfaceFilter {
+    Virtual,
+    Wireless,
+    /// Without a PTP hardware clock.
+    Unclocked,
+}
+
+impl Settings {
+    /// Whether the picker leaves out interfaces of `filter`'s kind.
+    pub fn hides(&self, filter: InterfaceFilter) -> bool {
+        match filter {
+            InterfaceFilter::Virtual => self.hide_virtual_interfaces,
+            InterfaceFilter::Wireless => self.hide_wireless_interfaces,
+            InterfaceFilter::Unclocked => self.hide_unclocked_interfaces,
+        }
+    }
+
+    fn hides_mut(&mut self, filter: InterfaceFilter) -> &mut bool {
+        match filter {
+            InterfaceFilter::Virtual => &mut self.hide_virtual_interfaces,
+            InterfaceFilter::Wireless => &mut self.hide_wireless_interfaces,
+            InterfaceFilter::Unclocked => &mut self.hide_unclocked_interfaces,
+        }
+    }
+
+    /// Leaves interfaces of `filter`'s kind out of the picker, or puts
+    /// them back.
+    pub fn toggle_filter(&mut self, filter: InterfaceFilter) {
+        let hides = self.hides_mut(filter);
+        *hides = !*hides;
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -29,6 +64,10 @@ pub struct Settings {
     /// Leave bridges, tunnels and other virtual interfaces out of the
     /// interface picker.
     pub hide_virtual_interfaces: bool,
+    /// Leave wireless interfaces out of it.
+    pub hide_wireless_interfaces: bool,
+    /// Leave interfaces without a PTP hardware clock out of it.
+    pub hide_unclocked_interfaces: bool,
     /// The Entities view lists only this computer's own talkers and
     /// listeners.
     pub host_entities_only: bool,
@@ -70,6 +109,8 @@ impl Default for Settings {
             animations: true,
             interface: None,
             hide_virtual_interfaces: true,
+            hide_wireless_interfaces: false,
+            hide_unclocked_interfaces: false,
             host_entities_only: false,
             view: View::Matrix,
             inspector: false,

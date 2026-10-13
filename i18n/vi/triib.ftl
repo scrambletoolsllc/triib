@@ -64,8 +64,10 @@ interface-virtual = ảo
 
 toolbar-choose-interface = Chọn giao diện mạng
 toolbar-interface = Giao diện mạng
-toolbar-show-virtual = Hiện giao diện ảo
+toolbar-filter-interfaces = Lọc giao diện
 toolbar-hide-virtual = Ẩn giao diện ảo
+toolbar-hide-wireless = Ẩn giao diện không dây
+toolbar-hide-unclocked = Ẩn giao diện không có đồng hồ phần cứng
 toolbar-connections = Kết nối
 toolbar-network = Mạng
 toolbar-entities = Thực thể

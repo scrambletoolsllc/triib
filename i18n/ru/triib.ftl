@@ -61,8 +61,10 @@ interface-virtual = виртуальный
 
 toolbar-choose-interface = Выберите интерфейс
 toolbar-interface = Сетевой интерфейс
-toolbar-show-virtual = Показать виртуальные интерфейсы
+toolbar-filter-interfaces = Фильтр интерфейсов
 toolbar-hide-virtual = Скрыть виртуальные интерфейсы
+toolbar-hide-wireless = Скрыть беспроводные интерфейсы
+toolbar-hide-unclocked = Скрыть интерфейсы без аппаратных часов
 toolbar-connections = Подключения
 toolbar-network = Сеть
 toolbar-entities = Сущности

@@ -63,8 +63,10 @@ interface-virtual = virtuelt
 
 toolbar-choose-interface = Velg et grensesnitt
 toolbar-interface = Nettverksgrensesnitt
-toolbar-show-virtual = Vis virtuelle grensesnitt
+toolbar-filter-interfaces = Filtrer grensesnitt
 toolbar-hide-virtual = Skjul virtuelle grensesnitt
+toolbar-hide-wireless = Skjul trådløse grensesnitt
+toolbar-hide-unclocked = Skjul grensesnitt uten maskinvareklokke
 toolbar-connections = Tilkoblinger
 toolbar-network = Nettverk
 toolbar-entities = Entiteter

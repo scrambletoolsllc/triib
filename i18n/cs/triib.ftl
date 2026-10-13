@@ -61,8 +61,10 @@ interface-virtual = virtuální
 
 toolbar-choose-interface = Vyberte rozhraní
 toolbar-interface = Síťové rozhraní
-toolbar-show-virtual = Zobrazit virtuální rozhraní
+toolbar-filter-interfaces = Filtrovat rozhraní
 toolbar-hide-virtual = Skrýt virtuální rozhraní
+toolbar-hide-wireless = Skrýt bezdrátová rozhraní
+toolbar-hide-unclocked = Skrýt rozhraní bez hardwarových hodin
 toolbar-connections = Připojení
 toolbar-network = Síť
 toolbar-entities = Entity

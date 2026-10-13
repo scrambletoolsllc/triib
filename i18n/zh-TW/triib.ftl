@@ -64,8 +64,10 @@ interface-virtual = 虛擬
 
 toolbar-choose-interface = 選擇介面
 toolbar-interface = 網路介面
-toolbar-show-virtual = 顯示虛擬介面
+toolbar-filter-interfaces = 篩選介面
 toolbar-hide-virtual = 隱藏虛擬介面
+toolbar-hide-wireless = 隱藏無線介面
+toolbar-hide-unclocked = 隱藏沒有硬體時鐘的介面
 toolbar-connections = 連線
 toolbar-network = 網路
 toolbar-entities = 實體

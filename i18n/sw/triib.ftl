@@ -61,8 +61,10 @@ interface-virtual = pepe
 
 toolbar-choose-interface = Chagua kiolesura
 toolbar-interface = Kiolesura cha mtandao
-toolbar-show-virtual = Onyesha violesura pepe
+toolbar-filter-interfaces = Chuja violesura
 toolbar-hide-virtual = Ficha violesura pepe
+toolbar-hide-wireless = Ficha violesura visivyotumia waya
+toolbar-hide-unclocked = Ficha violesura visivyo na saa ya maunzi
 toolbar-connections = Miunganisho
 toolbar-network = Mtandao
 toolbar-entities = Huluki
