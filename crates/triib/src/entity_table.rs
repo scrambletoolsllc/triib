@@ -585,6 +585,41 @@ mod tests {
         assert_eq!(loaded.entity_columns, before);
     }
 
+    /// This computer's endpoints show what they are from the moment they
+    /// advertise, before the daemon's status names them.
+    #[test]
+    fn own_endpoints_have_their_icons_at_once() {
+        use atdecc::EntityId;
+        use scramble_ui::icon::Icon;
+
+        let mut triib = sample();
+        triib.settings.interface = Some("enp6s0".to_owned());
+        triib.endpoints = None;
+        let own = avb_net::MacAddress([0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b]);
+        let template = *triib.entities.values().next().unwrap();
+        let mut advertise = |id: u64, mac, model: u64| {
+            let mut entity = template;
+            entity.adp.entity_id = EntityId(id);
+            entity.adp.entity_model_id = atdecc::EntityModelId(model);
+            entity.mac = mac;
+            triib.entities.insert(EntityId(id), entity);
+        };
+        advertise(0x9c6b_00ff_0030_9a2b, own, 0x8c1f_6436_c000_0002);
+        advertise(0x9c6b_00ff_0130_9a2b, own, 0x8c1f_6436_c000_0004);
+        // Another computer's talker of the same model.
+        let other = avb_net::MacAddress([0xf0, 0xa7, 0x31, 0xf4, 0x0f, 0x14]);
+        advertise(0xf0a7_31ff_00f4_0f14, other, 0x8c1f_6436_c000_0002);
+        assert_eq!(
+            triib.host_icon(EntityId(0x9c6b_00ff_0030_9a2b)),
+            Some(Icon::Output)
+        );
+        assert_eq!(
+            triib.host_icon(EntityId(0x9c6b_00ff_0130_9a2b)),
+            Some(Icon::Input)
+        );
+        assert_eq!(triib.host_icon(EntityId(0xf0a7_31ff_00f4_0f14)), None);
+    }
+
     fn sample() -> Triib {
         let (entities, models) = crate::view::tests::bench();
         let interface = avb_net::Interface {

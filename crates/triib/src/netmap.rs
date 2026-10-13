@@ -815,8 +815,10 @@ fn cards(
                 NodeKind::Entity { entity_id, .. } => {
                     let found = triib.entities.get(&entity_id);
                     (
-                        found.map_or(Icon::GraphicEq, |entity| {
-                            crate::describe::glyph(&entity.adp)
+                        triib.host_icon(entity_id).unwrap_or_else(|| {
+                            found.map_or(Icon::GraphicEq, |entity| {
+                                crate::describe::glyph(&entity.adp)
+                            })
                         }),
                         found.map(tag).unwrap_or_default(),
                     )

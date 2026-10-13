@@ -431,8 +431,20 @@ impl Triib {
     /// The icon of one of this computer's endpoints, telling a talker,
     /// a listener and a device apart; `None` for others' entities.
     pub fn host_icon(&self, entity_id: EntityId) -> Option<scramble_ui::icon::Icon> {
-        crate::host::status_of(self.endpoints.as_ref(), entity_id)
-            .map(|endpoint| crate::host_view::icon(endpoint.kind))
+        let kind = crate::host::status_of(self.endpoints.as_ref(), entity_id)
+            .map(|endpoint| endpoint.kind)
+            // Until the daemon's status names it, as it does a moment after
+            // the entity advertises: one of its models, from this
+            // computer's address.
+            .or_else(|| {
+                let entity = self.entities.get(&entity_id)?;
+                let own = self.interface()?.mac;
+                if entity.mac != own {
+                    return None;
+                }
+                triib_endpointd::runtime::kind_of_model(entity.adp.entity_model_id)
+            })?;
+        Some(crate::host_view::icon(kind))
     }
 
     /// Goes on with a preset recalled while this computer's endpoints
