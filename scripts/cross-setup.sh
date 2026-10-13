@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sets up an x86_64 Ubuntu (the release uses 22.04, as GitHub's runners
+# Sets up an x86_64 Ubuntu (the release uses 24.04, as GitHub's runners
 # do) to cross-compile triib for another Linux architecture:
 #
 #   scripts/cross-setup.sh riscv64
@@ -25,6 +25,12 @@ codename=$(. /etc/os-release && echo "$VERSION_CODENAME")
 host=$(dpkg --print-architecture)
 sudo sed -i -E "s/^deb (http|https|mirror)/deb [arch=$host] \1/" \
   /etc/apt/sources.list /etc/apt/sources.list.d/*.list 2>/dev/null || true
+# Ubuntu 24.04 lists them in deb822 files instead.
+for sources in /etc/apt/sources.list.d/*.sources; do
+  [ -f "$sources" ] || continue
+  grep -q '^Architectures:' "$sources" ||
+    sudo sed -i -E "/^Types:/a Architectures: $host" "$sources"
+done
 sudo tee /etc/apt/sources.list.d/ports-$debarch.list >/dev/null <<SOURCES
 deb [arch=$debarch] http://ports.ubuntu.com/ubuntu-ports $codename main universe
 deb [arch=$debarch] http://ports.ubuntu.com/ubuntu-ports $codename-updates main universe

@@ -20,7 +20,9 @@ env:
 
 jobs:
   linux:
-    # Built on an older system so the packages run on newer ones too. The
+    # Built on an older system so the packages run on newer ones too:
+    # Ubuntu 24.04, as PipeWire's Rust bindings need its headers, so the
+    # packages need glibc 2.39. The
     # Debian and RPM packages grant the programs CAP_NET_RAW as they
     # install; a plain archive cannot, so it says how in the README. No
     # AppImage or Flatpak, which cannot carry the capability. GitHub has
@@ -31,13 +33,13 @@ jobs:
       matrix:
         include:
           - arch: x86_64
-            runner: ubuntu-22.04
+            runner: ubuntu-24.04
             deb: amd64
           - arch: aarch64
-            runner: ubuntu-22.04-arm
+            runner: ubuntu-24.04-arm
             deb: arm64
           - arch: riscv64
-            runner: ubuntu-22.04
+            runner: ubuntu-24.04
             deb: riscv64
             target: riscv64gc-unknown-linux-gnu
     runs-on: ${{ matrix.runner }}

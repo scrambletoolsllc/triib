@@ -46,6 +46,13 @@ way, AI agents through MCP, and on a Mac the Mac's own AVB entity.
   declares both SR classes' domains, so a bridge passes class B
   streams as well.
 
+### Packages
+
+- The Linux packages are built on Ubuntu 24.04, as PipeWire's Rust
+  bindings need its headers, so they need glibc 2.39 or newer: Ubuntu
+  24.04, Debian 13, Fedora 40 and later. Ubuntu 22.04 and Debian 12 are
+  no longer covered.
+
 ### Fixed
 
 - Connections to a class B talker say so, and a class B talker

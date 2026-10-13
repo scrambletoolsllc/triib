@@ -44,7 +44,7 @@ overrides:
     depends:
       - libasound2
       - libpipewire-0.3-0
-      - libc6
+      - libc6 (>= 2.39)
       - libgcc-s1
       - libcap2-bin
       - libwayland-client0
@@ -57,6 +57,7 @@ overrides:
   rpm:
     depends:
       - alsa-lib
+      - glibc >= 2.39
       - pipewire-libs
       - libcap
       - libwayland-client
