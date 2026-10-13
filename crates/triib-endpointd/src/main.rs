@@ -1,4 +1,4 @@
-//! triib-endpointd: this computer's devices on an AVB network, each its
+//! triib-endpointd: this computer's entities on an AVB network, each its
 //! own ATDECC entity with streams that any controller can connect, with
 //! audio from and to the computer's audio.
 //!
@@ -29,7 +29,7 @@ fn first_config() -> Config {
     Config {
         interface,
         ptp4l_socket: "/var/run/ptp4lro".into(),
-        endpoints: vec![EndpointConfig::new("triib device", None)],
+        endpoints: vec![EndpointConfig::new("Host entity 1", None)],
         ..Config::default()
     }
 }

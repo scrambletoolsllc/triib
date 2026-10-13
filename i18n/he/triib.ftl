@@ -727,9 +727,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } לא נמצאות כאן או לא נקראו: { $missing }.
 presets-deleted = "{ $name }" נמחק.
-presets-host-note = הוא שומר גם את ההתקנים של המחשב הזה, ומפעיל אותם מחדש בטעינה.
+presets-host-note = הוא שומר גם את הישויות של המחשב הזה, ומפעיל אותן מחדש בטעינה.
 presets-host-endpoints = { $count } במחשב הזה
-presets-starting-host = מפעיל את ההתקנים של המחשב הזה עבור "{ $name }"; השאר יבוא כשיחזרו.
+presets-starting-host = מפעיל את הישויות של המחשב הזה עבור "{ $name }"; השאר יבוא כשיחזרו.
 
 ## Controls
 
@@ -748,16 +748,16 @@ matrix-stream-format-state = { $format }. { $state }.
 
 common-decimal-separator = {"."}
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = הוספת נקודת קצה
-host-show-mine = הצגת ההתקנים של המחשב הזה בלבד
+host-add-entity = הוספת ישות
+host-show-mine = הצגת הישויות של המחשב הזה בלבד
 host-show-all = הצגת כל הישויות
-host-new-device = התקן מארח { $number }
+host-new-entity = ישות מארח { $number }
 host-failed = לא ניתן היה להוסיף למחשב הזה: { $reason }
-host-needs-clock = ההתקנים של המחשב הזה צריכים ממשק קווי עם שעון חומרה PTP
+host-needs-clock = הישויות של המחשב הזה צריכות ממשק קווי עם שעון חומרה PTP
 host-no-ptp4l = ptp4l לא עונה, ולכן הזרמים של המחשב הזה לא יכולים לשמור על זמן gPTP
-host-elsewhere = triib-endpointd פועל ב-{ $interface } עבור משתמש אחר או כ-root, ולכן ההתקנים של המחשב הזה פועלים שם ולא כאן
+host-elsewhere = triib-endpointd פועל ב-{ $interface } עבור משתמש אחר או כ-root, ולכן הישויות של המחשב הזה פועלות שם ולא כאן
 host-foreign-mrp = תוכנה אחרת שולחת הצהרות MSRP או MVRP ב-{ $interface } מהכתובת של המחשב הזה, וכך היא עלולה לבטל את מה שהזרמים של המחשב הזה צריכים
 host-alarm-foreign-mrp = תוכנה אחרת במחשב הזה שולחת הצהרות MSRP או MVRP ב-{ $interface }
 host-state = מצב

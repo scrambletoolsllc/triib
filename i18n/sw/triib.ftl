@@ -698,9 +698,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Haipo hapa au haijasomwa: { $missing }.
 presets-deleted = Imefuta "{ $name }".
-presets-host-note = Pia huhifadhi vifaa vya kompyuta hii, na kuviwasha tena inaporejeshwa.
+presets-host-note = Pia huhifadhi huluki za kompyuta hii, na kuziwasha tena inaporejeshwa.
 presets-host-endpoints = { $count } kwenye kompyuta hii
-presets-starting-host = Inawasha vifaa vya kompyuta hii kwa "{ $name }"; mengine yatafuata vitakaporudi.
+presets-starting-host = Inawasha huluki za kompyuta hii kwa "{ $name }"; mengine yatafuata zitakaporudi.
 
 ## Controls
 
@@ -717,16 +717,16 @@ network-npcap-administrators = Npcap inaruhusu wasimamizi pekee kutuma na kupoke
 matrix-stream-format = { $format }.
 matrix-stream-format-state = { $format }. { $state }.
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = Ongeza endpoint
-host-show-mine = Onyesha vifaa vya kompyuta hii pekee
+host-add-entity = Ongeza huluki
+host-show-mine = Onyesha huluki za kompyuta hii pekee
 host-show-all = Onyesha huluki zote
-host-new-device = Kifaa cha mwenyeji { $number }
+host-new-entity = Huluki ya mwenyeji { $number }
 host-failed = Haikuweza kuongezwa kwenye kompyuta hii: { $reason }
-host-needs-clock = Vifaa vya kompyuta hii vinahitaji kiolesura cha waya chenye saa ya maunzi ya PTP
+host-needs-clock = Huluki za kompyuta hii zinahitaji kiolesura cha waya chenye saa ya maunzi ya PTP
 host-no-ptp4l = ptp4l haijibu, kwa hiyo mitiririko ya kompyuta hii haiwezi kushika muda wa gPTP
-host-elsewhere = triib-endpointd inaendeshwa kwenye { $interface } kwa mtumiaji mwingine au kama root, kwa hiyo vifaa vya kompyuta hii vinaendeshwa huko, si hapa
+host-elsewhere = triib-endpointd inaendeshwa kwenye { $interface } kwa mtumiaji mwingine au kama root, kwa hiyo huluki za kompyuta hii zinaendeshwa huko, si hapa
 host-foreign-mrp = Programu nyingine inatoa matamko ya MSRP au MVRP kwenye { $interface } kutoka anwani ya kompyuta hii, jambo linaloweza kuondoa kile ambacho mitiririko ya kompyuta hii inahitaji
 host-alarm-foreign-mrp = Programu nyingine kwenye kompyuta hii inatoa matamko ya MSRP au MVRP kwenye { $interface }
 host-state = Hali

@@ -621,9 +621,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Not here or not read: { $missing }.
 presets-deleted = Deleted ‘{ $name }’.
-presets-host-note = It also keeps this computer's own devices, and starts them again on recall.
+presets-host-note = It also keeps this computer's own entities, and starts them again on recall.
 presets-host-endpoints = { $count } on this computer
-presets-starting-host = Starting this computer's devices for ‘{ $name }’; the rest follows once they are back.
+presets-starting-host = Starting this computer's entities for ‘{ $name }’; the rest follows once they are back.
 
 ## Controls
 
@@ -640,12 +640,12 @@ network-npcap-administrators = Npcap lets only administrators send and receive r
 matrix-stream-format = { $format }.
 matrix-stream-format-state = { $format }. { $state }.
 
-## This computer's own devices
+## This computer's own entities
 
-host-show-mine = Show only this computer's own devices
+host-show-mine = Show only this computer's own entities
 host-show-all = Show every entity
 host-failed = Could not add it to this computer: { $reason }
-host-needs-clock = This computer's own devices need a wired interface with a PTP hardware clock
+host-needs-clock = This computer's own entities need a wired interface with a PTP hardware clock
 host-no-ptp4l = ptp4l does not answer, so this computer's streams cannot keep gPTP time
 host-state = State
 host-streaming = Streaming

@@ -755,9 +755,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Entités absentes ou non lues : { $missing }.
 presets-deleted = « { $name } » supprimé.
-presets-host-note = Il conserve aussi les appareils propres à cet ordinateur, et les relance au rappel.
+presets-host-note = Il conserve aussi les entités propres à cet ordinateur, et les relance au rappel.
 presets-host-endpoints = { $count } sur cet ordinateur
-presets-starting-host = Démarrage des appareils de cet ordinateur pour « { $name } » ; le reste suivra dès leur retour.
+presets-starting-host = Démarrage des entités de cet ordinateur pour « { $name } » ; le reste suivra dès leur retour.
 
 ## Controls
 
@@ -774,16 +774,16 @@ network-npcap-administrators = Npcap ne permet qu’aux administrateurs d’envo
 matrix-stream-format = { $format }.
 matrix-stream-format-state = { $format }. { $state }.
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = Ajouter un terminal
-host-show-mine = Afficher uniquement les appareils propres à cet ordinateur
+host-add-entity = Ajouter une entité
+host-show-mine = Afficher uniquement les entités propres à cet ordinateur
 host-show-all = Afficher toutes les entités
-host-new-device = Appareil de l’hôte { $number }
+host-new-entity = Entité de l’hôte { $number }
 host-failed = Impossible de l’ajouter à cet ordinateur : { $reason }
-host-needs-clock = Les appareils propres à cet ordinateur nécessitent une interface filaire avec une horloge matérielle PTP
+host-needs-clock = Les entités propres à cet ordinateur nécessitent une interface filaire avec une horloge matérielle PTP
 host-no-ptp4l = ptp4l ne répond pas, les flux de cet ordinateur ne peuvent donc pas suivre l’heure gPTP
-host-elsewhere = triib-endpointd s’exécute sur { $interface } pour un autre utilisateur ou en tant que root, les appareils de cet ordinateur s’exécutent donc là-bas, pas ici
+host-elsewhere = triib-endpointd s’exécute sur { $interface } pour un autre utilisateur ou en tant que root, les entités de cet ordinateur s’exécutent donc là-bas, pas ici
 host-foreign-mrp = Un autre programme émet des déclarations MSRP ou MVRP sur { $interface } depuis l’adresse de cet ordinateur et peut retirer ce dont ont besoin les flux de cet ordinateur
 host-alarm-foreign-mrp = Un autre programme de cet ordinateur émet des déclarations MSRP ou MVRP sur { $interface }
 host-state = État

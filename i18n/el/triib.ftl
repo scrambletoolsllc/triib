@@ -712,9 +712,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Δεν υπάρχουν εδώ ή δεν έχουν διαβαστεί: { $missing }.
 presets-deleted = Διαγράφηκε η «{ $name }».
-presets-host-note = Κρατά επίσης τις συσκευές αυτού του υπολογιστή και τις ξεκινά ξανά κατά την ανάκληση.
+presets-host-note = Κρατά επίσης τις οντότητες αυτού του υπολογιστή και τις ξεκινά ξανά κατά την ανάκληση.
 presets-host-endpoints = { $count } σε αυτόν τον υπολογιστή
-presets-starting-host = Εκκίνηση των συσκευών αυτού του υπολογιστή για την «{ $name }»· τα υπόλοιπα ακολουθούν μόλις επανέλθουν.
+presets-starting-host = Εκκίνηση των οντοτήτων αυτού του υπολογιστή για την «{ $name }»· τα υπόλοιπα ακολουθούν μόλις επανέλθουν.
 
 ## Controls
 
@@ -733,16 +733,16 @@ matrix-stream-format-state = { $format }. { $state }.
 
 common-decimal-separator = {","}
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = Προσθήκη τελικού σημείου
-host-show-mine = Εμφάνιση μόνο των συσκευών αυτού του υπολογιστή
+host-add-entity = Προσθήκη οντότητας
+host-show-mine = Εμφάνιση μόνο των οντοτήτων αυτού του υπολογιστή
 host-show-all = Εμφάνιση όλων των οντοτήτων
-host-new-device = Συσκευή κεντρικού υπολογιστή { $number }
+host-new-entity = Οντότητα κεντρικού υπολογιστή { $number }
 host-failed = Δεν ήταν δυνατή η προσθήκη σε αυτόν τον υπολογιστή: { $reason }
-host-needs-clock = Οι συσκευές αυτού του υπολογιστή χρειάζονται ενσύρματη διεπαφή με ρολόι υλικού PTP
+host-needs-clock = Οι οντότητες αυτού του υπολογιστή χρειάζονται ενσύρματη διεπαφή με ρολόι υλικού PTP
 host-no-ptp4l = Το ptp4l δεν απαντά, έτσι οι ροές αυτού του υπολογιστή δεν μπορούν να κρατήσουν χρόνο gPTP
-host-elsewhere = Το triib-endpointd εκτελείται στη διεπαφή { $interface } για άλλον χρήστη ή ως root, έτσι οι συσκευές αυτού του υπολογιστή εκτελούνται εκεί, όχι εδώ
+host-elsewhere = Το triib-endpointd εκτελείται στη διεπαφή { $interface } για άλλον χρήστη ή ως root, έτσι οι οντότητες αυτού του υπολογιστή εκτελούνται εκεί, όχι εδώ
 host-foreign-mrp = Ένα άλλο πρόγραμμα στέλνει δηλώσεις MSRP ή MVRP στη διεπαφή { $interface } από τη διεύθυνση αυτού του υπολογιστή και μπορεί να αποσύρει ό,τι χρειάζονται οι ροές αυτού του υπολογιστή
 host-alarm-foreign-mrp = Ένα άλλο πρόγραμμα αυτού του υπολογιστή στέλνει δηλώσεις MSRP ή MVRP στη διεπαφή { $interface }
 host-state = Κατάσταση

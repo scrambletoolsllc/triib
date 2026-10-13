@@ -595,9 +595,9 @@ presets-nothing-differs = 与“{ $name }”没有差异。
 presets-recalling = 正在调用“{ $name }”：{ $count } 项更改。
 presets-missing = { $report }以下实体不在此处或尚未读取：{ $missing }。
 presets-deleted = 已删除“{ $name }”。
-presets-host-note = 也会保存本机自己的设备，并在调用时重新启动它们。
+presets-host-note = 也会保存本机自己的实体，并在调用时重新启动它们。
 presets-host-endpoints = 本机 { $count } 个
-presets-starting-host = 正在为“{ $name }”启动本机的设备；它们恢复后再应用其余部分。
+presets-starting-host = 正在为“{ $name }”启动本机的实体；它们恢复后再应用其余部分。
 
 ## Controls
 
@@ -614,16 +614,16 @@ network-npcap-administrators = Npcap 仅允许管理员收发原始以太网帧�
 matrix-stream-format = { $format }。
 matrix-stream-format-state = { $format }。{ $state }。
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = 添加终端
-host-show-mine = 只显示本机自己的设备
+host-add-entity = 添加实体
+host-show-mine = 只显示本机自己的实体
 host-show-all = 显示所有实体
-host-new-device = 主机设备 { $number }
+host-new-entity = 主机实体 { $number }
 host-failed = 无法添加到本机：{ $reason }
-host-needs-clock = 本机自己的设备需要带 PTP 硬件时钟的有线接口
+host-needs-clock = 本机自己的实体需要带 PTP 硬件时钟的有线接口
 host-no-ptp4l = ptp4l 没有应答，本机的流无法保持 gPTP 时间
-host-elsewhere = triib-endpointd 正以其他用户或 root 身份在 { $interface } 上运行，因此本机的设备在那里运行，而不是在这里
+host-elsewhere = triib-endpointd 正以其他用户或 root 身份在 { $interface } 上运行，因此本机的实体在那里运行，而不是在这里
 host-foreign-mrp = 另一个程序正从本机的地址在 { $interface } 上发出 MSRP 或 MVRP 声明，可能撤回本机的流所需的内容
 host-alarm-foreign-mrp = 本机上的另一个程序在 { $interface } 上发出 MSRP 或 MVRP 声明
 host-state = 状态

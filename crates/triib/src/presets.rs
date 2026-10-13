@@ -32,12 +32,12 @@ pub struct Preset {
     pub name: String,
     #[serde(default)]
     pub entities: Vec<EntityPreset>,
-    /// This computer's own devices, when it had any.
+    /// This computer's own entities, when it had any.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub host: Option<HostPreset>,
 }
 
-/// This computer's own devices as `endpoints.toml` had them, and the
+/// This computer's own entities as `endpoints.toml` had them, and the
 /// address of the interface their entity IDs came from.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct HostPreset {
@@ -225,7 +225,7 @@ pub fn capture(triib: &Triib, name: &str) -> Preset {
     }
 }
 
-/// `preset` with the entity IDs of this computer's own devices, in its
+/// `preset` with the entity IDs of this computer's own entities, in its
 /// entities and their bindings, made this computer's on the interface
 /// with `mac`, for one saved on another computer or interface.
 pub fn moved_to(preset: &Preset, mac: MacAddress) -> Preset {

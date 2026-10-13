@@ -708,9 +708,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Inte här eller inte lästa: { $missing }.
 presets-deleted = Tog bort ”{ $name }”.
-presets-host-note = Den sparar också den här datorns egna enheter och startar dem igen när den hämtas.
+presets-host-note = Den sparar också den här datorns egna entiteter och startar dem igen när den hämtas.
 presets-host-endpoints = { $count } på den här datorn
-presets-starting-host = Startar den här datorns enheter för ”{ $name }”; resten följer när de är tillbaka.
+presets-starting-host = Startar den här datorns entiteter för ”{ $name }”; resten följer när de är tillbaka.
 
 ## Controls
 
@@ -729,16 +729,16 @@ matrix-stream-format-state = { $format }. { $state }.
 
 common-decimal-separator = {","}
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = Lägg till slutpunkt
-host-show-mine = Visa bara den här datorns egna enheter
+host-add-entity = Lägg till entitet
+host-show-mine = Visa bara den här datorns egna entiteter
 host-show-all = Visa alla entiteter
-host-new-device = Värdenhet { $number }
+host-new-entity = Värdentitet { $number }
 host-failed = Kunde inte lägga till den på den här datorn: { $reason }
-host-needs-clock = Den här datorns egna enheter behöver ett trådbundet gränssnitt med en PTP-hårdvaruklocka
+host-needs-clock = Den här datorns egna entiteter behöver ett trådbundet gränssnitt med en PTP-hårdvaruklocka
 host-no-ptp4l = ptp4l svarar inte, så den här datorns streamar kan inte hålla gPTP-tid
-host-elsewhere = triib-endpointd körs på { $interface } för en annan användare eller som root, så den här datorns enheter körs där, inte här
+host-elsewhere = triib-endpointd körs på { $interface } för en annan användare eller som root, så den här datorns entiteter körs där, inte här
 host-foreign-mrp = Ett annat program deklarerar MSRP eller MVRP på { $interface } från den här datorns adress och kan därmed dra tillbaka det som den här datorns streamar behöver
 host-alarm-foreign-mrp = Ett annat program på den här datorn deklarerar MSRP eller MVRP på { $interface }
 host-state = Läge

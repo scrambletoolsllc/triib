@@ -699,9 +699,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Ikke til stede eller ikke læst: { $missing }.
 presets-deleted = Slettede »{ $name }«.
-presets-host-note = Det gemmer også denne computers egne enheder og starter dem igen, når det hentes.
+presets-host-note = Det gemmer også denne computers egne entiteter og starter dem igen, når det hentes.
 presets-host-endpoints = { $count } på denne computer
-presets-starting-host = Starter denne computers enheder for »{ $name }«; resten følger, når de er tilbage.
+presets-starting-host = Starter denne computers entiteter for »{ $name }«; resten følger, når de er tilbage.
 
 ## Controls
 
@@ -720,16 +720,16 @@ matrix-stream-format-state = { $format }. { $state }.
 
 common-decimal-separator = {","}
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = Tilføj endepunkt
-host-show-mine = Vis kun denne computers egne enheder
+host-add-entity = Tilføj entitet
+host-show-mine = Vis kun denne computers egne entiteter
 host-show-all = Vis alle entiteter
-host-new-device = Værtsenhed { $number }
+host-new-entity = Værtsentitet { $number }
 host-failed = Kunne ikke tilføje den til denne computer: { $reason }
-host-needs-clock = Denne computers egne enheder kræver et kablet interface med en PTP-hardwareclock
+host-needs-clock = Denne computers egne entiteter kræver et kablet interface med en PTP-hardwareclock
 host-no-ptp4l = ptp4l svarer ikke, så denne computers streams kan ikke holde gPTP-tid
-host-elsewhere = triib-endpointd kører på { $interface } for en anden bruger eller som root, så denne computers enheder kører der, ikke her
+host-elsewhere = triib-endpointd kører på { $interface } for en anden bruger eller som root, så denne computers entiteter kører der, ikke her
 host-foreign-mrp = Et andet program erklærer MSRP eller MVRP på { $interface } fra denne computers adresse og kan dermed trække det tilbage, som denne computers streams har brug for
 host-alarm-foreign-mrp = Et andet program på denne computer erklærer MSRP eller MVRP på { $interface }
 host-state = Tilstand

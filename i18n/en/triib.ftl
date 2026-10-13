@@ -899,13 +899,13 @@ presets-recalling = { $count ->
 # holds that are not on the network or not read yet.
 presets-missing = { $report } Not here or not read: { $missing }.
 presets-deleted = Deleted "{ $name }".
-# Follows presets-note where this computer can run devices of its own
+# Follows presets-note where this computer can run entities of its own
 # of its own.
-presets-host-note = It also keeps this computer's own devices, and starts them again on recall.
+presets-host-note = It also keeps this computer's own entities, and starts them again on recall.
 # Beside the counts of entities and connections in a preset's row.
 presets-host-endpoints = { $count } on this computer
 # While a recalled preset waits for this computer's endpoints to start.
-presets-starting-host = Starting this computer's devices for "{ $name }"; the rest follows once they are back.
+presets-starting-host = Starting this computer's entities for "{ $name }"; the rest follows once they are back.
 
 ## Controls
 # An entity's CONTROL descriptors, such as gain or mute.
@@ -930,19 +930,19 @@ matrix-stream-format-state = { $format }. { $state }.
 # {","}.
 common-decimal-separator = {"."}
 
-## This computer's own devices
+## This computer's own entities
 
-# This computer as one device with stream outputs and inputs.
-host-add-endpoint = Add endpoint
-host-show-mine = Show only this computer's own devices
+# This computer as an entity with stream outputs and inputs.
+host-add-entity = Add entity
+host-show-mine = Show only this computer's own entities
 host-show-all = Show every entity
-host-new-device = Host device { $number }
+host-new-entity = Host entity { $number }
 host-failed = Could not add it to this computer: { $reason }
-host-needs-clock = This computer's own devices need a wired interface with a PTP hardware clock
+host-needs-clock = This computer's own entities need a wired interface with a PTP hardware clock
 host-no-ptp4l = ptp4l does not answer, so this computer's streams cannot keep gPTP time
-# Another user's triib-endpointd, or root's, runs this computer's devices
+# Another user's triib-endpointd, or root's, runs this computer's entities
 # on the interface; this user's cannot run beside it.
-host-elsewhere = triib-endpointd runs on { $interface } for another user or as root, so this computer's devices run there, not here
+host-elsewhere = triib-endpointd runs on { $interface } for another user or as root, so this computer's entities run there, not here
 # MSRP and MVRP are protocols that reserve bandwidth and VLANs; keep them as
 # written. Another program on this computer runs them on the same port.
 host-foreign-mrp = Another program declares MSRP or MVRP on { $interface } from this computer's address, which can withdraw what this computer's streams need
@@ -956,7 +956,7 @@ host-unbound = Not bound
 host-audio-from = Audio from
 host-audio-to = Audio to
 host-channels = Channels
-# One of a device's streams with an audio device of its own on this
+# One of an entity's streams with an audio device of its own on this
 # computer, which apps play into or record from.
 host-virtual-device = Virtual device
 host-add-stream = Add stream

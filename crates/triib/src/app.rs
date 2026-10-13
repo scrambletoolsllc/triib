@@ -84,7 +84,7 @@ pub struct Triib {
     /// Why this computer cannot listen for the bridge's gPTP messages,
     /// when it cannot.
     pub cannot_listen: Option<String>,
-    /// What triib-endpointd says this computer's devices are doing, while
+    /// What triib-endpointd says this computer's entities are doing, while
     /// it runs.
     pub endpoints: Option<triib_endpointd::status::DaemonStatus>,
     /// The interface another user's or root's triib-endpointd holds.
@@ -187,9 +187,9 @@ pub enum Message {
     OpenLink(String),
     /// Adds a device on this computer.
     HostAdded,
-    /// Removes one of this computer's devices.
+    /// Removes one of this computer's entities.
     HostRemoved(EntityId),
-    /// One of this computer's devices changes one of its streams.
+    /// One of this computer's entities changes one of its streams.
     HostStream(EntityId, crate::host::StreamChange),
     Act(Action),
     /// Several actions, sent in order, such as removing a channel's mapping
@@ -432,12 +432,12 @@ impl Triib {
             })
     }
 
-    /// Whether `entity_id` is one of this computer's devices.
+    /// Whether `entity_id` is one of this computer's entities.
     pub fn is_host(&self, entity_id: EntityId) -> bool {
         crate::host::status_of(self.endpoints.as_ref(), entity_id).is_some()
     }
 
-    /// The icon of one of this computer's devices, the computer's; `None`
+    /// The icon of one of this computer's entities, the computer's; `None`
     /// for others' entities.
     pub fn host_icon(&self, entity_id: EntityId) -> Option<scramble_ui::icon::Icon> {
         // Until the daemon's status names it, as it does a moment after the
@@ -499,7 +499,7 @@ impl Triib {
             .as_ref()
             .map_or(0, |status| status.endpoints.len())
             + 1;
-        let name = crate::fl!("host-new-device", number = count);
+        let name = crate::fl!("host-new-entity", number = count);
         let result =
             crate::host::add(&interface, name).and_then(|()| crate::host::ensure_running());
         if let Err(error) = result {

@@ -1,4 +1,4 @@
-//! This computer's own devices, which triib-endpointd runs: adding,
+//! This computer's own entities, which triib-endpointd runs: adding,
 //! changing and removing them and their streams in its `endpoints.toml`,
 //! starting it, and what it says each is doing.
 
@@ -10,7 +10,7 @@ use atdecc::{EntityId, MacAddress};
 use triib_endpointd::config::{self, Config, Direction, EndpointConfig, StreamConfig};
 use triib_endpointd::status::{DaemonStatus, EndpointStatus};
 
-/// Whether this system runs devices of its own.
+/// Whether this system runs entities of its own.
 pub const SUPPORTED: bool = cfg!(target_os = "linux");
 /// A preset waits for this computer's endpoints, so the app hears what
 /// the daemon says every time it looks, changed or not, to keep its
@@ -52,7 +52,7 @@ fn place_of(config: &Config, mac: MacAddress, entity_id: EntityId) -> Option<usi
         })
 }
 
-/// Adds a device named `name`, with a stream each way, each with its own
+/// Adds an entity named `name`, with a stream each way, each with its own
 /// virtual audio device; its inspector adds more and sets each up.
 pub fn add(interface: &str, name: String) -> Result<(), String> {
     let (path, mut config) = load(interface)?;
@@ -79,7 +79,7 @@ pub fn remove(interface: &str, mac: MacAddress, entity_id: EntityId) -> Result<(
     save(&path, &config)
 }
 
-/// A change to one of a device's streams.
+/// A change to one of an entity's streams.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StreamChange {
     /// A new stream of this way at the end: audio, with its own virtual
@@ -95,7 +95,7 @@ pub enum StreamChange {
     Audio(usize, String),
 }
 
-/// Changes one of a device's streams.
+/// Changes one of an entity's streams.
 pub fn change_stream(
     interface: &str,
     mac: MacAddress,
@@ -105,7 +105,7 @@ pub fn change_stream(
     let (path, mut config) = load(interface)?;
     let place = place_of(&config, mac, entity_id).ok_or("not one of this computer's")?;
     let endpoint = &mut config.endpoints[place];
-    // A device's streams as they are, written down once one changes.
+    // An entity's streams as they are, written down once one changes.
     let mut streams = endpoint.stream_configs();
     match change {
         StreamChange::Add { direction, clock } => {

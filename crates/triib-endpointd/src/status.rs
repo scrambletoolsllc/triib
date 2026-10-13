@@ -27,7 +27,7 @@ pub struct DaemonStatus {
     pub endpoints: Vec<EndpointStatus>,
 }
 
-/// One of this computer's devices.
+/// One of this computer's entities.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EndpointStatus {
     /// As text, `0x` and sixteen hex digits.

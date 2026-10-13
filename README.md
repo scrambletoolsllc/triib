@@ -51,26 +51,26 @@ On macOS the Mac's own AVB entity cannot be read from the same Mac, as
 the system never hands it the commands triib writes; triib says so.
 [docs/RELEASING.md](docs/RELEASING.md) has the details.
 
-## This computer's devices
+## This computer's entities
 
-On Linux, the Entities view adds devices of the computer's own, which
+On Linux, the Entities view adds entities of the computer's own, which
 `triib-endpointd` runs, on a wired interface with a PTP hardware clock
 (`ethtool -T <interface>` shows one). They need
 [linuxptp](https://linuxptp.nwtime.org)'s `ptp4l` running gPTP on that
 interface, as with its `configs/gPTP.cfg`, so the clock keeps the
 network's time; triib reads ptp4l's state through its read-only socket,
-`/var/run/ptp4lro`, and says when ptp4l isn't there. Each device is a
-Milan entity with any number of streams each way, which controllers,
+`/var/run/ptp4lro`, and says when ptp4l isn't there. Each is a Milan
+entity with any number of streams each way, which controllers,
 triib among them, bind like any other. The inspector's Streams tab adds
 and removes them: audio streams of AAF or AM824 at 48, 96 or 192 kHz, 8
 channels unless it picks another count, each by default with a virtual
 audio device of its own that apps play into or record from, or a test
 tone, silence or one of the computer's devices; and media clock streams
-of CRF, a media clock input being a clock source the device can follow.
+of CRF, a media clock input being a clock source the entity can follow.
 Talkers take their stream addresses with MAAP, and the stream threads
 ask RealtimeKit for real-time scheduling, as PipeWire does.
 
-The devices are listed in `endpoints.toml` in triib's data folder
+The entities are listed in `endpoints.toml` in triib's data folder
 (`~/.local/share/triib` on Linux), which the app writes and the daemon
 reads again whenever it changes; the names, formats, bindings and clock
 sources controllers give are kept in it, so an input binds again after
@@ -82,7 +82,7 @@ ptp4l_socket = "/var/run/ptp4lro"
 
 [[endpoint]]
 instance = 0
-name = "Host device 1"
+name = "Host entity 1"
 
 [[endpoint.stream]]
 direction = "out"
@@ -96,11 +96,11 @@ audio = "default"     # or "discard", or an output's name
 [[endpoint.stream]]
 direction = "in"
 clock = true          # a media clock stream
-clock_source = true   # which the device follows
+clock_source = true   # which the entity follows
 ```
 
 triib 1.0's talkers and listeners, `kind = "talker"` and
-`kind = "listener"` entries, read as devices of their one stream.
+`kind = "listener"` entries, read as entities of their one stream.
 
 Where no AVB bridge answers on the interface, the endpoints fall back to
 [AVB Lite](https://github.com/avbcommunity/profiles/blob/main/avb_lite.md),
@@ -242,7 +242,7 @@ whether raw Ethernet is ready.
 |---|---|
 | `triib` | The app |
 | `triib-cli` | Headless controller |
-| `triib-endpointd` | Runs this computer's devices |
+| `triib-endpointd` | Runs this computer's entities |
 | `triib-stream` | AAF streams, the media clock and audio devices |
 | `triib-pipewire` | Virtual audio devices as PipeWire nodes |
 | `triib-store` | Settings and cache files |

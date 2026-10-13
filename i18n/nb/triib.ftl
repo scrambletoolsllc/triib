@@ -699,9 +699,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Ikke til stede eller ikke lest: { $missing }.
 presets-deleted = Slettet «{ $name }».
-presets-host-note = Den lagrer også denne datamaskinens egne enheter, og starter dem på nytt når den hentes.
+presets-host-note = Den lagrer også denne datamaskinens egne entiteter, og starter dem på nytt når den hentes.
 presets-host-endpoints = { $count } på denne datamaskinen
-presets-starting-host = Starter denne datamaskinens enheter for «{ $name }»; resten følger når de er tilbake.
+presets-starting-host = Starter denne datamaskinens entiteter for «{ $name }»; resten følger når de er tilbake.
 
 ## Controls
 
@@ -720,16 +720,16 @@ matrix-stream-format-state = { $format }. { $state }.
 
 common-decimal-separator = {","}
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = Legg til endepunkt
-host-show-mine = Vis bare denne datamaskinens egne enheter
+host-add-entity = Legg til entitet
+host-show-mine = Vis bare denne datamaskinens egne entiteter
 host-show-all = Vis alle entiteter
-host-new-device = Vertsenhet { $number }
+host-new-entity = Vertsentitet { $number }
 host-failed = Kunne ikke legge den til på denne datamaskinen: { $reason }
-host-needs-clock = Denne datamaskinens egne enheter trenger et kablet grensesnitt med en PTP-maskinvareklokke
+host-needs-clock = Denne datamaskinens egne entiteter trenger et kablet grensesnitt med en PTP-maskinvareklokke
 host-no-ptp4l = ptp4l svarer ikke, så streamene til denne datamaskinen kan ikke holde gPTP-tid
-host-elsewhere = triib-endpointd kjører på { $interface } for en annen bruker eller som root, så denne datamaskinens enheter kjører der, ikke her
+host-elsewhere = triib-endpointd kjører på { $interface } for en annen bruker eller som root, så denne datamaskinens entiteter kjører der, ikke her
 host-foreign-mrp = Et annet program erklærer MSRP eller MVRP på { $interface } fra denne datamaskinens adresse og kan dermed trekke tilbake det streamene til denne datamaskinen trenger
 host-alarm-foreign-mrp = Et annet program på denne datamaskinen erklærer MSRP eller MVRP på { $interface }
 host-state = Tilstand

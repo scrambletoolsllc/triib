@@ -689,9 +689,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } حاضر نیست یا خوانده نشده: { $missing }.
 presets-deleted = «{ $name }» حذف شد.
-presets-host-note = همچنین دستگاه‌های خود این رایانه را نگه می‌دارد و هنگام فراخوانی دوباره راه‌اندازی‌شان می‌کند.
+presets-host-note = همچنین موجودیت‌های خود این رایانه را نگه می‌دارد و هنگام فراخوانی دوباره راه‌اندازی‌شان می‌کند.
 presets-host-endpoints = { $count } روی این رایانه
-presets-starting-host = در حال راه‌اندازی دستگاه‌های این رایانه برای «{ $name }»؛ بقیه پس از بازگشت آن‌ها انجام می‌شود.
+presets-starting-host = در حال راه‌اندازی موجودیت‌های این رایانه برای «{ $name }»؛ بقیه پس از بازگشت آن‌ها انجام می‌شود.
 
 ## Controls
 
@@ -710,16 +710,16 @@ matrix-stream-format-state = { $format }. { $state }.
 
 common-decimal-separator = {"٫"}
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = افزودن نقطه پایانی
-host-show-mine = فقط دستگاه‌های خود این رایانه نمایش داده شود
+host-add-entity = افزودن موجودیت
+host-show-mine = فقط موجودیت‌های خود این رایانه نمایش داده شود
 host-show-all = نمایش همه موجودیت‌ها
-host-new-device = دستگاه میزبان { $number }
+host-new-entity = موجودیت میزبان { $number }
 host-failed = افزودن به این رایانه ممکن نشد: { $reason }
-host-needs-clock = دستگاه‌های خود این رایانه به یک واسط سیمی با ساعت سخت‌افزاری PTP نیاز دارند
+host-needs-clock = موجودیت‌های خود این رایانه به یک واسط سیمی با ساعت سخت‌افزاری PTP نیاز دارند
 host-no-ptp4l = ptp4l پاسخ نمی‌دهد، پس جریان‌های این رایانه نمی‌توانند زمان gPTP را نگه دارند
-host-elsewhere = triib-endpointd روی { $interface } برای کاربر دیگری یا به‌عنوان root اجرا می‌شود، پس دستگاه‌های این رایانه آنجا اجرا می‌شوند، نه اینجا
+host-elsewhere = triib-endpointd روی { $interface } برای کاربر دیگری یا به‌عنوان root اجرا می‌شود، پس موجودیت‌های این رایانه آنجا اجرا می‌شوند، نه اینجا
 host-foreign-mrp = برنامهٔ دیگری از آدرس این رایانه روی { $interface } اعلان‌های MSRP یا MVRP می‌فرستد و ممکن است آنچه را که جریان‌های این رایانه لازم دارند پس بگیرد
 host-alarm-foreign-mrp = برنامهٔ دیگری در این رایانه روی { $interface } اعلان‌های MSRP یا MVRP می‌فرستد
 host-state = وضعیت

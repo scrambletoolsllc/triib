@@ -1,5 +1,5 @@
 //! The endpoints to run, from `endpoints.toml` in triib's data folder:
-//! the interface, then each of this computer's devices with its streams,
+//! the interface, then each of this computer's entities with its streams,
 //! their channels and where their audio comes from or goes.
 
 use std::path::PathBuf;
@@ -69,7 +69,7 @@ impl SrClass {
     }
 }
 
-/// Which way a device's stream goes.
+/// Which way an entity's stream goes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Direction {
@@ -77,7 +77,7 @@ pub enum Direction {
     In,
 }
 
-/// One of a device's streams.
+/// One of an entity's streams.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StreamConfig {
     pub direction: Direction,
@@ -85,7 +85,7 @@ pub struct StreamConfig {
     /// and no audio.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub clock: bool,
-    /// For a media clock input, the device's clock source: its talkers
+    /// For a media clock input, the entity's clock source: its talkers
     /// follow the clock the input carries.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub clock_source: bool,
@@ -180,7 +180,7 @@ impl StreamConfig {
 /// The audio of a stream's own virtual device.
 pub const VIRTUAL: &str = "virtual";
 
-/// This computer as one device, with any number of stream outputs and
+/// This computer as an entity, with any number of stream outputs and
 /// inputs, as hardware presents itself, each set up on its own.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(from = "EndpointEntry")]
@@ -196,8 +196,9 @@ pub struct EndpointConfig {
     pub streams: Vec<StreamConfig>,
 }
 
-/// An endpoint as files have it: a device, or triib 1.0's talker or
-/// listener of one stream, whose stream's settings are the entry's own.
+/// An endpoint as files have it: an entity of any streams, or triib
+/// 1.0's talker or listener of one stream, whose stream's settings are
+/// the entry's own.
 #[derive(Deserialize)]
 struct EndpointEntry {
     #[serde(default)]
@@ -235,8 +236,8 @@ enum EntryKind {
 }
 
 impl From<EndpointEntry> for EndpointConfig {
-    /// A talker or listener is a device of its one stream, named as the
-    /// device is, with the audio, format, binding and class it had.
+    /// A talker or listener is an entity of its one stream, named as the
+    /// entity is, with the audio, format, binding and class it had.
     fn from(entry: EndpointEntry) -> Self {
         let one = |direction, audio: Option<String>, otherwise: &str| StreamConfig {
             name: entry.name.clone(),
@@ -290,7 +291,7 @@ fn parse_format(text: &str) -> Option<StreamFormat> {
 }
 
 impl EndpointConfig {
-    /// A device named `name` with a stream each way, each with its own
+    /// An entity named `name` with a stream each way, each with its own
     /// virtual audio device.
     pub fn new(name: impl Into<String>, instance: Option<u8>) -> Self {
         EndpointConfig {
@@ -379,9 +380,9 @@ mod tests {
         config.endpoints.into_iter().next().expect("an endpoint")
     }
 
-    /// triib 1.0's talkers and listeners read as devices of their one
+    /// triib 1.0's talkers and listeners read as entities of their one
     /// stream, named as they are, with their audio, format, binding,
-    /// transit time and class; written again as devices. A device without
+    /// transit time and class; written again as such. An entity without
     /// streams has one each way, virtual.
     #[test]
     fn talkers_and_listeners_read_as_devices() {
@@ -437,7 +438,7 @@ mod tests {
         assert!(streams.iter().all(StreamConfig::is_virtual));
     }
 
-    /// A device's streams each keep their own settings.
+    /// An entity's streams each keep their own settings.
     #[test]
     fn a_devices_streams_keep_their_own_settings() {
         let device = entry(

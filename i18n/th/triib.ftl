@@ -592,9 +592,9 @@ presets-nothing-differs = ไม่มีสิ่งใดต่างจาก
 presets-recalling = กำลังเรียกคืน “{ $name }”: เปลี่ยน { $count } รายการ
 presets-missing = { $report } ไม่อยู่ที่นี่หรือยังไม่ได้อ่าน: { $missing }
 presets-deleted = ลบ “{ $name }” แล้ว
-presets-host-note = และยังเก็บอุปกรณ์ของคอมพิวเตอร์เครื่องนี้ไว้ด้วย โดยจะเริ่มใหม่เมื่อเรียกคืน
+presets-host-note = และยังเก็บเอนทิตีของคอมพิวเตอร์เครื่องนี้ไว้ด้วย โดยจะเริ่มใหม่เมื่อเรียกคืน
 presets-host-endpoints = { $count } รายการบนคอมพิวเตอร์เครื่องนี้
-presets-starting-host = กำลังเริ่มอุปกรณ์ของคอมพิวเตอร์เครื่องนี้สำหรับ “{ $name }” ส่วนที่เหลือจะตามมาเมื่อกลับมาแล้ว
+presets-starting-host = กำลังเริ่มเอนทิตีของคอมพิวเตอร์เครื่องนี้สำหรับ “{ $name }” ส่วนที่เหลือจะตามมาเมื่อกลับมาแล้ว
 
 ## Controls
 
@@ -611,16 +611,16 @@ network-npcap-administrators = Npcap อนุญาตให้เฉพาะ�
 matrix-stream-format = { $format }
 matrix-stream-format-state = { $format } { $state }
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = เพิ่มเอนด์พอยต์
-host-show-mine = แสดงเฉพาะอุปกรณ์ของคอมพิวเตอร์เครื่องนี้
+host-add-entity = เพิ่มเอนทิตี
+host-show-mine = แสดงเฉพาะเอนทิตีของคอมพิวเตอร์เครื่องนี้
 host-show-all = แสดงเอนทิตีทั้งหมด
-host-new-device = อุปกรณ์ของโฮสต์ { $number }
+host-new-entity = เอนทิตีของโฮสต์ { $number }
 host-failed = ไม่สามารถเพิ่มลงในคอมพิวเตอร์เครื่องนี้: { $reason }
-host-needs-clock = อุปกรณ์ของคอมพิวเตอร์เครื่องนี้ต้องใช้อินเทอร์เฟซแบบมีสายที่มีคล็อกฮาร์ดแวร์ PTP
+host-needs-clock = เอนทิตีของคอมพิวเตอร์เครื่องนี้ต้องใช้อินเทอร์เฟซแบบมีสายที่มีคล็อกฮาร์ดแวร์ PTP
 host-no-ptp4l = ptp4l ไม่ตอบ สตรีมของคอมพิวเตอร์เครื่องนี้จึงรักษาเวลา gPTP ไม่ได้
-host-elsewhere = triib-endpointd ทำงานบน { $interface } ในนามผู้ใช้อื่นหรือ root อุปกรณ์ของคอมพิวเตอร์เครื่องนี้จึงทำงานที่นั่น ไม่ใช่ที่นี่
+host-elsewhere = triib-endpointd ทำงานบน { $interface } ในนามผู้ใช้อื่นหรือ root เอนทิตีของคอมพิวเตอร์เครื่องนี้จึงทำงานที่นั่น ไม่ใช่ที่นี่
 host-foreign-mrp = โปรแกรมอื่นประกาศ MSRP หรือ MVRP บน { $interface } จากที่อยู่ของคอมพิวเตอร์เครื่องนี้ ซึ่งอาจเพิกถอนสิ่งที่สตรีมของคอมพิวเตอร์เครื่องนี้ต้องใช้
 host-alarm-foreign-mrp = โปรแกรมอื่นบนคอมพิวเตอร์เครื่องนี้ประกาศ MSRP หรือ MVRP บน { $interface }
 host-state = สถานะ

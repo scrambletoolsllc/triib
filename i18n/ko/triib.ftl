@@ -595,9 +595,9 @@ presets-nothing-differs = “{ $name }”과(와) 다른 점이 없습니다.
 presets-recalling = “{ $name }” 리콜 중: 변경 { $count }건.
 presets-missing = { $report } 없거나 읽지 않은 엔티티: { $missing }.
 presets-deleted = “{ $name }”을(를) 삭제했습니다.
-presets-host-note = 이 컴퓨터 자체의 장치도 저장하며, 리콜하면 다시 시작합니다.
+presets-host-note = 이 컴퓨터 자체의 엔티티도 저장하며, 리콜하면 다시 시작합니다.
 presets-host-endpoints = 이 컴퓨터에 { $count }개
-presets-starting-host = “{ $name }”을(를) 위해 이 컴퓨터의 장치를 시작하는 중입니다. 다시 나타나면 나머지를 적용합니다.
+presets-starting-host = “{ $name }”을(를) 위해 이 컴퓨터의 엔티티를 시작하는 중입니다. 다시 나타나면 나머지를 적용합니다.
 
 ## Controls
 
@@ -614,16 +614,16 @@ network-npcap-administrators = Npcap이 관리자에게만 원시 이더넷 프�
 matrix-stream-format = { $format }.
 matrix-stream-format-state = { $format }. { $state }.
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = 엔드포인트 추가
-host-show-mine = 이 컴퓨터 자체의 장치만 표시
+host-add-entity = 엔티티 추가
+host-show-mine = 이 컴퓨터 자체의 엔티티만 표시
 host-show-all = 모든 엔티티 표시
-host-new-device = 호스트 장치 { $number }
+host-new-entity = 호스트 엔티티 { $number }
 host-failed = 이 컴퓨터에 추가할 수 없음: { $reason }
-host-needs-clock = 이 컴퓨터 자체의 장치에는 PTP 하드웨어 클럭이 있는 유선 인터페이스가 필요함
+host-needs-clock = 이 컴퓨터 자체의 엔티티에는 PTP 하드웨어 클럭이 있는 유선 인터페이스가 필요함
 host-no-ptp4l = ptp4l이 응답하지 않아 이 컴퓨터의 스트림이 gPTP 시간을 유지할 수 없음
-host-elsewhere = triib-endpointd 데몬이 { $interface }에서 다른 사용자 또는 root 계정으로 실행 중이므로 이 컴퓨터의 장치는 여기가 아니라 그쪽에서 실행됨
+host-elsewhere = triib-endpointd 데몬이 { $interface }에서 다른 사용자 또는 root 계정으로 실행 중이므로 이 컴퓨터의 엔티티는 여기가 아니라 그쪽에서 실행됨
 host-foreign-mrp = 다른 프로그램이 이 컴퓨터의 주소로 { $interface }에서 MSRP 또는 MVRP 선언을 보내고 있어 이 컴퓨터의 스트림에 필요한 것이 철회될 수 있음
 host-alarm-foreign-mrp = 이 컴퓨터의 다른 프로그램이 { $interface }에서 MSRP 또는 MVRP 선언 중
 host-state = 상태

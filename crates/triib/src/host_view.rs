@@ -1,4 +1,4 @@
-//! This computer's own devices in the views: the Entities view's bar
+//! This computer's own entities in the views: the Entities view's bar
 //! that adds them, their section in the inspector with a button that
 //! removes them, and their streams' audio and channels.
 
@@ -21,7 +21,7 @@ use crate::host::StreamChange;
 use crate::view::{property, stacked};
 
 /// The bar above the Entities view's table: why this computer cannot add
-/// devices of its own, or the button that adds one.
+/// entities of its own, or the button that adds one.
 pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
     if !crate::host::SUPPORTED || triib.interface().is_none() {
         return None;
@@ -47,7 +47,7 @@ pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
     } else {
         None
     };
-    let add = button::with_icon(Kind::Tonal, Icon::Computer, fl!("host-add-endpoint"))
+    let add = button::with_icon(Kind::Tonal, Icon::Computer, fl!("host-add-entity"))
         .size(Size::ExtraSmall)
         .on_press_maybe(able.then_some(Message::HostAdded));
     let text: Element<'_, Message> = match note {
@@ -106,7 +106,7 @@ impl fmt::Display for Audio {
     }
 }
 
-/// The inspector's section for one of this computer's devices: its
+/// The inspector's section for one of this computer's entities: its
 /// state, and a button that removes it. Its streams are on the Streams
 /// tab.
 pub fn sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>> {
@@ -123,7 +123,7 @@ pub fn sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>>
     ]
 }
 
-/// A device's button that adds a stream, with a menu of the kinds it
+/// An entity's button that adds a stream, with a menu of the kinds it
 /// adds: audio or a media clock, either way.
 pub fn add_buttons(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>> {
     if !triib.is_host(entity_id) {
@@ -157,7 +157,7 @@ pub fn add_buttons(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Messag
     ]
 }
 
-/// What this computer sets for one of its device's streams, the stream
+/// What this computer sets for one of its entities' streams, the stream
 /// input or output `index`: where its audio comes from or goes, and its
 /// channels. Nothing for others' entities.
 pub fn stream_rows(
@@ -174,7 +174,7 @@ pub fn stream_rows(
     } else {
         fl!("host-audio-from")
     };
-    // The device's streams one way, in the order the entity numbers them.
+    // The entity's streams one way, in the order it numbers them.
     let direction = if input { Direction::In } else { Direction::Out };
     let Some((at, stream)) = endpoint
         .streams
@@ -205,7 +205,7 @@ pub fn stream_rows(
     ]
 }
 
-/// The button that removes a device's stream input or output `index`,
+/// The button that removes an entity's stream input or output `index`,
 /// but not its last stream; none for others' entities.
 pub fn remove_stream(
     triib: &Triib,

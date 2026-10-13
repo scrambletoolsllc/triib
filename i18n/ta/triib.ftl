@@ -689,9 +689,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } இங்கே இல்லாதவை அல்லது படிக்கப்படாதவை: { $missing }.
 presets-deleted = “{ $name }” நீக்கப்பட்டது.
-presets-host-note = இது இந்தக் கணினியின் சொந்த Device-களையும் வைத்திருக்கும்; recall செய்யும்போது அவற்றை மீண்டும் தொடங்கும்.
+presets-host-note = இது இந்தக் கணினியின் சொந்த Entity-களையும் வைத்திருக்கும்; recall செய்யும்போது அவற்றை மீண்டும் தொடங்கும்.
 presets-host-endpoints = இந்தக் கணினியில் { $count }
-presets-starting-host = “{ $name }”-க்காக இந்தக் கணினியின் Device-கள் தொடங்கப்படுகின்றன; அவை திரும்பியதும் மீதி தொடரும்.
+presets-starting-host = “{ $name }”-க்காக இந்தக் கணினியின் Entity-கள் தொடங்கப்படுகின்றன; அவை திரும்பியதும் மீதி தொடரும்.
 
 ## Controls
 
@@ -710,16 +710,16 @@ matrix-stream-format-state = { $format }. { $state }.
 
 common-decimal-separator = {"."}
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = Endpoint-ஐச் சேர்
-host-show-mine = இந்தக் கணினியின் சொந்த Device-களை மட்டும் காட்டு
+host-add-entity = Entity-ஐச் சேர்
+host-show-mine = இந்தக் கணினியின் சொந்த Entity-களை மட்டும் காட்டு
 host-show-all = எல்லா entity-களையும் காட்டு
-host-new-device = ஹோஸ்ட் Device { $number }
+host-new-entity = ஹோஸ்ட் Entity { $number }
 host-failed = இந்தக் கணினியில் சேர்க்க முடியவில்லை: { $reason }
-host-needs-clock = இந்தக் கணினியின் சொந்த Device-களுக்கு PTP hardware clock உள்ள கம்பி interface தேவை
+host-needs-clock = இந்தக் கணினியின் சொந்த Entity-களுக்கு PTP hardware clock உள்ள கம்பி interface தேவை
 host-no-ptp4l = ptp4l பதிலளிக்கவில்லை, எனவே இந்தக் கணினியின் stream-களால் gPTP நேரத்தைப் பின்பற்ற முடியாது
-host-elsewhere = triib-endpointd { $interface }-இல் வேறொரு பயனருக்காக அல்லது root-ஆக இயங்குகிறது, எனவே இந்தக் கணினியின் Device-கள் இங்கே அல்ல, அங்கே இயங்குகின்றன
+host-elsewhere = triib-endpointd { $interface }-இல் வேறொரு பயனருக்காக அல்லது root-ஆக இயங்குகிறது, எனவே இந்தக் கணினியின் Entity-கள் இங்கே அல்ல, அங்கே இயங்குகின்றன
 host-foreign-mrp = வேறொரு நிரல் இந்தக் கணினியின் முகவரியிலிருந்து { $interface }-இல் MSRP அல்லது MVRP declaration-களை அனுப்புகிறது, இது இந்தக் கணினியின் stream-களுக்குத் தேவையானவற்றைத் திரும்பப் பெறக்கூடும்
 host-alarm-foreign-mrp = இந்தக் கணினியில் உள்ள வேறொரு நிரல் { $interface }-இல் MSRP அல்லது MVRP declaration-களை அனுப்புகிறது
 host-state = நிலை

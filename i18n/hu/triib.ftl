@@ -691,9 +691,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Nincs itt vagy nincs beolvasva: { $missing }.
 presets-deleted = Törölve: „{ $name }”.
-presets-host-note = A számítógép saját eszközeit is megőrzi, és visszahíváskor újraindítja őket.
+presets-host-note = A számítógép saját entitásait is megőrzi, és visszahíváskor újraindítja őket.
 presets-host-endpoints = { $count } ezen a számítógépen
-presets-starting-host = A számítógép eszközeinek indítása ehhez: „{ $name }”; a többi akkor következik, amikor újra elérhetők.
+presets-starting-host = A számítógép entitásainak indítása ehhez: „{ $name }”; a többi akkor következik, amikor újra elérhetők.
 
 ## Controls
 
@@ -712,16 +712,16 @@ matrix-stream-format-state = { $format }. { $state }.
 
 common-decimal-separator = {","}
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = Végpont hozzáadása
-host-show-mine = Csak a számítógép saját eszközeinek megjelenítése
+host-add-entity = Entitás hozzáadása
+host-show-mine = Csak a számítógép saját entitásainak megjelenítése
 host-show-all = Az összes entitás megjelenítése
-host-new-device = Gazda eszköz { $number }
+host-new-entity = Gazda entitás { $number }
 host-failed = Nem sikerült hozzáadni ehhez a számítógéphez: { $reason }
-host-needs-clock = A számítógép saját eszközeinek PTP-hardverórával rendelkező vezetékes interfész kell
+host-needs-clock = A számítógép saját entitásainak PTP-hardverórával rendelkező vezetékes interfész kell
 host-no-ptp4l = A ptp4l nem válaszol, így a számítógép streamjei nem tudják tartani a gPTP időt
-host-elsewhere = A triib-endpointd egy másik felhasználó vagy a root nevében fut az interfészen ({ $interface }), így a számítógép eszközei ott futnak, nem itt
+host-elsewhere = A triib-endpointd egy másik felhasználó vagy a root nevében fut az interfészen ({ $interface }), így a számítógép entitásai ott futnak, nem itt
 host-foreign-mrp = Egy másik program a számítógép címéről MSRP- vagy MVRP-deklarációkat küld az interfészen ({ $interface }), és visszavonhatja azt, amire a számítógép streamjeinek szüksége van
 host-alarm-foreign-mrp = Egy másik program ezen a számítógépen MSRP- vagy MVRP-deklarációkat küld ({ $interface })
 host-state = Állapot

@@ -743,9 +743,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Ausentes o sin leer: { $missing }.
 presets-deleted = Se eliminó «{ $name }».
-presets-host-note = También guarda los dispositivos propios de este equipo, y los vuelve a iniciar al recuperarlo.
+presets-host-note = También guarda las entidades propias de este equipo, y las vuelve a iniciar al recuperarlo.
 presets-host-endpoints = { $count } en este equipo
-presets-starting-host = Iniciando los dispositivos de este equipo para «{ $name }»; el resto seguirá cuando vuelvan.
+presets-starting-host = Iniciando las entidades de este equipo para «{ $name }»; el resto seguirá cuando vuelvan.
 
 ## Controls
 
@@ -762,16 +762,16 @@ network-npcap-administrators = Npcap solo permite a los administradores enviar y
 matrix-stream-format = { $format }.
 matrix-stream-format-state = { $format }. { $state }.
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = Añadir endpoint
-host-show-mine = Mostrar solo los dispositivos propios de este equipo
+host-add-entity = Añadir entidad
+host-show-mine = Mostrar solo las entidades propias de este equipo
 host-show-all = Mostrar todas las entidades
-host-new-device = Dispositivo del equipo { $number }
+host-new-entity = Entidad del equipo { $number }
 host-failed = No se pudo añadir a este equipo: { $reason }
-host-needs-clock = Los dispositivos propios de este equipo necesitan una interfaz cableada con reloj de hardware PTP
+host-needs-clock = Las entidades propias de este equipo necesitan una interfaz cableada con reloj de hardware PTP
 host-no-ptp4l = ptp4l no responde, así que los flujos de este equipo no pueden mantener la hora gPTP
-host-elsewhere = triib-endpointd se ejecuta en { $interface } para otro usuario o como root, así que los dispositivos de este equipo se ejecutan allí, no aquí
+host-elsewhere = triib-endpointd se ejecuta en { $interface } para otro usuario o como root, así que las entidades de este equipo se ejecutan allí, no aquí
 host-foreign-mrp = Otro programa emite declaraciones MSRP o MVRP en { $interface } desde la dirección de este equipo y puede retirar lo que necesitan los flujos de este equipo
 host-alarm-foreign-mrp = Otro programa de este equipo emite declaraciones MSRP o MVRP en { $interface }
 host-state = Estado

@@ -833,9 +833,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } غير موجودة أو لم تُقرأ: { $missing }.
 presets-deleted = حُذف «{ $name }».
-presets-host-note = ويحفظ أيضًا أجهزة هذا الحاسوب الخاصة، ويشغّلها من جديد عند الاستدعاء.
+presets-host-note = ويحفظ أيضًا كيانات هذا الحاسوب الخاصة، ويشغّلها من جديد عند الاستدعاء.
 presets-host-endpoints = { $count } على هذا الحاسوب
-presets-starting-host = جارٍ تشغيل أجهزة هذا الحاسوب لـ«{ $name }»؛ ويتبعها الباقي حين تعود.
+presets-starting-host = جارٍ تشغيل كيانات هذا الحاسوب لـ«{ $name }»؛ ويتبعها الباقي حين تعود.
 
 ## Controls
 
@@ -854,16 +854,16 @@ matrix-stream-format-state = { $format }. { $state }.
 
 common-decimal-separator = {"."}
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = إضافة نقطة طرفية
-host-show-mine = عرض أجهزة هذا الحاسوب الخاصة فقط
+host-add-entity = إضافة كيان
+host-show-mine = عرض كيانات هذا الحاسوب الخاصة فقط
 host-show-all = عرض كل الكيانات
-host-new-device = جهاز المضيف { $number }
+host-new-entity = كيان المضيف { $number }
 host-failed = تعذّرت إضافته إلى هذا الحاسوب: { $reason }
-host-needs-clock = تحتاج أجهزة هذا الحاسوب الخاصة إلى واجهة سلكية بساعة PTP عتادية
+host-needs-clock = تحتاج كيانات هذا الحاسوب الخاصة إلى واجهة سلكية بساعة PTP عتادية
 host-no-ptp4l = لا يجيب ptp4l، لذا لا تستطيع تدفقات هذا الحاسوب الالتزام بتوقيت gPTP
-host-elsewhere = يعمل triib-endpointd على { $interface } لمستخدم آخر أو بصفة root، لذا تعمل أجهزة هذا الحاسوب هناك لا هنا
+host-elsewhere = يعمل triib-endpointd على { $interface } لمستخدم آخر أو بصفة root، لذا تعمل كيانات هذا الحاسوب هناك لا هنا
 host-foreign-mrp = يرسل برنامج آخر تصريحات MSRP أو MVRP على { $interface } من عنوان هذا الحاسوب، مما قد يسحب ما تحتاج إليه تدفقات هذا الحاسوب
 host-alarm-foreign-mrp = يرسل برنامج آخر على هذا الحاسوب تصريحات MSRP أو MVRP على { $interface }
 host-state = الحالة

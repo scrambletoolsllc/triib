@@ -689,9 +689,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } এখানে নেই বা পড়া হয়নি: { $missing }।
 presets-deleted = “{ $name }” মোছা হয়েছে।
-presets-host-note = এটি এই কম্পিউটারের নিজস্ব Device-ও রাখে, এবং recall করলে সেগুলো আবার চালু করে।
+presets-host-note = এটি এই কম্পিউটারের নিজস্ব Entity-ও রাখে, এবং recall করলে সেগুলো আবার চালু করে।
 presets-host-endpoints = এই কম্পিউটারে { $count }টি
-presets-starting-host = “{ $name }”-এর জন্য এই কম্পিউটারের Device চালু হচ্ছে; সেগুলো ফিরে এলে বাকিটা হবে।
+presets-starting-host = “{ $name }”-এর জন্য এই কম্পিউটারের Entity চালু হচ্ছে; সেগুলো ফিরে এলে বাকিটা হবে।
 
 ## Controls
 
@@ -710,16 +710,16 @@ matrix-stream-format-state = { $format }। { $state }।
 
 common-decimal-separator = {"."}
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = Endpoint যোগ করুন
-host-show-mine = শুধু এই কম্পিউটারের নিজস্ব Device দেখান
+host-add-entity = Entity যোগ করুন
+host-show-mine = শুধু এই কম্পিউটারের নিজস্ব Entity দেখান
 host-show-all = সব entity দেখান
-host-new-device = হোস্ট Device { $number }
+host-new-entity = হোস্ট Entity { $number }
 host-failed = এই কম্পিউটারে যোগ করা যায়নি: { $reason }
-host-needs-clock = এই কম্পিউটারের নিজস্ব Device-এর জন্য PTP hardware clock-সহ তারযুক্ত interface দরকার
+host-needs-clock = এই কম্পিউটারের নিজস্ব Entity-এর জন্য PTP hardware clock-সহ তারযুক্ত interface দরকার
 host-no-ptp4l = ptp4l সাড়া দিচ্ছে না, তাই এই কম্পিউটারের stream gPTP সময় ধরে রাখতে পারে না
-host-elsewhere = triib-endpointd { $interface }-এ অন্য একজন ব্যবহারকারীর জন্য বা root হিসেবে চলছে, তাই এই কম্পিউটারের Device সেখানে চলে, এখানে নয়
+host-elsewhere = triib-endpointd { $interface }-এ অন্য একজন ব্যবহারকারীর জন্য বা root হিসেবে চলছে, তাই এই কম্পিউটারের Entity সেখানে চলে, এখানে নয়
 host-foreign-mrp = অন্য একটি প্রোগ্রাম এই কম্পিউটারের ঠিকানা থেকে { $interface }-এ MSRP বা MVRP declaration পাঠাচ্ছে, তাতে এই কম্পিউটারের stream-এর যা দরকার তা প্রত্যাহার হয়ে যেতে পারে
 host-alarm-foreign-mrp = এই কম্পিউটারের অন্য একটি প্রোগ্রাম { $interface }-এ MSRP বা MVRP declaration পাঠাচ্ছে
 host-state = অবস্থা

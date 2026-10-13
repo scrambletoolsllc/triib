@@ -381,7 +381,7 @@ impl Endpoint {
             }
         }
         log(format!(
-            "device {} as {}, {} out and {} in",
+            "entity {} as {}, {} out and {} in",
             self.config.name,
             self.entity.entity_id(),
             self.outputs.len(),

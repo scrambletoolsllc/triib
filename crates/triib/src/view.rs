@@ -434,7 +434,7 @@ fn content(triib: &Triib) -> Element<'_, Message> {
                     state => return network_state_view(triib, state),
                 }
             };
-            // This computer's own devices are added here.
+            // This computer's own entities are added here.
             match crate::host_view::bar(triib) {
                 Some(bar) => scramble_ui::column![bar, body].into(),
                 None => body,
@@ -1053,7 +1053,7 @@ const STREAMS_SHOWN: usize = 5;
 
 /// The Streams tab: a list of the entity's streams, outputs then inputs,
 /// with the picked one's details under it, or for an entity of one
-/// stream its details alone; this computer's devices add streams under
+/// stream its details alone; this computer's entities add streams under
 /// the list. The channel mappings follow.
 fn stream_sections<'a>(
     triib: &'a Triib,
@@ -2329,7 +2329,7 @@ pub(crate) mod tests {
                 Size::new(2200.0, 760.0),
             ),
             ("inspector-editing", View::Entities, true, desktop),
-            // As one of this computer's devices, with a stream each way.
+            // As one of this computer's entities, with a stream each way.
             (
                 "inspector-device",
                 View::Entities,
@@ -2733,7 +2733,7 @@ pub(crate) mod tests {
         let messages: Vec<Message> = {
             let mut simulator = simulate(&triib, size);
             assert!(simulator.find("Add talker").is_err());
-            simulator.click("Add endpoint").expect("the button");
+            simulator.click("Add entity").expect("the button");
             simulator.into_messages().collect()
         };
         assert!(
@@ -2809,7 +2809,7 @@ pub(crate) mod tests {
             assert!(simulator.find("Virtual device").is_ok());
             assert!(simulator.find("Nowhere").is_err());
             assert!(simulator.find("Remove stream").is_ok());
-            assert!(simulator.find("Add endpoint").is_ok());
+            assert!(simulator.find("Add entity").is_ok());
             simulator.click("Add stream").expect("the button");
             let messages: Vec<Message> = simulator.into_messages().collect();
             assert!(
@@ -2890,7 +2890,7 @@ pub(crate) mod tests {
         assert!(
             simulator
                 .find(
-                    "This computer's own devices need a wired interface with a PTP hardware clock"
+                    "This computer's own entities need a wired interface with a PTP hardware clock"
                 )
                 .is_ok()
         );
@@ -2971,7 +2971,7 @@ pub(crate) mod tests {
         }
     }
 
-    /// An entity read again, as one of this computer's devices is when a
+    /// An entity read again, as one of this computer's entities is when a
     /// stream is added, keeps the model read before until the new one is
     /// read, so the list and the inspector do not empty meanwhile; one
     /// seen for the first time shows that it is being read.

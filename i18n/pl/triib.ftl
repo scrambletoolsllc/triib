@@ -781,9 +781,9 @@ presets-recalling = { $count ->
 }
 presets-missing = { $report } Brak w sieci lub nie odczytano: { $missing }.
 presets-deleted = Usunięto „{ $name }”.
-presets-host-note = Zachowuje też własne urządzenia tego komputera i uruchamia je ponownie przy przywołaniu.
+presets-host-note = Zachowuje też własne encje tego komputera i uruchamia je ponownie przy przywołaniu.
 presets-host-endpoints = { $count } na tym komputerze
-presets-starting-host = Uruchamianie urządzeń tego komputera dla „{ $name }”; reszta nastąpi, gdy wrócą.
+presets-starting-host = Uruchamianie encji tego komputera dla „{ $name }”; reszta nastąpi, gdy wrócą.
 
 ## Controls
 
@@ -802,16 +802,16 @@ matrix-stream-format-state = { $format }. { $state }.
 
 common-decimal-separator = {","}
 
-## This computer's own devices
+## This computer's own entities
 
-host-add-endpoint = Dodaj urządzenie końcowe
-host-show-mine = Pokaż tylko własne urządzenia tego komputera
+host-add-entity = Dodaj encję
+host-show-mine = Pokaż tylko własne encje tego komputera
 host-show-all = Pokaż wszystkie encje
-host-new-device = Urządzenie hosta { $number }
+host-new-entity = Encja hosta { $number }
 host-failed = Nie można dodać do tego komputera: { $reason }
-host-needs-clock = Własne urządzenia tego komputera wymagają przewodowego interfejsu ze sprzętowym zegarem PTP
+host-needs-clock = Własne encje tego komputera wymagają przewodowego interfejsu ze sprzętowym zegarem PTP
 host-no-ptp4l = ptp4l nie odpowiada, więc strumienie tego komputera nie mogą trzymać czasu gPTP
-host-elsewhere = triib-endpointd działa na { $interface } dla innego użytkownika lub jako root, więc urządzenia tego komputera działają tam, nie tutaj
+host-elsewhere = triib-endpointd działa na { $interface } dla innego użytkownika lub jako root, więc encje tego komputera działają tam, nie tutaj
 host-foreign-mrp = Inny program deklaruje MSRP lub MVRP na { $interface } z adresu tego komputera i może wycofać to, czego potrzebują strumienie tego komputera
 host-alarm-foreign-mrp = Inny program na tym komputerze deklaruje MSRP lub MVRP na { $interface }
 host-state = Stan
