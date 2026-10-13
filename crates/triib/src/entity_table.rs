@@ -657,7 +657,7 @@ mod tests {
         assert_eq!(triib.entity_name_of(alone), "triib controller");
         assert_eq!(
             crate::describe::glyph(&triib.entities[&alone].adp),
-            Icon::SettingsRemote
+            Icon::Traffic
         );
     }
 

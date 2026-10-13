@@ -23,10 +23,11 @@ computer's talkers and listeners folded into its entities.
 - While a media clock stream is picked, the Streams tab leaves out the
   entity's channel mappings, which are its audio streams'.
 - The matrix remembers which entities are folded, across restarts.
-- Controllers have an icon of their own, a remote, rather than this
-  computer's. triib's controller, which has no model to read, is named
-  for the computer it runs on: "triib on Mac mini" after an entity from
-  the same address, "triib on this computer", else "triib controller".
+- Controllers have an icon of their own, a traffic light, rather than
+  this computer's. triib's controller, which has no model to read, is
+  named for the computer it runs on: "triib on Mac mini" after an entity
+  from the same address, "triib on this computer", else "triib
+  controller".
 - Settings has a Storage tab, as prev has: the presets folder and the
   entities file, each typed or chosen with Choose…, and checked before
   it is taken.

@@ -36,7 +36,7 @@ pub fn glyph(adp: &Adpdu) -> Icon {
         (true, true) => Icon::GraphicEq,
         (true, false) => Icon::Mic,
         (false, true) => Icon::Speaker,
-        (false, false) if is_controller(adp) => Icon::SettingsRemote,
+        (false, false) if is_controller(adp) => Icon::Traffic,
         (false, false) => Icon::Lan,
     }
 }
