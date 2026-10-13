@@ -240,7 +240,7 @@ pub fn remove_stream(
         .0;
     let last = endpoint.streams.len() <= 1;
     Some(
-        button::with_icon(Kind::Text, Icon::Delete, fl!("host-remove-stream"))
+        button::with_icon(Kind::Outlined, Icon::Delete, fl!("host-remove-stream"))
             .size(Size::ExtraSmall)
             .on_press_maybe(
                 (!last).then_some(Message::HostStream(entity_id, StreamChange::Remove(at))),
