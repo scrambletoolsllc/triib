@@ -695,7 +695,7 @@ lite-active-untagged = Active, untagged
 lite-active-vlan = Active, VLAN { $vlan }
 lite-capable = Capable
 lite-mode = Mode
-lite-mode-capable = AVB, AVB Lite capable
+lite-mode-capable = AVB (AVB Lite capable)
 # Why the entity fell back to AVB Lite, after "Because".
 lite-because = Because
 lite-fallback-none = no reason given
