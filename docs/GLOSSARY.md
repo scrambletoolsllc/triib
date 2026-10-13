@@ -139,3 +139,27 @@ including inside longer messages.
   stay short. The inspector's labels have about 130 pixels.
 - **Comments:** lines starting with `#` explain the message beneath them.
   They are not translated.
+
+## The website
+
+triib.run is in every language the app is. The English pages in `site/`
+are the source; `site/i18n/en.json` holds their text block by block, and
+`site/i18n/LANG.json` each language's, keyed by the English's hash. A tag
+with attributes stands as a short name such as `<a1>…</a1>`, and a
+release number as `{v}`, so translations see only the words.
+
+- After changing the English pages, run `scripts/site-i18n.py extract`
+  to update `en.json`, then `scripts/site-i18n.py check` to list what
+  each language now lacks: a changed sentence is a new key, and its old
+  translation shows as no longer in the English. Remove those once
+  translated again.
+- Names of things in the app follow the app's own translation in
+  `i18n/LANG/triib.ftl`, and terms this glossary's, so the tour says what
+  the app shows.
+- `en-GB.json` holds only the texts spelled differently, as the app's
+  British English does; the rest come from the US English.
+- `scripts/build-site.sh` writes English at the root and each language
+  under its own folder, with a language menu and `hreflang` links, right
+  to left where the language reads so. A reader who arrives at an English
+  page from elsewhere, with a browser that prefers one of the languages,
+  is taken to it.

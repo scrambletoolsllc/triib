@@ -1,0 +1,1186 @@
+{
+ "5e1fb400d2b1": {
+  "page": "index.html",
+  "text": "triib: an AVB and Milan controller for Linux, Windows and macOS"
+ },
+ "45d690eda18f": {
+  "page": "index.html",
+  "text": "<img1>triib"
+ },
+ "fc338f87a058": {
+  "page": "index.html",
+  "text": "Features"
+ },
+ "a479c9c34e87": {
+  "page": "index.html",
+  "text": "Download"
+ },
+ "cd9e8f38bcfe": {
+  "page": "index.html",
+  "text": "Tour"
+ },
+ "7b4379a60050": {
+  "page": "index.html",
+  "text": "Specs"
+ },
+ "c60f2f817f12": {
+  "page": "index.html",
+  "text": "Source on GitHub"
+ },
+ "a4f50d1a4290": {
+  "page": "index.html",
+  "text": "triib"
+ },
+ "421ae42310b7": {
+  "page": "index.html",
+  "text": "<span1>See, connect and look after your AVB network.</span1> <span2>Find every Milan and AVB device, connect their streams in a matrix, follow each stream and clock across the network, and change formats, clocks, channel maps and controls. On Linux, add talkers, listeners and devices of your own, routed to the computer's&nbsp;audio.</span2>"
+ },
+ "6b4032b23584": {
+  "page": "index.html",
+  "text": "<a1>Download {v}</a1> <a2>Source on GitHub</a2>"
+ },
+ "a2fafaf64ad2": {
+  "page": "index.html",
+  "text": "Free and open source under MIT or Apache 2.0, on Linux, Windows and macOS. In 38 languages, including right-to-left."
+ },
+ "af748efff6cb": {
+  "page": "index.html",
+  "text": "What triib does"
+ },
+ "add3d39778b4": {
+  "page": "index.html",
+  "text": "Finds every device"
+ },
+ "9e8b1ba9f47f": {
+  "page": "index.html",
+  "text": "triib discovers the ATDECC entities on the interface you pick, reads each entity model, its names, streams, clocks and Milan support, and keeps it, so a device you have seen before shows in full at once."
+ },
+ "aca52c18ede1": {
+  "page": "index.html",
+  "text": "A connection matrix"
+ },
+ "8aa87a7530a6": {
+  "page": "index.html",
+  "text": "Talker outputs across, listener inputs down: click a cell to connect or disconnect. Each cell shows whether the stream flows, waits or has failed, and whether the two formats can meet at all."
+ },
+ "fb352cac30d9": {
+  "page": "index.html",
+  "text": "A map of the network"
+ },
+ "6785f2acc8db": {
+  "page": "index.html",
+  "text": "Bridges and devices from each entity's gPTP path, every stream as its own wire, and the clock tree from the grandmaster, with each device in sync or not. A failed reservation shows in red where it stops."
+ },
+ "b3e12f1c2db6": {
+  "page": "index.html",
+  "text": "Changes that matter"
+ },
+ "b003af27f693": {
+  "page": "index.html",
+  "text": "Rename entities, change stream formats, sampling rates and clock sources, map channels to streams, set controls such as gain and mute, and make a device identify itself."
+ },
+ "e709e76ff542": {
+  "page": "index.html",
+  "text": "Presets"
+ },
+ "27d13ede9772": {
+  "page": "index.html",
+  "text": "Save each entity's clock sources, sampling rates, stream formats, controls and connections, and recall them later: triib changes only what differs."
+ },
+ "b0a72ef8c766": {
+  "page": "index.html",
+  "text": "Every frame in the log"
+ },
+ "29ec72a75ced": {
+  "page": "index.html",
+  "text": "Every ATDECC frame sent and heard, decoded in plain words, with the ones that break the rules marked and the reason given."
+ },
+ "4a57b74c7b1b": {
+  "page": "index.html",
+  "text": "AVB Lite"
+ },
+ "d5e547014e5b": {
+  "page": "index.html",
+  "text": "See how devices run <a1>AVB Lite</a1> over switches that are not AVB bridges: their mode and why, their PTP offset, what their streams take of each link, and the alarms the profile calls for."
+ },
+ "c694445a6cc8": {
+  "page": "index.html",
+  "text": "AVB Wireless"
+ },
+ "ab6d2edd7ada": {
+  "page": "index.html",
+  "text": "Wi-Fi stations and access points under the <a1>AVB Wireless</a1> profile: each station's link and time, the access point it follows, and whether an access point can carry Class A."
+ },
+ "d5b6a4ef6e2b": {
+  "page": "index.html",
+  "text": "Talkers, listeners and devices of your own"
+ },
+ "b9dc19ab1796": {
+  "page": "index.html",
+  "text": "On Linux, with a PTP hardware clock and ptp4l, triib runs Milan talkers, listeners and devices with any number of streams each way, AAF or AM824 at 48, 96 or 192 kHz, each stream with its own virtual audio device or one of the computer's."
+ },
+ "50603fd9e222": {
+  "page": "index.html",
+  "text": "Help from AI agents"
+ },
+ "f2aa0aeca274": {
+  "page": "index.html",
+  "text": "Agents such as Claude Code can read the network and make changes through <code>triib --mcp</code>, the same way a click does, once you let each one in."
+ },
+ "fb5125ed59fa": {
+  "page": "index.html",
+  "text": "A command line and libraries"
+ },
+ "2c27af41716c": {
+  "page": "index.html",
+  "text": "<code>triib-cli</code> does the same from scripts. The protocols are Rust crates of their own, <code>atdecc</code>, <code>avb-mrp</code> and <code>avb-net</code>, for other apps and for microcontrollers."
+ },
+ "2387d8edc47d": {
+  "page": "index.html",
+  "text": "The gPTP clock tree, device by device"
+ },
+ "0ab299b9eae5": {
+  "page": "index.html",
+  "text": "The PTP tree when devices run AVB Lite"
+ },
+ "2d30ccce799c": {
+  "page": "index.html",
+  "text": "Frames decoded, and the broken ones marked"
+ },
+ "e16b1234382b": {
+  "page": "index.html",
+  "text": "Presets, recalled in one click"
+ },
+ "a3942f9b612c": {
+  "page": "index.html",
+  "text": "A show's network: three bridges, twenty devices and every audio stream as its own wire"
+ },
+ "50c39ea39a1c": {
+  "page": "index.html",
+  "text": "triib {v} for Linux and Windows on x86_64 and ARM64, Linux on RISC-V, and macOS on Apple Silicon, each package setting up what triib needs to send and receive raw Ethernet. Every file is on the <a1>release page</a1>, with checksums."
+ },
+ "bc0792d8dc81": {
+  "page": "index.html",
+  "text": "System"
+ },
+ "fd6c3ebf7bef": {
+  "page": "index.html",
+  "text": "Install"
+ },
+ "de89bebd80f9": {
+  "page": "index.html",
+  "text": "Windows 10 and 11"
+ },
+ "304ebb08851b": {
+  "page": "index.html",
+  "text": "Installer (.msi): <a1>x64</a1> · <a2>ARM64</a2>"
+ },
+ "36eec3ec7710": {
+  "page": "index.html",
+  "text": "Install <a1>Npcap</a1> first, then open it: it installs for you alone, with no administrator prompt"
+ },
+ "5ab7761535e2": {
+  "page": "index.html",
+  "text": "Windows, portable"
+ },
+ "c6562b548a86": {
+  "page": "index.html",
+  "text": ".zip: <a1>x64</a1> · <a2>ARM64</a2>"
+ },
+ "362304f8808e": {
+  "page": "index.html",
+  "text": "With Npcap installed, unpack it anywhere and run <code>triib.exe</code>"
+ },
+ "04f864a554e0": {
+  "page": "index.html",
+  "text": "macOS 11 and later, Apple Silicon"
+ },
+ "1444a039b47d": {
+  "page": "index.html",
+  "text": "Installer package (.pkg): <a1>Apple Silicon</a1>"
+ },
+ "63da0d04543e": {
+  "page": "index.html",
+  "text": "Open it: it installs triib and gives you raw Ethernet (<code>/dev/bpf*</code>) from your next login, as Wireshark's ChmodBPF does. Until it is notarized, choose Open Anyway in System Settings, Privacy &amp; Security first"
+ },
+ "2d9dceb94637": {
+  "page": "index.html",
+  "text": "Debian, Ubuntu"
+ },
+ "d2d0a2426b0f": {
+  "page": "index.html",
+  "text": ".deb: <a1>x86_64</a1> · <a2>ARM64</a2> · <a3>RISC-V</a3>"
+ },
+ "3f99deb79bdf": {
+  "page": "index.html",
+  "text": "<code>sudo apt install ./triib_{v}-1_*.deb</code>"
+ },
+ "bc5fc74a0c92": {
+  "page": "index.html",
+  "text": "Fedora"
+ },
+ "c5cb99e1826e": {
+  "page": "index.html",
+  "text": ".rpm: <a1>x86_64</a1> · <a2>ARM64</a2> · <a3>RISC-V</a3>"
+ },
+ "ca193d70c978": {
+  "page": "index.html",
+  "text": "<code>sudo dnf install ./triib-{v}-1.*.rpm</code>"
+ },
+ "f96ddf323d80": {
+  "page": "index.html",
+  "text": "Arch"
+ },
+ "9aafae0c79b5": {
+  "page": "index.html",
+  "text": "<a1>PKGBUILD</a1> and <a2>triib.install</a2>"
+ },
+ "70a4bfafdc84": {
+  "page": "index.html",
+  "text": "<code>makepkg -si</code> in a folder with both"
+ },
+ "edce668491b6": {
+  "page": "index.html",
+  "text": "Any distribution"
+ },
+ "1702595f8b41": {
+  "page": "index.html",
+  "text": ".tar.gz: <a1>x86_64</a1> · <a2>ARM64</a2> · <a3>RISC-V</a3>"
+ },
+ "1049c7ccfa50": {
+  "page": "index.html",
+  "text": "<code>sudo tar -C / -xzf triib-{v}-*-linux.tar.gz</code>, then <code>sudo setcap cap_net_raw+ep</code> on <code>/usr/bin/triib</code>, <code>triib-cli</code> and <code>triib-endpointd</code>"
+ },
+ "24417227efdb": {
+  "page": "index.html",
+  "text": "The Linux packages set <code>CAP_NET_RAW</code> on the three programs as they install, and recommend linuxptp for this computer's talkers and listeners. The Windows installer and programs are signed by Scramble Tools LLC. See the <a1>install notes</a1> for what differs between packages, or build it from source with Rust: <code>cargo run -p triib</code> in a clone of the repository."
+ },
+ "321062598d1b": {
+  "page": "index.html",
+  "text": "Code signing policy"
+ },
+ "0e4e4e25ba00": {
+  "page": "index.html",
+  "text": "Windows releases of triib are signed by Scramble Tools LLC with <a1>Microsoft Azure Artifact Signing</a1>, from its first release."
+ },
+ "9e21560e9de5": {
+  "page": "index.html",
+  "text": "<strong>What is signed:</strong> only programs built from this project's own <a1>source code</a1> by its GitHub Actions release workflow: <code>triib.exe</code>, <code>triib-cli.exe</code> and the triib installer. triib carries no programs of others; Npcap, which it needs on Windows, comes from Npcap's own installer."
+ },
+ "840981ec0887": {
+  "page": "index.html",
+  "text": "<strong>Committers and reviewers:</strong> the members of the <a1>scrambletoolsllc</a1> GitHub organization, who review every outside contribution before it is merged."
+ },
+ "6263ca064f9a": {
+  "page": "index.html",
+  "text": "<strong>Approvers:</strong> the owner of the <a1>scrambletoolsllc</a1> GitHub organization, who alone can publish a release, and with it a signing."
+ },
+ "2d89c53bf0a2": {
+  "page": "index.html",
+  "text": "Signing runs only in the release workflow, which signs in to Azure without a stored secret. Everyone on the team signs in to GitHub and Azure with two-factor authentication."
+ },
+ "cf01481f626d": {
+  "page": "index.html",
+  "text": "Privacy"
+ },
+ "92ff4c2062be": {
+  "page": "index.html",
+  "text": "This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. triib never goes online: it sends and receives AVB frames only on the local network interface you pick, as an AVB controller does, and the only web page it opens is Npcap's, on Windows, when you click its link. triib has no accounts and sends no telemetry. This website sets no cookies and loads nothing from other sites."
+ },
+ "10ad6a2a5a92": {
+  "page": "index.html",
+  "text": "triib is free software under the <a1>MIT</a1> or <a2>Apache 2.0</a2> license. Made by <a3>Scramble Tools</a3>. Milan and AVB are trademarks of Avnu Alliance; triib is not certified by Avnu Alliance. <a4>Code signing policy</a4> · <a5>Privacy</a5>"
+ },
+ "83a29688a8df": {
+  "page": "index.html",
+  "text": "triib is a free, open source ATDECC (IEEE 1722.1) controller with Milan and AVB Lite support: it finds the AVB devices on your network, connects their streams, maps the network and its clocks, and on Linux runs talkers and listeners of its own.",
+  "attribute": true
+ },
+ "348629e8e455": {
+  "page": "index.html",
+  "text": "The triib icon",
+  "attribute": true
+ },
+ "a0cc51db2168": {
+  "page": "index.html",
+  "text": "triib in dark mode with the connection matrix of three entities, talker outputs across the top and listener inputs down the side, and the inspector on the right showing the selected Mac mini's name, product, firmware, media clock and sampling rate",
+  "attribute": true
+ },
+ "744b44c965b9": {
+  "page": "index.html",
+  "text": "The network map's clock tree: a core bridge as grandmaster, two more bridges below it and twenty devices, each marked Sync except one monitor amp marked No sync",
+  "attribute": true
+ },
+ "c672066f5161": {
+  "page": "index.html",
+  "text": "The network view in AVB Lite: the PTP tree from the grandmaster clock to a device in sync, two devices not on the PTP tree, and a panel counting two in sync and two not",
+  "attribute": true
+ },
+ "07ebe8ce3b3c": {
+  "page": "index.html",
+  "text": "The log below the entity list, listing a Connect RX command, a Get counters response with a warning that its control data length claims eight octets past the end of the frame, and a response marked Not implemented",
+  "attribute": true
+ },
+ "1b3db4c60fa7": {
+  "page": "index.html",
+  "text": "The Presets dialog with a preset named Matinee about to be saved, and Rehearsal and Sunday service ready to recall",
+  "attribute": true
+ },
+ "66f203cac1de": {
+  "page": "index.html",
+  "text": "The network map of a show: a core bridge, a stage bridge and a front of house bridge, twenty devices from stage boxes to amps, and each audio stream as its own colored wire, with two failed reservations marked",
+  "attribute": true
+ },
+ "64d5808da8e6": {
+  "page": "guide.html",
+  "text": "A tour of triib"
+ },
+ "40430316698a": {
+  "page": "guide.html",
+  "text": "What each part of triib does and how to use it. The pictures show a test network of three entities, and a show's network of twenty devices."
+ },
+ "f1b320f71673": {
+  "page": "guide.html",
+  "text": "<a1>Picking an interface</a1>"
+ },
+ "3652bfef4394": {
+  "page": "guide.html",
+  "text": "<a1>Connections</a1>"
+ },
+ "42dd0db25ddc": {
+  "page": "guide.html",
+  "text": "<a1>Entities</a1>"
+ },
+ "9e24965d94e5": {
+  "page": "guide.html",
+  "text": "<a1>Inspector</a1>"
+ },
+ "a5feb210b1af": {
+  "page": "guide.html",
+  "text": "<a1>Network</a1>"
+ },
+ "918f6f9446fe": {
+  "page": "guide.html",
+  "text": "<a1>AVB Lite</a1>"
+ },
+ "f4ccc42a901c": {
+  "page": "guide.html",
+  "text": "<a1>AVB Wireless</a1>"
+ },
+ "478276ab8f60": {
+  "page": "guide.html",
+  "text": "<a1>Presets</a1>"
+ },
+ "bd4120aeb0bf": {
+  "page": "guide.html",
+  "text": "<a1>Log</a1>"
+ },
+ "1afc1de6f5c5": {
+  "page": "guide.html",
+  "text": "<a1>This computer's talkers, listeners and devices</a1>"
+ },
+ "0183b04870f6": {
+  "page": "guide.html",
+  "text": "<a1>Settings</a1>"
+ },
+ "2875ef990c96": {
+  "page": "guide.html",
+  "text": "<a1>AI agents</a1>"
+ },
+ "2fd230342410": {
+  "page": "guide.html",
+  "text": "<a1>Command line</a1>"
+ },
+ "3cf6a1772621": {
+  "page": "guide.html",
+  "text": "Picking an interface"
+ },
+ "8b00cc502604": {
+  "page": "guide.html",
+  "text": "triib works on one network interface at a time: pick it from the menu at the left of the toolbar, which shows each wired interface with its speed and whether it has a PTP hardware clock. Virtual interfaces stay hidden unless you ask for them. The status bar says how the interface is doing and the entity ID triib discovers as."
+ },
+ "d3abb0681e3a": {
+  "page": "guide.html",
+  "text": "triib asks every entity to announce itself when it starts, and again whenever you press the refresh button. Each entity it finds has its entity model read once and kept, so a device you have seen before shows in full at once the next time."
+ },
+ "24bd84ecd553": {
+  "page": "guide.html",
+  "text": "On Linux triib needs <code>CAP_NET_RAW</code>, on macOS access to <code>/dev/bpf*</code>, and on Windows <a1>Npcap</a1>. The packages set the first two up; when something is missing, triib says what and how to fix it. On a Mac, triib reaches the Mac's own AVB entity through Apple's AudioVideoBridging framework, as macOS never hands that entity what a program writes to BPF."
+ },
+ "8f3509b64e0e": {
+  "page": "guide.html",
+  "text": "Connections"
+ },
+ "6603b9bd80f4": {
+  "page": "guide.html",
+  "text": "The matrix has every talker output across the top and every listener input down the side, grouped by entity. Point at a cell to see its talker and listener and whether their formats meet; click it to connect or disconnect. An entity's row folds into one line, where a cell says how many of its streams are connected, and opens to connect them one by one."
+ },
+ "9e7b4ca55b98": {
+  "page": "guide.html",
+  "text": "A cell shows"
+ },
+ "19cd7d185cfd": {
+  "page": "guide.html",
+  "text": "Meaning"
+ },
+ "c2f9b7b4897f": {
+  "page": "guide.html",
+  "text": "Connected"
+ },
+ "015e92f63bed": {
+  "page": "guide.html",
+  "text": "The listener is bound and receiving"
+ },
+ "d948526ebcaa": {
+  "page": "guide.html",
+  "text": "Bound, waiting for the stream"
+ },
+ "ae8130b7f497": {
+  "page": "guide.html",
+  "text": "The listener is bound, but the talker's stream has not arrived yet"
+ },
+ "c2ba863d8f23": {
+  "page": "guide.html",
+  "text": "Bound, something is wrong"
+ },
+ "96096f2a8c27": {
+  "page": "guide.html",
+  "text": "Bound, but the reservation failed or the formats differ; pointing at it says which"
+ },
+ "4c380e58fc32": {
+  "page": "guide.html",
+  "text": "Can connect"
+ },
+ "5d206de9885e": {
+  "page": "guide.html",
+  "text": "The formats match: click to connect"
+ },
+ "cfb59e21332d": {
+  "page": "guide.html",
+  "text": "Input format must change first"
+ },
+ "6856c00f2e0b": {
+  "page": "guide.html",
+  "text": "The input takes the stream but is set to another format, so it may not play until its format changes"
+ },
+ "eed488be3150": {
+  "page": "guide.html",
+  "text": "Formats cannot meet"
+ },
+ "257dd7743f31": {
+  "page": "guide.html",
+  "text": "The talker and listener have no format in common"
+ },
+ "eb11981e7c15": {
+  "page": "guide.html",
+  "text": "Click a cell marked <em>Input format must change first</em> for a menu of the formats both ends take: pick one and triib changes the input, or both ends, and connects."
+ },
+ "b022e750d40a": {
+  "page": "guide.html",
+  "text": "The chips above the matrix show all streams, only audio or only media clock streams, and <em>Hide what cannot connect</em> leaves out the rows and columns with nothing to connect. The search field in the toolbar finds entities and streams by name."
+ },
+ "f7638a26e808": {
+  "page": "guide.html",
+  "text": "Entities"
+ },
+ "51cbd921bf09": {
+  "page": "guide.html",
+  "text": "The entity list has a row for each entity: its name and group, product and firmware, Milan version, roles, media clock and more. The media clock's menu changes an entity's clock source right in the list. Each column header has a menu to move or remove its column or add another, such as vendor, model, state, AVB Lite or egress."
+ },
+ "9cf73a886022": {
+  "page": "guide.html",
+  "text": "On Linux, <em>Add talker</em>, <em>Add listener</em> and <em>Add device</em> add the computer's own; see <a1>below</a1>."
+ },
+ "8222c902ae07": {
+  "page": "guide.html",
+  "text": "Inspector"
+ },
+ "ad5e3380002a": {
+  "page": "guide.html",
+  "text": "Select an entity, in the matrix, the entity list or the network, and the inspector shows all there is to know about it, in five tabs:"
+ },
+ "8207af1ba8e5": {
+  "page": "guide.html",
+  "text": "<strong>Entity:</strong> its name and group, which you can rename, its product, firmware and configuration, its media clock with the clock source and sampling rate to change, its AVB Lite and AVB Wireless state, its identity and roles. <em>Identify</em> makes the device show itself, as by a blinking light."
+ },
+ "6199b2a63a13": {
+  "page": "guide.html",
+  "text": "<strong>Streams:</strong> each stream's format, which you can change, its state and maximum transit time, and how the stream's channels map to the entity's audio."
+ },
+ "3198f45d9c98": {
+  "page": "guide.html",
+  "text": "<strong>Controls:</strong> the entity's controls, such as gain, volume and mute, to set."
+ },
+ "ba2b8b304ff3": {
+  "page": "guide.html",
+  "text": "<strong>Diagnostics:</strong> how each clock domain and stream has fared since the entity started, from the counters it keeps, with what went wrong marked, and how each bound input's reservation stands."
+ },
+ "ad14e487e9fd": {
+  "page": "guide.html",
+  "text": "<strong>Descriptors:</strong> the entity model itself, descriptor by descriptor."
+ },
+ "53ebc572b4a4": {
+  "page": "guide.html",
+  "text": "Network"
+ },
+ "57d4c4633b61": {
+  "page": "guide.html",
+  "text": "The network view draws the network from each entity's gPTP path: bridges at the top, the devices behind each of them below, and those connected straight to the grandmaster's bridge in the middle. A panel beside the map counts what it shows and lists what needs attention. The chips switch what is drawn on the map:"
+ },
+ "7174fbf83271": {
+  "page": "guide.html",
+  "text": "<strong>Audio:</strong> each stream as its own wire, entering and leaving every bridge it crosses. Each talker has a hue and its streams are shades of it. Moving dots mean audio is flowing; a still red line is a failed reservation and a still gray line is advertised with no listener ready, both stopping where the reservation stops."
+ },
+ "b279c95db0cf": {
+  "page": "guide.html",
+  "text": "<strong>CRF:</strong> the media clock streams, the same way."
+ },
+ "3a41d056503d": {
+  "page": "guide.html",
+  "text": "<strong>gPTP:</strong> the clock tree from the grandmaster, with each device in sync or not."
+ },
+ "45a133abd548": {
+  "page": "guide.html",
+  "text": "Click a wire to inspect its stream, or a device to see its streams; click the background to clear. On a narrow window the map and the panel take turns."
+ },
+ "d5354bee5ff8": {
+  "page": "guide.html",
+  "text": "<a1>AVB Lite</a1> gives AVB devices a working if degraded path over switches that are not AVB bridges: plain PTP end to end, and streams unicast to each listener. triib shows how each entity runs it:"
+ },
+ "102f50166f74": {
+  "page": "guide.html",
+  "text": "The inspector's AVB Lite section gives the entity's mode and why it fell back, its PTP profile and offset from the grandmaster, its media VLAN, how many listeners it serves unicast, and its link speed."
+ },
+ "1026742966af": {
+  "page": "guide.html",
+  "text": "When no AVB bridge is heard and entities run AVB Lite, the network view's clock chip reads PTP and draws the PTP tree. A device is in sync while it follows the grandmaster within 50&nbsp;µs."
+ },
+ "8a8eb7155462": {
+  "page": "guide.html",
+  "text": "The alarms the profile calls for, such as a PTP offset past what AVB Lite allows, show in the status bar and the inspector."
+ },
+ "19fbebecf7c6": {
+  "page": "guide.html",
+  "text": "The <a1>AVB Wireless</a1> profile carries AVB over one Wi-Fi hop: an access point that is a bridge on its wired port, and Wi-Fi stations as talkers and listeners. triib asks each entity's AVB interfaces for their wireless status and shows it:"
+ },
+ "32f1b810fd96": {
+  "page": "guide.html",
+  "text": "The inspector's Wireless section gives a station's role, time mode and whether its time holds, its link, signal and rate, and the access point it follows; on an access point, its stations, the listeners it cannot serve and the frames a second it can deliver."
+ },
+ "34f53565c039": {
+  "page": "guide.html",
+  "text": "An access point admits Class A only where it delivers 12000 frames a second or more; <code>triib-cli wireless-config</code> allows it or keeps it off."
+ },
+ "90317b7453bf": {
+  "page": "guide.html",
+  "text": "The network view draws each station under its access point, its Wi-Fi hop dotted, and in sync while its time is locked. A station not locked and listeners an access point cannot serve show as alarms."
+ },
+ "53ea3ae7230a": {
+  "page": "guide.html",
+  "text": "A preset keeps each entity's clock sources, sampling rates, stream formats, controls and connections, and this computer's own talkers and listeners. Name it and save it from the toolbar's presets button; recalling it later changes only what differs, and says how many changes it made."
+ },
+ "8bf95ea37256": {
+  "page": "guide.html",
+  "text": "Log"
+ },
+ "eba0da68151d": {
+  "page": "guide.html",
+  "text": "The log lists every ATDECC frame triib sends and hears, newest first, each decoded into plain words with its time, direction and entity. A frame that breaks the rules is marked with the reason, and a response that refuses a command shows its status. Show all frames, only warnings, or only ADP, AECP or ACMP; pause the log to read it, or clear it."
+ },
+ "9b1e6601a357": {
+  "page": "guide.html",
+  "text": "This computer's talkers, listeners and devices"
+ },
+ "eba29bdf2962": {
+  "page": "guide.html",
+  "text": "On Linux, triib can run talkers, listeners and devices of the computer's own, which other controllers see and bind like any device. They need:"
+ },
+ "4f0792027d0c": {
+  "page": "guide.html",
+  "text": "A wired interface with a PTP hardware clock; <code>ethtool -T &lt;interface&gt;</code> shows whether it has one."
+ },
+ "6c35d03d2b69": {
+  "page": "guide.html",
+  "text": "<a1>linuxptp</a1>'s <code>ptp4l</code> running gPTP on that interface, so the clock keeps the network's time. triib reads its state and says when it is not there."
+ },
+ "a4dfb03084c5": {
+  "page": "guide.html",
+  "text": "Add them with <em>Add talker</em>, <em>Add listener</em> and <em>Add device</em> in the entity list. A talker or a listener is a Milan entity with one stream; a device is one with any number of streams each way, which the inspector adds and removes. Each stream is AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless the inspector picks another count, in SR class A or B."
+ },
+ "36926ea2bdaf": {
+  "page": "guide.html",
+  "text": "A talker sends from one of the computer's audio devices and a listener plays to one, as the inspector picks. Each of a device's streams has a virtual audio device of its own in PipeWire, named after the device and the stream, such as <em>Host device 1 Out 1</em>, for any program to play into or record from, unless the inspector picks a sound card instead. <code>triib-endpointd</code> runs them all, and keeps the names, formats and bindings controllers give, so a listener binds again after a restart."
+ },
+ "93f90e88c29d": {
+  "page": "guide.html",
+  "text": "Where no AVB bridge answers on the interface, they fall back to AVB Lite. The Linux packages carry systemd units that move ptp4l to AVB Lite's PTP profile when they do, and back to gPTP when the link comes up again, and keep Energy-Efficient Ethernet and PAUSE off the link, as the profile asks. The <a1>README</a1> has the settings."
+ },
+ "c7f73bb54d92": {
+  "page": "guide.html",
+  "text": "Settings"
+ },
+ "820e8dceb6c9": {
+  "page": "guide.html",
+  "text": "Settings has the language, any of 38 or the system's, and the appearance: light, dark or the system's, the colors, and whether triib animates. triib takes its colors from the system's accent color, or from the Omarchy theme, unless you pick one. Settings also has outside control: whether AI agents may control triib, and the agents you have allowed, which <em>Forget</em> clears."
+ },
+ "2b51b10f6585": {
+  "page": "guide.html",
+  "text": "AI agents"
+ },
+ "b84120edc0f0": {
+  "page": "guide.html",
+  "text": "<code>triib --mcp</code> lets an AI agent such as Claude Code see and change your network through the triib on your desktop, over the Model Context Protocol; it starts triib when it is not running. To add it to Claude Code:"
+ },
+ "9c19c69bbded": {
+  "page": "guide.html",
+  "text": "The agent can read triib's status, the entities, each one's streams, formats and clocks, and the connections, and change what a click would: connect and disconnect streams, set a stream's format, a sampling rate or a clock source, rename and identify. A change answers once the device has, with what it said. The first time an agent connects, triib asks you whether to let it in."
+ },
+ "f6fe35e20917": {
+  "page": "guide.html",
+  "text": "Command line"
+ },
+ "a8fc550187be": {
+  "page": "guide.html",
+  "text": "<code>triib-cli</code> does what the app does from a terminal or a script. A few examples:"
+ },
+ "acebe26b703c": {
+  "page": "guide.html",
+  "text": "Run it with no arguments for every command; the <a1>README</a1> lists them too."
+ },
+ "04d41817751d": {
+  "page": "guide.html",
+  "text": "triib is free software under the <a1>MIT</a1> or <a2>Apache 2.0</a2> license. Made by <a3>Scramble Tools</a3>. <a4>Code signing policy</a4> · <a5>Privacy</a5>"
+ },
+ "cdfaa16ff80f": {
+  "page": "guide.html",
+  "text": "A tour of triib, the AVB and Milan controller: picking an interface, connecting streams in the matrix, the entity list and inspector, the network map and its clocks, AVB Lite, presets, the log, this computer's own talkers and listeners, and the command line.",
+  "attribute": true
+ },
+ "f5cbdf6bfb51": {
+  "page": "guide.html",
+  "text": "Contents",
+  "attribute": true
+ },
+ "73af9c6aeb81": {
+  "page": "guide.html",
+  "text": "The connection matrix: talker outputs of three entities written diagonally across the top, listener inputs down the right, and circles in the cells where a connection can be made",
+  "attribute": true
+ },
+ "141be4a57b66": {
+  "page": "guide.html",
+  "text": "The connection matrix with a menu open over a cell: change the input to AAF 48 kHz, 8 ch, 32-bit, or change both to AM824 48 kHz, 8 ch or AAF 48 kHz, 8 ch, 32-bit (24 used), or connect without changing formats",
+  "attribute": true
+ },
+ "e29fc05ddc09": {
+  "page": "guide.html",
+  "text": "The entity list: two AVB Example Entities and a Mac mini, with their group, product, firmware, Milan version, roles, media clock and grandmaster",
+  "attribute": true
+ },
+ "62da388857c6": {
+  "page": "guide.html",
+  "text": "The inspector beside the entity list, showing an entity's name, group, product, firmware and Milan version, its clock domain and sampling rate, and its AVB Lite section with mode, the reason it fell back, PTP profile, offset, media VLAN, unicast and link speed",
+  "attribute": true
+ },
+ "4deae411c723": {
+  "page": "guide.html",
+  "text": "The Controls tab of the inspector with sliders for Speaker Volume at 0.0 dB and Mic Gain at 36.0 dB",
+  "attribute": true
+ },
+ "1383e82fbf3b": {
+  "page": "guide.html",
+  "text": "The network map of a show: a core bridge, a stage bridge and a front of house bridge, twenty devices below them, and each audio stream as its own colored wire",
+  "attribute": true
+ },
+ "143a212d65f3": {
+  "page": "guide.html",
+  "text": "The same show's network as a clock tree, with the core bridge as grandmaster and every device marked Sync except one monitor amp marked No sync",
+  "attribute": true
+ },
+ "c08dda99add5": {
+  "page": "guide.html",
+  "text": "The network view in AVB Lite, its first chip reading PTP: the PTP tree from the grandmaster clock to one device in sync, two devices not on the PTP tree, and a panel listing them as needing attention",
+  "attribute": true
+ },
+ "a7b0046002ee": {
+  "page": "guide.html",
+  "text": "The inspector's Wireless section for a Wi-Fi station: role Station, Mode A over FTM, time holding over, a 5 GHz link on channel 36 at 80 MHz, signal, rate, its access point and FTM",
+  "attribute": true
+ },
+ "2a87832933e1": {
+  "page": "guide.html",
+  "text": "The Presets dialog with Matinee typed in to save, Recalling Rehearsal: 3 changes, and Rehearsal and Sunday service listed with Recall buttons",
+  "attribute": true
+ },
+ "7cc43ff168b9": {
+  "page": "guide.html",
+  "text": "The log below the entity list, with frames sent and heard: a Connect RX command, a Get counters response with a warning, and a response marked Not implemented",
+  "attribute": true
+ },
+ "02c747d7eb0c": {
+  "page": "guide.html",
+  "text": "The inspector for one of this computer's devices: its state, an output stream Out 1 streaming from a virtual device and an input stream In 1 to another, each with its channels and Remove stream, and Add output stream, Add input stream and Remove from this computer",
+  "attribute": true
+ },
+ "4257bda93404": {
+  "page": "guide.html",
+  "text": "Settings, General: the language, and Outside control with Allow outside control switched on",
+  "attribute": true
+ },
+ "f5f0275002ca": {
+  "page": "specs.html",
+  "text": "triib specifications"
+ },
+ "0c709f9886c3": {
+  "page": "specs.html",
+  "text": "Specifications"
+ },
+ "b13fae8835e9": {
+  "page": "specs.html",
+  "text": "triib {v}, an ATDECC controller with Milan, AVB Lite and AVB Wireless support, released October 12, 2026. For what each feature does, see the <a1>tour</a1>."
+ },
+ "77df58244ee6": {
+  "page": "specs.html",
+  "text": "<a1>Systems</a1>"
+ },
+ "aebb50aa8bba": {
+  "page": "specs.html",
+  "text": "<a1>Standards</a1>"
+ },
+ "308610819b3e": {
+  "page": "specs.html",
+  "text": "<a1>Controller</a1>"
+ },
+ "5b2ccff857be": {
+  "page": "specs.html",
+  "text": "<a1>Talkers, listeners and devices</a1>"
+ },
+ "4a8e4a99ccc3": {
+  "page": "specs.html",
+  "text": "<a1>Languages</a1>"
+ },
+ "0e3d994d9865": {
+  "page": "specs.html",
+  "text": "<a1>Technology</a1>"
+ },
+ "47da9a90205a": {
+  "page": "specs.html",
+  "text": "<a1>Settings and data</a1>"
+ },
+ "ca9f059b4152": {
+  "page": "specs.html",
+  "text": "<a1>License and privacy</a1>"
+ },
+ "1413f8bb4824": {
+  "page": "specs.html",
+  "text": "Systems and processors"
+ },
+ "a239107ef28f": {
+  "page": "specs.html",
+  "text": "Versions"
+ },
+ "2aee1b9d4885": {
+  "page": "specs.html",
+  "text": "Processors"
+ },
+ "0a999012ffb8": {
+  "page": "specs.html",
+  "text": "Packages"
+ },
+ "83ad8510bbd3": {
+  "page": "specs.html",
+  "text": "Linux"
+ },
+ "3c814587403b": {
+  "page": "specs.html",
+  "text": "Wayland and X11; glibc 2.35 or newer for the packages"
+ },
+ "ae5ba4af13a1": {
+  "page": "specs.html",
+  "text": "x86_64, ARM64, RISC-V"
+ },
+ "f59b14d917cc": {
+  "page": "specs.html",
+  "text": ".deb, .rpm, PKGBUILD for Arch, tarball"
+ },
+ "26d9c28d789c": {
+  "page": "specs.html",
+  "text": "Windows"
+ },
+ "a57849bcc1db": {
+  "page": "specs.html",
+  "text": "Windows 10 and 11, with <a1>Npcap</a1>"
+ },
+ "0346c8a43cf8": {
+  "page": "specs.html",
+  "text": "x64, ARM64"
+ },
+ "3950472118c0": {
+  "page": "specs.html",
+  "text": "Per-user installer (.msi), portable .zip"
+ },
+ "cd6fdcbf5a86": {
+  "page": "specs.html",
+  "text": "macOS"
+ },
+ "d6adcf4d46ee": {
+  "page": "specs.html",
+  "text": "macOS 11 or later"
+ },
+ "5b7657e40c32": {
+  "page": "specs.html",
+  "text": "Apple Silicon"
+ },
+ "a42bce6cde19": {
+  "page": "specs.html",
+  "text": "Installer package (.pkg), not yet notarized"
+ },
+ "23eba0ef6037": {
+  "page": "specs.html",
+  "text": "A wired Ethernet interface, through raw sockets on Linux (<code>CAP_NET_RAW</code>), BPF on macOS and Npcap on Windows"
+ },
+ "ab255c27aec8": {
+  "page": "specs.html",
+  "text": "Graphics"
+ },
+ "92a99f7559b8": {
+  "page": "specs.html",
+  "text": "The GPU through Vulkan on Linux, DirectX 12 or Vulkan on Windows, and Metal on macOS; the CPU when no GPU backend starts"
+ },
+ "b8db515e7ae6": {
+  "page": "specs.html",
+  "text": "Look"
+ },
+ "c9283a58313e": {
+  "page": "specs.html",
+  "text": "Material Design 3, light or dark and the accent color from the system"
+ },
+ "924e1dc5ea71": {
+  "page": "specs.html",
+  "text": "The Mac's own entity"
+ },
+ "24fa6a192386": {
+  "page": "specs.html",
+  "text": "Read and controlled through Apple's AudioVideoBridging framework, as macOS never hands it what a program writes to BPF"
+ },
+ "2210d472bf0c": {
+  "page": "specs.html",
+  "text": "Not here yet"
+ },
+ "35d3d829dd69": {
+  "page": "specs.html",
+  "text": "Talkers, listeners and devices of the computer's own on Windows and macOS"
+ },
+ "1c3c39d0afc7": {
+  "page": "specs.html",
+  "text": "Standards and profiles"
+ },
+ "ea1d3df298ca": {
+  "page": "specs.html",
+  "text": "Control"
+ },
+ "0246e3148321": {
+  "page": "specs.html",
+  "text": "IEEE 1722.1-2021 ATDECC: discovery (ADP), the entity model (AECP AEM) and connections (ACMP)"
+ },
+ "5380bcebfb8a": {
+  "page": "specs.html",
+  "text": "Milan"
+ },
+ "4f669ea9da8c": {
+  "page": "specs.html",
+  "text": "Milan 1.3: its connection management, GET_MILAN_INFO and the Milan view of stream state"
+ },
+ "74985da267c6": {
+  "page": "specs.html",
+  "text": "Streams"
+ },
+ "2b605f1b8402": {
+  "page": "specs.html",
+  "text": "IEEE 1722 AVTP: AAF and AM824 audio, CRF media clock streams, and MAAP for stream addresses"
+ },
+ "fe5c54bbae46": {
+  "page": "specs.html",
+  "text": "Reservations"
+ },
+ "d81821a891be": {
+  "page": "specs.html",
+  "text": "IEEE 802.1Q MRP, MSRP and MVRP"
+ },
+ "6c82e6dd8680": {
+  "page": "specs.html",
+  "text": "Time"
+ },
+ "46058b4a7f23": {
+  "page": "specs.html",
+  "text": "IEEE 802.1AS gPTP, through <a1>linuxptp</a1>'s ptp4l, and each entity's gPTP path and grandmaster"
+ },
+ "68fdc86eb50f": {
+  "page": "specs.html",
+  "text": "The <a1>AVB Lite</a1> community profile: falling back over switches that are not AVB bridges, CVU SRP declarations, its PTP profile, status and alarms"
+ },
+ "bf2fe1e85388": {
+  "page": "specs.html",
+  "text": "The <a1>AVB Wireless</a1> community profile: each AVB interface's wireless status (GET_WIRELESS_STATUS), whether an access point admits Class A (SET_WIRELESS_CONFIG), and its unsolicited responses"
+ },
+ "d36835363d59": {
+  "page": "specs.html",
+  "text": "Milan and AVB are trademarks of Avnu Alliance. triib is not certified by Avnu Alliance."
+ },
+ "a36a5ffa6e0d": {
+  "page": "specs.html",
+  "text": "Controller"
+ },
+ "3b3290c7fa38": {
+  "page": "specs.html",
+  "text": "Discovery"
+ },
+ "28619594d893": {
+  "page": "specs.html",
+  "text": "Every entity on the interface, with its entity model read and kept for next time, and offline entities shown as such"
+ },
+ "8ba1e809fd70": {
+  "page": "specs.html",
+  "text": "A matrix of talker outputs and listener inputs for audio and media clock streams, with each connection's state and whether the formats meet; connections by group or one by one, and a menu of the formats both ends take where the input must change first"
+ },
+ "6ef2c8493fa1": {
+  "page": "specs.html",
+  "text": "A map of bridges and devices from each entity's gPTP path, with audio streams, CRF streams or the clock tree drawn on it"
+ },
+ "8aa57de6dce6": {
+  "page": "specs.html",
+  "text": "Changes"
+ },
+ "f0aecb979bbf": {
+  "page": "specs.html",
+  "text": "Names and groups, stream formats, sampling rates, clock sources, channel maps, controls such as gain and mute, and identifying"
+ },
+ "3af2279f9e30": {
+  "page": "specs.html",
+  "text": "Diagnostics"
+ },
+ "8e795bbd13c1": {
+  "page": "specs.html",
+  "text": "How each clock domain and stream has fared, from the entity's counters, with what went wrong marked; each bound input's reservation; each stream's maximum transit time; and the descriptors themselves"
+ },
+ "29df68d6bf18": {
+  "page": "specs.html",
+  "text": "Clock sources, sampling rates, stream formats, controls and connections, and this computer's own talkers and listeners; recalling one changes only what differs"
+ },
+ "0e907f4631a9": {
+  "page": "specs.html",
+  "text": "Every ATDECC frame sent and heard, decoded, with the frames that break the rules marked"
+ },
+ "db0f01dd4e3f": {
+  "page": "specs.html",
+  "text": "Each Wi-Fi station's role, time mode, link and access point, each access point's stations and the frames a second it delivers, stations under their access point on the map, and the profile's alarms"
+ },
+ "5b211bd63642": {
+  "page": "specs.html",
+  "text": "<code>triib --mcp</code>, a Model Context Protocol server for agents such as Claude Code: status, entities, streams, formats, clocks and connections to read, and connecting, formats, sampling rates, clock sources, names and identifying to change, once you let the agent in"
+ },
+ "e3da60b434d5": {
+  "page": "specs.html",
+  "text": "<code>triib-cli</code>: discover, describe, connect and disconnect, name, formats, rates, clocks, channel maps, controls, identify, the network and the stream state"
+ },
+ "52e7fca83f98": {
+  "page": "specs.html",
+  "text": "Talkers, listeners and devices of the computer's own"
+ },
+ "e26dfc1f8d96": {
+  "page": "specs.html",
+  "text": "Systems"
+ },
+ "4402140a037d": {
+  "page": "specs.html",
+  "text": "Linux, on a wired interface with a PTP hardware clock (<code>ethtool -T</code> shows one)"
+ },
+ "b5e4b72c514c": {
+  "page": "specs.html",
+  "text": "ptp4l running gPTP on that interface, read through its read-only socket"
+ },
+ "213c134d42d0": {
+  "page": "specs.html",
+  "text": "Talkers and listeners, Milan entities with one stream, and devices, with any number of streams each way; any controller binds them"
+ },
+ "2804d9f16a38": {
+  "page": "specs.html",
+  "text": "Formats"
+ },
+ "4c0337aec946": {
+  "page": "specs.html",
+  "text": "AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless another count is picked, in SR class A or B"
+ },
+ "acdac205f5e2": {
+  "page": "specs.html",
+  "text": "Audio"
+ },
+ "3390f187c4fb": {
+  "page": "specs.html",
+  "text": "To and from the computer's audio devices; each of a device's streams with a virtual audio device of its own in PipeWire unless it uses a sound card; a talker can send a tone or silence instead, and a listener can discard what it receives"
+ },
+ "b1429a72540c": {
+  "page": "specs.html",
+  "text": "Scheduling"
+ },
+ "804d53c7e889": {
+  "page": "specs.html",
+  "text": "Real-time threads through RealtimeKit, as PipeWire asks for"
+ },
+ "9d68007b0763": {
+  "page": "specs.html",
+  "text": "Program"
+ },
+ "62dfee61db7b": {
+  "page": "specs.html",
+  "text": "<code>triib-endpointd</code>, which reads <code>endpoints.toml</code> again whenever it changes"
+ },
+ "96d9e027ee25": {
+  "page": "specs.html",
+  "text": "Watching"
+ },
+ "8ebd7fd6d091": {
+  "page": "specs.html",
+  "text": "Each entity's mode and why it fell back, its PTP profile and offset, its media VLAN and what its streams take of each link, and the profile's alarms"
+ },
+ "7b5b72b72fb0": {
+  "page": "specs.html",
+  "text": "Falling back"
+ },
+ "ebd7e051a80b": {
+  "page": "specs.html",
+  "text": "This computer's endpoints fall back when no AVB bridge answers on the interface, and come back to AVB when the link comes up again"
+ },
+ "176c1fe73710": {
+  "page": "specs.html",
+  "text": "Unicast to each listener, to 2 a talker unless set otherwise, and multicast beyond that only where allowed"
+ },
+ "bcd9f68b4298": {
+  "page": "specs.html",
+  "text": "ptp4l"
+ },
+ "d3abe771d786": {
+  "page": "specs.html",
+  "text": "Moved between gPTP and the AVB Lite PTP profile through triib's systemd units and polkit rule"
+ },
+ "d0517071aa37": {
+  "page": "specs.html",
+  "text": "Link"
+ },
+ "babea1e3355a": {
+  "page": "specs.html",
+  "text": "Energy-Efficient Ethernet and PAUSE kept off, as the profile asks, by a systemd unit"
+ },
+ "db07be184479": {
+  "page": "specs.html",
+  "text": "Languages"
+ },
+ "566544f2d2b2": {
+  "page": "specs.html",
+  "text": "38, following the system's language or the one picked in Settings: Arabic, Bengali, Catalan, Chinese (Simplified and Traditional), Czech, Danish, Dutch, English (US and UK), Finnish, French, German, Greek, Hebrew, Hindi, Hungarian, Indonesian, Italian, Japanese, Korean, Malay, Norwegian Bokmål, Persian, Polish, Portuguese (Brazil and Portugal), Romanian, Russian, Spanish, Swahili, Swedish, Tamil, Thai, Turkish, Ukrainian, Urdu and Vietnamese. Arabic, Hebrew, Persian and Urdu are laid out right to left."
+ },
+ "d018b082e8a3": {
+  "page": "specs.html",
+  "text": "Technology"
+ },
+ "89b86ab0e66f": {
+  "page": "specs.html",
+  "text": "Language"
+ },
+ "e2ae20d9ae7f": {
+  "page": "specs.html",
+  "text": "Rust"
+ },
+ "7b4db7ef1fa2": {
+  "page": "specs.html",
+  "text": "Interface"
+ },
+ "f3aee7fb8323": {
+  "page": "specs.html",
+  "text": "<a1>iced</a1>, with <a2>scramble-ui</a2>, the look it shares with <a3>prev</a3>"
+ },
+ "8ad8302d110b": {
+  "page": "specs.html",
+  "text": "Translations"
+ },
+ "96957def1188": {
+  "page": "specs.html",
+  "text": "Fluent"
+ },
+ "27c968e6692b": {
+  "page": "specs.html",
+  "text": "Libraries"
+ },
+ "b5786b417ed2": {
+  "page": "specs.html",
+  "text": "<code>atdecc</code> (IEEE 1722.1 with Milan), <code>avb-mrp</code> (MRP, MSRP and MVRP) and <code>avb-net</code> (raw Ethernet, interfaces and hardware timestamps): no I/O of their own outside <code>avb-net</code>'s platform support, and no std needed, for microcontrollers"
+ },
+ "8906c977181f": {
+  "page": "specs.html",
+  "text": "Settings and data"
+ },
+ "328bc197bda9": {
+  "page": "specs.html",
+  "text": "<code>triib.toml</code>, in <code>~/.config</code> on Linux, <code>%APPDATA%\\triib</code> on Windows and <code>~/Library/Application Support/triib</code> on macOS"
+ },
+ "c1255490ed43": {
+  "page": "specs.html",
+  "text": "Entity models"
+ },
+ "08a081594213": {
+  "page": "specs.html",
+  "text": "Kept in triib's cache, so a device seen before shows in full at once"
+ },
+ "b71c52711a24": {
+  "page": "specs.html",
+  "text": "Endpoints"
+ },
+ "8f4967e8e973": {
+  "page": "specs.html",
+  "text": "<code>endpoints.toml</code> in triib's data folder, <code>~/.local/share/triib</code> on Linux"
+ },
+ "bef020fa479b": {
+  "page": "specs.html",
+  "text": "License and privacy"
+ },
+ "3229609e1543": {
+  "page": "specs.html",
+  "text": "License"
+ },
+ "df952d8b73f6": {
+  "page": "specs.html",
+  "text": "<a1>MIT</a1> or <a2>Apache 2.0</a2>, at your option"
+ },
+ "5299b83db4fe": {
+  "page": "specs.html",
+  "text": "Only AVB frames, on the local interface you pick; triib never goes online"
+ },
+ "20ee773d6aa4": {
+  "page": "specs.html",
+  "text": "Outside control"
+ },
+ "c7181990e3ea": {
+  "page": "specs.html",
+  "text": "For <code>triib --mcp</code>, a local socket that only your user can open on Linux and macOS, and a named pipe on Windows; each agent acts only once you allow it, and Settings turns it off"
+ },
+ "9c713e397d32": {
+  "page": "specs.html",
+  "text": "Accounts and telemetry"
+ },
+ "6eef6648406c": {
+  "page": "specs.html",
+  "text": "None"
+ },
+ "3a51e6a07fd5": {
+  "page": "specs.html",
+  "text": "See the <a1>privacy note</a1> and the <a2>code signing policy</a2>."
+ },
+ "799e2f4712be": {
+  "page": "specs.html",
+  "text": "triib's specifications: the systems it runs on, the standards and profiles it speaks, its own talkers and listeners, its languages, the software it is built on, and where it keeps its settings.",
+  "attribute": true
+ },
+ "extra:policy-note": {
+  "page": "index.html",
+  "text": "This translation is given for convenience; the English version of this policy is the one that applies."
+ }
+}
