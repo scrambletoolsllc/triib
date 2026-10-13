@@ -29,7 +29,11 @@ computer's talkers and listeners folded into its entities.
 - An entity advertising another model is read again in place: the list
   and the inspector keep showing what was read before until the new
   read is done.
-- `triib-cli streams` prints each input's counters.
+- A stream that offers CRF formats counts as a media clock stream
+  whatever it sends, as the Mac's media clock outputs sending one
+  channel of AAF do.
+- `triib-cli streams` prints each input's counters, and its probing
+  state and last ACMP answer where Milan's stream info gives them.
 - The new app icon.
 
 ### This computer's entities (Linux)
@@ -47,15 +51,22 @@ computer's talkers and listeners folded into its entities.
 - Media clock streams: CRF in Milan's format, 48 kHz with a timestamp
   every 96 samples, sent on the same timeline as the entity's audio,
   without channels, audio or mappings.
-- A media clock input can be the entity's clock source: its talkers then
-  follow the clock recovered from its timestamps, and gPTP time while it
-  is not recovered. The choice is kept, and the clock domain's counters
-  count each lock and loss.
+- Any input can be the entity's clock source: its talkers then follow
+  the clock recovered from a media clock's timestamps or an audio
+  stream's presentation times, and gPTP time while it is not recovered.
+  The choice is kept, and the clock domain's counters count each lock
+  and loss.
+- Controllers map an entity's inputs: their ports have dynamic
+  mappings, as Milan has them, kept in `endpoints.toml` and played as
+  mapped.
+- An entity's input binds to its own output, which the matrix offers on
+  this computer's entities.
 - The max transit times controllers set on an entity's outputs are kept
   in `endpoints.toml`.
-- Adding or removing an entity's stream keeps the entity on the network,
-  where controllers read it again in place, and its outputs keep their
-  stream addresses.
+- Adding, removing or changing an entity's stream keeps the entity on
+  the network, where controllers read it again in place, and leaves its
+  other streams running as they were, their stream addresses, bindings
+  and reservations with them. A stream added runs at the entity's rate.
 - The entities' model name is triib entity, and their model IDs change
   once for it.
 

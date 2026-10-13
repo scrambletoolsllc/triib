@@ -487,11 +487,16 @@ budgets: 240 instances, 75% of the link, and the real-time threads.
   source: chosen, the device's talkers follow the clock recovered from
   its timestamps, and gPTP time while it is not recovered. Checked on the
   bench following the Mac's clock at -5 ppm.
-- **Open.** Controllers changing its channel mapping (Milan's dynamic
-  mappings, ADD_AUDIO_MAPPINGS and REMOVE_AUDIO_MAPPINGS); streams at
-  other sampling rates, which stay entities of their own; an input bound
-  to its own entity's output, which the daemon does not hand the
-  entity's ACMP back to it for, and which the matrix does not offer.
+- **Since.** Any input, audio or media clock, can be the clock source,
+  an audio input's clock recovered from its presentation times. Inputs'
+  mappings are dynamic, as Milan has them, kept in `endpoints.toml`;
+  outputs keep static maps. An input binds to its own entity's output,
+  the daemon handing its entities their own frames, and the matrix
+  offers it on this computer's entities. A change to an entity's streams
+  leaves those that run as before going, their threads, devices,
+  reservations and probes carried into the entity taking over.
+- **Open.** Streams at other sampling rates, which stay entities of
+  their own; dynamic mappings on outputs.
 
 ### Later
 
@@ -508,15 +513,6 @@ budgets: 240 instances, 75% of the link, and the real-time threads.
 - Editing array and text controls, Bode plots, and meters drawn as bars;
   a grid editor for channel mappings with many channels.
 - Firmware update over MVU, several interfaces at once.
-- Media clock outputs that send as audio: a stream that offers CRF
-  formats is a media clock output whatever its current format, as the
-  Mac's Media Clock Output Streams 2 and 3 send one channel of AAF whose
-  presentation times carry the clock. The views showing them as media
-  clock streams, without their channel or mappings.
-- An audio stream input as a device's clock source: the clock recovered
-  from AAF's or AM824's presentation times, AAF's 32 bits extended with
-  the local gPTP time, as a media clock input's is from its CRF
-  timestamps.
 - More for agents over MCP: channel mappings and controls, presets, and
   this computer's own endpoints.
 
