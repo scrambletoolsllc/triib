@@ -146,13 +146,6 @@ pub struct LiteReport<'a> {
     pub interfaces: Vec<(u16, ClockIdentity, Option<&'a LiteStatus>)>,
 }
 
-/// Whom this computer follows in AVB Lite, as its own endpoints report it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct HostLite {
-    pub grandmaster: ClockIdentity,
-    pub offset: Option<i32>,
-}
-
 /// What this computer heard of its neighbor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HostReport {
@@ -464,7 +457,7 @@ impl Topology {
     /// switches that take no part, so no bridges. A follower is in sync
     /// while its offset is measured and within `alarm` nanoseconds; an
     /// entity that does not run AVB Lite is set apart.
-    pub fn build_lite(entities: &[LiteReport<'_>], host: Option<HostLite>, alarm: i32) -> Self {
+    pub fn build_lite(entities: &[LiteReport<'_>], alarm: i32) -> Self {
         let mut topology = Topology {
             ptp: true,
             ..Topology::default()
@@ -529,19 +522,6 @@ impl Topology {
                 });
                 topology.apart.push(node);
             }
-        }
-        if let Some(host) = host {
-            let node = topology.push(Node {
-                kind: Kind::Host,
-                clock: None,
-                name: String::new(),
-                parent: None,
-                children: Vec::new(),
-                link: Link::default(),
-                apart: None,
-                access_point: false,
-            });
-            follows.push((node, host.grandmaster, host.offset));
         }
         for (node, grandmaster, offset) in follows {
             if topology.nodes[node].clock == Some(grandmaster) {
@@ -1177,9 +1157,9 @@ mod tests {
     }
 
     /// A plain switch with the wired ESP as grandmaster: the Wi-Fi one
-    /// follows it closely, this computer's endpoints and so this computer
-    /// too, and the Mac, which runs no AVB Lite, is set apart. No switch is
-    /// shown, and each follower hangs straight under the grandmaster.
+    /// follows it closely, and this computer's endpoint too far off; the
+    /// Mac, which runs no AVB Lite, is set apart. No switch is shown, and
+    /// each follower hangs straight under the grandmaster.
     #[test]
     fn avb_lite_flows_end_to_end_from_the_grandmaster() {
         const HOST_CLOCK: ClockIdentity = ClockIdentity(0x9c6b_00ff_fe30_9a2b);
@@ -1211,17 +1191,13 @@ mod tests {
                 interfaces: vec![(0, MAC_CLOCK, Some(&mac))],
             },
         ];
-        let host = HostLite {
-            grandmaster: WIRED_CLOCK,
-            offset: Some(72_000),
-        };
-        let topology = Topology::build_lite(&entities, Some(host), 50_000);
+        let topology = Topology::build_lite(&entities, 50_000);
         assert!(topology.ptp);
         assert!(topology.nodes.iter().all(|node| node.kind != Kind::Bridge));
         assert_eq!(topology.roots.len(), 1);
         let root = topology.roots[0];
         assert_eq!(topology.nodes[root].clock, Some(WIRED_CLOCK));
-        assert_eq!(topology.nodes[root].children.len(), 3);
+        assert_eq!(topology.nodes[root].children.len(), 2);
         let node = |kind: Kind| {
             topology
                 .nodes
@@ -1236,10 +1212,15 @@ mod tests {
         assert_eq!(wifi.parent, Some(root));
         assert!(wifi.link.synced);
         assert_eq!(wifi.link.offset, Some(-180));
-        // 72 us is past the 50 us AVB Lite allows.
-        let host = node(Kind::Host);
-        assert_eq!(host.parent, Some(root));
-        assert!(!host.link.synced);
+        // 72 us is past the 50 us AVB Lite allows. This computer shows as
+        // its entity alone.
+        let talker = node(Kind::Entity {
+            entity_id: HOST_TALKER,
+            interface: 0,
+        });
+        assert_eq!(talker.parent, Some(root));
+        assert!(!talker.link.synced);
+        assert!(topology.nodes.iter().all(|node| node.kind != Kind::Host));
         let mac = node(Kind::Entity {
             entity_id: MAC,
             interface: 0,
@@ -1252,7 +1233,7 @@ mod tests {
             name: "Mac mini",
             interfaces: vec![(0, MAC_CLOCK, None)],
         }];
-        let topology = Topology::build_lite(&quiet, None, 50_000);
+        let topology = Topology::build_lite(&quiet, 50_000);
         assert_eq!(topology.nodes[0].apart, Some(Apart::LiteUnreported));
     }
 
@@ -1267,7 +1248,7 @@ mod tests {
             name: "Synthia",
             interfaces: vec![(0, WIRED_CLOCK, Some(&wired))],
         }];
-        let topology = Topology::build_lite(&entities, None, 50_000);
+        let topology = Topology::build_lite(&entities, 50_000);
         let root = topology.roots[0];
         assert_eq!(topology.nodes[root].kind, Kind::Clock);
         assert_eq!(topology.nodes[root].clock, Some(SWITCH));

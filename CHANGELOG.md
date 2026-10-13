@@ -29,6 +29,9 @@ computer's talkers and listeners folded into its entities.
   computer's entities. Each is named for the computer it runs on, as
   "Controller on Mac mini", and stays listed for 5 minutes after its
   last command.
+- The network view leaves out controllers, which take no part in the
+  clock or the streams, and shows this computer as its own entities
+  where one is there, rather than as This computer beside them.
 - Controllers have an icon of their own, a traffic light, rather than
   this computer's. triib's controller, which has no model to read, is
   named for the computer it runs on: "triib on Mac mini" after an entity

@@ -25,8 +25,8 @@ use crate::describe;
 use crate::fl;
 use crate::settings::NetworkShows;
 use crate::topology::{
-    Apart, EntityReport, HostLite, HostReport, InterfaceReport, Kind as NodeKind, LiteReport,
-    NodeId, Route, Topology, WirelessLink,
+    Apart, EntityReport, HostReport, InterfaceReport, Kind as NodeKind, LiteReport, NodeId, Route,
+    Topology, WirelessLink,
 };
 
 const PANEL_WIDTH: f32 = 360.0;
@@ -367,12 +367,21 @@ fn header<'a>(
     }
 }
 
+/// The entities the map shows: all but controllers, which take no part
+/// in the clock or the streams.
+fn mapped_entities(triib: &Triib) -> impl Iterator<Item = &DiscoveredEntity> {
+    triib.entities.values().filter(|entity| {
+        let adp = &entity.adp;
+        !crate::describe::is_controller(adp)
+            || crate::describe::is_talker(adp)
+            || crate::describe::is_listener(adp)
+    })
+}
+
 /// The tree the entities' reports make, with this computer when the
-/// network runs.
+/// network runs and none of its entities is in it.
 fn topology_of(triib: &Triib) -> Topology {
-    let names: Vec<(EntityId, String)> = triib
-        .entities
-        .values()
+    let names: Vec<(EntityId, String)> = mapped_entities(triib)
         .map(|entity| (entity.entity_id(), triib.entity_name(entity)))
         .collect();
     let reports: Vec<EntityReport<'_>> = names
@@ -402,8 +411,15 @@ fn topology_of(triib: &Triib) -> Topology {
             }
         })
         .collect();
-    let host =
-        matches!(triib.network_state, NetworkState::Running { .. }).then(|| match triib.neighbor {
+    // This computer, unless its own entities show where it is.
+    let shown_by_entities = names.iter().any(|(entity_id, _)| {
+        triib.is_host(*entity_id)
+            && triib.models.get(entity_id).is_some_and(|model| {
+                model.state != EnumerationState::Failed(EnumerationFailure::OnThisComputer)
+            })
+    });
+    let host = (matches!(triib.network_state, NetworkState::Running { .. }) && !shown_by_entities)
+        .then(|| match triib.neighbor {
             _ if triib.cannot_listen.is_some() => HostReport::CannotListen,
             Some(neighbor) => HostReport::Heard(neighbor.clock, neighbor.port, neighbor.synced),
             None => HostReport::Unheard,
@@ -431,9 +447,7 @@ fn lite_topology(triib: &Triib) -> Option<Topology> {
         return None;
     }
     let active = |status: &&LiteStatus| status.flags.contains(LiteFlags::ACTIVE);
-    let names: Vec<(EntityId, String)> = triib
-        .entities
-        .values()
+    let names: Vec<(EntityId, String)> = mapped_entities(triib)
         .map(|entity| (entity.entity_id(), triib.entity_name(entity)))
         .collect();
     let reports: Vec<LiteReport<'_>> = names
@@ -466,20 +480,10 @@ fn lite_topology(triib: &Triib) -> Option<Topology> {
     if !running {
         return None;
     }
-    // This computer follows whom its own endpoints follow, as they share
-    // its ptp4l.
-    let host = reports
-        .iter()
-        .filter(|report| triib.is_host(report.entity_id))
-        .flat_map(|report| &report.interfaces)
-        .find_map(|(_, _, status)| status.filter(active))
-        .map(|status| HostLite {
-            grandmaster: status.grandmaster,
-            offset: status.offset(),
-        });
+    // This computer shows as its own entities, which follow whom it
+    // follows, as they share its ptp4l.
     Some(Topology::build_lite(
         &reports,
-        host,
         crate::lite_view::OFFSET_ALARM,
     ))
 }
@@ -1850,6 +1854,67 @@ mod tests {
             let snapshot = simulator.snapshot(&theme).expect("draws");
             assert!(snapshot.matches_image(&file).expect("writes"));
         }
+    }
+
+    /// Controllers take no place in the map, and this computer shows as
+    /// its own entities once one of them is there.
+    #[test]
+    fn the_map_leaves_out_controllers_and_a_redundant_host() {
+        use triib_endpointd::status::{DaemonStatus, EndpointStatus};
+
+        let (entities, models) = crate::view::tests::bench();
+        let interface = avb_net::Interface {
+            name: "enp6s0".to_owned(),
+            mac: avb_net::MacAddress([0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b]),
+            up: true,
+            speed: None,
+            physical: true,
+            wireless: false,
+            hardware_clock: None,
+        };
+        let mut triib = Triib::sample(
+            crate::settings::Settings::default(),
+            interface,
+            entities,
+            models,
+        );
+        triib.network_state = NetworkState::Running {
+            controller: EntityId(0x9c6b_00ff_fe30_9a2b),
+        };
+        let controller = EntityId(1);
+        let mut entity = *triib.entities.values().next().unwrap();
+        entity.adp.entity_id = controller;
+        entity.adp.talker_capabilities = atdecc::adp::TalkerCapabilities::empty();
+        entity.adp.listener_capabilities = atdecc::adp::ListenerCapabilities::empty();
+        entity.adp.controller_capabilities = atdecc::adp::ControllerCapabilities::IMPLEMENTED;
+        triib.entities.insert(controller, entity);
+        let kinds = |triib: &Triib| -> Vec<NodeKind> {
+            topology_of(triib)
+                .nodes
+                .iter()
+                .map(|node| node.kind)
+                .collect()
+        };
+        assert!(!kinds(&triib).iter().any(|kind| matches!(
+            kind,
+            NodeKind::Entity { entity_id, .. } if *entity_id == controller
+        )));
+        assert!(kinds(&triib).contains(&NodeKind::Host));
+        triib.endpoints = Some(DaemonStatus {
+            pid: 1,
+            started: 0,
+            interface: "enp6s0".into(),
+            gptp: String::new(),
+            foreign_mrp: false,
+            config: None,
+            endpoints: vec![EndpointStatus {
+                entity_id: crate::view::tests::WIRED_ESP.to_string(),
+                name: "Host entity 1".into(),
+                state: "running".into(),
+                streams: Vec::new(),
+            }],
+        });
+        assert!(!kinds(&triib).contains(&NodeKind::Host));
     }
 
     /// The bench on a plain switch, the wired ESP following a grandmaster
