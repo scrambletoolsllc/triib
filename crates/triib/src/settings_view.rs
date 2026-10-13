@@ -4,7 +4,7 @@
 
 use std::fmt;
 
-use iced::widget::{container, mouse_area, opaque, space, text_input, toggler};
+use iced::widget::{container, mouse_area, opaque, space, toggler};
 use iced::{Center, Color, Element, Fill, Length, Theme};
 use scramble_ui::appearance::{Appearance, hex_to_color};
 use scramble_ui::button::{self, Kind};
@@ -23,6 +23,7 @@ pub enum SettingsTab {
     #[default]
     General,
     Appearance,
+    Storage,
 }
 
 /// The widest and tallest the dialog gets.
@@ -70,12 +71,14 @@ pub fn dialog<'a>(triib: &'a Triib, base: Element<'a, Message>) -> Element<'a, M
         component::tabs(vec![
             tab(fl!("settings-general"), SettingsTab::General),
             tab(fl!("settings-appearance"), SettingsTab::Appearance),
+            tab(fl!("settings-storage"), SettingsTab::Storage),
         ]),
     ]
     .spacing(12);
     let mut content = match triib.settings_tab {
         SettingsTab::General => general(triib),
         SettingsTab::Appearance => appearance(triib),
+        SettingsTab::Storage => storage(triib),
     };
     if let Some(error) = &triib.settings_error {
         content = content.push(aligned(
@@ -167,54 +170,8 @@ fn general(triib: &Triib) -> iced::widget::Column<'_, Message> {
             Message::OutsideControlToggled,
         ),
         allowed_agents(triib),
-        entities_file(triib),
     ]
     .spacing(12)
-}
-
-/// The file this computer's entities are listed in, where it runs
-/// entities of its own: its path, typed and taken with Enter, and a button
-/// back to the default.
-fn entities_file(triib: &Triib) -> Element<'_, Message> {
-    if !crate::host::SUPPORTED {
-        return space().into();
-    }
-    let shown = triib.entities_file_edit.clone().unwrap_or_else(|| {
-        crate::host::entities_path()
-            .map(|path| path.display().to_string())
-            .unwrap_or_default()
-    });
-    let note: Element<'_, Message> = match &triib.entities_file_error {
-        Some(error) => aligned(styled(error.clone(), Type::BodySmall).style(style::error_text)),
-        None => aligned(
-            styled(fl!("settings-entities-file-note"), Type::BodySmall)
-                .style(style::on_surface_variant),
-        ),
-    };
-    scramble_ui::column![
-        component::section(fl!("netmap-this-computer")),
-        styled(fl!("settings-entities-file"), Type::BodyLarge),
-        scramble_ui::row![
-            text_input("", &shown)
-                .on_input(Message::EntitiesFileEdited)
-                .on_submit(Message::EntitiesFileSubmitted)
-                .padding([6, 10])
-                .style(style::outlined_field)
-                .width(Fill),
-            button::button(Kind::Text, fl!("settings-entities-file-default")).on_press_maybe(
-                triib
-                    .settings
-                    .entities_file
-                    .is_some()
-                    .then_some(Message::EntitiesFileReset)
-            ),
-        ]
-        .spacing(8)
-        .align_y(Center),
-        note,
-    ]
-    .spacing(8)
-    .into()
 }
 
 /// The agents the user allowed to control triib, and forgetting them.
@@ -239,6 +196,65 @@ fn allowed_agents(triib: &Triib) -> Element<'_, Message> {
     .spacing(16)
     .align_y(Center)
     .into()
+}
+
+/// Where triib keeps its files, as prev's Storage tab has it: each path
+/// typed, then applied with Enter or Apply, which shows once it is
+/// changed, or chosen with the folder dialog; why one is refused under
+/// its row.
+fn storage(triib: &Triib) -> iced::widget::Column<'_, Message> {
+    use crate::storage::{Storage, shown_path};
+    let mut rows = scramble_ui::column![].spacing(12);
+    for storage in Storage::shown() {
+        let draft = &triib.storage_drafts[storage.index()];
+        let changed = *draft != shown_path(storage.path(&triib.settings));
+        let mut entry = scramble_ui::row![
+            container(component::text_field(
+                storage.label(),
+                draft,
+                component::Backdrop::ContainerHigh,
+                move |input| {
+                    input
+                        .on_input(move |text| Message::StorageDraft(storage, text))
+                        .on_submit(Message::StorageApply(storage))
+                },
+            ))
+            .width(Fill),
+        ]
+        .spacing(8)
+        .align_y(Center);
+        if changed {
+            entry = entry.push(component::beside_field(
+                button::button(Kind::Filled, fl!("settings-storage-apply"))
+                    .on_press(Message::StorageApply(storage)),
+            ));
+        }
+        entry = entry.push(component::beside_field(
+            button::button(Kind::Tonal, fl!("settings-storage-choose"))
+                .on_press(Message::StorageChoose(storage)),
+        ));
+        rows = rows.push(entry);
+        if let Some(problem) = &triib.storage_errors[storage.index()] {
+            rows = rows.push(aligned(
+                styled(problem.as_str(), Type::BodySmall).style(style::error_text),
+            ));
+        }
+    }
+    let file = triib_store::paths::config_file()
+        .as_deref()
+        .map(shown_path)
+        .unwrap_or_default();
+    rows = rows.push(aligned(
+        styled(fl!("settings-storage-note", file = file), Type::BodySmall)
+            .style(style::on_surface_variant),
+    ));
+    if Storage::shown().any(|storage| storage == Storage::Entities) {
+        rows = rows.push(aligned(
+            styled(fl!("settings-storage-entities-note"), Type::BodySmall)
+                .style(style::on_surface_variant),
+        ));
+    }
+    rows
 }
 
 /// Light or dark, colors, and motion.

@@ -14,6 +14,7 @@ common-auto-hide-toolbar = Hide toolbar automatically
 
 ## Settings
 
+app-file-dialog-failed = Could not show the file dialogue: { $error }
 settings-title = Settings
 settings-general = General
 settings-appearance = Appearance

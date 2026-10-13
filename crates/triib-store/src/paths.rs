@@ -2,7 +2,7 @@
 //! `%APPDATA%` and `%LOCALAPPDATA%`, and on macOS `~/Library`.
 
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Set by release builds. Every other build is a development build, which
 /// keeps its own settings and cache so it never disturbs the installed copy.
@@ -14,6 +14,25 @@ const APP_DIR: &str = if PRODUCTION { "triib" } else { "triib-dev" };
 pub fn home() -> Option<PathBuf> {
     let variable = if cfg!(windows) { "USERPROFILE" } else { "HOME" };
     env::var_os(variable).map(PathBuf::from)
+}
+
+/// A path written with `~` for the home folder, made whole.
+pub fn expand_home(path: &Path) -> PathBuf {
+    match (path.strip_prefix("~"), home()) {
+        (Ok(rest), Some(home)) => home.join(rest),
+        _ => path.to_path_buf(),
+    }
+}
+
+/// A path under the home folder written with `~`, for a readable file
+/// and field.
+pub fn abbreviate_home(path: &Path) -> PathBuf {
+    match home() {
+        Some(home) if path.starts_with(&home) && home != Path::new("/") => {
+            Path::new("~").join(path.strip_prefix(&home).unwrap_or(path))
+        }
+        _ => path.to_path_buf(),
+    }
 }
 
 /// The settings file: `$XDG_CONFIG_HOME/triib.toml`,

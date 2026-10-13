@@ -422,8 +422,25 @@ fn setting_changes(entity: EntityId, model: &EntityModel, wanted: &EntityPreset)
     actions
 }
 
+/// The folder the settings name for presets, once they are read.
+static FOLDER: std::sync::Mutex<Option<PathBuf>> = std::sync::Mutex::new(None);
+
+/// Keeps presets in `folder` from now on.
+pub fn set_folder(folder: PathBuf) {
+    *FOLDER
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(folder);
+}
+
+/// Where presets are kept: the folder the settings name, else `presets`
+/// in the data folder.
 fn folder() -> Option<PathBuf> {
-    triib_store::paths::data_dir().map(|dir| dir.join("presets"))
+    FOLDER
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone()
+        .or_else(|| Some(crate::settings::default_presets_folder()))
+        .filter(|folder| !folder.as_os_str().is_empty())
 }
 
 /// A preset's file name from its name: letters and digits, the rest dashes.

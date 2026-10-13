@@ -97,10 +97,10 @@ pub struct Triib {
     pub overflow_open: bool,
     /// The menu of the interface picker's filters is open.
     pub interface_filters_open: bool,
-    /// The entities file's path while it is typed in Settings, and why
+    /// Each storage place as typed in Settings, not yet applied, and why
     /// the one given could not be used.
-    pub entities_file_edit: Option<String>,
-    pub entities_file_error: Option<String>,
+    pub storage_drafts: [String; 2],
+    pub storage_errors: [Option<String>; 2],
     /// On a narrow window, the network view shows its list instead of the map.
     pub network_list: bool,
     /// The name being edited in the inspector, and its text so far.
@@ -278,12 +278,14 @@ pub enum Message {
     AgentPromptReady,
     OutsideControlToggled(bool),
     ForgetAgents,
-    /// The entities file's path, as typed in Settings.
-    EntitiesFileEdited(String),
-    /// Lists this computer's entities in the file typed.
-    EntitiesFileSubmitted,
-    /// Lists them in the default file again.
-    EntitiesFileReset,
+    /// A storage place, as typed in Settings.
+    StorageDraft(crate::storage::Storage, String),
+    /// Keeps it where typed.
+    StorageApply(crate::storage::Storage),
+    /// Asks where to keep it, with the folder dialog.
+    StorageChoose(crate::storage::Storage),
+    /// The folder the dialog gave, none when cancelled.
+    StorageChosen(crate::storage::Storage, Result<Option<PathBuf>, String>),
     Nothing,
 }
 
@@ -331,8 +333,8 @@ impl Triib {
             network_focus: None,
             overflow_open: false,
             interface_filters_open: false,
-            entities_file_edit: None,
-            entities_file_error: None,
+            storage_drafts: Default::default(),
+            storage_errors: Default::default(),
             network_list: false,
             editing: None,
             tree_open: BTreeSet::new(),
@@ -357,7 +359,8 @@ impl Triib {
     pub fn boot(omarchy_dir: Option<PathBuf>) -> (Self, Task<Message>) {
         let (settings, settings_error) = Settings::load();
         triib_endpointd::config::move_endpoints_file();
-        crate::host::set_entities_file(settings.entities_file.clone());
+        crate::host::set_entities_file(Some(settings.entities_file.clone()));
+        crate::presets::set_folder(settings.presets_folder.clone());
         crate::i18n::set_language(settings.chosen_language());
         let mut triib = Self {
             settings,
@@ -391,8 +394,8 @@ impl Triib {
             network_focus: None,
             overflow_open: false,
             interface_filters_open: false,
-            entities_file_edit: None,
-            entities_file_error: None,
+            storage_drafts: Default::default(),
+            storage_errors: Default::default(),
             network_list: false,
             editing: None,
             tree_open: BTreeSet::new(),
@@ -514,24 +517,46 @@ impl Triib {
         Task::none()
     }
 
-    /// Lists this computer's entities in `file`, or the default one, and
-    /// keeps that in the settings.
-    fn move_entities(&mut self, file: Option<PathBuf>) {
-        // The default file, named, is the default.
-        let file = file.filter(|file| Some(file) != triib_endpointd::config::path().as_ref());
-        if file == self.settings.entities_file {
+    /// Shows each storage place in Settings as it is kept.
+    fn reset_storage_drafts(&mut self) {
+        for storage in crate::storage::Storage::ALL {
+            self.storage_drafts[storage.index()] =
+                crate::storage::shown_path(storage.path(&self.settings));
+            self.storage_errors[storage.index()] = None;
+        }
+    }
+
+    /// Keeps `storage` at `path` from now on, in the settings file too,
+    /// once the place checks out; otherwise says why under its row. The
+    /// entities file in use is copied to a place that has none, and the
+    /// daemon starts again on it.
+    fn set_storage(&mut self, storage: crate::storage::Storage, path: &std::path::Path) {
+        use crate::storage::Storage;
+        let path = storage.take(&self.settings, path);
+        if let Err(problem) = crate::storage::check(storage, &path) {
+            self.storage_errors[storage.index()] = Some(problem);
             return;
         }
-        match crate::host::move_entities(file.clone()) {
-            Ok(()) => {
-                self.settings.entities_file = file;
-                self.save_settings();
+        if path != storage.path(&self.settings) {
+            match storage {
+                Storage::Presets => {
+                    crate::presets::set_folder(path.clone());
+                    self.presets = crate::presets::load_all();
+                    self.settings.presets_folder = path;
+                }
+                Storage::Entities => {
+                    if let Err(problem) = crate::host::move_entities(Some(path.clone())) {
+                        crate::host::set_entities_file(Some(self.settings.entities_file.clone()));
+                        self.storage_errors[storage.index()] = Some(problem);
+                        return;
+                    }
+                    self.settings.entities_file = path;
+                }
             }
-            Err(error) => {
-                crate::host::set_entities_file(self.settings.entities_file.clone());
-                self.entities_file_error = Some(error);
-            }
+            self.save_settings();
         }
+        self.storage_errors[storage.index()] = None;
+        self.reset_storage_drafts();
     }
 
     fn add_host(&mut self) {
@@ -878,6 +903,7 @@ impl Triib {
             Message::SettingsOpened => {
                 self.settings_open = true;
                 self.overflow_open = false;
+                self.reset_storage_drafts();
             }
             Message::SettingsClosed => self.settings_open = false,
             Message::SettingsTab(tab) => self.settings_tab = tab,
@@ -1000,26 +1026,29 @@ impl Triib {
                 self.settings.allowed_agents.clear();
                 self.save_settings();
             }
-            Message::EntitiesFileEdited(text) => {
-                self.entities_file_edit = Some(text);
-                self.entities_file_error = None;
+            Message::StorageDraft(storage, text) => {
+                self.storage_drafts[storage.index()] = text;
+                self.storage_errors[storage.index()] = None;
             }
-            Message::EntitiesFileSubmitted => {
-                if let Some(text) = self.entities_file_edit.take() {
-                    match crate::host::typed_path(&text) {
-                        Some(file) => self.move_entities(Some(file)),
-                        None => {
-                            self.entities_file_error =
-                                Some(crate::fl!("settings-entities-file-full"));
-                            self.entities_file_edit = Some(text);
-                        }
-                    }
-                }
+            Message::StorageApply(storage) => {
+                let typed = PathBuf::from(self.storage_drafts[storage.index()].trim());
+                self.set_storage(storage, &typed);
             }
-            Message::EntitiesFileReset => {
-                self.entities_file_edit = None;
-                self.entities_file_error = None;
-                self.move_entities(None);
+            Message::StorageChoose(storage) => {
+                return Task::perform(
+                    crate::dialog::choose_folder(
+                        storage.choose_title(),
+                        storage.current_folder(&self.settings),
+                    ),
+                    move |result| Message::StorageChosen(storage, result),
+                );
+            }
+            Message::StorageChosen(storage, Ok(Some(folder))) => {
+                self.set_storage(storage, &folder);
+            }
+            Message::StorageChosen(_, Ok(None)) => {}
+            Message::StorageChosen(_, Err(error)) => {
+                self.settings_error = Some(crate::fl!("app-file-dialog-failed", error = error));
             }
             Message::Nothing => {}
         }

@@ -44,17 +44,6 @@ pub fn entities_path() -> Option<PathBuf> {
         .or_else(config::path)
 }
 
-/// A path typed in Settings, a leading `~` the home folder: `None` but
-/// for a full path.
-pub fn typed_path(text: &str) -> Option<PathBuf> {
-    let text = text.trim();
-    let path = match text.strip_prefix("~/") {
-        Some(rest) => std::env::home_dir()?.join(rest),
-        None => PathBuf::from(text),
-    };
-    path.is_absolute().then_some(path)
-}
-
 /// Moves this computer's entities to `to`: a file that is not there yet
 /// starts as a copy of the one in use, and the daemon, when it runs on
 /// another file, starts again on it. `None` is the default file.

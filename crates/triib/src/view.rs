@@ -2451,6 +2451,7 @@ pub(crate) mod tests {
             ),
             ("settings-general", View::Matrix, false, desktop),
             ("settings-appearance", View::Matrix, false, desktop),
+            ("settings-storage", View::Matrix, false, desktop),
             ("settings-phone", View::Matrix, false, phone),
             (
                 "entities-medium",
@@ -2604,6 +2605,10 @@ pub(crate) mod tests {
                 if suffix.contains("appearance") || suffix.contains("phone") {
                     triib.settings_tab = crate::settings_view::SettingsTab::Appearance;
                     triib.settings.system_accent = false;
+                }
+                if suffix.contains("storage") {
+                    triib.settings_tab = crate::settings_view::SettingsTab::Storage;
+                    let _ = triib.update(Message::SettingsOpened);
                 }
             }
             if suffix.contains("tree") {
@@ -3028,42 +3033,73 @@ pub(crate) mod tests {
         }
     }
 
-    /// Settings take the entities file's path, typed: a full one is kept,
-    /// a leading ~ the home folder, and one that is not full is refused.
+    /// The Storage tab takes each place typed, with ~ the home folder and
+    /// a folder for the entities file taking its file name, and refuses
+    /// one that is not full or not there.
     #[test]
     #[cfg(target_os = "linux")]
-    fn settings_take_the_entities_file() {
+    fn settings_take_storage_places() {
+        use crate::storage::Storage;
         let mut triib = logging(View::Matrix, false);
         triib.settings_open = true;
+        let _ = triib.update(Message::SettingsOpened);
+        triib.settings_tab = crate::settings_view::SettingsTab::Storage;
         {
             let mut simulator = simulate(&triib, Size::new(1280.0, 1400.0));
-            assert!(simulator.find("Entities file").is_ok());
+            assert!(simulator.find("Choose…").is_ok());
         }
-        let _ = triib.update(Message::EntitiesFileEdited("triib/entities.toml".into()));
-        let _ = triib.update(Message::EntitiesFileSubmitted);
+        let entities = triib.settings.entities_file.clone();
+        let _ = triib.update(Message::StorageDraft(
+            Storage::Entities,
+            "triib/entities.toml".into(),
+        ));
+        let _ = triib.update(Message::StorageApply(Storage::Entities));
         assert_eq!(
-            triib.entities_file_error.as_deref(),
-            Some("Give a full path, such as ~/entities.toml.")
+            triib.storage_errors[Storage::Entities.index()].as_deref(),
+            Some("Use a full path, such as ~/Documents/triib.")
         );
-        assert_eq!(triib.settings.entities_file, None);
-        let _ = triib.update(Message::EntitiesFileEdited("~/studio/entities.toml".into()));
-        let _ = triib.update(Message::EntitiesFileSubmitted);
-        let home = std::env::home_dir().unwrap();
-        assert_eq!(
-            triib.settings.entities_file,
-            Some(home.join("studio/entities.toml"))
-        );
+        assert_eq!(triib.settings.entities_file, entities);
+
+        let dir = std::env::temp_dir().join(format!("triib-places-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let _ = triib.update(Message::StorageDraft(
+            Storage::Entities,
+            dir.display().to_string(),
+        ));
+        let _ = triib.update(Message::StorageApply(Storage::Entities));
+        assert!(triib.storage_errors[Storage::Entities.index()].is_none());
+        assert_eq!(triib.settings.entities_file, dir.join("entities.toml"));
         assert_eq!(
             crate::host::entities_path(),
-            Some(home.join("studio/entities.toml"))
+            Some(dir.join("entities.toml"))
         );
-        assert!(triib.entities_file_error.is_none());
-        let _ = triib.update(Message::EntitiesFileReset);
-        assert_eq!(triib.settings.entities_file, None);
         assert_eq!(
-            crate::host::entities_path(),
-            triib_endpointd::config::path()
+            triib.storage_drafts[Storage::Entities.index()],
+            crate::storage::shown_path(&dir.join("entities.toml"))
         );
+
+        let _ = triib.update(Message::StorageDraft(
+            Storage::Presets,
+            dir.join("none").display().to_string(),
+        ));
+        let _ = triib.update(Message::StorageApply(Storage::Presets));
+        assert!(
+            triib.storage_errors[Storage::Presets.index()]
+                .as_deref()
+                .is_some_and(|problem| problem.starts_with("There is no folder"))
+        );
+        let _ = triib.update(Message::StorageChosen(
+            Storage::Presets,
+            Ok(Some(dir.clone())),
+        ));
+        assert!(triib.storage_errors[Storage::Presets.index()].is_none());
+        assert_eq!(triib.settings.presets_folder, dir);
+        // A dialog closed without a choice changes nothing.
+        let _ = triib.update(Message::StorageChosen(Storage::Presets, Ok(None)));
+        assert_eq!(triib.settings.presets_folder, dir);
+        crate::host::set_entities_file(Some(entities));
+        crate::presets::set_folder(crate::settings::default_presets_folder());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     /// The interface picker leaves out virtual and wireless interfaces and

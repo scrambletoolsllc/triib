@@ -71,8 +71,9 @@ Talkers take their stream addresses with MAAP, and the stream threads
 ask RealtimeKit for real-time scheduling, as PipeWire does.
 
 The entities are listed in `entities.toml` in triib's data folder
-(`~/.local/share/triib` on Linux), or in another file Settings name,
-which the app writes and the daemon reads again whenever it changes;
+(`~/.local/share/triib` on Linux), or in another file Settings, Storage
+name, which the app writes and the daemon reads again whenever it
+changes;
 the names, formats, bindings, clock sources and mappings controllers
 give are kept in it, so an input binds again after a restart, and
 presets keep it too:

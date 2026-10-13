@@ -23,6 +23,9 @@ computer's talkers and listeners folded into its entities.
 - While a media clock stream is picked, the Streams tab leaves out the
   entity's channel mappings, which are its audio streams'.
 - The matrix remembers which entities are folded, across restarts.
+- Settings has a Storage tab, as prev has: the presets folder and the
+  entities file, each typed or chosen with Choose…, and checked before
+  it is taken.
 - The interface picker's filter opens a menu that hides virtual
   interfaces, as before by default, wireless interfaces, and interfaces
   without a PTP hardware clock, each checked on its own.
@@ -70,9 +73,9 @@ computer's talkers and listeners folded into its entities.
 - The entities' model name is triib entity, and their model IDs change
   once for it.
 - The entities are listed in `entities.toml`, to which 1.0's
-  `endpoints.toml` moves, or in the file Settings name; the daemon
-  starts again on a file named there, one not there yet starting as a
-  copy of the one in use.
+  `endpoints.toml` moves, or in the file Settings, Storage name; the
+  daemon starts again on a file named there, one not there yet starting
+  as a copy of the one in use.
 
 ### Fixed
 

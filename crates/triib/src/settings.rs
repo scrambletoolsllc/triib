@@ -1,6 +1,7 @@
 //! The app's settings and window state, kept in `triib.toml`.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::path::PathBuf;
 
 use atdecc::EntityId;
 
@@ -11,6 +12,30 @@ use crate::matrix::Side;
 
 /// The language setting's value for following the system's language.
 pub const SYSTEM_LANGUAGE: &str = "system";
+
+/// Where presets are kept unless the settings say otherwise: `presets` in
+/// the data folder.
+pub fn default_presets_folder() -> PathBuf {
+    triib_store::paths::data_dir()
+        .map(|dir| dir.join("presets"))
+        .unwrap_or_default()
+}
+
+/// Paths written with `~` for the home folder, and read back expanded.
+mod home_path {
+    use std::path::{Path, PathBuf};
+
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S: Serializer>(path: &Path, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&triib_store::paths::abbreviate_home(path).to_string_lossy())
+    }
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<PathBuf, D::Error> {
+        let text = String::deserialize(deserializer)?;
+        Ok(triib_store::paths::expand_home(Path::new(&text)))
+    }
+}
 
 /// A kind of interface the interface picker can leave out.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -68,10 +93,12 @@ pub struct Settings {
     pub hide_wireless_interfaces: bool,
     /// Leave interfaces without a PTP hardware clock out of it.
     pub hide_unclocked_interfaces: bool,
-    /// The file this computer's entities are listed in, `entities.toml`
-    /// in the data folder when not given.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub entities_file: Option<std::path::PathBuf>,
+    /// The folder presets are kept in.
+    #[serde(with = "home_path")]
+    pub presets_folder: PathBuf,
+    /// The file this computer's entities are listed in.
+    #[serde(with = "home_path")]
+    pub entities_file: PathBuf,
     /// The Entities view lists only this computer's own talkers and
     /// listeners.
     pub host_entities_only: bool,
@@ -115,7 +142,8 @@ impl Default for Settings {
             hide_virtual_interfaces: true,
             hide_wireless_interfaces: false,
             hide_unclocked_interfaces: false,
-            entities_file: None,
+            presets_folder: default_presets_folder(),
+            entities_file: triib_endpointd::config::path().unwrap_or_default(),
             host_entities_only: false,
             view: View::Matrix,
             inspector: false,

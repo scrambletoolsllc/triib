@@ -58,10 +58,25 @@ settings-allow-outside-control-note = Agents such as Claude Code can see and cha
 # $agents is a list of agent names, such as claude-code.
 settings-allowed-agents = Allowed: { $agents }
 settings-forget-agents = Forget
-settings-entities-file = Entities file
-settings-entities-file-note = Where this computer's own entities are listed. Press Enter to use another file: one not there yet starts as a copy of this one, and triib-endpointd starts again on it.
-settings-entities-file-default = Default
-settings-entities-file-full = Give a full path, such as ~/entities.toml.
+settings-storage = Storage
+settings-storage-presets = Presets folder
+settings-storage-entities = Entities file
+settings-storage-apply = Apply
+settings-storage-choose = Choose…
+# $file is where triib keeps its settings.
+settings-storage-note = Presets already kept at an old place stay there; move them over to keep using them. triib's settings are saved in { $file }.
+# Under the storage note where this computer runs entities of its own.
+settings-storage-entities-note = An entities file not there yet starts as a copy of the one in use, and triib-endpointd starts again on it.
+dialog-choose-presets = Choose the presets folder
+dialog-choose-entities = Choose the folder for the entities file
+settings-full-path = Use a full path, such as ~/Documents/triib.
+# $path is a folder or file as typed or chosen.
+settings-path-is-folder = { $path } is a folder, not a file.
+settings-folder-missing = There is no folder { $path }. Create it first, or choose one.
+settings-path-is-file = { $path } is a file, not a folder.
+# $error is the system's reason.
+settings-cannot-write = triib can't write in { $path }: { $error }.
+app-file-dialog-failed = Could not show the file dialog: { $error }
 
 ## An agent asking to control triib
 
