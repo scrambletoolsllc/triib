@@ -182,6 +182,11 @@ inspector-read-failed = Could not read the entity model: { $reason }.
 
 entity-section = Entity
 entity-name = Name
+# triib's controller on another computer, which has no name of its own.
+entity-triib-controller = triib controller
+# $host is the name of an entity on the same computer, such as Mac mini.
+entity-triib-on = triib on { $host }
+entity-triib-here = triib on this computer
 entity-group = Group
 entity-product = Product
 entity-firmware = Firmware

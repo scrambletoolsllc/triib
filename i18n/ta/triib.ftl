@@ -133,6 +133,9 @@ inspector-read-failed = Entity model-ஐப் படிக்க முடி�
 
 entity-section = Entity
 entity-name = பெயர்
+entity-triib-controller = triib controller
+entity-triib-on = { $host } இல் triib
+entity-triib-here = இந்தக் கணினியில் triib
 entity-group = குழு
 entity-product = தயாரிப்பு
 entity-firmware = ஃபர்ம்வேர்

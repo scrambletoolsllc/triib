@@ -133,6 +133,9 @@ inspector-read-failed = Не вдалося прочитати модель су
 
 entity-section = Сутність
 entity-name = Назва
+entity-triib-controller = Контролер triib
+entity-triib-on = triib на { $host }
+entity-triib-here = triib на цьому комп'ютері
 entity-group = Група
 entity-product = Продукт
 entity-firmware = Прошивка

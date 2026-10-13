@@ -26,7 +26,7 @@ const TURN: Duration = Duration::from_millis(200);
 
 /// triib's controller entity model ID, under the Scramble Tools MA-S
 /// `8C-1F-64-36-C`.
-const ENTITY_MODEL_ID: EntityModelId = EntityModelId(0x8c1f_6436_c000_0001);
+pub const ENTITY_MODEL_ID: EntityModelId = EntityModelId(0x8c1f_6436_c000_0001);
 
 /// How long other controllers keep triib after its last advertisement, in
 /// units of 2 s: the standard's default of 62 s.

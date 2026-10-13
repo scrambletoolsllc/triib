@@ -136,6 +136,9 @@ inspector-read-failed = エンティティモデルを読み込めませんで�
 
 entity-section = エンティティ
 entity-name = 名前
+entity-triib-controller = triib コントローラー
+entity-triib-on = { $host } 上の triib
+entity-triib-here = このコンピューター上の triib
 entity-group = グループ
 entity-product = 製品
 entity-firmware = ファームウェア

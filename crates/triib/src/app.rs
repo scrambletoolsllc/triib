@@ -1353,13 +1353,48 @@ impl Triib {
         format!("{}: {stream}", self.entity_name_of(entity_id))
     }
 
-    /// The name to show for an entity: the one it was given, else its
-    /// entity ID.
+    /// The name to show for an entity: the one it was given; else for
+    /// triib's controller, which has no model to read, the computer it
+    /// runs on; else its entity ID.
     pub fn entity_name(&self, entity: &DiscoveredEntity) -> String {
-        self.models
+        if let Some(name) = self
+            .models
             .get(&entity.entity_id())
             .and_then(EntityModel::entity_name)
-            .map_or_else(|| entity.entity_id().to_string(), str::to_owned)
+        {
+            return name.to_owned();
+        }
+        if entity.adp.entity_model_id == crate::network::ENTITY_MODEL_ID {
+            return self.triib_name(entity);
+        }
+        entity.entity_id().to_string()
+    }
+
+    /// "triib on Mac mini": triib's controller named after an entity from
+    /// the same address, which runs on the same computer.
+    fn triib_name(&self, controller: &DiscoveredEntity) -> String {
+        if self
+            .interface()
+            .is_some_and(|interface| interface.mac == controller.mac)
+        {
+            return crate::fl!("entity-triib-here");
+        }
+        let host = self
+            .entities
+            .values()
+            .filter(|entity| {
+                entity.mac == controller.mac
+                    && entity.adp.entity_model_id != crate::network::ENTITY_MODEL_ID
+            })
+            .find_map(|entity| {
+                self.models
+                    .get(&entity.entity_id())
+                    .and_then(EntityModel::entity_name)
+            });
+        match host {
+            Some(host) => crate::fl!("entity-triib-on", host = host),
+            None => crate::fl!("entity-triib-controller"),
+        }
     }
 
     /// Saves the settings, keeping why when that fails.

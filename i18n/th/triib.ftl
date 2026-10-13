@@ -133,6 +133,9 @@ inspector-read-failed = อ่านโมเดลเอนทิตีไม�
 
 entity-section = เอนทิตี
 entity-name = ชื่อ
+entity-triib-controller = คอนโทรลเลอร์ triib
+entity-triib-on = triib บน { $host }
+entity-triib-here = triib บนคอมพิวเตอร์เครื่องนี้
 entity-group = กลุ่ม
 entity-product = ผลิตภัณฑ์
 entity-firmware = เฟิร์มแวร์

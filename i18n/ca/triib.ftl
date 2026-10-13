@@ -136,6 +136,9 @@ inspector-read-failed = No s’ha pogut llegir el model d’entitat: { $reason }
 
 entity-section = Entitat
 entity-name = Nom
+entity-triib-controller = Controlador triib
+entity-triib-on = triib a { $host }
+entity-triib-here = triib en aquest ordinador
 entity-group = Grup
 entity-product = Producte
 entity-firmware = Firmware

@@ -136,6 +136,9 @@ inspector-read-failed = Modelul entității nu a putut fi citit: { $reason }.
 
 entity-section = Entitate
 entity-name = Nume
+entity-triib-controller = Controler triib
+entity-triib-on = triib pe { $host }
+entity-triib-here = triib pe acest computer
 entity-group = Grup
 entity-product = Produs
 entity-firmware = Firmware

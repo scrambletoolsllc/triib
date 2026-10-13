@@ -133,6 +133,9 @@ inspector-read-failed = Nie udało się odczytać modelu encji: { $reason }.
 
 entity-section = Encja
 entity-name = Nazwa
+entity-triib-controller = Kontroler triib
+entity-triib-on = triib na { $host }
+entity-triib-here = triib na tym komputerze
 entity-group = Grupa
 entity-product = Produkt
 entity-firmware = Firmware

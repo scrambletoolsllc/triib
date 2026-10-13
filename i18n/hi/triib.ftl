@@ -133,6 +133,9 @@ inspector-read-failed = Entity model पढ़ा नहीं जा सका:
 
 entity-section = Entity
 entity-name = नाम
+entity-triib-controller = triib controller
+entity-triib-on = { $host } पर triib
+entity-triib-here = इस कंप्यूटर पर triib
 entity-group = समूह
 entity-product = उत्पाद
 entity-firmware = फ़र्मवेयर

@@ -133,6 +133,9 @@ inspector-read-failed = تعذّرت قراءة نموذج الكيان: { $reas
 
 entity-section = الكيان
 entity-name = الاسم
+entity-triib-controller = وحدة تحكم triib
+entity-triib-on = triib على { $host }
+entity-triib-here = triib على هذا الحاسوب
 entity-group = المجموعة
 entity-product = المنتج
 entity-firmware = البرنامج الثابت

@@ -136,6 +136,9 @@ inspector-read-failed = 엔티티 모델을 읽을 수 없습니다: { $reason }
 
 entity-section = 엔티티
 entity-name = 이름
+entity-triib-controller = triib 컨트롤러
+entity-triib-on = { $host }의 triib
+entity-triib-here = 이 컴퓨터의 triib
 entity-group = 그룹
 entity-product = 제품
 entity-firmware = 펌웨어

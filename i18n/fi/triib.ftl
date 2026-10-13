@@ -135,6 +135,9 @@ inspector-read-failed = Entiteettimallia ei voitu lukea: { $reason }.
 
 entity-section = Entiteetti
 entity-name = Nimi
+entity-triib-controller = triib-ohjain
+entity-triib-on = triib laitteessa { $host }
+entity-triib-here = triib tässä tietokoneessa
 entity-group = Ryhmä
 entity-product = Tuote
 entity-firmware = Laiteohjelmisto

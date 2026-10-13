@@ -135,6 +135,9 @@ inspector-read-failed = Δεν ήταν δυνατή η ανάγνωση του 
 
 entity-section = Οντότητα
 entity-name = Όνομα
+entity-triib-controller = Ελεγκτής triib
+entity-triib-on = triib στο { $host }
+entity-triib-here = triib σε αυτόν τον υπολογιστή
 entity-group = Ομάδα
 entity-product = Προϊόν
 entity-firmware = Υλικολογισμικό

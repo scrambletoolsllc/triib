@@ -133,6 +133,9 @@ inspector-read-failed = Gagal membaca model entiti: { $reason }.
 
 entity-section = Entiti
 entity-name = Nama
+entity-triib-controller = Pengawal triib
+entity-triib-on = triib pada { $host }
+entity-triib-here = triib pada komputer ini
 entity-group = Kumpulan
 entity-product = Produk
 entity-firmware = Perisian tegar

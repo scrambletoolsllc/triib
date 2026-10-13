@@ -133,6 +133,9 @@ inspector-read-failed = خواندن مدل موجودیت ممکن نشد: { $r
 
 entity-section = موجودیت
 entity-name = نام
+entity-triib-controller = کنترلر triib
+entity-triib-on = triib روی { $host }
+entity-triib-here = triib روی این رایانه
 entity-group = گروه
 entity-product = محصول
 entity-firmware = میان‌افزار

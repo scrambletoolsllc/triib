@@ -133,6 +133,9 @@ inspector-read-failed = לא ניתן היה לקרוא את מודל הישות
 
 entity-section = ישות
 entity-name = שם
+entity-triib-controller = בקר triib
+entity-triib-on = triib ב-{ $host }
+entity-triib-here = triib במחשב הזה
 entity-group = קבוצה
 entity-product = מוצר
 entity-firmware = קושחה

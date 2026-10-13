@@ -136,6 +136,9 @@ inspector-read-failed = Không thể đọc mô hình thực thể: { $reason }.
 
 entity-section = Thực thể
 entity-name = Tên
+entity-triib-controller = Bộ điều khiển triib
+entity-triib-on = triib trên { $host }
+entity-triib-here = triib trên máy tính này
 entity-group = Nhóm
 entity-product = Sản phẩm
 entity-firmware = Firmware

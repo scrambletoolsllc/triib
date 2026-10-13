@@ -136,6 +136,9 @@ inspector-read-failed = Impossible de lire le modèle d’entité : { $reason }
 
 entity-section = Entité
 entity-name = Nom
+entity-triib-controller = Contrôleur triib
+entity-triib-on = triib sur { $host }
+entity-triib-here = triib sur cet ordinateur
 entity-group = Groupe
 entity-product = Produit
 entity-firmware = Firmware

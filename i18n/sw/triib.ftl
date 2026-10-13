@@ -133,6 +133,9 @@ inspector-read-failed = Imeshindwa kusoma modeli ya huluki: { $reason }.
 
 entity-section = Huluki
 entity-name = Jina
+entity-triib-controller = Controller ya triib
+entity-triib-on = triib kwenye { $host }
+entity-triib-here = triib kwenye kompyuta hii
 entity-group = Kikundi
 entity-product = Bidhaa
 entity-firmware = Programu dhibiti

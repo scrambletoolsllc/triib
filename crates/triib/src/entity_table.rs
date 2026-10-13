@@ -618,6 +618,49 @@ mod tests {
         assert_eq!(triib.host_icon(EntityId(0xf0a7_31ff_00f4_0f14)), None);
     }
 
+    /// triib's controller, which has no model to read, is named after
+    /// the computer it runs on, and controllers have their own icon.
+    #[test]
+    fn triib_controllers_say_where_they_run() {
+        use atdecc::EntityId;
+        use scramble_ui::icon::Icon;
+
+        let mut triib = sample();
+        triib.settings.interface = Some("enp6s0".to_owned());
+        let (&named, template) = triib.entities.iter().next().unwrap();
+        let template = *template;
+        let host = triib.entity_name_of(named);
+        let mut controller = |id: u64, mac| {
+            let mut entity = template;
+            entity.adp.entity_id = EntityId(id);
+            entity.adp.entity_model_id = crate::network::ENTITY_MODEL_ID;
+            entity.adp.talker_stream_sources = 0;
+            entity.adp.listener_stream_sinks = 0;
+            entity.adp.talker_capabilities = atdecc::adp::TalkerCapabilities::empty();
+            entity.adp.listener_capabilities = atdecc::adp::ListenerCapabilities::empty();
+            entity.adp.controller_capabilities = atdecc::adp::ControllerCapabilities::IMPLEMENTED;
+            entity.mac = mac;
+            triib.entities.insert(EntityId(id), entity);
+            EntityId(id)
+        };
+        // On the computer of an entity read.
+        let there = controller(0x1, template.mac);
+        // On this computer.
+        let here = controller(
+            0x2,
+            avb_net::MacAddress([0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b]),
+        );
+        // On a computer of no other entity.
+        let alone = controller(0x3, avb_net::MacAddress([2, 0, 0, 0, 0, 3]));
+        assert_eq!(triib.entity_name_of(there), format!("triib on {host}"));
+        assert_eq!(triib.entity_name_of(here), "triib on this computer");
+        assert_eq!(triib.entity_name_of(alone), "triib controller");
+        assert_eq!(
+            crate::describe::glyph(&triib.entities[&alone].adp),
+            Icon::SettingsRemote
+        );
+    }
+
     fn sample() -> Triib {
         let (entities, models) = crate::view::tests::bench();
         let interface = avb_net::Interface {

@@ -135,6 +135,9 @@ inspector-read-failed = Nem sikerült beolvasni az entitásmodellt: { $reason }.
 
 entity-section = Entitás
 entity-name = Név
+entity-triib-controller = triib-vezérlő
+entity-triib-on = triib ezen: { $host }
+entity-triib-here = triib ezen a számítógépen
 entity-group = Csoport
 entity-product = Termék
 entity-firmware = Firmware

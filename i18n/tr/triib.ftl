@@ -135,6 +135,9 @@ inspector-read-failed = Varlık modeli okunamadı: { $reason }.
 
 entity-section = Varlık
 entity-name = Ad
+entity-triib-controller = triib denetleyicisi
+entity-triib-on = { $host } üzerinde triib
+entity-triib-here = Bu bilgisayarda triib
 entity-group = Grup
 entity-product = Ürün
 entity-firmware = Ürün yazılımı

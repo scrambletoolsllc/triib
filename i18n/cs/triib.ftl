@@ -133,6 +133,9 @@ inspector-read-failed = Model entity se nepodařilo načíst: { $reason }.
 
 entity-section = Entita
 entity-name = Název
+entity-triib-controller = Kontrolér triib
+entity-triib-on = triib na { $host }
+entity-triib-here = triib na tomto počítači
 entity-group = Skupina
 entity-product = Produkt
 entity-firmware = Firmware

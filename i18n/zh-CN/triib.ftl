@@ -136,6 +136,9 @@ inspector-read-failed = 无法读取实体模型：{ $reason }。
 
 entity-section = 实体
 entity-name = 名称
+entity-triib-controller = triib 控制器
+entity-triib-on = { $host } 上的 triib
+entity-triib-here = 本机上的 triib
 entity-group = 组
 entity-product = 产品
 entity-firmware = 固件
