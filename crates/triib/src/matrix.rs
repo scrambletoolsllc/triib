@@ -465,7 +465,10 @@ fn lines<'s, 'a>(
 ) -> Vec<(Heading, Members<'s, 'a>)> {
     let mut lines = Vec::new();
     for group in groups {
-        let collapsed = triib.collapsed.contains(&(side, group.entity_id));
+        let collapsed = triib
+            .settings
+            .matrix_collapsed
+            .contains(side, group.entity_id);
         lines.push((
             Heading {
                 line: Line::Entity(group.entity_id),
@@ -925,7 +928,10 @@ fn say(triib: &Triib, grid: &Grid, talkers: &[Group<'_>], listeners: &[Group<'_>
             match heading {
                 Some((Found::Group(group), side)) => {
                     let count = group.streams.len();
-                    let collapsed = triib.collapsed.contains(&(side, group.entity_id));
+                    let collapsed = triib
+                        .settings
+                        .matrix_collapsed
+                        .contains(side, group.entity_id);
                     info(
                         group.label(),
                         match (side, collapsed) {

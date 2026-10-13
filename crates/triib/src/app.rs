@@ -77,8 +77,6 @@ pub struct Triib {
     pub entity_list_offset: (f32, f32),
     /// What happened to the last action that did not succeed.
     pub notice: Option<String>,
-    /// Talkers and listeners the matrix shows as one column or row.
-    pub collapsed: BTreeSet<(Side, EntityId)>,
     /// What the pointer is over in the matrix.
     pub hover: Hover,
     /// The bridge this computer is plugged into.
@@ -303,7 +301,6 @@ impl Triib {
             format_menu: None,
             entity_list_offset: (0.0, 0.0),
             notice: None,
-            collapsed: BTreeSet::new(),
             hover: Hover::default(),
             neighbor: None,
             cannot_listen: None,
@@ -357,7 +354,6 @@ impl Triib {
             format_menu: None,
             entity_list_offset: (0.0, 0.0),
             notice: None,
-            collapsed: BTreeSet::new(),
             hover: Hover::default(),
             neighbor: None,
             cannot_listen: None,
@@ -693,9 +689,8 @@ impl Triib {
                 self.save_settings();
             }
             Message::MatrixCollapseToggled(side, entity_id) => {
-                if !self.collapsed.remove(&(side, entity_id)) {
-                    self.collapsed.insert((side, entity_id));
-                }
+                self.settings.matrix_collapsed.toggle(side, entity_id);
+                self.save_settings();
             }
             Message::MatrixHovered(hover) => self.hover = hover,
             Message::EntityListScrolled(part, viewport) => {

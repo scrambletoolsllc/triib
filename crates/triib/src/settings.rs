@@ -1,9 +1,13 @@
 //! The app's settings and window state, kept in `triib.toml`.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
+
+use atdecc::EntityId;
 
 use scramble_ui::appearance::Appearance;
 use serde::{Deserialize, Serialize};
+
+use crate::matrix::Side;
 
 /// The language setting's value for following the system's language.
 pub const SYSTEM_LANGUAGE: &str = "system";
@@ -47,6 +51,8 @@ pub struct Settings {
     pub entity_column_widths: BTreeMap<EntityField, f32>,
     /// The width the user dragged the entity list's name column to.
     pub entity_name_width: Option<f32>,
+    /// The entities the connection matrix folds into one line.
+    pub matrix_collapsed: Collapsed,
     /// Programs such as AI agents may control triib, through `triib
     /// --mcp`, once the user allows each.
     pub outside_control: bool,
@@ -75,8 +81,44 @@ impl Default for Settings {
             entity_columns: EntityField::DEFAULT_COLUMNS.to_vec(),
             entity_column_widths: BTreeMap::new(),
             entity_name_width: None,
+            matrix_collapsed: Collapsed::default(),
             outside_control: true,
             allowed_agents: Vec::new(),
+        }
+    }
+}
+
+/// The entities the connection matrix folds into one line, by entity ID:
+/// as talkers across the top, and as listeners down the side. Kept for
+/// entities offline too, so they come back as they were.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct Collapsed {
+    pub talkers: BTreeSet<String>,
+    pub listeners: BTreeSet<String>,
+}
+
+impl Collapsed {
+    pub fn contains(&self, side: Side, entity_id: EntityId) -> bool {
+        self.side(side).contains(&entity_id.to_string())
+    }
+
+    /// Folds an expanded entity, or unfolds a folded one.
+    pub fn toggle(&mut self, side: Side, entity_id: EntityId) {
+        let entities = match side {
+            Side::Talker => &mut self.talkers,
+            Side::Listener => &mut self.listeners,
+        };
+        let key = entity_id.to_string();
+        if !entities.remove(&key) {
+            entities.insert(key);
+        }
+    }
+
+    fn side(&self, side: Side) -> &BTreeSet<String> {
+        match side {
+            Side::Talker => &self.talkers,
+            Side::Listener => &self.listeners,
         }
     }
 }
@@ -309,5 +351,30 @@ mod tests {
         let _ = std::fs::remove_file(&file);
         assert_eq!(loaded.view, View::Matrix);
         assert!(!loaded.log);
+    }
+
+    #[test]
+    fn folded_entities_are_kept_by_side() {
+        let synthia = EntityId(0xe8f6_0ae0_9220_0000);
+        let amp = EntityId(0xe8f6_0ae0_9721_0000);
+        let mut settings = Settings::default();
+        settings.matrix_collapsed.toggle(Side::Talker, synthia);
+        settings.matrix_collapsed.toggle(Side::Listener, amp);
+        settings.matrix_collapsed.toggle(Side::Listener, synthia);
+        // Folded again, unfolded.
+        settings.matrix_collapsed.toggle(Side::Listener, amp);
+        let file = std::env::temp_dir().join(format!("triib-folded-{}.toml", std::process::id()));
+        triib_store::save(&file, &settings).unwrap();
+        let loaded = triib_store::load::<Settings>(&file).unwrap();
+        let _ = std::fs::remove_file(&file);
+        let folded = &loaded.matrix_collapsed;
+        assert!(folded.contains(Side::Talker, synthia));
+        assert!(folded.contains(Side::Listener, synthia));
+        assert!(!folded.contains(Side::Talker, amp));
+        assert!(!folded.contains(Side::Listener, amp));
+        assert_eq!(
+            folded.talkers,
+            BTreeSet::from(["0xe8f60ae092200000".to_owned()])
+        );
     }
 }
