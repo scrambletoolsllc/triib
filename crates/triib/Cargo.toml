@@ -35,6 +35,8 @@ schemars = "1"
 # system's own dialogs elsewhere, as prev has them.
 [target.'cfg(target_os = "linux")'.dependencies]
 ashpd = { version = "0.13", default-features = false, features = ["async-io", "file_chooser"] }
+# The portal's helper drops triib's capabilities.
+libc = "0.2"
 
 [target.'cfg(not(target_os = "linux"))'.dependencies]
 rfd = { version = "0.15", default-features = false }

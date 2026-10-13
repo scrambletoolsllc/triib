@@ -947,7 +947,7 @@ impl Triib {
             Message::OverflowClosed => self.overflow_open = false,
             Message::Copy(text) => return iced::clipboard::write(text),
             Message::OpenLink(link) => {
-                return Task::perform(desktop::open_uri(link), |_| Message::Nothing);
+                return Task::perform(crate::dialog::open_uri(link), |_| Message::Nothing);
             }
             Message::SystemTheme(mode) => {
                 self.system_mode = mode;

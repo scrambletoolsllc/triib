@@ -4260,6 +4260,7 @@ dependencies = [
  "iced",
  "iced_test",
  "interprocess",
+ "libc",
  "png",
  "rfd",
  "rmcp",

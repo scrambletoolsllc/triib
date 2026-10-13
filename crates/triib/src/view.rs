@@ -3046,7 +3046,12 @@ pub(crate) mod tests {
         triib.settings_tab = crate::settings_view::SettingsTab::Storage;
         {
             let mut simulator = simulate(&triib, Size::new(1280.0, 1400.0));
-            assert!(simulator.find("Choose…").is_ok());
+            simulator.click("Choose…").expect("the button");
+            let messages: Vec<_> = simulator.into_messages().collect();
+            assert!(matches!(
+                messages.as_slice(),
+                [Message::StorageChoose(Storage::Presets)]
+            ));
         }
         let entities = triib.settings.entities_file.clone();
         let _ = triib.update(Message::StorageDraft(

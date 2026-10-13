@@ -80,6 +80,11 @@ fn main() -> iced::Result {
                     std::process::exit(1);
                 }
             }
+            #[cfg(target_os = "linux")]
+            dialog::CHOOSE_FOLDER | dialog::OPEN_URI => {
+                let arguments: Vec<_> = std::env::args_os().skip(1).collect();
+                std::process::exit(dialog::serve(&arguments));
+            }
             _ => println!("usage: triib [--version | --mcp]"),
         }
         return Ok(());

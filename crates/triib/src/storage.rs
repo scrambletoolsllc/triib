@@ -57,18 +57,17 @@ impl Storage {
         self == Storage::Entities
     }
 
-    /// The folder its dialog starts in: the one it is in now, where that
-    /// is there.
+    /// The folder its dialog starts in: the one it is in now, or the
+    /// nearest one above that is there, as a folder not made yet, such as
+    /// presets before the first is saved, is in hidden folders the dialog
+    /// would not show.
     pub fn current_folder(self, settings: &Settings) -> Option<PathBuf> {
         let path = self.path(settings);
-        let folder = if self.is_file() {
-            path.parent()
-        } else {
-            Some(path)
-        };
+        let folder = if self.is_file() { path.parent()? } else { path };
         folder
+            .ancestors()
+            .find(|folder| folder.is_dir())
             .map(Path::to_path_buf)
-            .filter(|folder| folder.is_dir())
     }
 
     /// The path it takes from `path` as typed or chosen: `~` the home
@@ -162,10 +161,21 @@ mod tests {
                 .ends_with("is a file, not a folder.")
         );
         // A folder given for the entities file gets its file name.
-        let settings = Settings::default();
+        let mut settings = Settings::default();
         assert_eq!(
             Storage::Entities.take(&settings, &dir),
             dir.join("entities.toml")
+        );
+        // The dialog starts in the nearest folder there.
+        settings.presets_folder = dir.join("presets/not/yet");
+        assert_eq!(
+            Storage::Presets.current_folder(&settings),
+            Some(dir.clone())
+        );
+        settings.entities_file = dir.join("entities.toml");
+        assert_eq!(
+            Storage::Entities.current_folder(&settings),
+            Some(dir.clone())
         );
         let _ = std::fs::remove_dir_all(&dir);
     }
