@@ -716,7 +716,12 @@ impl Entity {
         let message = acmpdu.message_type;
         if message.is_command() && acmpdu.talker_entity_id == us && is_talker_command(message) {
             self.answer_talker(acmpdu);
-        } else if message.is_command() && acmpdu.listener_entity_id == us {
+        } else if message.is_command()
+            && acmpdu.listener_entity_id == us
+            && !is_talker_command(message)
+        {
+            // A talker command naming this entity's input is its own probe,
+            // as it hears its own frames: its talker answers it.
             self.answer_listener(now, acmpdu);
         } else if message == AcmpMessageType::PROBE_TX_RESPONSE && acmpdu.listener_entity_id == us {
             self.probe_answered(now, acmpdu);

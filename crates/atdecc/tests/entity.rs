@@ -699,3 +699,35 @@ fn an_input_bound_to_its_own_output_settles() {
         Some((STREAM, DESTINATION))
     );
 }
+
+/// A listener hearing its own probe, as entities that hear their own
+/// frames do, leaves it to the talker it names to answer.
+#[test]
+fn a_listener_does_not_answer_its_own_probe() {
+    use atdecc::acmp::{AcmpMessageType, Acmpdu};
+
+    let mut listener = Entity::new(model(LISTENER, "Listener", false), &[]);
+    let now = Instant::ZERO;
+    listener.start(now);
+    let bind = Acmpdu::command(
+        AcmpMessageType::BIND_RX_COMMAND,
+        EntityId(0x0200_00ff_fe00_0001),
+        (TALKER, 0),
+        (LISTENER, 0),
+        1,
+    );
+    let mut out = [0; 128];
+    let length = bind.encode(&mut out).unwrap();
+    listener.handle_frame(now, CONTROLLER_MAC, &out[..length]);
+    listener.handle_timeout(now);
+    let probe = std::iter::from_fn(|| listener.poll_transmit())
+        .filter_map(|(_, bytes)| Acmpdu::decode(&bytes).ok())
+        .find(|acmpdu| acmpdu.message_type == AcmpMessageType::PROBE_TX_COMMAND)
+        .expect("the probe");
+    let length = probe.encode(&mut out).unwrap();
+    listener.handle_frame(now, HOST_MAC, &out[..length]);
+    let answers: Vec<Acmpdu> = std::iter::from_fn(|| listener.poll_transmit())
+        .filter_map(|(_, bytes)| Acmpdu::decode(&bytes).ok())
+        .collect();
+    assert!(answers.is_empty(), "{answers:?}");
+}
