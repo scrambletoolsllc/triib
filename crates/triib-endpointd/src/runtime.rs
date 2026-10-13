@@ -48,7 +48,7 @@ use crate::status::{DaemonStatus, EndpointStatus, StreamStatus, status_path};
 /// talkers and listeners had `0x8c1f_6436_c000_0002` and `_0004`.
 const DEVICE_MODELS: u64 = 0x8c1f_6436_c001_0000;
 /// The revision of every device's model, in its hash.
-const MODEL_REVISION: u8 = 3;
+const MODEL_REVISION: u8 = 4;
 /// Class A's priority; its VLAN is the port's.
 const PRIORITY: u8 = 3;
 /// Class B's priority.
@@ -341,7 +341,7 @@ fn model_id(outputs: &[StreamModel], inputs: &[StreamModel]) -> EntityModelId {
     // The model's revision, for what the streams leave the same: 1 since
     // the inputs stopped being clock sources, 2 since the model name is
     // "triib entity" and media clock inputs are clock sources, 3 since
-    // every input is.
+    // every input is, 4 since inputs' mappings are dynamic.
     take(&[MODEL_REVISION]);
     for (way, streams) in [(0u8, outputs), (1, inputs)] {
         for stream in streams {
@@ -360,10 +360,15 @@ impl Endpoint {
     /// Starts advertising, and binds its inputs again to what they were
     /// bound to.
     fn begin(&mut self, now: Instant) {
-        // The max transit times controllers set before.
+        // The max transit times and mappings controllers set before.
         for (at, place) in self.out_streams.iter().enumerate() {
             if let Some(nanoseconds) = self.streams[*place].transit {
                 self.entity.restore_max_transit_time(at as u16, nanoseconds);
+            }
+        }
+        for (at, place) in self.in_streams.iter().enumerate() {
+            if let Some(mappings) = self.streams[*place].mapping_pairs() {
+                self.entity.restore_input_mappings(at as u16, &mappings);
             }
         }
         self.entity.start(now);
@@ -1303,6 +1308,16 @@ impl Runtime {
                 .get(at)
                 .map(|stream| format!("{:#018x}", stream.current_format.0));
             streams[*place].clock_source = source == Some(at as u16);
+            let channels = model.inputs.get(at).map_or(0, |stream| stream.channels);
+            streams[*place].mappings = (!endpoint.entity.input_mappings_are_default(at as u16))
+                .then(|| endpoint.entity.input_mappings(at as u16))
+                .flatten()
+                .map(|mappings| {
+                    let pairs = mappings
+                        .iter()
+                        .map(|mapping| (mapping.stream_channel, mapping.cluster_offset));
+                    crate::config::mappings_text(pairs, channels)
+                });
             streams[*place].bound = endpoint
                 .entity
                 .input_binding(at as u16)
@@ -2239,6 +2254,20 @@ impl Runtime {
                 None => endpoint.in_config(input.1).sink(),
             },
             recovered: Some(self.input(input).recovered.clone()),
+            // Each of its audio's channels the stream channel its cluster
+            // is mapped from, where a controller mapped them otherwise.
+            channel_map: (!endpoint.entity.input_mappings_are_default(input.1))
+                .then(|| endpoint.entity.input_mappings(input.1))
+                .flatten()
+                .map(|mappings| {
+                    let mut map = vec![None; usize::from(model.channels)];
+                    for mapping in mappings {
+                        if let Some(slot) = map.get_mut(usize::from(mapping.cluster_offset)) {
+                            *slot = Some(mapping.stream_channel);
+                        }
+                    }
+                    map
+                }),
         };
         // Every input takes its stream on the endpoint's one listening
         // thread, which the first to listen starts.
@@ -2421,6 +2450,15 @@ impl Runtime {
                 self.update_lite_status();
                 if self.lite.is_some() {
                     self.update_own_talkers();
+                }
+            }
+            EntityEvent::MappingsChanged { index: at } => {
+                let input = In(index, at);
+                log(format!("{}: mappings changed", self.in_name(input)));
+                self.keep_settings(index);
+                // Its audio takes the stream's channels anew.
+                if self.input_mut(input).listener.take().is_some() {
+                    self.update_listener(input);
                 }
             }
             EntityEvent::NameChanged => {
@@ -3929,6 +3967,43 @@ mod tests {
         assert_eq!(plain.entity.model().clock_source, 0);
         assert_eq!(plain.followed(), None);
         assert_eq!(plain.clock_source_name(), "the internal clock");
+    }
+
+    /// Mappings a controller gave an input, kept in the configuration,
+    /// come back as the entity starts; written and read again, they stay.
+    #[test]
+    fn kept_mappings_come_back() {
+        let config = EndpointConfig {
+            streams: vec![
+                stream(Direction::Out, 2),
+                StreamConfig {
+                    mappings: Some(crate::config::mappings_text([(1, 0), (0, 1)], 2)),
+                    ..stream(Direction::In, 2)
+                },
+            ],
+            ..EndpointConfig::new("Studio", Some(4))
+        };
+        let text = toml::to_string_pretty(&Config {
+            endpoints: vec![config.clone()],
+            ..Config::default()
+        })
+        .expect("writes");
+        assert!(text.contains("mappings = \"2 1\""), "{text}");
+        let read: Config = toml::from_str(&text).expect("reads");
+        assert_eq!(read.endpoints[0], config);
+        let mac = MacAddress([0xf0, 0xa7, 0x31, 0xf4, 0x0f, 0x14]);
+        let mut entity = Endpoint::new(config, 4, mac, "enp2s0", ClockIdentity(1));
+        assert!(entity.entity.input_mappings_are_default(0));
+        entity.begin(Instant::from_nanos(0));
+        assert!(!entity.entity.input_mappings_are_default(0));
+        let restored: Vec<(u16, u16)> = entity
+            .entity
+            .input_mappings(0)
+            .unwrap()
+            .iter()
+            .map(|mapping| (mapping.stream_channel, mapping.cluster_offset))
+            .collect();
+        assert_eq!(restored, [(0, 1), (1, 0)]);
     }
 
     /// A max transit time a controller set, kept in the configuration,

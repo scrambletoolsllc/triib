@@ -6,8 +6,9 @@
 //! One configuration with one audio unit, one AVB interface and one clock
 //! domain. Each audio stream has a stream port of its own on the audio
 //! unit, with an audio cluster of one channel for each of the stream's
-//! channels and a static map between them; a media clock stream, CRF, has
-//! none. The clock sources are the internal clock, then the stream inputs
+//! channels: an output's mapped to them by a static map, an input's by
+//! dynamic mappings controllers change, as Milan has inputs' (the entity
+//! keeps those); a media clock stream, CRF, has none. The clock sources are the internal clock, then the stream inputs
 //! the model offers as clock sources.
 
 use alloc::string::String;
@@ -139,20 +140,22 @@ impl Writer {
 /// Which stream port, cluster and map belong to which audio stream:
 /// inputs' ports first, then outputs'.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct Port {
-    input: bool,
+pub(crate) struct Port {
+    pub(crate) input: bool,
     /// The stream port's index, counting its way's audio streams.
-    index: u16,
+    pub(crate) index: u16,
     /// The stream's index.
-    stream: u16,
+    pub(crate) stream: u16,
     base_cluster: u16,
-    channels: u16,
-    /// Its map, by AUDIO_MAP index.
-    map: u16,
+    /// Its channels, each a cluster.
+    pub(crate) channels: u16,
+    /// Its map, by AUDIO_MAP index; none for an input's, whose mappings
+    /// are dynamic.
+    map: Option<u16>,
 }
 
 impl EndpointModel {
-    fn ports(&self) -> Vec<Port> {
+    pub(crate) fn ports(&self) -> Vec<Port> {
         let mut ports = Vec::new();
         let mut cluster = 0;
         let mut map = 0;
@@ -168,10 +171,12 @@ impl EndpointModel {
                     stream: stream as u16,
                     base_cluster: cluster,
                     channels: model.channels,
-                    map,
+                    map: (!input).then_some(map),
                 });
                 cluster += model.channels;
-                map += 1;
+                if !input {
+                    map += 1;
+                }
             }
         }
         ports
@@ -386,8 +391,8 @@ impl EndpointModel {
                     .u16(0) // base_control
                     .u16(port.channels)
                     .u16(port.base_cluster)
-                    .u16(1) // number_of_maps
-                    .u16(port.map)
+                    .u16(u16::from(port.map.is_some())) // number_of_maps
+                    .u16(port.map.unwrap_or(0))
                     .pad_to(28)
                     .done()
             }
@@ -412,7 +417,7 @@ impl EndpointModel {
                     .done()
             }
             DescriptorType::AUDIO_MAP => {
-                let port = ports.iter().find(|port| port.map == index)?;
+                let port = ports.iter().find(|port| port.map == Some(index))?;
                 writer.u16(8).u16(port.channels);
                 for channel in 0..port.channels {
                     writer.u16(port.stream).u16(channel).u16(channel).u16(0);

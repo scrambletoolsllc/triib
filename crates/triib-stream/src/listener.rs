@@ -42,6 +42,10 @@ pub struct ListenerConfig {
     /// follow: a media clock's from its timestamps, an audio stream's
     /// from its presentation times.
     pub recovered: Option<RecoveredClock>,
+    /// For each of the sink's channels, the stream channel it plays, none
+    /// for silence, as a controller mapped them; the stream's own order
+    /// when left out.
+    pub channel_map: Option<Vec<Option<u16>>>,
 }
 
 /// A listener's counters (Milan 1.3, Table 5.10).
@@ -332,6 +336,8 @@ struct Running {
     counters: Arc<Counters>,
     expected: Option<u8>,
     last: Instant,
+    /// Its samples in the order its channel map plays them.
+    mapped: Vec<f32>,
 }
 
 impl Drop for Running {
@@ -431,6 +437,7 @@ fn take_changes(shared: &Shared, running: &mut [Option<Running>]) {
                 counters: counters.get(place).cloned().unwrap_or_default(),
                 expected: None,
                 last: Instant::now(),
+                mapped: Vec::new(),
             });
         }
     }
@@ -443,6 +450,7 @@ fn take_frame(stream: &mut Running, frame: &[u8], samples: &mut Vec<f32>, clock:
         counters,
         expected,
         last,
+        mapped,
     } = stream;
     samples.clear();
     let Some(pdu) = avtp_payload(frame) else {
@@ -531,6 +539,13 @@ fn take_frame(stream: &mut Running, frame: &[u8], samples: &mut Vec<f32>, clock:
     let Some(output) = &opened.output else {
         return;
     };
+    let samples = match &opened.config.channel_map {
+        Some(map) => {
+            remap(samples, opened.media.channels(), map, mapped);
+            &*mapped
+        }
+        None => &*samples,
+    };
     output.write(samples, presented);
     if header.sequence == 0 {
         counters
@@ -543,5 +558,36 @@ fn take_frame(stream: &mut Running, frame: &[u8], samples: &mut Vec<f32>, clock:
             counters.delay.store(delay, Ordering::Relaxed);
             counters.playout_error.store(error, Ordering::Relaxed);
         }
+    }
+}
+
+/// `samples`, frames of `channels` interleaved, into `out` as `map` plays
+/// them: each of its channels the stream channel it names, silence where
+/// it names none or one the stream lacks.
+fn remap(samples: &[f32], channels: u16, map: &[Option<u16>], out: &mut Vec<f32>) {
+    let channels = usize::from(channels.max(1));
+    out.clear();
+    for frame in samples.chunks_exact(channels) {
+        out.extend(map.iter().map(|channel| {
+            channel
+                .and_then(|channel| frame.get(usize::from(channel)))
+                .copied()
+                .unwrap_or(0.0)
+        }));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A channel map plays the stream's channels where it names them, and
+    /// silence elsewhere.
+    #[test]
+    fn a_channel_map_moves_and_silences_channels() {
+        let samples = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6];
+        let mut out = Vec::new();
+        remap(&samples, 3, &[Some(2), None, Some(0)], &mut out);
+        assert_eq!(out, [0.3, 0.0, 0.1, 0.6, 0.0, 0.4]);
     }
 }

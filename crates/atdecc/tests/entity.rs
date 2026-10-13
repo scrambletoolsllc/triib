@@ -731,3 +731,79 @@ fn a_listener_does_not_answer_its_own_probe() {
         .collect();
     assert!(answers.is_empty(), "{answers:?}");
 }
+
+/// A listener's input port has dynamic mappings, one to one at first: a
+/// controller reads them, moves a channel to another cluster, and is
+/// refused one that maps a cluster twice.
+#[test]
+fn a_listener_maps_its_inputs_dynamically() {
+    use atdecc::aem::AudioMapping;
+
+    let mut network = Network::new();
+    network.controller.discover(None);
+    network.run(3000);
+    let port = (DescriptorType::STREAM_PORT_INPUT, 0);
+    let read = |network: &Network| -> Vec<(u16, u16)> {
+        network
+            .controller
+            .model(LISTENER)
+            .and_then(|model| model.dynamic_mappings(port.0, port.1))
+            .map(|mappings| {
+                mappings
+                    .map(|mapping| (mapping.stream_channel, mapping.cluster_offset))
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    assert_eq!(
+        read(&network),
+        (0..8).map(|channel| (channel, channel)).collect::<Vec<_>>()
+    );
+    let mapping = |stream_channel, cluster_offset| AudioMapping {
+        stream_index: 0,
+        stream_channel,
+        cluster_offset,
+        cluster_channel: 0,
+    };
+    // Channel 0 to cluster 7, which first lets go of channel 7.
+    let now = network.now;
+    network
+        .controller
+        .remove_audio_mappings(now, LISTENER, port, &[mapping(7, 7)]);
+    network.run(500);
+    let now = network.now;
+    let added = network
+        .controller
+        .add_audio_mappings(now, LISTENER, port, &[mapping(0, 7)]);
+    network.run(500);
+    assert!(
+        network
+            .controller_events
+            .contains(&Event::CommandFinished(added, Outcome::Done))
+    );
+    let mut expected: Vec<(u16, u16)> = (0..7).map(|channel| (channel, channel)).collect();
+    expected.push((0, 7));
+    expected.sort_by_key(|&(channel, cluster)| (channel, cluster));
+    let mut got = read(&network);
+    got.sort_by_key(|&(channel, cluster)| (channel, cluster));
+    assert_eq!(got, expected);
+    assert_eq!(
+        network
+            .entity_events
+            .iter()
+            .filter(|event| matches!(event, EntityEvent::MappingsChanged { index: 0 }))
+            .count(),
+        2
+    );
+    assert_eq!(network.listener.input_mappings(0).map(<[_]>::len), Some(8));
+    // Cluster 1 takes channel 1 already.
+    let now = network.now;
+    let refused = network
+        .controller
+        .add_audio_mappings(now, LISTENER, port, &[mapping(2, 1)]);
+    network.run(500);
+    assert!(network.controller_events.iter().any(|event| matches!(
+        event,
+        Event::CommandFinished(command, Outcome::Refused(_)) if *command == refused
+    )));
+}

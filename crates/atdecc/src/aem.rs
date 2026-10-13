@@ -392,7 +392,7 @@ impl AudioMapping {
         }
     }
 
-    fn encode(&self, out: &mut [u8]) {
+    pub(crate) fn encode(&self, out: &mut [u8]) {
         out[0..2].copy_from_slice(&self.stream_index.to_be_bytes());
         out[2..4].copy_from_slice(&self.stream_channel.to_be_bytes());
         out[4..6].copy_from_slice(&self.cluster_offset.to_be_bytes());

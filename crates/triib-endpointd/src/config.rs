@@ -114,6 +114,12 @@ pub struct StreamConfig {
     /// `bound` keeps it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bound: Option<String>,
+    /// For an input, the stream channel each of its audio's channels
+    /// plays, as controllers mapped them: a number from 1 for each audio
+    /// channel in turn, or - for silence, such as "1 2 2 -"; one to one
+    /// when left out.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mappings: Option<String>,
     /// An output's SR class, `"A"` when left out.
     #[serde(default, skip_serializing_if = "SrClass::is_a")]
     pub class: SrClass,
@@ -137,6 +143,7 @@ impl StreamConfig {
             format: None,
             transit: None,
             bound: None,
+            mappings: None,
             class: SrClass::A,
         }
     }
@@ -160,6 +167,37 @@ impl StreamConfig {
         parse_binding(self.bound.as_deref()?)
     }
 
+    /// An input's mappings, as `(stream channel, audio channel)` from 0.
+    pub fn mapping_pairs(&self) -> Option<Vec<(u16, u16)>> {
+        let text = self.mappings.as_deref()?;
+        Some(
+            text.split_whitespace()
+                .enumerate()
+                .filter_map(|(audio, stream)| {
+                    let stream: u16 = stream.parse().ok()?;
+                    Some((stream.checked_sub(1)?, audio as u16))
+                })
+                .collect(),
+        )
+    }
+}
+
+/// Mappings as `mappings` keeps them, for `channels` audio channels.
+pub fn mappings_text(pairs: impl IntoIterator<Item = (u16, u16)>, channels: u16) -> String {
+    let mut played = vec![None; usize::from(channels)];
+    for (stream, audio) in pairs {
+        if let Some(slot) = played.get_mut(usize::from(audio)) {
+            *slot = Some(stream);
+        }
+    }
+    played
+        .iter()
+        .map(|stream| stream.map_or_else(|| "-".to_owned(), |stream| (stream + 1).to_string()))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+impl StreamConfig {
     /// Whether its audio is its own virtual device; never a media
     /// clock's.
     pub fn is_virtual(&self) -> bool {

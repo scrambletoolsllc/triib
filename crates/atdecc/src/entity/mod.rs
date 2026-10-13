@@ -24,7 +24,7 @@ use crate::aecp::{
     AecpHeader, AecpMessageType, AemCommandType, AemPdu, AemStatus, VendorUniquePdu,
 };
 use crate::aem::NAME_LENGTH;
-use crate::aem::{AvbInfoFlags, StreamInfoFlags};
+use crate::aem::{AudioMapping, AvbInfoFlags, StreamInfoFlags};
 use crate::avtp::{read_u16, read_u32, read_u64};
 use crate::descriptor::DescriptorType;
 use crate::id::{ClockIdentity, EntityId, StreamId};
@@ -152,6 +152,11 @@ pub enum EntityEvent {
     },
     /// A name changed, to be kept.
     NameChanged,
+    /// A controller changed which of an input's stream channels its
+    /// clusters take (ADD_AUDIO_MAPPINGS, REMOVE_AUDIO_MAPPINGS).
+    MappingsChanged {
+        index: u16,
+    },
 }
 
 /// Where a bound input's probe stands (Milan 1.3, 5.5.3.2).
@@ -243,6 +248,8 @@ pub struct Entity {
     inputs: Vec<Input>,
     /// The clock domain's counters: how often it locked and unlocked.
     clock_counters: [u32; 32],
+    /// Each stream port input's dynamic mappings, by port.
+    input_mappings: Vec<Vec<AudioMapping>>,
     known: BTreeMap<EntityId, Known>,
     random: Random,
     outgoing: VecDeque<(MacAddress, Vec<u8>)>,
@@ -281,8 +288,17 @@ impl Entity {
                 counters: [0; 32],
             })
             .collect();
+        // Each input's channels to its clusters one to one, until a
+        // controller maps them otherwise.
+        let input_mappings = model
+            .ports()
+            .into_iter()
+            .filter(|port| port.input)
+            .map(|port| one_to_one(port.stream, port.channels))
+            .collect();
         Entity {
             random: Random(model.entity_id.0 | 1),
+            input_mappings,
             model,
             available_index: 0,
             advertise_at: None,
@@ -338,6 +354,70 @@ impl Entity {
                 nanoseconds => nanoseconds,
             };
         }
+    }
+
+    /// The mappings of stream input `index`'s port: which of its channels
+    /// each of its clusters takes. None for an input without a port, as a
+    /// media clock's.
+    pub fn input_mappings(&self, index: u16) -> Option<&[AudioMapping]> {
+        let port = self.input_port(index)?;
+        self.input_mappings
+            .get(usize::from(port))
+            .map(Vec::as_slice)
+    }
+
+    /// Whether stream input `index`'s mappings are one to one, as they
+    /// start.
+    pub fn input_mappings_are_default(&self, index: u16) -> bool {
+        let Some(port) = self
+            .model
+            .ports()
+            .into_iter()
+            .find(|port| port.input && port.stream == index)
+        else {
+            return true;
+        };
+        self.input_mappings(index)
+            .is_none_or(|mappings| mappings == one_to_one(port.stream, port.channels))
+    }
+
+    /// Takes the mappings a controller gave stream input `index` before,
+    /// as `(stream channel, cluster)`, those that fit its channels.
+    pub fn restore_input_mappings(&mut self, index: u16, mappings: &[(u16, u16)]) {
+        let Some(port) = self
+            .model
+            .ports()
+            .into_iter()
+            .find(|port| port.input && port.stream == index)
+        else {
+            return;
+        };
+        let mut kept: Vec<AudioMapping> = Vec::new();
+        for &(stream_channel, cluster) in mappings {
+            let mapping = AudioMapping {
+                stream_index: index,
+                stream_channel,
+                cluster_offset: cluster,
+                cluster_channel: 0,
+            };
+            if stream_channel < port.channels
+                && cluster < port.channels
+                && !kept.iter().any(|other| other.cluster_offset == cluster)
+            {
+                kept.push(mapping);
+            }
+        }
+        kept.sort();
+        self.input_mappings[usize::from(port.index)] = kept;
+    }
+
+    /// The stream port input of stream input `index`.
+    fn input_port(&self, index: u16) -> Option<u16> {
+        self.model
+            .ports()
+            .into_iter()
+            .find(|port| port.input && port.stream == index)
+            .map(|port| port.index)
     }
 
     pub fn input_binding(&self, index: u16) -> Option<InputBinding> {
@@ -1045,6 +1125,8 @@ impl Entity {
                 | AemCommandType::SET_CLOCK_SOURCE
                 | AemCommandType::SET_CONTROL
                 | AemCommandType::SET_MAX_TRANSIT_TIME
+                | AemCommandType::ADD_AUDIO_MAPPINGS
+                | AemCommandType::REMOVE_AUDIO_MAPPINGS
         );
         if changes && !self.may_change(controller) {
             let payload = Vec::from(command.payload);
@@ -1291,8 +1373,112 @@ impl Entity {
                 answer.extend_from_slice(&u64::from(output.max_transit_time).to_be_bytes());
                 (AemStatus::SUCCESS, answer, true)
             }
+            AemCommandType::GET_AUDIO_MAP => self.audio_map(payload),
+            AemCommandType::ADD_AUDIO_MAPPINGS | AemCommandType::REMOVE_AUDIO_MAPPINGS => {
+                self.change_mappings(command.command_type, payload)
+            }
             _ => (AemStatus::NOT_IMPLEMENTED, echo(), false),
         }
+    }
+
+    /// GET_AUDIO_MAP: a stream port input's dynamic mappings, in parts of
+    /// as many as fit one response; a port with a static map has none to
+    /// give, its AUDIO_MAP descriptor saying them.
+    fn audio_map(&self, payload: &[u8]) -> (AemStatus, Vec<u8>, bool) {
+        let echo = Vec::from(payload);
+        if payload.len() < 8 {
+            return (AemStatus::BAD_ARGUMENTS, echo, false);
+        }
+        let descriptor_type = DescriptorType(read_u16(payload, 0));
+        let index = read_u16(payload, 2);
+        let part = read_u16(payload, 4);
+        let mappings = match descriptor_type {
+            DescriptorType::STREAM_PORT_INPUT => self.input_mappings.get(usize::from(index)),
+            DescriptorType::STREAM_PORT_OUTPUT => return (AemStatus::NOT_SUPPORTED, echo, false),
+            _ => None,
+        };
+        let Some(mappings) = mappings else {
+            return (AemStatus::NO_SUCH_DESCRIPTOR, echo, false);
+        };
+        const PER_PART: usize = (crate::aem::MAX_AEM_PAYLOAD - 12) / 8;
+        let parts = mappings.len().div_ceil(PER_PART).max(1);
+        if usize::from(part) >= parts {
+            return (AemStatus::BAD_ARGUMENTS, echo, false);
+        }
+        let these: Vec<AudioMapping> = mappings
+            .iter()
+            .skip(usize::from(part) * PER_PART)
+            .take(PER_PART)
+            .copied()
+            .collect();
+        let mut answer = Vec::from(&payload[..6]);
+        answer.extend_from_slice(&(parts as u16).to_be_bytes());
+        answer.extend_from_slice(&(these.len() as u16).to_be_bytes());
+        answer.extend_from_slice(&[0, 0]);
+        for mapping in these {
+            let mut octets = [0; 8];
+            mapping.encode(&mut octets);
+            answer.extend_from_slice(&octets);
+        }
+        (AemStatus::SUCCESS, answer, false)
+    }
+
+    /// ADD_AUDIO_MAPPINGS and REMOVE_AUDIO_MAPPINGS on a stream port
+    /// input: each mapping its own stream's channel to one of its
+    /// clusters, a cluster taking one channel at most; all of them or
+    /// none.
+    fn change_mappings(
+        &mut self,
+        command_type: AemCommandType,
+        payload: &[u8],
+    ) -> (AemStatus, Vec<u8>, bool) {
+        let echo = Vec::from(payload);
+        let Ok(changed) = crate::aem::AudioMappings::decode(payload) else {
+            return (AemStatus::BAD_ARGUMENTS, echo, false);
+        };
+        if changed.descriptor_type == DescriptorType::STREAM_PORT_OUTPUT {
+            return (AemStatus::NOT_SUPPORTED, echo, false);
+        }
+        let port = self
+            .model
+            .ports()
+            .into_iter()
+            .find(|port| port.input && port.index == changed.index);
+        let (Some(port), DescriptorType::STREAM_PORT_INPUT) = (port, changed.descriptor_type)
+        else {
+            return (AemStatus::NO_SUCH_DESCRIPTOR, echo, false);
+        };
+        let add = command_type == AemCommandType::ADD_AUDIO_MAPPINGS;
+        let mut mappings = self.input_mappings[usize::from(port.index)].clone();
+        for mapping in changed.mappings() {
+            let fits = mapping.stream_index == port.stream
+                && mapping.stream_channel < port.channels
+                && mapping.cluster_offset < port.channels
+                && mapping.cluster_channel == 0;
+            if !fits {
+                return (AemStatus::BAD_ARGUMENTS, echo, false);
+            }
+            if add {
+                let taken = mappings.iter().any(|other| {
+                    other.cluster_offset == mapping.cluster_offset && *other != mapping
+                });
+                if taken {
+                    return (AemStatus::BAD_ARGUMENTS, echo, false);
+                }
+                if !mappings.contains(&mapping) {
+                    mappings.push(mapping);
+                }
+            } else {
+                mappings.retain(|other| *other != mapping);
+            }
+        }
+        mappings.sort();
+        if mappings != self.input_mappings[usize::from(port.index)] {
+            self.input_mappings[usize::from(port.index)] = mappings;
+            self.events
+                .push_back(EntityEvent::MappingsChanged { index: port.stream });
+        }
+        (AemStatus::SUCCESS, echo, true)
     }
 
     fn stream_format(
@@ -1656,4 +1842,16 @@ fn is_talker_command(message: AcmpMessageType) -> bool {
             | AcmpMessageType::GET_TX_STATE_COMMAND
             | AcmpMessageType::GET_TX_CONNECTION_COMMAND
     )
+}
+
+/// Stream `stream`'s `channels` channels to its clusters one to one.
+fn one_to_one(stream: u16, channels: u16) -> Vec<AudioMapping> {
+    (0..channels)
+        .map(|channel| AudioMapping {
+            stream_index: stream,
+            stream_channel: channel,
+            cluster_offset: channel,
+            cluster_channel: 0,
+        })
+        .collect()
 }
