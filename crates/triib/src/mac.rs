@@ -4,7 +4,9 @@
 
 #![allow(unsafe_code)]
 
+use std::ffi::c_void;
 use std::ptr::NonNull;
+use std::sync::Arc;
 
 use atdecc::EntityId;
 use objc2_core_audio::{
@@ -14,7 +16,9 @@ use objc2_core_audio::{
     kAudioObjectPropertyElementMain, kAudioObjectPropertyName, kAudioObjectPropertyScopeGlobal,
     kAudioObjectPropertyScopeInput, kAudioObjectPropertyScopeOutput, kAudioObjectSystemObject,
 };
+use objc2_core_audio_types::{AudioBuffer, AudioBufferList, AudioTimeStamp};
 use objc2_core_foundation::{CFRetained, CFString};
+use triib_stream::audio::{FrameBuffer, SharedBuffer};
 
 fn address(selector: AudioObjectPropertySelector) -> AudioObjectPropertyAddress {
     AudioObjectPropertyAddress {
@@ -164,6 +168,26 @@ fn stream_channels_of(device: AudioObjectID, input: bool) -> Vec<u16> {
         .collect()
 }
 
+/// A device's nominal sample rate.
+fn rate_of(device: AudioObjectID) -> Option<f64> {
+    use objc2_core_audio::kAudioDevicePropertyNominalSampleRate;
+    let mut address = address(kAudioDevicePropertyNominalSampleRate);
+    let mut rate = 0f64;
+    let mut size = std::mem::size_of::<f64>() as u32;
+    // SAFETY: room for the one Float64 the property gives.
+    let status = unsafe {
+        AudioObjectGetPropertyData(
+            device,
+            NonNull::from(&mut address),
+            0,
+            std::ptr::null(),
+            NonNull::from(&mut size),
+            NonNull::from(&mut rate).cast(),
+        )
+    };
+    (status == 0 && rate > 0.0).then_some(rate)
+}
+
 /// The channels of each of the output streams of the device with `name`,
 /// whose audio a [`SentTap`] can hear.
 pub fn output_streams(name: &str) -> Vec<u16> {
@@ -173,16 +197,87 @@ pub fn output_streams(name: &str) -> Vec<u16> {
 /// What every app sends to one output stream of a device, heard through a
 /// Core Audio process tap, and delivered as the input of a private
 /// aggregate device holding the tap alone, as Apple's own example has it:
-/// its inputs are the tap's channels. Both go when it is dropped.
+/// its inputs are the tap's channels. The aggregate is read by an I/O
+/// callback of its own, as audio libraries do not list a private device.
+/// All of it goes when it is dropped.
 pub struct SentTap {
     tap: AudioObjectID,
     aggregate: AudioObjectID,
-    /// The aggregate device's name, to open it by.
-    pub name: String,
-    /// The aggregate's input channels before the tap's: none.
-    pub offset: u16,
     /// The tap's channels: the stream's.
     pub channels: u16,
+    /// The callback reading the aggregate, once started, and what it
+    /// fills.
+    reading: Option<(objc2_core_audio::AudioDeviceIOProcID, NonNull<Reader>)>,
+}
+
+/// What the callback fills, and with which of the tap's channels.
+struct Reader {
+    buffer: Arc<FrameBuffer>,
+    first: usize,
+    wanted: usize,
+    /// The frames of one callback, kept so as to allocate once.
+    frames: Vec<f32>,
+}
+
+/// Copies channels `first..first + wanted` of the aggregate's input,
+/// whatever its buffers, into the reader's buffer as interleaved frames.
+unsafe extern "C-unwind" fn deliver(
+    _device: AudioObjectID,
+    _now: NonNull<AudioTimeStamp>,
+    input: NonNull<AudioBufferList>,
+    _input_time: NonNull<AudioTimeStamp>,
+    _output: NonNull<AudioBufferList>,
+    _output_time: NonNull<AudioTimeStamp>,
+    reader: *mut c_void,
+) -> i32 {
+    // SAFETY: the reader the callback was made with, which only it
+    // touches until it is stopped.
+    let reader = unsafe { &mut *reader.cast::<Reader>() };
+    // SAFETY: an AudioBufferList holds mNumberBuffers buffers from
+    // mBuffers on, however many its declaration shows.
+    let buffers: &[AudioBuffer] = unsafe {
+        let list = input.as_ptr();
+        std::slice::from_raw_parts(
+            std::ptr::addr_of!((*list).mBuffers).cast::<AudioBuffer>(),
+            (*list).mNumberBuffers as usize,
+        )
+    };
+    let frames = buffers
+        .iter()
+        .filter(|buffer| buffer.mNumberChannels > 0 && !buffer.mData.is_null())
+        .map(|buffer| buffer.mDataByteSize as usize / 4 / buffer.mNumberChannels as usize)
+        .min()
+        .unwrap_or(0);
+    if frames == 0 {
+        return 0;
+    }
+    let wanted = reader.wanted;
+    reader.frames.clear();
+    reader.frames.resize(frames * wanted, 0.0);
+    let mut channel = 0;
+    for buffer in buffers {
+        let count = buffer.mNumberChannels as usize;
+        if !buffer.mData.is_null() {
+            // SAFETY: a buffer of at least `frames` frames of `count`
+            // interleaved 32-bit floats, Core Audio's own format.
+            let samples =
+                unsafe { std::slice::from_raw_parts(buffer.mData.cast::<f32>(), frames * count) };
+            for within in 0..count {
+                let Some(slot) = (channel + within)
+                    .checked_sub(reader.first)
+                    .filter(|slot| *slot < wanted)
+                else {
+                    continue;
+                };
+                for frame in 0..frames {
+                    reader.frames[frame * wanted + slot] = samples[frame * count + within];
+                }
+            }
+        }
+        channel += count;
+    }
+    reader.buffer.device_push(&reader.frames);
+    0
 }
 
 impl SentTap {
@@ -276,9 +371,8 @@ impl SentTap {
         let mut made = Self {
             tap,
             aggregate,
-            name,
-            offset: 0,
             channels: 0,
+            reading: None,
         };
         let since = std::time::Instant::now();
         while since.elapsed() < std::time::Duration::from_secs(3) {
@@ -290,15 +384,78 @@ impl SentTap {
         }
         Err("the tap brought no channels".to_owned())
     }
+
+    /// Starts reading `channels` of the tap's channels from
+    /// `first_channel` on, into the buffer this returns.
+    pub fn start(&mut self, first_channel: u16, channels: u16) -> Result<SharedBuffer, String> {
+        use objc2_core_audio::{
+            AudioDeviceCreateIOProcID, AudioDeviceDestroyIOProcID, AudioDeviceIOProcID,
+            AudioDeviceStart,
+        };
+        if self.reading.is_some() {
+            return Err("already reading".to_owned());
+        }
+        let rate = rate_of(self.aggregate).ok_or("the tap has no rate")?;
+        // 10 ms kept beyond the device's chunks, as for other inputs.
+        let buffer = Arc::new(FrameBuffer::new(channels, rate as usize / 100));
+        let reader = NonNull::from(Box::leak(Box::new(Reader {
+            buffer: buffer.clone(),
+            first: usize::from(first_channel),
+            wanted: usize::from(channels),
+            frames: Vec::with_capacity(8192 * usize::from(channels)),
+        })));
+        let mut proc: AudioDeviceIOProcID = None;
+        // SAFETY: a callback of the declared type, the reader it is
+        // given, kept until the callback is destroyed, and an ID to
+        // write to.
+        let status = unsafe {
+            AudioDeviceCreateIOProcID(
+                self.aggregate,
+                Some(deliver),
+                reader.as_ptr().cast(),
+                NonNull::from(&mut proc),
+            )
+        };
+        if status != 0 {
+            // SAFETY: the reader leaked above, which nothing holds.
+            drop(unsafe { Box::from_raw(reader.as_ptr()) });
+            return Err(format!("Core Audio refused to read the tap ({status})"));
+        }
+        // SAFETY: the callback made above.
+        let status = unsafe { AudioDeviceStart(self.aggregate, proc) };
+        if status != 0 {
+            // SAFETY: the callback made above, never started, and the
+            // reader only it held.
+            unsafe {
+                AudioDeviceDestroyIOProcID(self.aggregate, proc);
+                drop(Box::from_raw(reader.as_ptr()));
+            }
+            return Err(format!("Core Audio would not start the tap ({status})"));
+        }
+        self.reading = Some((proc, reader));
+        Ok(SharedBuffer {
+            buffer,
+            channels,
+            rate: rate.round() as u32,
+        })
+    }
 }
 
 impl Drop for SentTap {
     fn drop(&mut self) {
         use objc2_core_audio::{
-            AudioHardwareDestroyAggregateDevice, AudioHardwareDestroyProcessTap,
+            AudioDeviceDestroyIOProcID, AudioDeviceStop, AudioHardwareDestroyAggregateDevice,
+            AudioHardwareDestroyProcessTap,
         };
-        // SAFETY: the aggregate device and the tap this made.
+        // SAFETY: the callback, the aggregate device and the tap this
+        // made; once the callback is stopped and destroyed, nothing holds
+        // its reader.
         unsafe {
+            if let Some((proc, reader)) = self.reading.take() {
+                AudioDeviceStop(self.aggregate, proc);
+                AudioDeviceDestroyIOProcID(self.aggregate, proc);
+                drop(Box::from_raw(reader.as_ptr()));
+            }
             AudioHardwareDestroyAggregateDevice(self.aggregate);
             AudioHardwareDestroyProcessTap(self.tap);
         }

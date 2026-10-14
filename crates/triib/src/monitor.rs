@@ -12,6 +12,8 @@ use std::time::{Duration, Instant};
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+#[cfg(target_os = "macos")]
+use triib_stream::audio::SharedBuffer;
 use triib_stream::audio::{Input, Output, Sink, Source};
 
 /// The flag that runs this binary as the helper.
@@ -153,43 +155,28 @@ pub fn serve(arguments: &[String]) -> i32 {
         std::process::exit(0);
     });
     loop {
-        // What it sends is heard through a tap, whose aggregate device
-        // delivers it as input, after the device's own inputs.
+        // What it sends is heard through a tap, read into a buffer this
+        // takes from as from any other input.
         #[cfg(target_os = "macos")]
-        let tap = match listen.side {
-            Side::Received => None,
-            Side::Sent => match crate::mac::SentTap::open(
-                listen.input.as_deref().unwrap_or_default(),
-                listen.stream,
-            ) {
-                Ok(tap) if listen.first_channel + listen.channels > tap.channels => {
-                    report(
-                        State::WaitingForInput(format!(
-                            "output stream {} has {} channels",
-                            listen.stream + 1,
-                            tap.channels
-                        )),
-                        0.0,
-                    );
-                    std::thread::sleep(RETRY);
-                    continue;
+        let mut tap = None;
+        let source = match listen.side {
+            Side::Received => Source::Device {
+                name: listen.input.clone(),
+                first_channel: listen.first_channel,
+            },
+            #[cfg(target_os = "macos")]
+            Side::Sent => match sent(&listen) {
+                Ok((opened, shared)) => {
+                    tap = Some(opened);
+                    Source::Shared(shared)
                 }
-                Ok(tap) => Some(tap),
                 Err(error) => {
                     report(State::WaitingForInput(error), 0.0);
                     std::thread::sleep(RETRY);
                     continue;
                 }
             },
-        };
-        #[cfg(target_os = "macos")]
-        let (name, first_channel) = match &tap {
-            Some(tap) => (Some(tap.name.clone()), tap.offset + listen.first_channel),
-            None => (listen.input.clone(), listen.first_channel),
-        };
-        #[cfg(not(target_os = "macos"))]
-        let (name, first_channel) = match listen.side {
-            Side::Received => (listen.input.clone(), listen.first_channel),
+            #[cfg(not(target_os = "macos"))]
             Side::Sent => {
                 report(
                     State::WaitingForInput("hearing what a device sends takes a Mac".into()),
@@ -198,10 +185,6 @@ pub fn serve(arguments: &[String]) -> i32 {
                 std::thread::sleep(RETRY);
                 continue;
             }
-        };
-        let source = Source::Device {
-            name,
-            first_channel,
         };
         let input = match Input::open(&source, listen.channels, RATE) {
             Ok(input) => input,
@@ -224,7 +207,26 @@ pub fn serve(arguments: &[String]) -> i32 {
             }
         };
         play(&listen, input, &output);
+        #[cfg(target_os = "macos")]
+        drop(tap);
     }
+}
+
+/// The tap on what `listen`'s device sends on its output stream, reading
+/// the channels listened to.
+#[cfg(target_os = "macos")]
+fn sent(listen: &Listen) -> Result<(crate::mac::SentTap, SharedBuffer), String> {
+    let mut tap =
+        crate::mac::SentTap::open(listen.input.as_deref().unwrap_or_default(), listen.stream)?;
+    if listen.first_channel + listen.channels > tap.channels {
+        return Err(format!(
+            "output stream {} has {} channels",
+            listen.stream + 1,
+            tap.channels
+        ));
+    }
+    let shared = tap.start(listen.first_channel, listen.channels)?;
+    Ok((tap, shared))
 }
 
 /// Moves audio from `input` to `output` until the input stalls or either
@@ -263,7 +265,12 @@ fn play(listen: &Listen, mut input: Input, output: &Output) {
             let gone = |name: &Option<String>, names: &[String]| {
                 name.as_ref().is_some_and(|name| !names.contains(name))
             };
-            if stalled || gone(&listen.input, &inputs) {
+            // What a device sends is heard from its outputs.
+            let heard_from = match listen.side {
+                Side::Received => &inputs,
+                Side::Sent => &outputs,
+            };
+            if stalled || gone(&listen.input, heard_from) {
                 report(State::WaitingForInput("stopped".into()), 0.0);
                 return;
             }

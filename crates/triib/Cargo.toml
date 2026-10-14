@@ -43,7 +43,8 @@ rfd = { version = "0.15", default-features = false }
 
 # The Core Audio device macOS makes of the Mac's own AVB entity.
 [target.'cfg(target_os = "macos")'.dependencies]
-objc2-core-audio = { version = "0.3", default-features = false, features = ["std", "AudioHardware", "objc2", "objc2-foundation"] }
+objc2-core-audio = { version = "0.3", default-features = false, features = ["std", "AudioHardware", "objc2", "objc2-core-audio-types", "objc2-foundation"] }
+objc2-core-audio-types = { version = "0.3", default-features = false, features = ["std", "CoreAudioBaseTypes", "objc2"] }
 objc2-core-foundation = { version = "0.3", default-features = false, features = ["std", "CFString", "CFDictionary"] }
 # A tap on what the Mac sends, through an aggregate device around it.
 objc2 = "0.6"
