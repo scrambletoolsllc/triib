@@ -124,3 +124,14 @@ Security. A Developer ID Application certificate, with a Developer ID
 Installer certificate for the package (`productsign`), and notarization
 with `xcrun notarytool submit --wait` and `xcrun stapler staple`, remove
 the warning.
+
+An ad hoc signature also changes with every build, and macOS asks again
+for the microphone and audio recording permissions Listen needs after
+each update. `bundle.sh` signs with the identity named in
+`TRIIB_SIGN_IDENTITY` where it is set, from the keychain in
+`TRIIB_SIGN_KEYCHAIN`, unlocked with `TRIIB_SIGN_KEYCHAIN_PASSWORD`: the
+Developer ID Application identity for a release. For development builds
+a self-signed code signing certificate does, as macOS keeps the
+permissions for every build signed by the same certificate; quit the app
+before rebuilding it, as one that asks while its bundle is rewritten
+loses them.

@@ -21,11 +21,18 @@ prev's look, widgets and window layout through scramble-ui.
   several streams, each with its own virtual audio device (P4); AI
   agents through `triib --mcp`; and on a Mac, the Mac's own entity
   through the AudioVideoBridging framework.
+- Done since 1.0.0, for the next release: on a Mac, the Mac's own AVB
+  entity as this computer's, its configurations picked, and Listen,
+  which plays what it receives or what apps send through it, routed by
+  hand or through `triib --mcp`.
 - Next: P4's rest, whether Windows and then macOS can run talkers and
   listeners of their own, starting with the I210 card for the Windows
   PC.
 - Waiting on others: the linuxptp organization TLV tables, the atlantic
-  driver's time stamps, and native speakers' review of the translations.
+  driver's time stamps, native speakers' review of the translations, and
+  Apple moving the developer account to the organization, for Developer
+  ID signing and notarization of the macOS app, which the next release
+  waits on.
 
 ## Guiding priorities
 
@@ -415,7 +422,23 @@ in the access point's beacons, and streamed unicast on the air.
   it. Its ten configurations, one media clock input and three media
   clock outputs beside 1 to 8 audio streams of 8, 16 or 32 channels, are
   picked with SET_CONFIGURATION, which it refuses while its streams run.
-  Our own entities on macOS, with their own shapes, stay a later
+  A talker outside Milan, it keeps a connection until its listener sends
+  DISCONNECT_TX; GET_TX_CONNECTION lists them, and this computer's
+  listeners let go of theirs.
+- **macOS, Listen:** the Mac's entity's audio played on this computer,
+  in a helper (`triib --monitor`) that the app starts again when it ends
+  or hangs, as a Core Audio call can block for good when the AVB device
+  goes. What it receives is its Core Audio device's input, which takes
+  the microphone permission. What apps send to one of its output streams
+  comes from a Core Audio process tap (macOS 14.2 and later, with the
+  audio recording permission), in a private aggregate device of its own,
+  read by an I/O callback, as audio libraries do not list a private
+  device. The tap's functions are looked up when used and CoreAudio is
+  linked weakly, so triib still starts on older macOS. macOS keeps the
+  permissions for a build signed by the same identity, so development
+  builds are signed with a local certificate, and the app is quit before
+  its bundle is rewritten.
+- Our own entities on macOS, with their own shapes, stay a later
   investigation.
 
 #### This computer's entities with several streams

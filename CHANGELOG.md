@@ -7,7 +7,9 @@ All notable changes to triib. Versions follow
 
 The Streams tab, max transit times, media clock streams on this
 computer's entities with one chosen as their clock source, and this
-computer's talkers and listeners folded into its entities.
+computer's talkers and listeners folded into its entities. On a Mac, the
+Mac's own AVB entity as this computer's, with its configurations, and
+Listen controls for what it receives and sends.
 
 ### Controller
 
@@ -39,7 +41,10 @@ computer's talkers and listeners folded into its entities.
   ends or hangs, which waits for a device that is not there, as the
   Mac's is not while none of its streams is connected; the choice is
   kept. Agents set it through the `set_audio_monitor`, `audio_monitor`
-  and `list_audio_devices` tools.
+  and `list_audio_devices` tools. macOS asks once for the microphone,
+  to hear what the Mac receives, and for audio recording, to hear what
+  it sends. Before macOS 14.2, which has no taps, the controls offer
+  what the Mac receives alone and say why.
 - On a Mac, the Mac's own AVB entity shows as this computer's, with its
   Core Audio device, which macOS makes only while one of its streams is
   connected, and a button that opens Audio MIDI Setup; where AVB is
@@ -115,6 +120,15 @@ computer's talkers and listeners folded into its entities.
   daemon starts again on a file named there, one not there yet starting
   as a copy of the one in use.
 
+### Packages
+
+- The macOS app says why it asks for the microphone and for audio
+  recording, which Listen needs. `packaging/macos/bundle.sh` signs with
+  the identity named in `TRIIB_SIGN_IDENTITY`, from the keychain in
+  `TRIIB_SIGN_KEYCHAIN`, rather than ad hoc where it is set: an ad hoc
+  signature changes with every build, and macOS then asks for those
+  permissions again.
+
 ### Fixed
 
 - An entity advertising a new gPTP grandmaster or domain has its gPTP
@@ -141,6 +155,10 @@ computer's talkers and listeners folded into its entities.
 - On Linux, the links triib opens open: the desktop portal refused
   them, as it does any app holding a capability, as triib holds
   `cap_net_raw`. triib now asks it from a helper without one.
+- A Mac's streams no longer read as failing their reservation, "for an
+  unknown reason". macOS marks a stream's MSRP failure fields valid
+  while they hold no failure, with failure code 0, and triib took the
+  mark alone for a failure; a failure now needs a failure code.
 
 ## [1.0.0] - 2026-10-12
 
