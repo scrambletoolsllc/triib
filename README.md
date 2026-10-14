@@ -163,7 +163,9 @@ claude mcp add triib -- triib --mcp
 The tools read what triib knows (its status, the entities, an entity's
 streams, formats and clocks, the connections) and change what a click
 would: connecting and disconnecting streams, setting a stream's format, a
-sampling rate or a clock source, renaming and identifying. A change
+sampling rate or a clock source, renaming and identifying, and routing an
+audio input on this computer to an output with the audio monitor, as the
+Mac's own AVB entity's Listen controls do. A change
 answers once the device has, with what it said. The first time an agent
 connects, triib asks whether to let it in; Settings lists the agents
 allowed and has a switch to turn outside control off.

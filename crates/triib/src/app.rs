@@ -103,6 +103,9 @@ pub struct Triib {
     /// Entities that took another configuration and are being read again
     /// in it, with the one they took.
     pub reconfiguring: BTreeMap<EntityId, u16>,
+    /// The listening helper while listening, and what it last said.
+    monitor: Option<crate::monitor::Supervisor>,
+    pub monitor_status: crate::monitor::Status,
     /// The interface another user's or root's triib-endpointd holds.
     pub endpoints_elsewhere: Option<String>,
     /// The audio devices' names: inputs, then outputs.
@@ -187,6 +190,8 @@ pub enum Message {
     HostEntitiesOnlyToggled,
     /// Open macOS's Audio MIDI Setup, which turns AVB on and off.
     OpenAudioMidiSetup,
+    /// Listen to an input through an output, or stop.
+    Listen(crate::monitor::Listen),
     SearchChanged(String),
     EntitySelected(EntityId),
     /// A press on a view's empty space: nothing selected.
@@ -359,6 +364,8 @@ impl Triib {
             mac_audio_device: None,
             mac_audio_checked: None,
             reconfiguring: BTreeMap::new(),
+            monitor: None,
+            monitor_status: crate::monitor::Status::off(),
             endpoints_elsewhere: None,
             audio_devices: (Vec::new(), Vec::new()),
             network_focus: None,
@@ -425,6 +432,8 @@ impl Triib {
             mac_audio_device: None,
             mac_audio_checked: None,
             reconfiguring: BTreeMap::new(),
+            monitor: None,
+            monitor_status: crate::monitor::Status::off(),
             endpoints_elsewhere: None,
             audio_devices: (Vec::new(), Vec::new()),
             network_focus: None,
@@ -455,6 +464,7 @@ impl Triib {
         triib.apply_motion();
         triib.apply_input_direction();
         triib.start_network(false);
+        triib.start_listening();
         let system = iced::system::theme().map(Message::SystemTheme);
         // The portal's own answer, in case it came after iced stopped
         // waiting for it.
@@ -506,6 +516,34 @@ impl Triib {
                     && (crate::describe::is_talker(&entity.adp)
                         || crate::describe::is_listener(&entity.adp))
             })
+    }
+
+    /// Listens as `listen` says, or stops, keeping it in the settings.
+    pub fn set_listen(&mut self, listen: crate::monitor::Listen) {
+        let listen = listen.bounded();
+        self.settings.listen = listen.clone();
+        self.save_settings();
+        self.start_listening();
+    }
+
+    /// Starts the listening helper the settings ask for, stopping one
+    /// running before.
+    fn start_listening(&mut self) {
+        self.monitor = None;
+        let listen = self.settings.listen.clone();
+        self.monitor_status = if listen.enabled {
+            crate::monitor::Status {
+                state: crate::monitor::State::Starting,
+                peak: 0.0,
+            }
+        } else {
+            crate::monitor::Status::off()
+        };
+        if listen.enabled && !cfg!(test) {
+            self.monitor = Some(crate::monitor::Supervisor::start(listen, |status| {
+                crate::post(External::Monitor(status));
+            }));
+        }
     }
 
     /// Asks macOS again whether it runs AVB on the interface.
@@ -1037,6 +1075,12 @@ impl Triib {
             Message::External(External::Interfaces(interfaces)) => {
                 self.interfaces = interfaces;
                 self.refresh_avb();
+            }
+            Message::Listen(listen) => self.set_listen(listen),
+            Message::External(External::Monitor(status)) => {
+                if self.monitor.is_some() {
+                    self.monitor_status = status;
+                }
             }
             Message::OpenAudioMidiSetup => {
                 let _ = std::process::Command::new("open")

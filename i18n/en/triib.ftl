@@ -1029,3 +1029,25 @@ mac-entity-note = macOS runs this entity. While one of its streams is connected,
 mac-open-audio-midi-setup = Open Audio MIDI Setup
 # $interface is a network interface, such as en0.
 mac-avb-off = AVB is off on { $interface }, so this Mac has no AVB entity of its own. Turn it on in Audio MIDI Setup's Network Device Browser.
+
+## Listening on this computer to the Mac's own entity
+
+listen-section = Listen
+listen-start = Listen
+listen-stop = Stop listening
+listen-channels = Channels
+listen-channel = Channel { $number }
+# Two channels listened to as a pair, such as Channels 1–2.
+listen-channel-pair = Channels { $first }–{ $last }
+listen-output = Output
+listen-default-output = Default output
+listen-gain = Gain
+# $db is signed, such as +6 or -12.
+listen-gain-db = { $db } dB
+listen-starting = Starting…
+# $device is an audio device, such as Mac mini:Ethernet.
+listen-waiting-input = Waiting for { $device }, which macOS makes while one of the entity's streams is connected.
+listen-waiting-output = Waiting for { $device }.
+# $db is the loudest level in the last second, such as -12.
+listen-playing = Playing, peaking at { $db } dB
+listen-playing-silent = Playing, silent

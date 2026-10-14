@@ -291,6 +291,23 @@ struct Rename {
     name: String,
 }
 
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct SetMonitor {
+    /// Listening, or not.
+    enabled: Option<bool>,
+    /// The audio input, by name, as list_audio_devices lists them.
+    input: Option<String>,
+    /// The input's first channel listened to, from 0.
+    first_channel: Option<u16>,
+    /// Channels listened to: 1, played on both sides, or 2.
+    channels: Option<u16>,
+    /// The audio output, by name, or "default" for the default output.
+    output: Option<String>,
+    /// Gain in decibels, from -60 to 24.
+    gain_db: Option<f32>,
+}
+
 /// Every tool, in the order agents see them.
 static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
     vec![
@@ -528,8 +545,90 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
                 Err(error) => reply(&answer, Err(error)),
             },
         ),
+        tool(
+            "list_audio_devices",
+            "List audio devices",
+            Kind::Read,
+            "Lists this computer's audio inputs and outputs by name, as the audio monitor \
+             takes them, and on a Mac the Core Audio device macOS makes of its own AVB \
+             entity, which is there only while one of that entity's streams is connected.",
+            |app, _: Nothing, answer| {
+                reply(
+                    &answer,
+                    Ok(Output::Json(json!({
+                        "inputs": app.audio_devices.0,
+                        "outputs": app.audio_devices.1,
+                        "this_mac_avb_device": app.mac_audio_device,
+                    }))),
+                )
+            },
+        ),
+        tool(
+            "audio_monitor",
+            "Audio monitor",
+            Kind::Read,
+            "Says what this computer listens to through the audio monitor: whether it is \
+             on, the input and its channels, the output and the gain, and what the monitor \
+             is doing: starting, waiting for the input or the output to be there, or \
+             playing, with the loudest level in the last second.",
+            |app, _: Nothing, answer| reply(&answer, Ok(Output::Json(monitor(app)))),
+        ),
+        tool(
+            "set_audio_monitor",
+            "Set the audio monitor",
+            Kind::Change,
+            "Routes an audio input on this computer to an audio output, as the Listen \
+             controls do: plays one channel on both sides, or a pair, with a gain. What is \
+             left out stays as it was; on a Mac the input defaults to its own AVB entity's \
+             device. The monitor waits for a device that is not there and plays once it \
+             is, and starts again by itself when it stops; the setting is kept across \
+             restarts. Answers with the new settings and state.",
+            |app, input: SetMonitor, answer| {
+                let mut listen = app.settings.listen.clone();
+                if let Some(enabled) = input.enabled {
+                    listen.enabled = enabled;
+                }
+                if let Some(name) = input.input {
+                    listen.input = Some(name);
+                }
+                if listen.input.is_none() {
+                    listen.input = app.mac_audio_device.clone();
+                }
+                if let Some(first) = input.first_channel {
+                    listen.first_channel = first;
+                }
+                if let Some(channels) = input.channels {
+                    listen.channels = channels;
+                }
+                if let Some(output) = input.output {
+                    listen.output = (!output.is_empty() && output != "default").then_some(output);
+                }
+                if let Some(gain) = input.gain_db {
+                    listen.gain_db = gain;
+                }
+                if listen.enabled && listen.input.is_none() {
+                    return reply(
+                        &answer,
+                        Err(Error::new(
+                            code::INVALID_PARAMS,
+                            "name the input, as list_audio_devices lists them",
+                        )),
+                    );
+                }
+                app.set_listen(listen);
+                reply(&answer, Ok(Output::Json(monitor(app))))
+            },
+        ),
     ]
 });
+
+/// The audio monitor's settings and what it is doing.
+fn monitor(app: &Triib) -> Value {
+    json!({
+        "listen": app.settings.listen,
+        "status": app.monitor_status,
+    })
+}
 
 /// The tools as MCP lists them.
 pub fn list() -> Value {
@@ -866,6 +965,66 @@ fn connections(app: &Triib) -> Vec<Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The audio monitor is set as the Listen controls would, what is left
+    /// out kept, on a Mac its input the Mac's own AVB device, and read back.
+    #[test]
+    fn the_audio_monitor_is_set_and_read() {
+        use crate::monitor::State;
+
+        let (entities, models) = crate::view::tests::bench();
+        let interface = avb_net::Interface {
+            name: "en0".to_owned(),
+            mac: avb_net::MacAddress([2, 0, 0, 0, 0, 1]),
+            up: true,
+            speed: None,
+            physical: true,
+            wireless: false,
+            hardware_clock: None,
+        };
+        let mut app = Triib::sample(
+            crate::settings::Settings::default(),
+            interface,
+            entities,
+            models,
+        );
+        app.mac_audio_device = Some("Mac mini:Ethernet".to_owned());
+        let run = |app: &mut Triib, name: &str, arguments: Value| -> Value {
+            let (sender, answered) = std::sync::mpsc::channel();
+            let call = Call::local(name, Value::Null, move |result| {
+                let _ = sender.send(result);
+            });
+            let _ = find(name).unwrap().start(app, arguments, Answer(call));
+            answered
+                .recv_timeout(std::time::Duration::from_secs(5))
+                .unwrap()
+                .unwrap()
+        };
+        let set = run(
+            &mut app,
+            "set_audio_monitor",
+            json!({ "enabled": true, "first_channel": 2, "channels": 1, "output": "KM-HIFI" }),
+        );
+        let listen = &app.settings.listen;
+        assert!(listen.enabled);
+        assert_eq!(listen.input.as_deref(), Some("Mac mini:Ethernet"));
+        assert_eq!((listen.first_channel, listen.channels), (2, 1));
+        assert_eq!(listen.output.as_deref(), Some("KM-HIFI"));
+        assert_eq!(app.monitor_status.state, State::Starting);
+        assert_eq!(set["structuredContent"]["listen"]["output"], "KM-HIFI");
+        // Left out, kept; "default" is the default output.
+        run(
+            &mut app,
+            "set_audio_monitor",
+            json!({ "output": "default", "gain_db": -6 }),
+        );
+        assert_eq!(app.settings.listen.output, None);
+        assert_eq!(app.settings.listen.first_channel, 2);
+        assert_eq!(app.settings.listen.gain_db, -6.0);
+        run(&mut app, "set_audio_monitor", json!({ "enabled": false }));
+        let read = run(&mut app, "audio_monitor", json!({}));
+        assert_eq!(read["structuredContent"]["status"]["state"], "off");
+    }
 
     #[test]
     fn names_are_unique_and_snake_case() {

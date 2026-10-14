@@ -22,6 +22,7 @@ mod mac;
 mod mapping_view;
 mod matrix;
 mod mcp;
+mod monitor;
 mod netmap;
 mod network;
 mod presets;
@@ -54,6 +55,8 @@ pub enum External {
     EndpointsElsewhere(Option<String>),
     /// The audio devices' names: inputs, then outputs.
     AudioDevices(Vec<String>, Vec<String>),
+    /// What the listening helper last said.
+    Monitor(monitor::Status),
     /// A request on the control channel, for `triib --mcp` and other
     /// programs.
     Control(control::Call),
@@ -83,6 +86,10 @@ fn main() -> iced::Result {
                     std::process::exit(1);
                 }
             }
+            monitor::FLAG => {
+                let arguments: Vec<String> = std::env::args().skip(2).collect();
+                std::process::exit(monitor::serve(&arguments));
+            }
             #[cfg(target_os = "linux")]
             dialog::CHOOSE_FOLDER | dialog::OPEN_URI => {
                 let arguments: Vec<_> = std::env::args_os().skip(1).collect();
@@ -108,6 +115,8 @@ fn main() -> iced::Result {
     serve_control();
     if host::SUPPORTED {
         watch_endpoints();
+    } else {
+        watch_audio_devices();
     }
 
     iced::application(
@@ -188,6 +197,24 @@ fn watch_interfaces() {
 
 /// Posts what triib-endpointd says whenever it changes, and the audio
 /// devices now and then.
+/// Looks for audio devices every few seconds where the endpoints'
+/// watcher does not, for listening.
+fn watch_audio_devices() {
+    let _ = std::thread::Builder::new()
+        .name("audio devices".into())
+        .spawn(|| {
+            let mut devices = None;
+            loop {
+                let found = triib_stream::audio::device_names();
+                if Some(&found) != devices.as_ref() {
+                    post(External::AudioDevices(found.0.clone(), found.1.clone()));
+                    devices = Some(found);
+                }
+                std::thread::sleep(std::time::Duration::from_secs(5));
+            }
+        });
+}
+
 fn watch_endpoints() {
     let _ = std::thread::Builder::new()
         .name("endpoint-watch".into())

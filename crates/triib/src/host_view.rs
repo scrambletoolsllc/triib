@@ -137,6 +137,209 @@ pub fn mac_sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Messa
     ]
 }
 
+/// The inspector's section that listens to the Mac's own entity on this
+/// computer: a button that starts and stops, the channels and the output,
+/// the gain, and what the listening helper says.
+pub fn listen_sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>> {
+    use crate::monitor::Listen;
+
+    if !triib.is_this_mac(entity_id) {
+        return Vec::new();
+    }
+    let listen = triib.settings.listen.clone();
+    // The Mac's own device, until another input is named.
+    let input = listen
+        .input
+        .clone()
+        .or_else(|| triib.mac_audio_device.clone());
+    let with = {
+        let listen = listen.clone();
+        let input = input.clone();
+        move |change: &dyn Fn(&mut Listen)| {
+            let mut changed = Listen {
+                input: input.clone(),
+                ..listen.clone()
+            };
+            change(&mut changed);
+            Message::Listen(changed)
+        }
+    };
+    let mut items = vec![component::section(fl!("listen-section"))];
+    let toggle = if listen.enabled {
+        button::button(Kind::Filled, fl!("listen-stop"))
+    } else {
+        button::button(Kind::Tonal, fl!("listen-start"))
+    };
+    let toggled = with(&|listen| listen.enabled = !listen.enabled);
+    items.push(
+        toggle
+            .size(Size::ExtraSmall)
+            .on_press_maybe(input.is_some().then_some(toggled))
+            .into(),
+    );
+    if let Some(status) = listen_status(triib) {
+        items.push(
+            styled(status, Type::BodySmall)
+                .style(style::on_surface_variant)
+                .into(),
+        );
+    }
+    // Its audio inputs' channels, as its configuration has them.
+    let count: u16 = triib
+        .models
+        .get(&entity_id)
+        .map(|model| {
+            model
+                .streams(true)
+                .filter(|stream| !stream.is_media_clock())
+                .filter_map(|stream| stream.current_format.channels())
+                .sum()
+        })
+        .filter(|&count| count > 0)
+        .unwrap_or(8);
+    let mut channels: Vec<Choice<(u16, u16)>> = (0..count)
+        .map(|first| Choice {
+            value: (first, 1),
+            label: fl!("listen-channel", number = (first + 1)),
+        })
+        .collect();
+    channels.extend((0..count.saturating_sub(1)).step_by(2).map(|first| Choice {
+        value: (first, 2),
+        label: fl!(
+            "listen-channel-pair",
+            first = (first + 1),
+            last = (first + 2)
+        ),
+    }));
+    let pick_channels = with.clone();
+    items.push(stacked(
+        fl!("listen-channels"),
+        choose(
+            channels,
+            (listen.first_channel, listen.channels),
+            move |(first, count)| {
+                pick_channels(&|listen| {
+                    listen.first_channel = first;
+                    listen.channels = count;
+                })
+            },
+        ),
+    ));
+    let mut outputs = vec![Choice {
+        value: None,
+        label: fl!("listen-default-output"),
+    }];
+    outputs.extend(
+        triib
+            .audio_devices
+            .1
+            .iter()
+            .filter(|name| Some(*name) != input.as_ref() && name.as_str() != "default")
+            .map(|name| Choice {
+                value: Some(name.clone()),
+                label: name.clone(),
+            }),
+    );
+    let pick_output = with.clone();
+    items.push(stacked(
+        fl!("listen-output"),
+        choose(outputs, listen.output.clone(), move |output| {
+            pick_output(&|listen| listen.output = output.clone())
+        }),
+    ));
+    let mut gains: Vec<f32> = vec![-24.0, -18.0, -12.0, -6.0, 0.0, 6.0, 12.0];
+    if !gains.contains(&listen.gain_db) {
+        gains.push(listen.gain_db);
+        gains.sort_by(f32::total_cmp);
+    }
+    let gains = gains
+        .into_iter()
+        .map(|gain| Choice {
+            value: gain,
+            label: fl!("listen-gain-db", db = decibels(gain)),
+        })
+        .collect();
+    items.push(stacked(
+        fl!("listen-gain"),
+        choose(gains, listen.gain_db, move |gain| {
+            with(&|listen| listen.gain_db = gain)
+        }),
+    ));
+    items
+}
+
+/// What the listening helper says, in words; nothing while not listening.
+fn listen_status(triib: &Triib) -> Option<String> {
+    use crate::monitor::State;
+
+    let listen = &triib.settings.listen;
+    let status = &triib.monitor_status;
+    Some(match &status.state {
+        State::Off => return None,
+        State::Starting => fl!("listen-starting"),
+        State::WaitingForInput(_) => fl!(
+            "listen-waiting-input",
+            device = listen.input.clone().unwrap_or_default()
+        ),
+        State::WaitingForOutput(_) => fl!(
+            "listen-waiting-output",
+            device = listen
+                .output
+                .clone()
+                .unwrap_or_else(|| fl!("listen-default-output"))
+        ),
+        State::Playing if status.peak <= 1e-5 => fl!("listen-playing-silent"),
+        State::Playing => fl!(
+            "listen-playing",
+            db = decibels((20.0 * status.peak.log10()).round())
+        ),
+    })
+}
+
+/// Decibels as said, with their sign: "+6", "0", "-12".
+fn decibels(db: f32) -> String {
+    if db > 0.0 {
+        format!("+{db}")
+    } else {
+        format!("{db}")
+    }
+}
+
+/// One choice of a picker: its value and its words.
+#[derive(Debug, Clone)]
+struct Choice<T> {
+    value: T,
+    label: String,
+}
+
+impl<T: PartialEq> PartialEq for Choice<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
+impl<T> fmt::Display for Choice<T> {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.label)
+    }
+}
+
+/// A picker of `choices`, `current` picked.
+fn choose<'a, T: Clone + PartialEq + fmt::Debug + 'a>(
+    choices: Vec<Choice<T>>,
+    current: T,
+    pick: impl Fn(T) -> Message + 'a,
+) -> Element<'a, Message> {
+    let shown = choices
+        .iter()
+        .find(|choice| choice.value == current)
+        .cloned();
+    dropdown::pick(choices, shown, move |choice: Choice<T>| pick(choice.value))
+        .size(button::Size::ExtraSmall)
+        .width(Fill)
+        .into()
+}
+
 /// The channel counts the inspector offers; six samples of each fit in a
 /// frame up to 60.
 const CHANNEL_COUNTS: [u16; 11] = [1, 2, 4, 6, 8, 12, 16, 24, 32, 48, 56];

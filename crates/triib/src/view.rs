@@ -1005,6 +1005,7 @@ fn entity_details<'a>(
         InspectorTab::Entity => {
             let mut items = crate::host_view::sections(triib, entity_id);
             items.extend(crate::host_view::mac_sections(triib, entity_id));
+            items.extend(crate::host_view::listen_sections(triib, entity_id));
             items.extend(entity_sections(triib, entity_id, model));
             items.extend(advertisement_details(entity));
             items

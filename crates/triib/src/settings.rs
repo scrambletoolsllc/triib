@@ -99,6 +99,8 @@ pub struct Settings {
     /// The file this computer's entities are listed in.
     #[serde(with = "home_path")]
     pub entities_file: PathBuf,
+    /// What this computer listens to, and through which output.
+    pub listen: crate::monitor::Listen,
     /// The Entities view lists only this computer's own talkers and
     /// listeners.
     pub host_entities_only: bool,
@@ -144,6 +146,7 @@ impl Default for Settings {
             hide_unclocked_interfaces: false,
             presets_folder: default_presets_folder(),
             entities_file: triib_endpointd::config::path().unwrap_or_default(),
+            listen: crate::monitor::Listen::default(),
             host_entities_only: false,
             view: View::Matrix,
             inspector: false,
