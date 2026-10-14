@@ -1080,11 +1080,14 @@ impl StreamInfo {
         self.flags.contains(StreamInfoFlags::STREAM_ID_VALID)
     }
 
-    /// The talker's MSRP declaration failed somewhere on the path.
+    /// The talker's MSRP declaration failed somewhere on the path. A
+    /// failure code of 0 is none, whatever the flags: macOS marks its
+    /// streams' failure fields valid while they hold no failure.
     pub fn talker_failed(&self) -> bool {
         self.flags
             .contains(StreamInfoFlags::SRP_REGISTRATION_FAILED)
-            || self.flags.contains(StreamInfoFlags::MSRP_FAILURE_VALID)
+            || (self.flags.contains(StreamInfoFlags::MSRP_FAILURE_VALID)
+                && self.msrp_failure_code != 0)
     }
 
     /// For a stream input: hearing the talker's MSRP declaration.
@@ -1182,6 +1185,22 @@ mod tests {
         assert_eq!(info.msrp_accumulated_latency, 500_000);
         assert_eq!(info.stream_vlan_id, 2);
         assert!(StreamInfo::decode(&payload[..45]).is_err());
+    }
+
+    /// The Mac's own AVB entity marks its failure fields valid on a stream
+    /// that is reserved and flowing, with no failure in them: flags
+    /// 0xfe000000, code 0. Only a failure code makes it a failure.
+    #[test]
+    fn a_failure_needs_a_failure_code() {
+        let mut payload = [0u8; 48];
+        payload[0..2].copy_from_slice(&DescriptorType::STREAM_INPUT.0.to_be_bytes());
+        payload[4..8].copy_from_slice(&0xfe00_0000u32.to_be_bytes());
+        let info = StreamInfo::decode(&payload).unwrap();
+        assert!(info.bound() && info.registering());
+        assert!(!info.talker_failed());
+        // Insufficient bandwidth, at a bridge.
+        payload[34] = 1;
+        assert!(StreamInfo::decode(&payload).unwrap().talker_failed());
     }
 
     #[test]
