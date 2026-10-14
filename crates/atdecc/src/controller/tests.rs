@@ -439,6 +439,22 @@ impl FakeEntity {
         AemStatus::SUCCESS
     }
 
+    /// Takes another of its configurations, refusing while it streams.
+    fn set_configuration(&mut self, payload: &[u8]) -> AemStatus {
+        let configuration = u16::from_be_bytes([payload[2], payload[3]]);
+        if self.streaming {
+            return AemStatus::STREAM_IS_RUNNING;
+        }
+        if !self
+            .descriptors
+            .contains_key(&(DescriptorType::CONFIGURATION.0, configuration))
+        {
+            return AemStatus::BAD_ARGUMENTS;
+        }
+        put(self.stored(DescriptorType::ENTITY, 0), 310, configuration);
+        AemStatus::SUCCESS
+    }
+
     fn rename(&mut self, descriptor_type: DescriptorType, index: u16, name: &str) {
         let bytes = self
             .descriptors
@@ -586,6 +602,9 @@ impl FakeEntity {
                     | AemCommandType::SET_CLOCK_SOURCE
             ) {
                 status = self.set(command.command_type, &mut payload);
+            }
+            if command.command_type == AemCommandType::SET_CONFIGURATION {
+                status = self.set_configuration(&payload);
             }
             if command.command_type == AemCommandType::GET_DYNAMIC_INFO {
                 let (whole, answers) = self.dynamic_info(&payload);
@@ -1704,6 +1723,51 @@ fn a_new_sampling_rate_reads_the_streams_again() {
             .chain(model.streams(false))
             .all(|stream| stream.current_format == StreamFormat(0x0205_0420_0200_6000))
     );
+}
+
+/// A configuration the entity takes is read again, and the advertisement
+/// naming it does not start the read over; one refused while a stream
+/// runs changes nothing.
+#[test]
+fn a_new_configuration_is_read_again() {
+    let (mut controller, mut entity) = enumerated();
+    // A second configuration, as the first.
+    let mut second = entity.descriptors[&(DescriptorType::CONFIGURATION.0, 0)].clone();
+    put(&mut second, 2, 1);
+    entity
+        .descriptors
+        .insert((DescriptorType::CONFIGURATION.0, 1), second);
+    put(entity.stored(DescriptorType::ENTITY, 0), 308, 2);
+    events(&mut controller);
+
+    entity.streaming = true;
+    let refused = controller.set_configuration(at(1), TALKER, 1);
+    exchange(&mut controller, &mut entity, at(1));
+    assert_eq!(
+        finished(&mut controller),
+        [(
+            refused,
+            Outcome::Refused(Refusal::Aem(AemStatus::STREAM_IS_RUNNING))
+        )]
+    );
+    assert_eq!(controller.model(TALKER).unwrap().configuration, 0);
+
+    entity.streaming = false;
+    let picked = controller.set_configuration(at(2), TALKER, 1);
+    exchange(&mut controller, &mut entity, at(2));
+    let seen = events(&mut controller);
+    assert!(seen.contains(&Event::CommandFinished(picked, Outcome::Done)));
+    assert!(seen.contains(&Event::EnumerationStarted(TALKER)));
+    assert!(seen.contains(&Event::EntityEnumerated(TALKER)));
+    let model = controller.model(TALKER).unwrap();
+    assert_eq!(model.state, EnumerationState::Complete);
+    assert_eq!(model.configuration, 1);
+
+    let mut advertised = aem_available(2);
+    advertised.current_configuration_index = 1;
+    advertised.entity_capabilities |= EntityCapabilities::AEM_CONFIGURATION_INDEX_VALID;
+    controller.handle_adpdu(at(3), TALKER_MAC, &advertised);
+    assert!(!events(&mut controller).contains(&Event::EnumerationStarted(TALKER)));
 }
 
 #[test]

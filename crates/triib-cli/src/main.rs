@@ -65,6 +65,10 @@ commands:
   disconnect-talker <interface> <talker-id>:<output> <listener-id>:<input>
                                      tell a talker to stop sending to a
                                      listener, as when the listener is gone
+  configuration <interface> <entity-id> <configuration>
+                                     make another of the entity's
+                                     configurations its current one, then
+                                     read it again
   identify <interface> <entity-id> [seconds]
                                      make an entity identify itself, for 5
                                      seconds by default
@@ -212,6 +216,17 @@ fn main() -> ExitCode {
                 listener,
             };
             set(interface, talker.0, change).map_err(|error| format!("{interface}: {error}"))
+        }
+        Some("configuration") => {
+            let (Some(interface), Some(Ok(entity)), Some(Ok(index))) = (
+                argument(1),
+                argument(2).map(str::parse::<EntityId>),
+                argument(3).map(str::parse::<u16>),
+            ) else {
+                return usage();
+            };
+            set(interface, entity, Change::Configuration { index })
+                .map_err(|error| format!("{interface}: {error}"))
         }
         Some("identify") => {
             let (Some(interface), Some(Ok(entity))) =
@@ -564,6 +579,9 @@ enum Change {
     Clock {
         domain: u16,
         source: u16,
+    },
+    Configuration {
+        index: u16,
     },
     Mappings {
         change: MappingChange,
@@ -1238,6 +1256,7 @@ fn set(interface: &str, entity: EntityId, change: Change) -> std::io::Result<()>
         Change::Clock { domain, source } => {
             controller.set_clock_source(now, entity, *domain, *source)
         }
+        Change::Configuration { index } => controller.set_configuration(now, entity, *index),
         Change::Mappings {
             change: MappingChange::Add,
             port,
@@ -1397,6 +1416,20 @@ fn set(interface: &str, entity: EntityId, change: Change) -> std::io::Result<()>
                         .map(|name| format!(", \"{name}\""))
                         .unwrap_or_default();
                     println!("clock source now {source}{name}");
+                }
+            }
+            Change::Configuration { .. } => {
+                if let Some(entity) = model.entity() {
+                    let name = model
+                        .name_of(DescriptorType::CONFIGURATION, entity.current_configuration)
+                        .unwrap_or_default();
+                    println!(
+                        "configuration now {} of {}, \"{name}\", {} inputs, {} outputs",
+                        entity.current_configuration,
+                        entity.configurations_count,
+                        model.streams(true).count(),
+                        model.streams(false).count()
+                    );
                 }
             }
             Change::Mappings { port, .. } => {

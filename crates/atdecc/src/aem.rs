@@ -61,6 +61,26 @@ pub fn encode_read_descriptor(
 
 /// Encodes REGISTER_UNSOLICITED_NOTIFICATION in the 2013 form, without
 /// the flags field, which 2021 entities must also accept.
+/// Encodes SET_CONFIGURATION (7.4.7), which makes `configuration` the
+/// entity's current one.
+pub fn encode_set_configuration(
+    addressing: Addressing,
+    configuration: u16,
+    out: &mut [u8],
+) -> Result<usize, EncodeError> {
+    let mut payload = [0; 4];
+    payload[2..4].copy_from_slice(&configuration.to_be_bytes());
+    command(addressing, AemCommandType::SET_CONFIGURATION, &payload).encode(out)
+}
+
+/// The configuration a SET_CONFIGURATION or GET_CONFIGURATION response or
+/// notification names.
+pub fn configuration_of(payload: &[u8]) -> Option<u16> {
+    payload
+        .get(2..4)
+        .map(|octets| u16::from_be_bytes([octets[0], octets[1]]))
+}
+
 pub fn encode_register_unsolicited(
     addressing: Addressing,
     out: &mut [u8],

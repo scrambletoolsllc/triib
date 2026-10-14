@@ -324,6 +324,10 @@ enum Request {
         set: SetClockSource,
         command: CommandId,
     },
+    SetConfiguration {
+        configuration: u16,
+        command: CommandId,
+    },
     /// One part of a stream port's dynamic mappings.
     GetAudioMap {
         descriptor_type: DescriptorType,
@@ -446,6 +450,7 @@ impl Request {
             | Request::SetStreamFormat { command, .. }
             | Request::SetSamplingRate { command, .. }
             | Request::SetClockSource { command, .. }
+            | Request::SetConfiguration { command, .. }
             | Request::SetControl { command, .. }
             | Request::DisconnectTx { command, .. }
             | Request::SetMaxTransitTime { command, .. }
@@ -836,6 +841,11 @@ impl Controller {
                 if header.controller_entity_id == self.config.entity_id =>
             {
                 if aem.unsolicited {
+                    // Another controller chose another configuration.
+                    if aem.command_type == AemCommandType::SET_CONFIGURATION {
+                        self.reconfigured(now, header.target_entity_id, aem.payload);
+                        return;
+                    }
                     self.handle_notification(header.target_entity_id, aem);
                     return;
                 }
@@ -854,9 +864,32 @@ impl Controller {
                 }
                 let inflight = *inflight;
                 self.complete(key, inflight);
+                if let Request::SetConfiguration { command, .. } = inflight.request {
+                    self.events
+                        .push_back(Event::CommandFinished(command, aem_outcome(aem)));
+                    if aem.status().is_success() {
+                        self.reconfigured(now, inflight.entity_id, aem.payload);
+                    }
+                    return;
+                }
                 self.handle_response(inflight, aem);
             }
             _ => {}
+        }
+    }
+
+    /// Reads an entity again in the configuration a SET_CONFIGURATION
+    /// response or notification names, taking it as advertised so the
+    /// advertisement that follows does not start the read over.
+    fn reconfigured(&mut self, now: Instant, entity_id: EntityId, payload: &[u8]) {
+        if let (Some(configuration), Some(entity)) = (
+            aem::configuration_of(payload),
+            self.entities.get_mut(&entity_id),
+        ) {
+            entity.adp.current_configuration_index = configuration;
+        }
+        if self.entities.contains_key(&entity_id) && self.config.enumerate {
+            self.start_enumeration(now, entity_id);
         }
     }
 
@@ -1318,7 +1351,9 @@ impl Controller {
                 self.events
                     .push_back(Event::CommandFinished(command, aem_outcome(aem)));
             }
-            Request::GetMilanInfo
+            // Finished as it is answered, where the read starts over.
+            Request::SetConfiguration { .. }
+            | Request::GetMilanInfo
             | Request::GetMediaClockReference { .. }
             | Request::GetLiteStatus { .. }
             | Request::SetLiteConfig { .. }
@@ -2320,6 +2355,9 @@ impl Controller {
             Request::SetStreamFormat { set, .. } => set.encode(addressing, &mut out),
             Request::SetSamplingRate { set, .. } => set.encode(addressing, &mut out),
             Request::SetClockSource { set, .. } => set.encode(addressing, &mut out),
+            Request::SetConfiguration { configuration, .. } => {
+                aem::encode_set_configuration(addressing, configuration, &mut out)
+            }
             Request::GetMaxTransitTime { output, .. } => {
                 aem::encode_get_max_transit_time(addressing, output, &mut out)
             }
@@ -2628,6 +2666,24 @@ impl Controller {
         let command = self.next_command();
         let request = Request::SetClockSource {
             set: SetClockSource { domain, source },
+            command,
+        };
+        self.queue_command(now, entity_id, command, request);
+        command
+    }
+
+    /// Makes `configuration` the entity's current configuration
+    /// (SET_CONFIGURATION); once it answers, the entity is read again in
+    /// it.
+    pub fn set_configuration(
+        &mut self,
+        now: Instant,
+        entity_id: EntityId,
+        configuration: u16,
+    ) -> CommandId {
+        let command = self.next_command();
+        let request = Request::SetConfiguration {
+            configuration,
             command,
         };
         self.queue_command(now, entity_id, command, request);
@@ -3289,6 +3345,7 @@ fn command_type_of(request: Request) -> AemCommandType {
         Request::SetStreamFormat { .. } => AemCommandType::SET_STREAM_FORMAT,
         Request::SetSamplingRate { .. } => AemCommandType::SET_SAMPLING_RATE,
         Request::SetClockSource { .. } => AemCommandType::SET_CLOCK_SOURCE,
+        Request::SetConfiguration { .. } => AemCommandType::SET_CONFIGURATION,
         Request::SetControl { .. } => AemCommandType::SET_CONTROL,
         Request::GetMaxTransitTime { .. } => AemCommandType::GET_MAX_TRANSIT_TIME,
         Request::SetMaxTransitTime { .. } => AemCommandType::SET_MAX_TRANSIT_TIME,
