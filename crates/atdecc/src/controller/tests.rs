@@ -1820,6 +1820,43 @@ fn a_talkers_listeners_are_read() {
     );
 }
 
+/// A talker heard letting a listener go, for any controller, is asked
+/// again what its output does and who listens.
+#[test]
+fn a_talker_letting_a_listener_go_is_read_again() {
+    let (mut controller, _) = enumerated();
+    events(&mut controller);
+    transmits(&mut controller);
+    let output = controller
+        .model(TALKER)
+        .unwrap()
+        .streams(false)
+        .next()
+        .unwrap()
+        .index;
+    let response = Acmpdu {
+        message_type: AcmpMessageType::DISCONNECT_TX_RESPONSE,
+        ..Acmpdu::command(
+            AcmpMessageType::DISCONNECT_TX_COMMAND,
+            EntityId(0x0bad),
+            (TALKER, output),
+            (EntityId(0x00aa_0000), 0),
+            7,
+        )
+    };
+    let mut frame = [0; 128];
+    let length = response.encode(&mut frame).unwrap();
+    controller
+        .handle_frame(at(1), MacAddress([2, 0, 0, 0, 0, 9]), &frame[..length])
+        .unwrap();
+    controller.pump(at(1));
+    let sent = transmits(&mut controller);
+    assert!(sent.iter().any(|(_, frame)| {
+        Acmpdu::decode(frame)
+            .is_ok_and(|acmpdu| acmpdu.message_type == AcmpMessageType::GET_TX_STATE_COMMAND)
+    }));
+}
+
 #[test]
 fn picks_a_clock_source() {
     let (mut controller, mut entity) = enumerated();

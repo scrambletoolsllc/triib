@@ -1406,8 +1406,9 @@ fn stream_details<'a>(
 
 /// Who listens to a stream output, as its talker keeps them: each by its
 /// input's name, or marked where it is not online, as a talker outside
-/// Milan counts one that left without saying, with a button that tells
-/// the talker the listener no longer takes the stream.
+/// Milan counts one that left without saying, with a button that
+/// disconnects it: one online is unbound, one gone is let go of at the
+/// talker.
 fn listener_rows<'a>(
     triib: &'a Triib,
     talker: EntityId,
@@ -1421,13 +1422,19 @@ fn listener_rows<'a>(
     let rows = listeners
         .into_iter()
         .map(|listener| -> Element<'a, Message> {
-            let action = Action::DisconnectTalker {
-                talker: (talker, output),
-                listener,
+            let gone = !triib.entities.contains_key(&listener.0);
+            // One online is unbound, and tells the talker itself, so the
+            // two agree; one gone is let go of at the talker.
+            let action = if gone {
+                Action::DisconnectTalker {
+                    talker: (talker, output),
+                    listener,
+                }
+            } else {
+                Action::Disconnect { listener }
             };
             let busy = triib.pending.contains(&action);
             let name = describe::listener_name(triib, listener);
-            let gone = !triib.entities.contains_key(&listener.0);
             let name = styled(name, Type::BodyMedium).width(Fill);
             let name = if gone {
                 name.style(style::on_surface_variant)

@@ -1706,19 +1706,7 @@ impl Controller {
             {
                 model.tx_connections_supported = Some(false);
             }
-            // A listener let go: who listens now.
-            if let Request::DisconnectTx { output, .. } = inflight.request
-                && acmpdu.status.is_success()
-                && self.config.read_talker_state
-            {
-                self.queue_query(
-                    addressed,
-                    Request::GetTxState {
-                        output,
-                        command: None,
-                    },
-                );
-            }
+
             if let Request::GetTxConnection { output, index, .. } = inflight.request
                 && acmpdu.status.is_success()
                 && acmpdu.talker_unique_id == output
@@ -1745,7 +1733,44 @@ impl Controller {
         // bindings, so changes made elsewhere show too.
         if acmpdu.status.is_success() {
             self.observe_binding(acmpdu);
+            self.observe_talker(acmpdu);
         }
+    }
+
+    /// A talker that took or let go of a listener, for whoever asked, is
+    /// asked again what its stream output does and who listens: a talker
+    /// outside Milan says nothing of it unasked.
+    fn observe_talker(&mut self, acmpdu: &Acmpdu) {
+        if !self.config.read_talker_state
+            || !matches!(
+                acmpdu.message_type,
+                AcmpMessageType::CONNECT_TX_RESPONSE | AcmpMessageType::DISCONNECT_TX_RESPONSE
+            )
+        {
+            return;
+        }
+        let (talker, output) = (acmpdu.talker_entity_id, acmpdu.talker_unique_id);
+        if !self
+            .models
+            .get(&talker)
+            .is_some_and(|model| model.has(DescriptorType::STREAM_OUTPUT, output))
+        {
+            return;
+        }
+        self.queue_query(
+            talker,
+            Request::GetTxState {
+                output,
+                command: None,
+            },
+        );
+        self.queue_query(
+            talker,
+            Request::GetStreamInfo {
+                descriptor_type: DescriptorType::STREAM_OUTPUT,
+                index: output,
+            },
+        );
     }
 
     fn observe_binding(&mut self, acmpdu: &Acmpdu) {
