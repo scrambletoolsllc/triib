@@ -413,7 +413,7 @@ fn topology_of(triib: &Triib) -> Topology {
         .collect();
     // This computer, unless its own entities show where it is.
     let shown_by_entities = names.iter().any(|(entity_id, _)| {
-        triib.is_host(*entity_id)
+        (triib.is_host(*entity_id) || triib.is_this_mac(*entity_id))
             && triib.models.get(entity_id).is_some_and(|model| {
                 model.state != EnumerationState::Failed(EnumerationFailure::OnThisComputer)
             })

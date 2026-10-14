@@ -22,6 +22,19 @@ const FRAME: usize = 1536;
 #[cfg(target_os = "macos")]
 const LOCAL_WAIT: Duration = Duration::from_millis(2);
 
+/// Whether macOS runs AVB on `interface`, giving the Mac an AVB entity of
+/// its own; `None` off macOS, or where its AudioVideoBridging framework
+/// is missing.
+pub fn avb_enabled(interface: &str) -> Option<bool> {
+    #[cfg(target_os = "macos")]
+    return apple::avb_enabled(interface);
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = interface;
+        None
+    }
+}
+
 pub struct Driver {
     socket: Socket,
     controller: Controller,

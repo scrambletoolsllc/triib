@@ -833,6 +833,55 @@ fn rate_picker<'a>(
     })
 }
 
+/// One of an entity's configurations, by its label.
+#[derive(Debug, Clone, PartialEq)]
+struct Configuration {
+    index: u16,
+    label: String,
+}
+
+impl fmt::Display for Configuration {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.label)
+    }
+}
+
+/// A picker of an entity's configurations, where it has several; the one
+/// asked for shows while it changes.
+fn configuration_picker<'a>(
+    triib: &'a Triib,
+    entity: EntityId,
+    model: &EntityModel,
+    current: u16,
+) -> Option<Element<'a, Message>> {
+    let choices: Vec<Configuration> = describe::configurations(model)
+        .into_iter()
+        .map(|(index, label)| Configuration { index, label })
+        .collect();
+    if choices.len() < 2 {
+        return None;
+    }
+    let changing = triib
+        .changing(|action| {
+            matches!(action, Action::SetConfiguration { entity: pending, .. } if *pending == entity)
+        })
+        .and_then(|action| match action {
+            Action::SetConfiguration { configuration, .. } => Some(*configuration),
+            _ => None,
+        })
+        .or_else(|| triib.reconfiguring.get(&entity).copied());
+    let shown = choices
+        .iter()
+        .find(|choice| choice.index == changing.unwrap_or(current))
+        .cloned()?;
+    Some(picker(choices, shown, changing.is_some(), move |choice| {
+        Action::SetConfiguration {
+            entity,
+            configuration: choice.index,
+        }
+    }))
+}
+
 /// A clock source by its name.
 #[derive(Debug, Clone, PartialEq)]
 struct Source {
@@ -955,6 +1004,7 @@ fn entity_details<'a>(
     let items = match tab {
         InspectorTab::Entity => {
             let mut items = crate::host_view::sections(triib, entity_id);
+            items.extend(crate::host_view::mac_sections(triib, entity_id));
             items.extend(entity_sections(triib, entity_id, model));
             items.extend(advertisement_details(entity));
             items
@@ -1066,21 +1116,26 @@ fn entity_sections<'a>(
             fl!("entity-serial-number"),
             or_unset(descriptor.serial_number),
         ));
-        let configuration = model
-            .name_of(
-                DescriptorType::CONFIGURATION,
-                descriptor.current_configuration,
-            )
-            .map(|name| {
-                fl!(
-                    "entity-configuration-of",
-                    name = name,
-                    number = (descriptor.current_configuration + 1),
-                    count = descriptor.configurations_count
-                )
-            })
-            .unwrap_or_else(|| (descriptor.current_configuration + 1).to_string());
-        items.push(property(fl!("entity-configuration"), configuration));
+        match configuration_picker(triib, entity_id, model, descriptor.current_configuration) {
+            Some(picker) => items.push(stacked(fl!("entity-configuration"), picker)),
+            None => {
+                let configuration = model
+                    .name_of(
+                        DescriptorType::CONFIGURATION,
+                        descriptor.current_configuration,
+                    )
+                    .map(|name| {
+                        fl!(
+                            "entity-configuration-of",
+                            name = name,
+                            number = (descriptor.current_configuration + 1),
+                            count = descriptor.configurations_count
+                        )
+                    })
+                    .unwrap_or_else(|| (descriptor.current_configuration + 1).to_string());
+                items.push(property(fl!("entity-configuration"), configuration));
+            }
+        }
         items.push(property(fl!("entity-milan"), describe::milan(model)));
     }
     let domains: Vec<_> = model.clock_domains().collect();
@@ -3119,6 +3174,81 @@ pub(crate) mod tests {
         crate::host::set_entities_file(Some(entities));
         crate::presets::set_folder(crate::settings::default_presets_folder());
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// On a Mac, the Mac's own entity shows as this computer's: the
+    /// computer icon, its Core Audio device and Audio MIDI Setup in the
+    /// inspector, its configurations to pick from, and where AVB is off,
+    /// where to turn it on.
+    #[test]
+    fn the_macs_own_entity_is_this_computers() {
+        use crate::network::{Action, Report, ReportKind};
+        use atdecc::controller::{Outcome, Refusal};
+
+        let (entities, models) = bench();
+        let mac = entities[&MAC_MINI].mac;
+        let interface = Interface {
+            name: "en0".to_owned(),
+            mac,
+            up: true,
+            speed: Some(1000),
+            physical: true,
+            wireless: false,
+            hardware_clock: None,
+        };
+        let settings = Settings {
+            view: crate::settings::View::Entities,
+            inspector: true,
+            ..Settings::default()
+        };
+        let mut triib = Triib::sample(settings, interface, entities, models);
+        triib.settings.interface = Some("en0".to_owned());
+        assert!(!triib.is_this_mac(MAC_MINI), "not off macOS");
+        triib.avb_enabled = Some(true);
+        triib.mac_audio_device = Some("Mac mini:Ethernet".to_owned());
+        assert!(triib.is_this_mac(MAC_MINI));
+        assert_eq!(triib.host_icon(MAC_MINI), Some(Icon::Computer));
+        triib.selected = Some(MAC_MINI);
+        triib.inspector_tab = InspectorTab::Entity;
+        // Its configurations share one name: the current one reads as what
+        // it holds, those not read here by their numbers.
+        let labels = crate::describe::configurations(&triib.models[&MAC_MINI]);
+        assert_eq!(labels.len(), 10);
+        assert_eq!(labels[0].1, "8 in, 8 out, 8 ch streams");
+        assert_eq!(labels[1].1, "Configuration 2");
+        {
+            let mut simulator = simulate(&triib, Size::new(1400.0, 2000.0));
+            assert!(simulator.find("Mac mini:Ethernet").is_ok());
+            assert!(simulator.find("Open Audio MIDI Setup").is_ok());
+            assert!(simulator.find("8 in, 8 out, 8 ch streams").is_ok());
+        }
+        // A configuration refused while its streams run says what to do.
+        let action = Action::SetConfiguration {
+            entity: MAC_MINI,
+            configuration: 1,
+        };
+        let _ = triib.update(Message::Act(action));
+        let _ = triib.update(Message::External(crate::External::Network(Report {
+            generation: 0,
+            kind: ReportKind::Finished(
+                action,
+                Outcome::Refused(Refusal::Aem(atdecc::AemStatus::STREAM_IS_RUNNING)),
+            ),
+        })));
+        assert_eq!(
+            triib.notice.as_deref(),
+            Some("Mac mini keeps its configuration while its streams run: disconnect them first.")
+        );
+        // With AVB off there is no entity of its own, and the bar says why.
+        triib.avb_enabled = Some(false);
+        let mut simulator = simulate(&triib, Size::new(1400.0, 2000.0));
+        assert!(
+            simulator
+                .find(
+                    "AVB is off on en0, so this Mac has no AVB entity of its own. Turn it on in Audio MIDI Setup's Network Device Browser."
+                )
+                .is_ok()
+        );
     }
 
     /// The interface picker leaves out virtual and wireless interfaces and

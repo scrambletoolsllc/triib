@@ -1,6 +1,7 @@
 //! This computer's own entities in the views: the Entities view's bar
 //! that adds them, their section in the inspector with a button that
-//! removes them, and their streams' audio and channels.
+//! removes them, and their streams' audio and channels; on a Mac, the
+//! Mac's own entity, which macOS runs.
 
 use std::fmt;
 
@@ -23,6 +24,9 @@ use crate::view::{property, stacked};
 /// The bar above the Entities view's table: why this computer cannot add
 /// entities of its own, or the button that adds one.
 pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
+    if triib.avb_enabled == Some(false) {
+        return mac_avb_off(triib);
+    }
     if !crate::host::SUPPORTED || triib.interface().is_none() {
         return None;
     }
@@ -80,6 +84,57 @@ pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
         .padding([8, 16])
         .into(),
     )
+}
+
+/// On a Mac where AVB is off on the interface, so the Mac has no entity
+/// of its own: where to turn it on.
+fn mac_avb_off(triib: &Triib) -> Option<Element<'_, Message>> {
+    let interface = triib.settings.interface.clone()?;
+    Some(
+        container(
+            scramble_ui::row![
+                styled(fl!("mac-avb-off", interface = interface), Type::BodySmall)
+                    .style(style::on_surface_variant)
+                    .width(Fill)
+                    .align_x(dir::text_start()),
+                open_audio_midi_setup(),
+            ]
+            .spacing(8)
+            .align_y(Center),
+        )
+        .padding([8, 16])
+        .into(),
+    )
+}
+
+fn open_audio_midi_setup<'a>() -> Element<'a, Message> {
+    button::button(Kind::Tonal, fl!("mac-open-audio-midi-setup"))
+        .size(Size::ExtraSmall)
+        .on_press(Message::OpenAudioMidiSetup)
+        .into()
+}
+
+/// The inspector's section for the Mac's own entity, which macOS runs:
+/// the Core Audio device apps use for its streams, and Audio MIDI Setup,
+/// where macOS sets AVB up.
+pub fn mac_sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>> {
+    if !triib.is_this_mac(entity_id) {
+        return Vec::new();
+    }
+    vec![
+        component::section(fl!("netmap-this-computer")),
+        property(
+            fl!("mac-audio-device"),
+            triib
+                .mac_audio_device
+                .clone()
+                .unwrap_or_else(|| fl!("mac-no-audio-device")),
+        ),
+        styled(fl!("mac-entity-note"), Type::BodySmall)
+            .style(style::on_surface_variant)
+            .into(),
+        open_audio_midi_setup(),
+    ]
 }
 
 /// The channel counts the inspector offers; six samples of each fit in a

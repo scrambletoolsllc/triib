@@ -174,6 +174,83 @@ pub fn milan(model: &EntityModel) -> String {
     }
 }
 
+/// Each of an entity's configurations, labelled to choose among them: by
+/// its name where each has a name of its own, else by what it holds, as
+/// "16 in, 16 out, 8 ch streams" for one the Mac names "8 in, 8 out, 8 ch
+/// streams" as it does all ten of its own.
+pub fn configurations(model: &EntityModel) -> Vec<(u16, String)> {
+    let summaries = model.configurations();
+    let names: std::collections::HashSet<&str> =
+        summaries.iter().map(|summary| summary.name).collect();
+    let named = names.len() == summaries.len() && !names.contains("");
+    let labels: Vec<String> = summaries
+        .iter()
+        .map(|summary| {
+            if named {
+                summary.name.to_owned()
+            } else if summary.read {
+                holds(summary)
+            } else if !summary.name.is_empty() {
+                summary.name.to_owned()
+            } else {
+                let number = u32::from(summary.index) + 1;
+                fl!("entity-configuration-numbered", number = number)
+            }
+        })
+        .collect();
+    // Two that would read the same are told apart by their numbers.
+    summaries
+        .iter()
+        .zip(&labels)
+        .map(|(summary, label)| {
+            let label = if labels.iter().filter(|other| *other == label).count() > 1 {
+                let number = u32::from(summary.index) + 1;
+                fl!(
+                    "entity-configuration-of",
+                    name = label.as_str(),
+                    number = number,
+                    count = summaries.len()
+                )
+            } else {
+                label.clone()
+            };
+            (summary.index, label)
+        })
+        .collect()
+}
+
+/// What a configuration holds: its audio channels each way, and its audio
+/// streams' channels where they all have as many.
+fn holds(summary: &atdecc::model::ConfigurationSummary<'_>) -> String {
+    let audio = |streams: &[atdecc::descriptor::StreamDescriptor<'_>]| -> Vec<u16> {
+        streams
+            .iter()
+            .filter(|stream| !stream.is_media_clock())
+            .filter_map(|stream| stream.current_format.channels())
+            .collect()
+    };
+    holding(&audio(&summary.inputs), &audio(&summary.outputs))
+}
+
+/// What audio streams of `inputs` and `outputs` channels hold, in words.
+fn holding(inputs: &[u16], outputs: &[u16]) -> String {
+    let total = |channels: &[u16]| channels.iter().map(|&count| u32::from(count)).sum::<u32>();
+    let mut each = inputs.iter().chain(outputs).copied();
+    match each.next() {
+        Some(first) if each.all(|channels| channels == first) => fl!(
+            "entity-configuration-holds",
+            inputs = total(inputs),
+            outputs = total(outputs),
+            channels = first
+        ),
+        _ => fl!(
+            "entity-configuration-holds-mixed",
+            inputs = total(inputs),
+            outputs = total(outputs)
+        ),
+    }
+}
+
 /// What went wrong with an action, in words, or `None` when it worked.
 pub fn outcome(triib: &Triib, action: Action, outcome: Outcome) -> Option<String> {
     let reason = match outcome {
@@ -238,6 +315,19 @@ pub fn outcome(triib: &Triib, action: Action, outcome: Outcome) -> Option<String
         } => fl!(
             "outcome-format",
             stream = triib.stream_name(entity, descriptor_type, index),
+            reason = reason
+        ),
+        Action::SetConfiguration { entity, .. }
+            if outcome == Outcome::Refused(Refusal::Aem(AemStatus::STREAM_IS_RUNNING)) =>
+        {
+            fl!(
+                "outcome-configuration-streaming",
+                entity = triib.entity_name_of(entity)
+            )
+        }
+        Action::SetConfiguration { entity, .. } => fl!(
+            "outcome-configuration",
+            entity = triib.entity_name_of(entity),
             reason = reason
         ),
         Action::SetSamplingRate { entity, .. } => fl!(
@@ -445,6 +535,25 @@ pub fn reservation_failure(info: &atdecc::aem::StreamInfo) -> String {
 
 #[cfg(test)]
 mod tests {
+
+    /// A configuration reads as the audio it holds each way, with its
+    /// streams' channels where they agree, as the Mac's own should be
+    /// named.
+    #[test]
+    fn configurations_read_as_what_they_hold() {
+        assert_eq!(holding(&[8], &[8]), "8 in, 8 out, 8 ch streams");
+        assert_eq!(
+            holding(&[16, 16], &[16, 16]),
+            "32 in, 32 out, 16 ch streams"
+        );
+        assert_eq!(
+            holding(&[8, 8, 8], &[8, 8, 8]),
+            "24 in, 24 out, 8 ch streams"
+        );
+        assert_eq!(holding(&[16], &[8]), "16 in, 8 out");
+        assert_eq!(holding(&[], &[2]), "0 in, 2 out, 2 ch streams");
+    }
+
     use super::*;
 
     /// An output says it sends only while a listener takes it, as the

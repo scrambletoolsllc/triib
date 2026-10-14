@@ -39,6 +39,18 @@ const VENDOR_UNIQUE_TIMEOUT: i64 = 250;
 /// Room for any frame.
 const FRAME: usize = 1536;
 
+/// Whether AVB is on for interface `name`, as Audio MIDI Setup's Network
+/// Device Browser turns it on and off; `None` where the framework is
+/// missing.
+pub(super) fn avb_enabled(name: &str) -> Option<bool> {
+    let base = AnyClass::get(c"AVBInterface")?;
+    let ns_name = NSString::from_str(name);
+    // SAFETY: the selector and its types are AVBInterface's, as the
+    // framework's headers declare them.
+    let enabled: Bool = unsafe { msg_send![base, isAVBEnabledOnInterfaceNamed: &*ns_name] };
+    Some(enabled.as_bool())
+}
+
 /// The framework's view of one interface, sending commands to this Mac's
 /// own entities and turning their answers into frames.
 pub(super) struct Local {

@@ -17,6 +17,8 @@ mod host_view;
 mod i18n;
 mod lite_view;
 mod log_view;
+#[cfg(target_os = "macos")]
+mod mac;
 mod mapping_view;
 mod matrix;
 mod mcp;

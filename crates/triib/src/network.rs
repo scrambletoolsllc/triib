@@ -77,6 +77,11 @@ pub enum Action {
     Disconnect { listener: (EntityId, u16) },
     /// Make an entity identify itself for a few seconds.
     Identify(EntityId),
+    /// Make another of an entity's configurations its current one.
+    SetConfiguration {
+        entity: EntityId,
+        configuration: u16,
+    },
     /// Rename an entity, its group or one of its descriptors.
     Rename { target: NameTarget, name: Name },
     /// Change a stream input's or output's format.
@@ -372,6 +377,10 @@ fn run(
                         Action::Identify(entity_id) => {
                             controller.identify(now, entity_id, IDENTIFY)
                         }
+                        Action::SetConfiguration {
+                            entity,
+                            configuration,
+                        } => controller.set_configuration(now, entity, configuration),
                         Action::Rename { target, name } => controller.set_name(
                             now,
                             target.entity,

@@ -200,6 +200,13 @@ entity-serial-number = Serial number
 entity-configuration = Configuration
 # The configuration in use: its name, its number and how many there are.
 entity-configuration-of = { $name } ({ $number } of { $count })
+# A configuration by what it holds, where its entity gives several the same
+# name: its audio channels each way, and its audio streams' channels.
+entity-configuration-holds = { $inputs } in, { $outputs } out, { $channels } ch streams
+# As above, its audio streams having different channel counts.
+entity-configuration-holds-mixed = { $inputs } in, { $outputs } out
+# A configuration not read yet.
+entity-configuration-numbered = Configuration { $number }
 entity-milan = Milan
 # The clock the entity's audio runs on.
 entity-media-clock = Media clock
@@ -350,6 +357,8 @@ outcome-max-transit-time = Could not change the max transit time of { $stream }:
 outcome-max-transit-time-streaming = Could not change the max transit time of { $stream }: it is streaming. Disconnect it first.
 outcome-sampling-rate = Could not change the sampling rate of { $entity }: { $reason }.
 outcome-clock-source = Could not change the clock source of { $entity }: { $reason }.
+outcome-configuration = Could not change the configuration of { $entity }: { $reason }.
+outcome-configuration-streaming = { $entity } keeps its configuration while its streams run: disconnect them first.
 outcome-map = Could not map the channel on { $entity }: { $reason }.
 outcome-unmap = Could not unmap the channel on { $entity }: { $reason }.
 # $control is a control's name, such as Speaker Volume.
@@ -1002,3 +1011,14 @@ host-tone = Test tone
 host-nowhere = Nowhere
 host-default-device = Default device
 host-remove = Remove from this computer
+
+## The Mac's own AVB entity, which macOS runs
+
+# The Core Audio device macOS makes of the Mac's own entity.
+mac-audio-device = Audio device
+mac-no-audio-device = None
+mac-entity-note = macOS runs this entity. Apps play into and record from its audio device, and its configuration sets how many channels it has each way.
+# Audio MIDI Setup is the macOS app's name.
+mac-open-audio-midi-setup = Open Audio MIDI Setup
+# $interface is a network interface, such as en0.
+mac-avb-off = AVB is off on { $interface }, so this Mac has no AVB entity of its own. Turn it on in Audio MIDI Setup's Network Device Browser.

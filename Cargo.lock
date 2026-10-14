@@ -4261,6 +4261,8 @@ dependencies = [
  "iced_test",
  "interprocess",
  "libc",
+ "objc2-core-audio",
+ "objc2-core-foundation",
  "png",
  "rfd",
  "rmcp",

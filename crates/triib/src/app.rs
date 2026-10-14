@@ -89,6 +89,14 @@ pub struct Triib {
     /// What triib-endpointd says this computer's entities are doing, while
     /// it runs.
     pub endpoints: Option<triib_endpointd::status::DaemonStatus>,
+    /// Whether macOS runs AVB on the interface, giving the Mac an entity
+    /// of its own; `None` off macOS.
+    pub avb_enabled: Option<bool>,
+    /// The Core Audio device macOS makes of the Mac's own entity.
+    pub mac_audio_device: Option<String>,
+    /// Entities that took another configuration and are being read again
+    /// in it, with the one they took.
+    pub reconfiguring: BTreeMap<EntityId, u16>,
     /// The interface another user's or root's triib-endpointd holds.
     pub endpoints_elsewhere: Option<String>,
     /// The audio devices' names: inputs, then outputs.
@@ -171,6 +179,8 @@ pub enum Message {
     InterfaceFiltersMenu(bool),
     /// The Entities view lists only this computer's endpoints, or all.
     HostEntitiesOnlyToggled,
+    /// Open macOS's Audio MIDI Setup, which turns AVB on and off.
+    OpenAudioMidiSetup,
     SearchChanged(String),
     EntitySelected(EntityId),
     /// A press on a view's empty space: nothing selected.
@@ -339,6 +349,9 @@ impl Triib {
             neighbor: None,
             cannot_listen: None,
             endpoints: None,
+            avb_enabled: None,
+            mac_audio_device: None,
+            reconfiguring: BTreeMap::new(),
             endpoints_elsewhere: None,
             audio_devices: (Vec::new(), Vec::new()),
             network_focus: None,
@@ -401,6 +414,9 @@ impl Triib {
             neighbor: None,
             cannot_listen: None,
             endpoints: None,
+            avb_enabled: None,
+            mac_audio_device: None,
+            reconfiguring: BTreeMap::new(),
             endpoints_elsewhere: None,
             audio_devices: (Vec::new(), Vec::new()),
             network_focus: None,
@@ -471,6 +487,38 @@ impl Triib {
             })
     }
 
+    /// Whether `entity_id` is the Mac's own AVB entity, which macOS runs:
+    /// a talker or listener from the interface's own address, where
+    /// macOS runs AVB.
+    pub fn is_this_mac(&self, entity_id: EntityId) -> bool {
+        self.avb_enabled.is_some()
+            && self.entities.get(&entity_id).is_some_and(|entity| {
+                self.interface()
+                    .is_some_and(|interface| interface.mac == entity.mac)
+                    && (crate::describe::is_talker(&entity.adp)
+                        || crate::describe::is_listener(&entity.adp))
+            })
+    }
+
+    /// Asks macOS again whether it runs AVB on the interface.
+    fn refresh_avb(&mut self) {
+        self.avb_enabled = self
+            .settings
+            .interface
+            .as_deref()
+            .and_then(atdecc::blocking::avb_enabled);
+    }
+
+    /// Looks up the Core Audio device macOS made of the Mac's own entity.
+    fn refresh_mac_audio_device(&mut self, entity_id: EntityId) {
+        #[cfg(target_os = "macos")]
+        {
+            self.mac_audio_device = crate::mac::audio_device_of(entity_id);
+        }
+        #[cfg(not(target_os = "macos"))]
+        let _ = entity_id;
+    }
+
     /// Whether `entity_id` is one of this computer's entities.
     pub fn is_host(&self, entity_id: EntityId) -> bool {
         crate::host::status_of(self.endpoints.as_ref(), entity_id).is_some()
@@ -488,7 +536,7 @@ impl Triib {
                     .is_some_and(|interface| interface.mac == entity.mac)
                     && triib_endpointd::runtime::is_device_model(entity.adp.entity_model_id)
             });
-        ours.then_some(scramble_ui::icon::Icon::Computer)
+        (ours || self.is_this_mac(entity_id)).then_some(scramble_ui::icon::Icon::Computer)
     }
 
     /// Goes on with a preset recalled while this computer's endpoints
@@ -977,7 +1025,15 @@ impl Triib {
                 }
             }
             Message::External(External::OmarchyThemeChanged) => self.reload_omarchy(),
-            Message::External(External::Interfaces(interfaces)) => self.interfaces = interfaces,
+            Message::External(External::Interfaces(interfaces)) => {
+                self.interfaces = interfaces;
+                self.refresh_avb();
+            }
+            Message::OpenAudioMidiSetup => {
+                let _ = std::process::Command::new("open")
+                    .args(["-b", "com.apple.audio.AudioMIDISetup"])
+                    .spawn();
+            }
             Message::External(External::Endpoints(status)) => {
                 self.endpoints = status;
                 return self.go_on_recalling();
@@ -1104,6 +1160,9 @@ impl Triib {
         self.neighbor = None;
         self.cannot_listen = None;
         self.network_focus = None;
+        self.refresh_avb();
+        self.mac_audio_device = None;
+        self.reconfiguring.clear();
         let Some(interface) = self.settings.interface.clone() else {
             self.network_state = NetworkState::Idle;
             return;
@@ -1131,7 +1190,11 @@ impl Triib {
             | ReportKind::Restarted(entity) => {
                 // A controller heard that now advertises is listed as such.
                 self.heard.remove(&entity.entity_id());
-                self.entities.insert(entity.entity_id(), entity);
+                let entity_id = entity.entity_id();
+                self.entities.insert(entity_id, entity);
+                if self.is_this_mac(entity_id) {
+                    self.refresh_mac_audio_device(entity_id);
+                }
             }
             ReportKind::Offline(entity_id, _) => {
                 self.entities.remove(&entity_id);
@@ -1146,6 +1209,9 @@ impl Triib {
                         known.state == atdecc::model::EnumerationState::Complete
                     });
                 if !rereading {
+                    if model.state != atdecc::model::EnumerationState::Reading {
+                        self.reconfiguring.remove(&entity_id);
+                    }
                     self.models.insert(entity_id, *model);
                 }
             }
@@ -1176,6 +1242,14 @@ impl Triib {
                     self.pending.remove(position);
                 }
                 self.notice = crate::describe::outcome(self, action, outcome);
+                if let Action::SetConfiguration {
+                    entity,
+                    configuration,
+                } = action
+                    && outcome == Outcome::Done
+                {
+                    self.reconfiguring.insert(entity, configuration);
+                }
                 self.agent_action_finished(action, outcome);
                 // The steps after it go on only once it is done.
                 if let Some(position) = self.chains.iter().position(|(head, _)| *head == action) {
