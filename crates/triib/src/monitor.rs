@@ -143,6 +143,15 @@ pub fn serve(arguments: &[String]) -> i32 {
         eprintln!("usage: triib {FLAG} SETTINGS-AS-JSON");
         return 2;
     };
+    // The app holds the other end of stdin: once it closes, however the
+    // app ended, this ends too, rather than play on unwatched.
+    std::thread::spawn(|| {
+        let mut sink = [0u8; 64];
+        while matches!(std::io::Read::read(&mut std::io::stdin(), &mut sink), Ok(read) if read > 0)
+        {
+        }
+        std::process::exit(0);
+    });
     loop {
         // What it sends is heard through a tap, whose aggregate device
         // delivers it as input, after the device's own inputs.
@@ -304,7 +313,8 @@ impl Supervisor {
                     Command::new(program)
                         .arg(FLAG)
                         .arg(&settings)
-                        .stdin(Stdio::null())
+                        // Held open by the child's handle while the app runs.
+                        .stdin(Stdio::piped())
                         .stdout(Stdio::piped())
                         .stderr(Stdio::null())
                         .spawn()

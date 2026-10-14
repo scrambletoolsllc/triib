@@ -1039,7 +1039,11 @@ mod tests {
         assert_eq!(app.settings.listen.first_channel, 2);
         assert_eq!(app.settings.listen.gain_db, -6.0);
         // What a device sends, on one of its output streams.
-        run(&mut app, "set_audio_monitor", json!({ "side": "sent", "stream": 1 }));
+        run(
+            &mut app,
+            "set_audio_monitor",
+            json!({ "side": "sent", "stream": 1 }),
+        );
         assert_eq!(app.settings.listen.side, crate::monitor::Side::Sent);
         assert_eq!(app.settings.listen.stream, 1);
         run(&mut app, "set_audio_monitor", json!({ "enabled": false }));
