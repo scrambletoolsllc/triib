@@ -172,14 +172,14 @@ pub fn output_streams(name: &str) -> Vec<u16> {
 
 /// What every app sends to one output stream of a device, heard through a
 /// Core Audio process tap, and delivered as the input of a private
-/// aggregate device around it, which the tapped device clocks: its own
-/// inputs first, then the tap's channels. Both go when it is dropped.
+/// aggregate device holding the tap alone, as Apple's own example has it:
+/// its inputs are the tap's channels. Both go when it is dropped.
 pub struct SentTap {
     tap: AudioObjectID,
     aggregate: AudioObjectID,
     /// The aggregate device's name, to open it by.
     pub name: String,
-    /// The aggregate's input channels before the tap's.
+    /// The aggregate's input channels before the tap's: none.
     pub offset: u16,
     /// The tap's channels: the stream's.
     pub channels: u16,
@@ -193,11 +193,9 @@ impl SentTap {
         use objc2_core_audio::{
             AudioHardwareCreateAggregateDevice, AudioHardwareCreateProcessTap,
             AudioHardwareDestroyProcessTap, CATapDescription, CATapMuteBehavior,
-            kAudioAggregateDeviceIsPrivateKey, kAudioAggregateDeviceMainSubDeviceKey,
-            kAudioAggregateDeviceNameKey, kAudioAggregateDeviceSubDeviceListKey,
+            kAudioAggregateDeviceIsPrivateKey, kAudioAggregateDeviceNameKey,
             kAudioAggregateDeviceTapAutoStartKey, kAudioAggregateDeviceTapListKey,
-            kAudioAggregateDeviceUIDKey, kAudioSubDeviceUIDKey, kAudioSubTapDriftCompensationKey,
-            kAudioSubTapUIDKey,
+            kAudioAggregateDeviceUIDKey, kAudioSubTapDriftCompensationKey, kAudioSubTapUIDKey,
         };
         use objc2_core_foundation::CFDictionary;
         use objc2_foundation::{NSArray, NSDictionary, NSNumber, NSObject, NSString};
@@ -249,16 +247,8 @@ impl SentTap {
                 key(kAudioAggregateDeviceUIDKey),
                 string(&format!("io.github.scrambletools.triib.listen.{id}")),
             ),
-            (key(kAudioAggregateDeviceMainSubDeviceKey), string(&uid)),
             (key(kAudioAggregateDeviceIsPrivateKey), number(1)),
             (key(kAudioAggregateDeviceTapAutoStartKey), number(1)),
-            (
-                key(kAudioAggregateDeviceSubDeviceListKey),
-                array(vec![dictionary(vec![(
-                    key(kAudioSubDeviceUIDKey),
-                    string(&uid),
-                )])]),
-            ),
             (
                 key(kAudioAggregateDeviceTapListKey),
                 array(vec![dictionary(vec![
@@ -280,15 +270,25 @@ impl SentTap {
                 "Core Audio refused the aggregate device ({status})"
             ));
         }
-        let offset: u16 = stream_channels_of(tapped, true).iter().sum();
-        let total: u16 = stream_channels_of(aggregate, true).iter().sum();
-        Ok(Self {
+
+        // The tap's channels come to the aggregate a moment after it is
+        // made, and until then it is no input to open.
+        let mut made = Self {
             tap,
             aggregate,
             name,
-            offset,
-            channels: total.saturating_sub(offset),
-        })
+            offset: 0,
+            channels: 0,
+        };
+        let since = std::time::Instant::now();
+        while since.elapsed() < std::time::Duration::from_secs(3) {
+            made.channels = stream_channels_of(aggregate, true).iter().sum();
+            if made.channels > 0 {
+                return Ok(made);
+            }
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+        Err("the tap brought no channels".to_owned())
     }
 }
 

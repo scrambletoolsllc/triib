@@ -13,6 +13,12 @@
 #
 # TRIIB_PRODUCTION=1 makes a release build, as in CI; without it the app
 # is the development build, with its own settings and cache.
+#
+# TRIIB_SIGN_IDENTITY signs with that identity rather than ad hoc, from
+# the keychain TRIIB_SIGN_KEYCHAIN when given, unlocked with
+# TRIIB_SIGN_KEYCHAIN_PASSWORD. An ad hoc signature changes with every
+# build, so macOS asks again for the microphone and audio recording; one
+# that stays, such as a local certificate's, keeps what was allowed.
 set -euo pipefail
 
 root=$(cd "$(dirname "$0")/../.." && pwd)
@@ -90,7 +96,12 @@ plutil -lint "$app/Contents/Info.plist" >/dev/null
 
 # Extended attributes would go into the package as AppleDouble files.
 xattr -cr "$app"
-codesign --force --deep --sign - "$app"
+sign=(--sign "${TRIIB_SIGN_IDENTITY:--}")
+if [ -n "${TRIIB_SIGN_KEYCHAIN:-}" ]; then
+    security unlock-keychain -p "${TRIIB_SIGN_KEYCHAIN_PASSWORD:-}" "$TRIIB_SIGN_KEYCHAIN"
+    sign+=(--keychain "$TRIIB_SIGN_KEYCHAIN")
+fi
+codesign --force --deep "${sign[@]}" "$app"
 echo "$app"
 
 if $pkg; then
