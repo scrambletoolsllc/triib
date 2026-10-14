@@ -676,7 +676,13 @@ mod tests {
     }
 
     fn toml_round_trip(preset: &Preset) -> Preset {
-        let file = std::env::temp_dir().join(format!("triib-preset-{}.toml", std::process::id()));
+        // A file of its own: tests run side by side in one process.
+        static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        let file = std::env::temp_dir().join(format!(
+            "triib-preset-{}-{}.toml",
+            std::process::id(),
+            NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        ));
         triib_store::save(&file, preset).unwrap();
         let loaded = triib_store::load(&file).unwrap();
         let _ = std::fs::remove_file(&file);
