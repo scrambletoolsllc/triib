@@ -32,7 +32,9 @@ computer's talkers and listeners folded into its entities.
   them, as talkers outside Milan do, those not online marked, each with
   a button that disconnects it; `triib-cli streams` lists them too.
 - On a Mac, the Mac's own entity has Listen controls: a channel or a
-  pair of its AVB input played through an output picked, with a gain.
+  pair of what it receives, or of what apps send to one of its output
+  streams, heard through a Core Audio tap (macOS 14.2 and later), played
+  through an output picked, with a gain.
   The audio runs in a helper, `triib --monitor`, started again when it
   ends or hangs, which waits for a device that is not there, as the
   Mac's is not while none of its streams is connected; the choice is

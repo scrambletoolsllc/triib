@@ -141,7 +141,7 @@ pub fn mac_sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Messa
 /// computer: a button that starts and stops, the channels and the output,
 /// the gain, and what the listening helper says.
 pub fn listen_sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>> {
-    use crate::monitor::Listen;
+    use crate::monitor::{Listen, Side};
 
     if !triib.is_this_mac(entity_id) {
         return Vec::new();
@@ -184,19 +184,53 @@ pub fn listen_sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Me
                 .into(),
         );
     }
-    // Its audio inputs' channels, as its configuration has them.
-    let count: u16 = triib
-        .models
-        .get(&entity_id)
-        .map(|model| {
+    // What it receives, or what it sends on one of its output streams.
+    let mut sides = vec![Choice {
+        value: (Side::Received, 0),
+        label: fl!("listen-received"),
+    }];
+    sides.extend(
+        triib
+            .mac_output_streams
+            .iter()
+            .enumerate()
+            .map(|(stream, &channels)| Choice {
+                value: (Side::Sent, stream as u16),
+                label: fl!("listen-sent", number = (stream + 1), channels = channels),
+            }),
+    );
+    let current_side = match listen.side {
+        Side::Received => (Side::Received, 0),
+        Side::Sent => (Side::Sent, listen.stream),
+    };
+    let pick_side = with.clone();
+    items.push(stacked(
+        fl!("listen-source"),
+        choose(sides, current_side, move |(side, stream)| {
+            pick_side(&|listen| {
+                listen.side = side;
+                listen.stream = stream;
+                listen.first_channel = 0;
+            })
+        }),
+    ));
+    // The channels to pick from: its audio inputs', as its configuration
+    // has them, or the output stream's.
+    let count: u16 = match listen.side {
+        Side::Sent => triib
+            .mac_output_streams
+            .get(usize::from(listen.stream))
+            .copied(),
+        Side::Received => triib.models.get(&entity_id).map(|model| {
             model
                 .streams(true)
                 .filter(|stream| !stream.is_media_clock())
                 .filter_map(|stream| stream.current_format.channels())
                 .sum()
-        })
-        .filter(|&count| count > 0)
-        .unwrap_or(8);
+        }),
+    }
+    .filter(|&count| count > 0)
+    .unwrap_or(8);
     let mut channels: Vec<Choice<(u16, u16)>> = (0..count)
         .map(|first| Choice {
             value: (first, 1),

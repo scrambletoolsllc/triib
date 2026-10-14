@@ -296,9 +296,16 @@ struct Rename {
 struct SetMonitor {
     /// Listening, or not.
     enabled: Option<bool>,
-    /// The audio input, by name, as list_audio_devices lists them.
+    /// The audio device, by name, as list_audio_devices lists them.
     input: Option<String>,
-    /// The input's first channel listened to, from 0.
+    /// "received" for what the device receives, its inputs; "sent" for
+    /// what apps send to one of its output streams (on a Mac, macOS 14.2
+    /// and later).
+    side: Option<crate::monitor::Side>,
+    /// For "sent", the device's output stream, from 0.
+    stream: Option<u16>,
+    /// The first channel listened to, from 0, of the device's inputs or of
+    /// the output stream.
     first_channel: Option<u16>,
     /// Channels listened to: 1, played on both sides, or 2.
     channels: Option<u16>,
@@ -551,7 +558,9 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
             Kind::Read,
             "Lists this computer's audio inputs and outputs by name, as the audio monitor \
              takes them, and on a Mac the Core Audio device macOS makes of its own AVB \
-             entity, which is there only while one of that entity's streams is connected.",
+             entity, which is there only while one of that entity's streams is connected, \
+             with the channels of each of its output streams, whose audio the monitor can \
+             hear as sent.",
             |app, _: Nothing, answer| {
                 reply(
                     &answer,
@@ -559,6 +568,7 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
                         "inputs": app.audio_devices.0,
                         "outputs": app.audio_devices.1,
                         "this_mac_avb_device": app.mac_audio_device,
+                        "this_mac_avb_output_streams": app.mac_output_streams,
                     }))),
                 )
             },
@@ -577,8 +587,9 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
             "set_audio_monitor",
             "Set the audio monitor",
             Kind::Change,
-            "Routes an audio input on this computer to an audio output, as the Listen \
-             controls do: plays one channel on both sides, or a pair, with a gain. What is \
+            "Routes an audio device on this computer to an audio output, as the Listen \
+             controls do: what it receives, or what apps send to one of its output \
+             streams, one channel played on both sides or a pair, with a gain. What is \
              left out stays as it was; on a Mac the input defaults to its own AVB entity's \
              device. The monitor waits for a device that is not there and plays once it \
              is, and starts again by itself when it stops; the setting is kept across \
@@ -593,6 +604,12 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
                 }
                 if listen.input.is_none() {
                     listen.input = app.mac_audio_device.clone();
+                }
+                if let Some(side) = input.side {
+                    listen.side = side;
+                }
+                if let Some(stream) = input.stream {
+                    listen.stream = stream;
                 }
                 if let Some(first) = input.first_channel {
                     listen.first_channel = first;
@@ -1021,6 +1038,10 @@ mod tests {
         assert_eq!(app.settings.listen.output, None);
         assert_eq!(app.settings.listen.first_channel, 2);
         assert_eq!(app.settings.listen.gain_db, -6.0);
+        // What a device sends, on one of its output streams.
+        run(&mut app, "set_audio_monitor", json!({ "side": "sent", "stream": 1 }));
+        assert_eq!(app.settings.listen.side, crate::monitor::Side::Sent);
+        assert_eq!(app.settings.listen.stream, 1);
         run(&mut app, "set_audio_monitor", json!({ "enabled": false }));
         let read = run(&mut app, "audio_monitor", json!({}));
         assert_eq!(read["structuredContent"]["status"]["state"], "off");

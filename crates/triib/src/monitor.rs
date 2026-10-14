@@ -33,15 +33,34 @@ const RESTART: Duration = Duration::from_secs(3);
 /// as stalled: the device went, or stopped delivering.
 const STALLED: u64 = 100;
 
+/// Which of a device's audio is listened to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Side {
+    /// What the device receives: its input channels, as the Mac's own AVB
+    /// entity's inputs.
+    #[default]
+    Received,
+    /// What apps send to one of the device's output streams, heard through
+    /// a Core Audio tap (macOS 14.2 and later), as the Mac's own AVB
+    /// entity's outputs.
+    Sent,
+}
+
 /// What to listen to, and where: kept in the settings.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]
 pub struct Listen {
     /// Listening, or not.
     pub enabled: bool,
-    /// The audio input, by name, as list_audio_devices names them.
+    /// The audio device, by name, as list_audio_devices names them.
     pub input: Option<String>,
-    /// The input's first channel listened to, from 0.
+    /// What it receives, or what it sends on one of its output streams.
+    pub side: Side,
+    /// For what it sends, the output stream, from 0.
+    pub stream: u16,
+    /// The first channel listened to, from 0, of the device's inputs or of
+    /// the output stream.
     pub first_channel: u16,
     /// Channels listened to: 1, played on both sides, or 2.
     pub channels: u16,
@@ -56,6 +75,8 @@ impl Default for Listen {
         Self {
             enabled: false,
             input: None,
+            side: Side::Received,
+            stream: 0,
             first_channel: 0,
             channels: 2,
             output: None,
@@ -123,9 +144,55 @@ pub fn serve(arguments: &[String]) -> i32 {
         return 2;
     };
     loop {
+        // What it sends is heard through a tap, whose aggregate device
+        // delivers it as input, after the device's own inputs.
+        #[cfg(target_os = "macos")]
+        let tap = match listen.side {
+            Side::Received => None,
+            Side::Sent => match crate::mac::SentTap::open(
+                listen.input.as_deref().unwrap_or_default(),
+                listen.stream,
+            ) {
+                Ok(tap) if listen.first_channel + listen.channels > tap.channels => {
+                    report(
+                        State::WaitingForInput(format!(
+                            "output stream {} has {} channels",
+                            listen.stream + 1,
+                            tap.channels
+                        )),
+                        0.0,
+                    );
+                    std::thread::sleep(RETRY);
+                    continue;
+                }
+                Ok(tap) => Some(tap),
+                Err(error) => {
+                    report(State::WaitingForInput(error), 0.0);
+                    std::thread::sleep(RETRY);
+                    continue;
+                }
+            },
+        };
+        #[cfg(target_os = "macos")]
+        let (name, first_channel) = match &tap {
+            Some(tap) => (Some(tap.name.clone()), tap.offset + listen.first_channel),
+            None => (listen.input.clone(), listen.first_channel),
+        };
+        #[cfg(not(target_os = "macos"))]
+        let (name, first_channel) = match listen.side {
+            Side::Received => (listen.input.clone(), listen.first_channel),
+            Side::Sent => {
+                report(
+                    State::WaitingForInput("hearing what a device sends takes a Mac".into()),
+                    0.0,
+                );
+                std::thread::sleep(RETRY);
+                continue;
+            }
+        };
         let source = Source::Device {
-            name: listen.input.clone(),
-            first_channel: listen.first_channel,
+            name,
+            first_channel,
         };
         let input = match Input::open(&source, listen.channels, RATE) {
             Ok(input) => input,

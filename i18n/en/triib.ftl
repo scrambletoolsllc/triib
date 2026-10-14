@@ -1035,6 +1035,11 @@ mac-avb-off = AVB is off on { $interface }, so this Mac has no AVB entity of its
 listen-section = Listen
 listen-start = Listen
 listen-stop = Stop listening
+# What the Mac's entity receives, or sends on one of its output streams.
+listen-source = Listens to
+listen-received = What it receives
+# $number is the output stream, from 1; $channels its channels.
+listen-sent = What it sends on stream { $number } ({ $channels } ch)
 listen-channels = Channels
 listen-channel = Channel { $number }
 # Two channels listened to as a pair, such as Channels 1–2.

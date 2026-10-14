@@ -99,6 +99,8 @@ pub struct Triib {
     /// The Core Audio device macOS makes of the Mac's own entity, while
     /// one of its streams is connected, and when it was last looked for.
     pub mac_audio_device: Option<String>,
+    /// Its output streams' channels, which the monitor can tap.
+    pub mac_output_streams: Vec<u16>,
     mac_audio_checked: Option<std::time::Instant>,
     /// Entities that took another configuration and are being read again
     /// in it, with the one they took.
@@ -363,6 +365,7 @@ impl Triib {
             avb_enabled: None,
             mac_audio_device: None,
             mac_audio_checked: None,
+            mac_output_streams: Vec::new(),
             reconfiguring: BTreeMap::new(),
             monitor: None,
             monitor_status: crate::monitor::Status::off(),
@@ -431,6 +434,7 @@ impl Triib {
             avb_enabled: None,
             mac_audio_device: None,
             mac_audio_checked: None,
+            mac_output_streams: Vec::new(),
             reconfiguring: BTreeMap::new(),
             monitor: None,
             monitor_status: crate::monitor::Status::off(),
@@ -561,6 +565,11 @@ impl Triib {
         #[cfg(target_os = "macos")]
         {
             self.mac_audio_device = crate::mac::audio_device_of(entity_id);
+            self.mac_output_streams = self
+                .mac_audio_device
+                .as_deref()
+                .map(crate::mac::output_streams)
+                .unwrap_or_default();
         }
         #[cfg(not(target_os = "macos"))]
         let _ = entity_id;
