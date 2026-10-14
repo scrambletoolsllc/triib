@@ -1770,6 +1770,36 @@ fn a_new_configuration_is_read_again() {
     assert!(!events(&mut controller).contains(&Event::EnumerationStarted(TALKER)));
 }
 
+/// Each of an entity's configurations is read once the entity is: its
+/// CONFIGURATION descriptor, then its streams, so a controller can tell
+/// them apart.
+#[test]
+fn other_configurations_are_read() {
+    let mut controller = controller();
+    let mut entity = FakeEntity::new();
+    let mut second = entity.descriptors[&(DescriptorType::CONFIGURATION.0, 0)].clone();
+    put(&mut second, 2, 1);
+    entity
+        .descriptors
+        .insert((DescriptorType::CONFIGURATION.0, 1), second);
+    put(entity.stored(DescriptorType::ENTITY, 0), 308, 2);
+    controller.handle_adpdu(at(0), TALKER_MAC, &aem_available(1));
+    controller.pump(at(0));
+    exchange(&mut controller, &mut entity, at(0));
+    let seen = events(&mut controller);
+    assert!(seen.contains(&Event::EntityModelChanged(TALKER)));
+    let model = controller.model(TALKER).unwrap();
+    let configurations = model.configurations();
+    assert_eq!(configurations.len(), 2);
+    let (current, other) = (&configurations[0], &configurations[1]);
+    assert_eq!((current.index, other.index), (0, 1));
+    assert!(current.read && other.read);
+    assert_eq!(other.inputs.len(), current.inputs.len());
+    assert_eq!(other.outputs.len(), current.outputs.len());
+    assert!(!other.outputs.is_empty());
+    assert_eq!(other.name, current.name);
+}
+
 #[test]
 fn picks_a_clock_source() {
     let (mut controller, mut entity) = enumerated();

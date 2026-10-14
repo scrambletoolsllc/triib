@@ -103,6 +103,19 @@ pub struct Wireless {
     pub stations: Vec<Station>,
 }
 
+/// What one of an entity's configurations holds, for choosing among them.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConfigurationSummary<'a> {
+    pub index: u16,
+    /// Its own name or its localized description; empty when it has
+    /// neither.
+    pub name: &'a str,
+    pub inputs: Vec<StreamDescriptor<'a>>,
+    pub outputs: Vec<StreamDescriptor<'a>>,
+    /// Whether its descriptor and all its streams are read.
+    pub read: bool,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct EntityModel {
     pub state: EnumerationState,
@@ -120,6 +133,9 @@ pub struct EntityModel {
     /// what changes on an entity read from it.
     pub from_cache: bool,
     descriptors: BTreeMap<(DescriptorType, u16), Vec<u8>>,
+    /// Its other configurations' CONFIGURATION and stream descriptors,
+    /// read to tell them apart: by configuration, type and index.
+    others: BTreeMap<(u16, DescriptorType, u16), Vec<u8>>,
     bindings: BTreeMap<u16, Binding>,
     stream_info: BTreeMap<(DescriptorType, u16), StreamInfo>,
     avb_info: BTreeMap<u16, AvbInfo>,
@@ -523,6 +539,81 @@ impl EntityModel {
 
     pub fn entity(&self) -> Option<EntityDescriptor<'_>> {
         EntityDescriptor::decode(self.descriptor(DescriptorType::ENTITY, 0)?).ok()
+    }
+
+    /// Stores a descriptor of another configuration than the one read.
+    pub(crate) fn store_other(
+        &mut self,
+        configuration: u16,
+        descriptor_type: DescriptorType,
+        index: u16,
+        bytes: &[u8],
+    ) {
+        self.others
+            .insert((configuration, descriptor_type, index), bytes.to_vec());
+    }
+
+    /// What each of its configurations holds, as far as it is read: the
+    /// current one from its own descriptors, the others from those read
+    /// of them. Empty unless it has more than one.
+    pub fn configurations(&self) -> Vec<ConfigurationSummary<'_>> {
+        let Some(entity) = self
+            .entity()
+            .filter(|entity| entity.configurations_count > 1)
+        else {
+            return Vec::new();
+        };
+        (0..entity.configurations_count)
+            .map(|index| {
+                let (descriptor, inputs, outputs) = if index == self.configuration {
+                    (
+                        self.configuration(),
+                        self.streams(true).collect(),
+                        self.streams(false).collect(),
+                    )
+                } else {
+                    let streams = |descriptor_type| -> Vec<StreamDescriptor<'_>> {
+                        self.others
+                            .range((index, descriptor_type, 0)..=(index, descriptor_type, u16::MAX))
+                            .filter_map(|(_, bytes)| StreamDescriptor::decode(bytes).ok())
+                            .collect()
+                    };
+                    (
+                        self.others
+                            .get(&(index, DescriptorType::CONFIGURATION, index))
+                            .and_then(|bytes| ConfigurationDescriptor::decode(bytes).ok()),
+                        streams(DescriptorType::STREAM_INPUT),
+                        streams(DescriptorType::STREAM_OUTPUT),
+                    )
+                };
+                let count = |descriptor_type| {
+                    descriptor.map_or(0, |descriptor| {
+                        descriptor
+                            .descriptor_counts()
+                            .find(|(found, _)| *found == descriptor_type)
+                            .map_or(0, |(_, count)| usize::from(count))
+                    })
+                };
+                let read = descriptor.is_some()
+                    && inputs.len() == count(DescriptorType::STREAM_INPUT)
+                    && outputs.len() == count(DescriptorType::STREAM_OUTPUT);
+                let name = descriptor.map_or("", |descriptor| {
+                    if descriptor.object_name.is_empty() {
+                        self.localized(descriptor.localized_description)
+                            .unwrap_or_default()
+                    } else {
+                        descriptor.object_name
+                    }
+                });
+                ConfigurationSummary {
+                    index,
+                    name,
+                    inputs,
+                    outputs,
+                    read,
+                }
+            })
+            .collect()
     }
 
     pub fn configuration(&self) -> Option<ConfigurationDescriptor<'_>> {

@@ -123,6 +123,9 @@ pub struct Config {
     /// Ask each Milan entity's stream outputs for their max transit time
     /// once it is read.
     pub read_transit_times: bool,
+    /// Read an entity's other configurations and their streams once it is
+    /// read, to tell them apart.
+    pub read_configurations: bool,
     /// Ask each entity for its AVB Lite status once it is read, and keep
     /// asking those that answer every `lite_poll`, zero for never, to
     /// follow their PTP offset.
@@ -155,6 +158,7 @@ impl Config {
             media_clock_info: true,
             read_counters: true,
             read_transit_times: true,
+            read_configurations: true,
             lite_status: true,
             lite_poll: Duration::from_secs(5),
             wireless_status: true,
@@ -327,6 +331,12 @@ enum Request {
     SetConfiguration {
         configuration: u16,
         command: CommandId,
+    },
+    /// A descriptor of another configuration than the one read.
+    ReadOther {
+        configuration: u16,
+        descriptor_type: DescriptorType,
+        index: u16,
     },
     /// One part of a stream port's dynamic mappings.
     GetAudioMap {
@@ -1341,6 +1351,20 @@ impl Controller {
                 self.events
                     .push_back(Event::CommandFinished(command, aem_outcome(aem)));
             }
+            Request::ReadOther {
+                configuration,
+                descriptor_type,
+                index,
+            } => {
+                let response = ReadDescriptorResponse::decode(aem.payload);
+                let read = aem
+                    .status()
+                    .is_success()
+                    .then(|| matching(response, descriptor_type, index))
+                    .flatten()
+                    .map(|response| response.descriptor);
+                self.other_read(entity_id, configuration, descriptor_type, index, read);
+            }
             Request::SetName { command, .. }
             | Request::SetStreamFormat { command, .. }
             | Request::SetSamplingRate { command, .. }
@@ -1366,6 +1390,55 @@ impl Controller {
             | Request::DisconnectTx { .. } => {}
         }
         self.check_complete(entity_id);
+    }
+
+    /// Keeps a descriptor of another configuration, when it was read; for
+    /// its CONFIGURATION descriptor, reads its streams; once the last is
+    /// answered, says the model changed.
+    fn other_read(
+        &mut self,
+        entity_id: EntityId,
+        configuration: u16,
+        descriptor_type: DescriptorType,
+        index: u16,
+        bytes: Option<&[u8]>,
+    ) {
+        let Some(model) = self.models.get_mut(&entity_id) else {
+            return;
+        };
+        if let Some(bytes) = bytes {
+            model.store_other(configuration, descriptor_type, index, bytes);
+        }
+        if descriptor_type == DescriptorType::CONFIGURATION
+            && let Some(Ok(descriptor)) = bytes.map(ConfigurationDescriptor::decode)
+        {
+            for (stream_type, count) in descriptor.descriptor_counts().filter(|(found, _)| {
+                matches!(
+                    *found,
+                    DescriptorType::STREAM_INPUT | DescriptorType::STREAM_OUTPUT
+                )
+            }) {
+                for stream in 0..count {
+                    self.queue_query(
+                        entity_id,
+                        Request::ReadOther {
+                            configuration,
+                            descriptor_type: stream_type,
+                            index: stream,
+                        },
+                    );
+                }
+            }
+        }
+        let pending = self.sessions.get(&entity_id).is_some_and(|session| {
+            session
+                .queue
+                .iter()
+                .any(|request| matches!(request, Request::ReadOther { .. }))
+        });
+        if !pending {
+            self.events.push_back(Event::EntityModelChanged(entity_id));
+        }
     }
 
     /// Updates the model with what a SET command's response says the
@@ -2073,6 +2146,21 @@ impl Controller {
                 });
             }
         }
+        // What its other configurations hold, to choose among them: each
+        // one's CONFIGURATION descriptor, then its streams.
+        if self.config.read_configurations
+            && let Some(entity) = model.entity()
+        {
+            for configuration in
+                (0..entity.configurations_count).filter(|&other| other != model.configuration)
+            {
+                session.queue.push_back(Request::ReadOther {
+                    configuration,
+                    descriptor_type: DescriptorType::CONFIGURATION,
+                    index: configuration,
+                });
+            }
+        }
         // Whether each interface runs AVB or AVB Lite, from entities that
         // answer the query.
         if self.config.lite_status && model.lite_supported != Some(false) {
@@ -2358,6 +2446,17 @@ impl Controller {
             Request::SetConfiguration { configuration, .. } => {
                 aem::encode_set_configuration(addressing, configuration, &mut out)
             }
+            Request::ReadOther {
+                configuration,
+                descriptor_type,
+                index,
+            } => aem::encode_read_descriptor(
+                addressing,
+                configuration,
+                descriptor_type,
+                index,
+                &mut out,
+            ),
             Request::GetMaxTransitTime { output, .. } => {
                 aem::encode_get_max_transit_time(addressing, output, &mut out)
             }
@@ -3349,7 +3448,9 @@ fn command_type_of(request: Request) -> AemCommandType {
         Request::SetControl { .. } => AemCommandType::SET_CONTROL,
         Request::GetMaxTransitTime { .. } => AemCommandType::GET_MAX_TRANSIT_TIME,
         Request::SetMaxTransitTime { .. } => AemCommandType::SET_MAX_TRANSIT_TIME,
-        Request::ReadForCaller { .. } => AemCommandType::READ_DESCRIPTOR,
+        Request::ReadForCaller { .. } | Request::ReadOther { .. } => {
+            AemCommandType::READ_DESCRIPTOR
+        }
         Request::GetDynamicInfo { .. } => AemCommandType::GET_DYNAMIC_INFO,
         Request::GetAudioMap { .. } => AemCommandType::GET_AUDIO_MAP,
         Request::ChangeMappings { change, .. } => change.command_type(),

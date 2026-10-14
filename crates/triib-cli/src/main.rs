@@ -2011,6 +2011,41 @@ fn print_entity(found: &DiscoveredEntity, model: Option<&EntityModel>) {
                 .map(|name| format!(", \"{name}\""))
                 .unwrap_or_default()
         );
+        for configuration in model.configurations() {
+            // Audio channels each way, and its media clock streams.
+            let audio = |streams: &[atdecc::descriptor::StreamDescriptor<'_>]| {
+                let channels: u16 = streams
+                    .iter()
+                    .filter(|stream| !stream.is_media_clock())
+                    .filter_map(|stream| stream.current_format.channels())
+                    .sum();
+                let clocks = streams
+                    .iter()
+                    .filter(|stream| stream.is_media_clock())
+                    .count();
+                format!(
+                    "{} streams, {channels} ch audio, {clocks} media clock",
+                    streams.len()
+                )
+            };
+            println!(
+                "    {} {:2} \"{}\": in {}; out {}{}",
+                if configuration.index == entity.current_configuration {
+                    "*"
+                } else {
+                    " "
+                },
+                configuration.index,
+                configuration.name,
+                audio(&configuration.inputs),
+                audio(&configuration.outputs),
+                if configuration.read {
+                    ""
+                } else {
+                    " (not all read)"
+                }
+            );
+        }
     }
     match model.milan {
         Some(milan) => {

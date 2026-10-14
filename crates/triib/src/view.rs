@@ -1906,6 +1906,7 @@ pub(crate) mod tests {
         config.media_clock_info = false;
         config.read_counters = false;
         config.read_transit_times = false;
+        config.read_configurations = false;
         config.lite_status = false;
         config.wireless_status = false;
         config.first_sequence_id = first_sequence_id;
