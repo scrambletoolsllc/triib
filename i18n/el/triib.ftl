@@ -812,6 +812,7 @@ listen-stop = Διακοπή ακρόασης
 listen-source = Ακούει
 listen-received = Ό,τι λαμβάνει
 listen-sent = Ό,τι στέλνει στη ροή { $number } ({ $channels } κανάλια)
+listen-sent-needs-macos = Για να ακούσετε ό,τι στέλνει αυτός ο Mac χρειάζεται macOS 14.2 ή νεότερο.
 listen-channels = Κανάλια
 listen-channel = Κανάλι { $number }
 listen-channel-pair = Κανάλια { $first }–{ $last }

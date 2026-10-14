@@ -698,6 +698,7 @@ listen-stop = Berhenti mendengarkan
 listen-source = Mendengarkan
 listen-received = Yang diterimanya
 listen-sent = Yang dikirimnya di stream { $number } ({ $channels } kanal)
+listen-sent-needs-macos = Mendengarkan apa yang dikirim Mac ini memerlukan macOS 14.2 atau lebih baru.
 listen-channels = Kanal
 listen-channel = Kanal { $number }
 listen-channel-pair = Kanal { $first }–{ $last }

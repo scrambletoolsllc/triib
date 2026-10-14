@@ -623,6 +623,15 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
                 if let Some(gain) = input.gain_db {
                     listen.gain_db = gain;
                 }
+                if listen.side == crate::monitor::Side::Sent && !crate::monitor::hears_sent() {
+                    return reply(
+                        &answer,
+                        Err(Error::new(
+                            code::INVALID_PARAMS,
+                            "hearing what a device sends takes a Mac with macOS 14.2 or later",
+                        )),
+                    );
+                }
                 if listen.enabled && listen.input.is_none() {
                     return reply(
                         &answer,
@@ -1038,14 +1047,29 @@ mod tests {
         assert_eq!(app.settings.listen.output, None);
         assert_eq!(app.settings.listen.first_channel, 2);
         assert_eq!(app.settings.listen.gain_db, -6.0);
-        // What a device sends, on one of its output streams.
-        run(
+        // What a device sends, on one of its output streams, where Core
+        // Audio's taps are (a Mac on macOS 14.2 and later); refused, and
+        // the setting kept, elsewhere.
+        let (sender, answered) = std::sync::mpsc::channel();
+        let call = Call::local("set_audio_monitor", Value::Null, move |result| {
+            let _ = sender.send(result);
+        });
+        let _ = find("set_audio_monitor").unwrap().start(
             &mut app,
-            "set_audio_monitor",
             json!({ "side": "sent", "stream": 1 }),
+            Answer(call),
         );
-        assert_eq!(app.settings.listen.side, crate::monitor::Side::Sent);
-        assert_eq!(app.settings.listen.stream, 1);
+        let sent = answered
+            .recv_timeout(std::time::Duration::from_secs(5))
+            .unwrap();
+        if crate::monitor::hears_sent() {
+            assert!(sent.is_ok());
+            assert_eq!(app.settings.listen.side, crate::monitor::Side::Sent);
+            assert_eq!(app.settings.listen.stream, 1);
+        } else {
+            assert!(sent.is_err());
+            assert_eq!(app.settings.listen.side, crate::monitor::Side::Received);
+        }
         run(&mut app, "set_audio_monitor", json!({ "enabled": false }));
         let read = run(&mut app, "audio_monitor", json!({}));
         assert_eq!(read["structuredContent"]["status"]["state"], "off");

@@ -827,6 +827,7 @@ listen-stop = הפסקת האזנה
 listen-source = מאזין ל
 listen-received = מה שהיא מקבלת
 listen-sent = מה שהיא שולחת בזרם { $number } ({ $channels } ערוצים)
+listen-sent-needs-macos = האזנה למה שה-Mac הזה שולח דורשת macOS 14.2 ומעלה.
 listen-channels = ערוצים
 listen-channel = ערוץ { $number }
 listen-channel-pair = ערוצים { $first }–{ $last }

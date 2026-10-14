@@ -693,6 +693,7 @@ listen-stop = モニターを停止
 listen-source = モニター対象
 listen-received = 受信しているもの
 listen-sent = ストリーム { $number } で送信しているもの（{ $channels } ch）
+listen-sent-needs-macos = この Mac が送信している音を聴くには macOS 14.2 以降が必要です。
 listen-channels = チャンネル
 listen-channel = チャンネル { $number }
 listen-channel-pair = チャンネル { $first }–{ $last }

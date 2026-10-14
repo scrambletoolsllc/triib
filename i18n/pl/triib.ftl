@@ -881,6 +881,7 @@ listen-stop = Zatrzymaj odsłuch
 listen-source = Odsłuchuje
 listen-received = To, co odbiera
 listen-sent = To, co wysyła w strumieniu { $number } ({ $channels } kan.)
+listen-sent-needs-macos = Słuchanie tego, co wysyła ten Mac, wymaga systemu macOS 14.2 lub nowszego.
 listen-channels = Kanały
 listen-channel = Kanał { $number }
 listen-channel-pair = Kanały { $first }–{ $last }

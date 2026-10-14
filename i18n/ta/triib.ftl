@@ -789,6 +789,7 @@ listen-stop = கேட்பதை நிறுத்து
 listen-source = கேட்பது
 listen-received = அது பெறுவது
 listen-sent = stream { $number } இல் அது அனுப்புவது ({ $channels } சேனல்கள்)
+listen-sent-needs-macos = இந்த Mac அனுப்புவதைக் கேட்க macOS 14.2 அல்லது அதற்குப் பிந்தையது தேவை.
 listen-channels = சேனல்கள்
 listen-channel = சேனல் { $number }
 listen-channel-pair = சேனல்கள் { $first }–{ $last }

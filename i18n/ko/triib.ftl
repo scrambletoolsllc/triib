@@ -693,6 +693,7 @@ listen-stop = 모니터 중지
 listen-source = 모니터 대상
 listen-received = 받는 것
 listen-sent = 스트림 { $number }(으)로 보내는 것({ $channels }채널)
+listen-sent-needs-macos = 이 Mac이 보내는 것을 들으려면 macOS 14.2 이상이 필요합니다.
 listen-channels = 채널
 listen-channel = 채널 { $number }
 listen-channel-pair = 채널 { $first }–{ $last }

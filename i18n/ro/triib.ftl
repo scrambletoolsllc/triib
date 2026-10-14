@@ -869,6 +869,7 @@ listen-stop = Oprește ascultarea
 listen-source = Ascultă
 listen-received = Ce primește
 listen-sent = Ce trimite pe fluxul { $number } ({ $channels } canale)
+listen-sent-needs-macos = Ascultarea a ceea ce trimite acest Mac necesită macOS 14.2 sau o versiune ulterioară.
 listen-channels = Canale
 listen-channel = Canalul { $number }
 listen-channel-pair = Canalele { $first }–{ $last }

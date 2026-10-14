@@ -799,6 +799,7 @@ listen-stop = Mithören beenden
 listen-source = Hört auf
 listen-received = Was sie empfängt
 listen-sent = Was sie auf Stream { $number } sendet ({ $channels } Kanäle)
+listen-sent-needs-macos = Um zu hören, was dieser Mac sendet, ist macOS 14.2 oder neuer nötig.
 listen-channels = Kanäle
 listen-channel = Kanal { $number }
 listen-channel-pair = Kanäle { $first }–{ $last }

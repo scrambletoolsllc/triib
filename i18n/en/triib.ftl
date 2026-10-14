@@ -1040,6 +1040,9 @@ listen-source = Listens to
 listen-received = What it receives
 # $number is the output stream, from 1; $channels its channels.
 listen-sent = What it sends on stream { $number } ({ $channels } ch)
+# Under the source picker, on a Mac before macOS 14.2, which lacks the tap
+# that hearing what the Mac sends takes; also the monitor's status then.
+listen-sent-needs-macos = Listening to what this Mac sends takes macOS 14.2 or later.
 listen-channels = Channels
 listen-channel = Channel { $number }
 # Two channels listened to as a pair, such as Channels 1–2.

@@ -693,6 +693,7 @@ listen-stop = Dừng nghe
 listen-source = Nghe
 listen-received = Những gì nó nhận
 listen-sent = Những gì nó gửi trên luồng { $number } ({ $channels } kênh)
+listen-sent-needs-macos = Để nghe những gì máy Mac này gửi cần macOS 14.2 trở lên.
 listen-channels = Kênh
 listen-channel = Kênh { $number }
 listen-channel-pair = Kênh { $first }–{ $last }

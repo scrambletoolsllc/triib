@@ -799,6 +799,7 @@ listen-stop = Stoppen met meeluisteren
 listen-source = Luistert naar
 listen-received = Wat hij ontvangt
 listen-sent = Wat hij verstuurt op stream { $number } ({ $channels } kanalen)
+listen-sent-needs-macos = Luisteren naar wat deze Mac verstuurt vereist macOS 14.2 of nieuwer.
 listen-channels = Kanalen
 listen-channel = Kanaal { $number }
 listen-channel-pair = Kanalen { $first }–{ $last }

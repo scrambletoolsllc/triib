@@ -49,6 +49,8 @@ objc2-core-foundation = { version = "0.3", default-features = false, features = 
 # A tap on what the Mac sends, through an aggregate device around it.
 objc2 = "0.6"
 objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSArray", "NSDictionary", "NSString", "NSUUID", "NSValue"] }
+# The tap's functions, looked up when used, as macOS before 14.2 lacks them.
+libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]
 # `triib --mcp` keeps its pipes from the triib it starts.

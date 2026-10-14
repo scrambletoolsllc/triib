@@ -789,6 +789,7 @@ listen-stop = توقف گوش دادن
 listen-source = گوش می‌دهد به
 listen-received = آنچه دریافت می‌کند
 listen-sent = آنچه روی جریان { $number } می‌فرستد ({ $channels } کانال)
+listen-sent-needs-macos = گوش دادن به آنچه این Mac می‌فرستد به macOS 14.2 یا جدیدتر نیاز دارد.
 listen-channels = کانال‌ها
 listen-channel = کانال { $number }
 listen-channel-pair = کانال‌های { $first }–{ $last }

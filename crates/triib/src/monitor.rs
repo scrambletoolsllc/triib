@@ -49,6 +49,15 @@ pub enum Side {
     Sent,
 }
 
+/// Whether this computer can hear what a device sends: a Mac with Core
+/// Audio's process taps, macOS 14.2 and later.
+pub fn hears_sent() -> bool {
+    #[cfg(target_os = "macos")]
+    return crate::mac::taps_supported();
+    #[cfg(not(target_os = "macos"))]
+    false
+}
+
 /// What to listen to, and where: kept in the settings.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(default)]

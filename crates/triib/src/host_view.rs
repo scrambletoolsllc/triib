@@ -184,21 +184,25 @@ pub fn listen_sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Me
                 .into(),
         );
     }
-    // What it receives, or what it sends on one of its output streams.
+    // What it receives, or what it sends on one of its output streams,
+    // which takes a tap only macOS 14.2 and later have.
+    let hears_sent = crate::monitor::hears_sent();
     let mut sides = vec![Choice {
         value: (Side::Received, 0),
         label: fl!("listen-received"),
     }];
-    sides.extend(
-        triib
-            .mac_output_streams
-            .iter()
-            .enumerate()
-            .map(|(stream, &channels)| Choice {
-                value: (Side::Sent, stream as u16),
-                label: fl!("listen-sent", number = (stream + 1), channels = channels),
-            }),
-    );
+    if hears_sent {
+        sides.extend(
+            triib
+                .mac_output_streams
+                .iter()
+                .enumerate()
+                .map(|(stream, &channels)| Choice {
+                    value: (Side::Sent, stream as u16),
+                    label: fl!("listen-sent", number = (stream + 1), channels = channels),
+                }),
+        );
+    }
     let current_side = match listen.side {
         Side::Received => (Side::Received, 0),
         Side::Sent => (Side::Sent, listen.stream),
@@ -214,6 +218,13 @@ pub fn listen_sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Me
             })
         }),
     ));
+    if !hears_sent && !triib.mac_output_streams.is_empty() {
+        items.push(
+            styled(fl!("listen-sent-needs-macos"), Type::BodySmall)
+                .style(style::on_surface_variant)
+                .into(),
+        );
+    }
     // The channels to pick from: its audio inputs', as its configuration
     // has them, or the output stream's.
     let count: u16 = match listen.side {
@@ -308,6 +319,12 @@ fn listen_status(triib: &Triib) -> Option<String> {
 
     let listen = &triib.settings.listen;
     let status = &triib.monitor_status;
+    if status.state != State::Off
+        && listen.side == crate::monitor::Side::Sent
+        && !crate::monitor::hears_sent()
+    {
+        return Some(fl!("listen-sent-needs-macos"));
+    }
     Some(match &status.state {
         State::Off => return None,
         State::Starting => fl!("listen-starting"),

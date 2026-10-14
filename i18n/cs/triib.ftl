@@ -882,6 +882,7 @@ listen-stop = Přestat poslouchat
 listen-source = Poslouchá
 listen-received = Co přijímá
 listen-sent = Co posílá ve streamu { $number } ({ $channels } kan.)
+listen-sent-needs-macos = Poslech toho, co tento Mac posílá, vyžaduje macOS 14.2 nebo novější.
 listen-channels = Kanály
 listen-channel = Kanál { $number }
 listen-channel-pair = Kanály { $first }–{ $last }

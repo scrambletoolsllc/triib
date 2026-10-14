@@ -791,6 +791,7 @@ listen-stop = Belehallgatás leállítása
 listen-source = Amit hallgat
 listen-received = Amit fogad
 listen-sent = Amit a(z) { $number }. streamen küld ({ $channels } csatorna)
+listen-sent-needs-macos = Annak meghallgatásához, amit ez a Mac küld, macOS 14.2 vagy újabb kell.
 listen-channels = Csatornák
 listen-channel = { $number }. csatorna
 listen-channel-pair = { $first }–{ $last }. csatorna

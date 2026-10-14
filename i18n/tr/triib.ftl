@@ -791,6 +791,7 @@ listen-stop = Dinlemeyi durdur
 listen-source = Dinlenen
 listen-received = Aldığı
 listen-sent = { $number }. akışta gönderdiği ({ $channels } kanal)
+listen-sent-needs-macos = Bu Mac’in gönderdiğini dinlemek için macOS 14.2 veya sonrası gerekir.
 listen-channels = Kanallar
 listen-channel = Kanal { $number }
 listen-channel-pair = Kanal { $first }–{ $last }

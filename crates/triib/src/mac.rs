@@ -6,7 +6,7 @@
 
 use std::ffi::c_void;
 use std::ptr::NonNull;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use atdecc::EntityId;
 use objc2_core_audio::{
@@ -194,6 +194,56 @@ pub fn output_streams(name: &str) -> Vec<u16> {
     device_named(name).map_or_else(Vec::new, |device| stream_channels_of(device, false))
 }
 
+/// Core Audio's process taps, which came with macOS 14.2. Their functions
+/// are looked up when first used rather than linked, so that triib starts
+/// on older systems, which lack them, and only taps are unavailable there.
+struct Taps {
+    create: unsafe extern "C" fn(*const c_void, *mut AudioObjectID) -> i32,
+    destroy: unsafe extern "C" fn(AudioObjectID) -> i32,
+}
+
+fn taps() -> Option<&'static Taps> {
+    static TAPS: OnceLock<Option<Taps>> = OnceLock::new();
+    TAPS.get_or_init(|| {
+        objc2::runtime::AnyClass::get(c"CATapDescription")?;
+        // SAFETY: looking up symbols by name in what the process loaded.
+        let (create, destroy) = unsafe {
+            (
+                libc::dlsym(
+                    libc::RTLD_DEFAULT,
+                    c"AudioHardwareCreateProcessTap".as_ptr(),
+                ),
+                libc::dlsym(
+                    libc::RTLD_DEFAULT,
+                    c"AudioHardwareDestroyProcessTap".as_ptr(),
+                ),
+            )
+        };
+        if create.is_null() || destroy.is_null() {
+            return None;
+        }
+        // SAFETY: the two functions, as Core Audio's header declares them.
+        Some(unsafe {
+            Taps {
+                create: std::mem::transmute::<
+                    *mut c_void,
+                    unsafe extern "C" fn(*const c_void, *mut AudioObjectID) -> i32,
+                >(create),
+                destroy: std::mem::transmute::<
+                    *mut c_void,
+                    unsafe extern "C" fn(AudioObjectID) -> i32,
+                >(destroy),
+            }
+        })
+    })
+    .as_ref()
+}
+
+/// Whether this Mac can tap what apps send: macOS 14.2 and later.
+pub fn taps_supported() -> bool {
+    taps().is_some()
+}
+
 /// What every app sends to one output stream of a device, heard through a
 /// Core Audio process tap, and delivered as the input of a private
 /// aggregate device holding the tap alone, as Apple's own example has it:
@@ -286,8 +336,7 @@ impl SentTap {
         use objc2::AnyThread;
         use objc2::rc::Retained;
         use objc2_core_audio::{
-            AudioHardwareCreateAggregateDevice, AudioHardwareCreateProcessTap,
-            AudioHardwareDestroyProcessTap, CATapDescription, CATapMuteBehavior,
+            AudioHardwareCreateAggregateDevice, CATapDescription, CATapMuteBehavior,
             kAudioAggregateDeviceIsPrivateKey, kAudioAggregateDeviceNameKey,
             kAudioAggregateDeviceTapAutoStartKey, kAudioAggregateDeviceTapListKey,
             kAudioAggregateDeviceUIDKey, kAudioSubTapDriftCompensationKey, kAudioSubTapUIDKey,
@@ -295,6 +344,7 @@ impl SentTap {
         use objc2_core_foundation::CFDictionary;
         use objc2_foundation::{NSArray, NSDictionary, NSNumber, NSObject, NSString};
 
+        let taps = taps().ok_or("hearing what a device sends takes macOS 14.2 or later")?;
         let tapped =
             device_named(device).ok_or_else(|| format!("no audio device named {device}"))?;
         let uid = text(tapped, kAudioDevicePropertyDeviceUID).ok_or("the device has no UID")?;
@@ -314,7 +364,7 @@ impl SentTap {
         };
         let mut tap: AudioObjectID = 0;
         // SAFETY: a description and a tap ID to write to.
-        let status = unsafe { AudioHardwareCreateProcessTap(Some(&description), &mut tap) };
+        let status = unsafe { (taps.create)(Retained::as_ptr(&description).cast(), &mut tap) };
         if status != 0 {
             return Err(format!("Core Audio refused the tap ({status})"));
         }
@@ -360,7 +410,7 @@ impl SentTap {
         };
         if status != 0 {
             // SAFETY: the tap made above.
-            unsafe { AudioHardwareDestroyProcessTap(tap) };
+            unsafe { (taps.destroy)(tap) };
             return Err(format!(
                 "Core Audio refused the aggregate device ({status})"
             ));
@@ -445,7 +495,6 @@ impl Drop for SentTap {
     fn drop(&mut self) {
         use objc2_core_audio::{
             AudioDeviceDestroyIOProcID, AudioDeviceStop, AudioHardwareDestroyAggregateDevice,
-            AudioHardwareDestroyProcessTap,
         };
         // SAFETY: the callback, the aggregate device and the tap this
         // made; once the callback is stopped and destroyed, nothing holds
@@ -457,7 +506,10 @@ impl Drop for SentTap {
                 drop(Box::from_raw(reader.as_ptr()));
             }
             AudioHardwareDestroyAggregateDevice(self.aggregate);
-            AudioHardwareDestroyProcessTap(self.tap);
+            // A tap was only made where taps are.
+            if let Some(taps) = taps() {
+                (taps.destroy)(self.tap);
+            }
         }
     }
 }

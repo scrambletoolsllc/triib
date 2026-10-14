@@ -853,6 +853,7 @@ listen-stop = Deixa d’escoltar
 listen-source = Escolta
 listen-received = El que rep
 listen-sent = El que envia al flux { $number } ({ $channels } canals)
+listen-sent-needs-macos = Per escoltar el que envia aquest Mac cal macOS 14.2 o posterior.
 listen-channels = Canals
 listen-channel = Canal { $number }
 listen-channel-pair = Canals { $first }–{ $last }

@@ -880,6 +880,7 @@ listen-stop = Остановить прослушивание
 listen-source = Слушает
 listen-received = То, что принимает
 listen-sent = То, что отправляет в потоке { $number } ({ $channels } кан.)
+listen-sent-needs-macos = Чтобы слушать то, что отправляет этот Mac, нужна macOS 14.2 или новее.
 listen-channels = Каналы
 listen-channel = Канал { $number }
 listen-channel-pair = Каналы { $first }–{ $last }

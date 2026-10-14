@@ -789,6 +789,7 @@ listen-stop = শোনা বন্ধ করুন
 listen-source = যা শোনা হয়
 listen-received = যা এটি গ্রহণ করে
 listen-sent = stream { $number }-এ যা এটি পাঠায় ({ $channels } চ্যানেল)
+listen-sent-needs-macos = এই Mac যা পাঠায় তা শুনতে macOS 14.2 বা তার পরের সংস্করণ লাগে।
 listen-channels = চ্যানেল
 listen-channel = চ্যানেল { $number }
 listen-channel-pair = চ্যানেল { $first }–{ $last }

@@ -796,6 +796,7 @@ listen-stop = Acha kusikiliza
 listen-source = Inasikiliza
 listen-received = Inachopokea
 listen-sent = Inachotuma kwenye mtiririko { $number } (chaneli { $channels })
+listen-sent-needs-macos = Kusikiliza kile ambacho Mac hii inatuma kunahitaji macOS 14.2 au mpya zaidi.
 listen-channels = Chaneli
 listen-channel = Chaneli { $number }
 listen-channel-pair = Chaneli { $first }–{ $last }

@@ -818,6 +818,7 @@ listen-stop = Lopeta kuuntelu
 listen-source = Kuuntelee
 listen-received = Mitä se vastaanottaa
 listen-sent = Mitä se lähettää striimissä { $number } ({ $channels } kanavaa)
+listen-sent-needs-macos = Sen kuunteleminen, mitä tämä Mac lähettää, vaatii macOS 14.2:n tai uudemman.
 listen-channels = Kanavat
 listen-channel = Kanava { $number }
 listen-channel-pair = Kanavat { $first }–{ $last }

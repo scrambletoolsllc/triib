@@ -933,6 +933,7 @@ listen-stop = إيقاف الاستماع
 listen-source = يستمع إلى
 listen-received = ما يستقبله
 listen-sent = ما يرسله على التدفق { $number } ({ $channels } قنوات)
+listen-sent-needs-macos = الاستماع إلى ما يرسله جهاز Mac هذا يتطلب macOS 14.2 أو أحدث.
 listen-channels = القنوات
 listen-channel = القناة { $number }
 listen-channel-pair = القناتان { $first }–{ $last }

@@ -693,6 +693,7 @@ listen-stop = 停止监听
 listen-source = 监听内容
 listen-received = 它接收的内容
 listen-sent = 它在流 { $number } 上发送的内容（{ $channels } 声道）
+listen-sent-needs-macos = 收听这台 Mac 发送的内容需要 macOS 14.2 或更高版本。
 listen-channels = 声道
 listen-channel = 声道 { $number }
 listen-channel-pair = 声道 { $first }–{ $last }

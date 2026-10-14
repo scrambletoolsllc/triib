@@ -690,6 +690,7 @@ listen-stop = หยุดฟัง
 listen-source = ฟัง
 listen-received = สิ่งที่รับเข้ามา
 listen-sent = สิ่งที่ส่งออกบนสตรีม { $number } ({ $channels } ช่อง)
+listen-sent-needs-macos = การฟังสิ่งที่ Mac เครื่องนี้ส่งออกต้องใช้ macOS 14.2 ขึ้นไป
 listen-channels = ช่องสัญญาณ
 listen-channel = ช่อง { $number }
 listen-channel-pair = ช่อง { $first }–{ $last }
