@@ -407,6 +407,16 @@ in the access point's beacons, and streamed unicast on the air.
 - **macOS.** Whether user space can read the system's gPTP time and its
   relation to the card, or get hardware time stamps at all; if not, the
   system's own AVB audio device, controlled by triib like any entity.
+- **macOS, as built:** the Mac's own entity, which macOS runs with its
+  gPTP, reservations and timing, is this computer's: the computer icon,
+  its Core Audio device (whose UID carries the entity ID, as
+  `AAA:0xd111e597f5448000:0x0000:0x0000`), and Audio MIDI Setup, which
+  alone turns AVB on, as the AudioVideoBridging framework only reports
+  it. Its ten configurations, one media clock input and three media
+  clock outputs beside 1 to 8 audio streams of 8, 16 or 32 channels, are
+  picked with SET_CONFIGURATION, which it refuses while its streams run.
+  Our own entities on macOS, with their own shapes, stay a later
+  investigation.
 
 #### This computer's entities with several streams
 

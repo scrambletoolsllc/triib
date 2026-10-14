@@ -178,7 +178,17 @@ impl Driver {
             let _ = self.controller.handle_frame(now, received.source, bytes);
             if self.keeps(&self.received[..received.length]) {
                 let bytes = self.received[..received.length].to_vec();
-                self.kept(false, received.source, bytes);
+                // The framework's copy of a command it sent for this
+                // controller counts as sent, not as another controller's.
+                #[cfg(target_os = "macos")]
+                let sent = received.source == self.socket.mac()
+                    && self
+                        .local
+                        .as_ref()
+                        .is_some_and(|local| local.echoes(&bytes));
+                #[cfg(not(target_os = "macos"))]
+                let sent = false;
+                self.kept(sent, received.source, bytes);
             }
         }
         self.take_local();

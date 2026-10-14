@@ -12,7 +12,7 @@
 
 #![allow(unsafe_code)]
 
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
@@ -38,6 +38,10 @@ const VENDOR_UNIQUE_TIMEOUT: i64 = 250;
 
 /// Room for any frame.
 const FRAME: usize = 1536;
+
+/// How long after sending an ACMP command through the framework its copy
+/// on the wire is taken for it.
+const ECHO_WINDOW: std::time::Duration = std::time::Duration::from_secs(2);
 
 /// Whether AVB is on for interface `name`, as Audio MIDI Setup's Network
 /// Device Browser turns it on and off; `None` where the framework is
@@ -70,6 +74,13 @@ pub(super) struct Local {
     handler: Option<Retained<Responses>>,
     /// The framework sends vendor unique commands (macOS 14 and later).
     vendor_unique: bool,
+    /// The controller IDs the framework puts on the ACMP commands it sends
+    /// on the wire for this controller, learned from its answers and from
+    /// the copies seen.
+    framework_controllers: Arc<Mutex<HashSet<EntityId>>>,
+    /// The ACMP commands sent through the framework lately, to tell their
+    /// copies on the wire before the framework's own ID is known.
+    recent: Mutex<VecDeque<(std::time::Instant, Acmpdu)>>,
 }
 
 impl Local {
@@ -116,6 +127,8 @@ impl Local {
                 sender,
                 answers,
                 waiting: Arc::new(AtomicUsize::new(0)),
+                framework_controllers: Arc::new(Mutex::new(HashSet::new())),
+                recent: Mutex::new(VecDeque::new()),
                 entities,
                 handler: registered.as_bool().then_some(handler),
                 vendor_unique: vendor_unique.as_bool(),
@@ -297,6 +310,7 @@ impl Local {
         let sent_command = *command;
         let answers = self.sender.clone();
         let waiting = self.waiting.clone();
+        let framework_controllers = self.framework_controllers.clone();
         let expected = command.message_type.response().0;
         let completion = RcBlock::new(move |error: *mut NSError, response: *mut AnyObject| {
             waiting.fetch_sub(1, Ordering::Relaxed);
@@ -324,6 +338,13 @@ impl Local {
                 let connection_count: u16 = msg_send![response, connectionCount];
                 let flags: u16 = msg_send![response, flags];
                 let vlan: u16 = msg_send![response, vlanID];
+                let controller: u64 = msg_send![response, controllerEntityID];
+                if controller != 0 && controller != sent_command.controller_entity_id.0 {
+                    framework_controllers
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .insert(EntityId(controller));
+                }
                 Acmpdu {
                     message_type: AcmpMessageType(message_type),
                     status: AcmpStatus(status),
@@ -345,6 +366,15 @@ impl Local {
             }
         });
         self.waiting.fetch_add(1, Ordering::Relaxed);
+        {
+            let mut recent = self
+                .recent
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            let now = std::time::Instant::now();
+            recent.retain(|(at, _)| now.duration_since(*at) < ECHO_WINDOW);
+            recent.push_back((now, *command));
+        }
         // SAFETY: as in send_aem; the message class has a plain init, and
         // the address is six octets.
         let sent: Bool = unsafe {
@@ -372,6 +402,46 @@ impl Local {
             ]
         };
         self.sent(sent)
+    }
+
+    /// Whether `bytes`, received from this Mac, are the framework's copy
+    /// of an ACMP command it sent on the wire for this controller, under a
+    /// controller ID of its own: one known from its answers, or a command
+    /// just sent through it, whose ID is learned then.
+    pub(super) fn echoes(&self, bytes: &[u8]) -> bool {
+        let Ok(Pdu::Acmp(copy)) = pdu::decode(bytes) else {
+            return false;
+        };
+        if copy.message_type.is_response() {
+            return false;
+        }
+        let mut controllers = self
+            .framework_controllers
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if controllers.contains(&copy.controller_entity_id) {
+            return true;
+        }
+        let mut recent = self
+            .recent
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let now = std::time::Instant::now();
+        recent.retain(|(at, _)| now.duration_since(*at) < ECHO_WINDOW);
+        let Some(position) = recent.iter().position(|(_, sent)| {
+            sent.message_type == copy.message_type
+                && sent.talker_entity_id == copy.talker_entity_id
+                && sent.talker_unique_id == copy.talker_unique_id
+                && sent.listener_entity_id == copy.listener_entity_id
+                && sent.listener_unique_id == copy.listener_unique_id
+        }) else {
+            return false;
+        };
+        recent.remove(position);
+        if copy.controller_entity_id != self.controller {
+            controllers.insert(copy.controller_entity_id);
+        }
+        true
     }
 
     /// Whether the framework took a command; one it did not take will not
