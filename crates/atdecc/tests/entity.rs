@@ -70,6 +70,8 @@ struct Network {
     listener: Entity,
     entity_events: Vec<EntityEvent>,
     controller_events: Vec<Event>,
+    /// Every frame the entities sent.
+    sent: Vec<Vec<u8>>,
 }
 
 impl Network {
@@ -85,6 +87,7 @@ impl Network {
             listener,
             entity_events: Vec::new(),
             controller_events: Vec::new(),
+            sent: Vec::new(),
         }
     }
 
@@ -110,6 +113,7 @@ impl Network {
                 }
                 for entity in [&mut self.talker, &mut self.listener] {
                     while let Some((destination, bytes)) = entity.poll_transmit() {
+                        self.sent.push(bytes.clone());
                         frames.push_back((HOST_MAC, destination, bytes));
                     }
                 }
@@ -221,6 +225,55 @@ fn binding_probes_the_talker_and_unbinding_undoes_it() {
             .contains(&EntityEvent::InputUnbound { index: 0 })
     );
     assert_eq!(network.listener.input_binding(0), None);
+    // The listener lets go of the talker, as one outside Milan keeps the
+    // connection the probe made until told.
+    assert_eq!(network.disconnects(), [(TALKER, 0, LISTENER, 0)]);
+}
+
+/// A listener leaving, or handing over to an entity that does not carry
+/// an input on, lets go of the talker that input was bound to.
+#[test]
+fn a_listener_leaving_lets_go_of_its_talker() {
+    let mut network = Network::new();
+    network.controller.discover(None);
+    network.run(3000);
+    let now = network.now;
+    network.controller.connect(now, (TALKER, 0), (LISTENER, 0));
+    network.run(1000);
+    assert!(network.disconnects().is_empty());
+
+    // Carried on, the input keeps its talker.
+    network.listener.release_inputs(&[0]);
+    network.run(100);
+    assert!(network.disconnects().is_empty());
+    network.listener.release_inputs(&[]);
+    network.run(100);
+    assert_eq!(network.disconnects(), [(TALKER, 0, LISTENER, 0)]);
+
+    network.sent.clear();
+    network.listener.depart();
+    network.run(100);
+    assert_eq!(network.disconnects(), [(TALKER, 0, LISTENER, 0)]);
+}
+
+impl Network {
+    /// The DISCONNECT_TX commands the entities sent: talker and output,
+    /// listener and input.
+    fn disconnects(&self) -> Vec<(EntityId, u16, EntityId, u16)> {
+        self.sent
+            .iter()
+            .filter_map(|bytes| atdecc::Acmpdu::decode(bytes).ok())
+            .filter(|acmpdu| acmpdu.message_type == atdecc::AcmpMessageType::DISCONNECT_TX_COMMAND)
+            .map(|acmpdu| {
+                (
+                    acmpdu.talker_entity_id,
+                    acmpdu.talker_unique_id,
+                    acmpdu.listener_entity_id,
+                    acmpdu.listener_unique_id,
+                )
+            })
+            .collect()
+    }
 }
 
 #[test]

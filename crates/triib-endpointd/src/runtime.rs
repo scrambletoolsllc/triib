@@ -1368,6 +1368,9 @@ impl Runtime {
             }
         }
         let mut earlier = self.endpoints.remove(index);
+        // The talkers of the inputs not carried on, at the same index, are
+        // let go, as a talker outside Milan keeps a connection until told.
+        earlier.entity.release_inputs(&inputs);
         while let Some((destination, bytes)) = earlier.entity.poll_transmit() {
             let _ = self.avtp.send(destination, &bytes);
         }

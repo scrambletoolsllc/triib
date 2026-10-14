@@ -542,6 +542,38 @@ impl Entity {
         self.advertise_at = Some(now);
     }
 
+    /// Lets go of the talkers of its bound inputs but those at the indexes
+    /// `kept`, which an entity taking over carries on, as it leaves.
+    pub fn release_inputs(&mut self, kept: &[u16]) {
+        let bound: Vec<(u16, InputBinding)> = (0..self.inputs.len() as u16)
+            .filter(|index| !kept.contains(index))
+            .filter_map(|index| {
+                self.inputs[usize::from(index)]
+                    .binding
+                    .map(|binding| (index, binding))
+            })
+            .collect();
+        for (index, binding) in bound {
+            self.let_go(index, binding);
+        }
+    }
+
+    /// Tells the talker an input was bound to that the input no longer
+    /// takes its stream (DISCONNECT_TX): a talker outside Milan, as the
+    /// Mac's, keeps the connection a listener's probe made, and streams
+    /// on, until told so.
+    fn let_go(&mut self, index: u16, binding: InputBinding) {
+        self.acmp_sequence = self.acmp_sequence.wrapping_add(1);
+        let command = Acmpdu::command(
+            AcmpMessageType::DISCONNECT_TX_COMMAND,
+            binding.controller,
+            (binding.talker, binding.talker_unique_id),
+            (self.model.entity_id, index),
+            self.acmp_sequence,
+        );
+        self.send_acmp(&command);
+    }
+
     /// Carries the state of `earlier`'s stream outputs and inputs at the
     /// indexes given into this entity's, those streams running on as
     /// they were: their reservations and counters, and an input's
@@ -575,8 +607,10 @@ impl Entity {
         }
     }
 
-    /// Says the entity is leaving and stops advertising.
+    /// Says the entity is leaving and stops advertising, letting go of
+    /// the talkers its inputs are bound to.
     pub fn depart(&mut self) {
+        self.release_inputs(&[]);
         self.advertise_at = None;
         let mut adpdu = self.adpdu();
         adpdu.message_type = AdpMessageType::ENTITY_DEPARTING;
@@ -921,13 +955,17 @@ impl Entity {
                 });
                 if !same {
                     let settled = matches!(input.probe, Some(Probe::Settled(_)));
-                    input.binding = Some(binding);
+                    let before = input.binding.replace(binding);
                     input.probe = Some(Probe::Due(now));
                     if settled {
                         self.events.push_back(EntityEvent::InputUnsettled { index });
                     }
                     self.events
                         .push_back(EntityEvent::InputBound { index, binding });
+                    // Bound elsewhere, it lets go of the talker before.
+                    if let Some(before) = before {
+                        self.let_go(index, before);
+                    }
                 } else {
                     input.binding = Some(binding);
                 }
@@ -938,13 +976,14 @@ impl Entity {
             }
             AcmpMessageType::UNBIND_RX_COMMAND => {
                 let input = &mut self.inputs[usize::from(index)];
-                if input.binding.take().is_some() {
+                if let Some(before) = input.binding.take() {
                     let settled = matches!(input.probe, Some(Probe::Settled(_)));
                     input.probe = None;
                     if settled {
                         self.events.push_back(EntityEvent::InputUnsettled { index });
                     }
                     self.events.push_back(EntityEvent::InputUnbound { index });
+                    self.let_go(index, before);
                 }
                 response.connection_count = 0;
                 self.send_acmp(&response);

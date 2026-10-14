@@ -120,6 +120,10 @@ computer's talkers and listeners folded into its entities.
 - A preset moved to another computer renames the talkers its entities'
   inputs are bound to.
 - An entity lists each sampling rate once.
+- This computer's entities tell a talker when an input lets go of its
+  stream: unbound, bound elsewhere, removed or leaving with its entity.
+  A talker outside Milan, such as the Mac, kept the connection a probe
+  made and streamed on to a listener long gone.
 - On Linux, the links triib opens open: the desktop portal refused
   them, as it does any app holding a capability, as triib holds
   `cap_net_raw`. triib now asks it from a helper without one.
