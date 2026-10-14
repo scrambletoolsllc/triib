@@ -162,6 +162,9 @@ stream-format = Formaat
 stream-id = Stream-ID
 stream-destination = Bestemming
 stream-max-transit = Max. doorlooptijd
+stream-listeners = Luisteraars
+stream-listener-gone = { $entity } ingang { $input }, niet online
+stream-disconnect-listener = Loskoppelen
 
 avb-interfaces = AVB-interfaces
 avb-interface = Interface
@@ -261,6 +264,7 @@ outcome-no-response = geen antwoord
 outcome-not-possible = niet mogelijk
 outcome-connect = Kon { $talker } niet verbinden met { $listener }: { $reason }.
 outcome-disconnect = Kon { $listener } niet loskoppelen: { $reason }.
+outcome-disconnect-listener = Kon { $listener } niet loskoppelen van { $talker }: { $reason }.
 outcome-identify = Kon { $entity } niet identificeren: { $reason }.
 outcome-rename = Kon { $what } niet hernoemen naar “{ $name }”: { $reason }.
 outcome-rename-group = Kon de groep van { $entity } niet hernoemen naar “{ $name }”: { $reason }.
@@ -784,7 +788,7 @@ host-default-device = Standaardapparaat
 host-remove = Verwijderen van deze computer
 
 mac-audio-device = Audioapparaat
-mac-no-audio-device = Geen
-mac-entity-note = macOS draait deze entiteit. Apps spelen af via en nemen op van het audioapparaat ervan, en de configuratie bepaalt hoeveel kanalen het in elke richting heeft.
+mac-no-audio-device = Geen zolang geen stream verbonden is
+mac-entity-note = macOS draait deze entiteit. Zolang een van de streams verbonden is, maakt macOS het audioapparaat waarmee apps afspelen en opnemen, met zoveel kanalen in elke richting als de configuratie bepaalt.
 mac-open-audio-midi-setup = Open Audio MIDI-configuratie
 mac-avb-off = AVB staat uit op { $interface }, dus deze Mac heeft geen eigen AVB-entiteit. Zet het aan in de netwerkapparatenbrowser van Audio MIDI-configuratie.

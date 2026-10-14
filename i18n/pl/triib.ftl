@@ -160,6 +160,9 @@ stream-format = Format
 stream-id = ID strumienia
 stream-destination = Cel
 stream-max-transit = Maks. czas przejścia
+stream-listeners = Słuchacze
+stream-listener-gone = { $entity } wejście { $input }, offline
+stream-disconnect-listener = Rozłącz
 
 avb-interfaces = Interfejsy AVB
 avb-interface = Interfejs
@@ -269,6 +272,7 @@ outcome-no-response = brak odpowiedzi
 outcome-not-possible = niemożliwe
 outcome-connect = Nie udało się połączyć { $talker } z { $listener }: { $reason }.
 outcome-disconnect = Nie udało się rozłączyć { $listener }: { $reason }.
+outcome-disconnect-listener = Nie udało się rozłączyć { $listener } od { $talker }: { $reason }.
 outcome-identify = Nie udało się zidentyfikować { $entity }: { $reason }.
 outcome-rename = Nie udało się zmienić nazwy { $what } na „{ $name }”: { $reason }.
 outcome-rename-group = Nie udało się zmienić nazwy grupy encji { $entity } na „{ $name }”: { $reason }.
@@ -866,7 +870,7 @@ host-default-device = Urządzenie domyślne
 host-remove = Usuń z tego komputera
 
 mac-audio-device = Urządzenie audio
-mac-no-audio-device = Brak
-mac-entity-note = Tę encję uruchamia macOS. Aplikacje odtwarzają i nagrywają przez jej urządzenie audio, a jej konfiguracja określa, ile ma kanałów w każdą stronę.
+mac-no-audio-device = Brak, dopóki żaden strumień nie jest połączony
+mac-entity-note = Tę encję uruchamia macOS. Dopóki któryś z jej strumieni jest połączony, macOS tworzy urządzenie audio, przez które aplikacje odtwarzają i nagrywają, z taką liczbą kanałów w każdą stronę, jaką określa konfiguracja.
 mac-open-audio-midi-setup = Otwórz Ustawienia Audio MIDI
 mac-avb-off = AVB jest wyłączone na { $interface }, więc ten Mac nie ma własnej encji AVB. Włącz je w przeglądarce urządzeń sieciowych w Ustawieniach Audio MIDI.

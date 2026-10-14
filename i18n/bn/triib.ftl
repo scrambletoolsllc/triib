@@ -160,6 +160,9 @@ stream-format = Format
 stream-id = Stream ID
 stream-destination = গন্তব্য
 stream-max-transit = সর্বোচ্চ transit time
+stream-listeners = Listeners
+stream-listener-gone = { $entity } ইনপুট { $input }, অনলাইনে নেই
+stream-disconnect-listener = সংযোগ বিচ্ছিন্ন করুন
 
 avb-interfaces = AVB interfaces
 avb-interface = Interface
@@ -259,6 +262,7 @@ outcome-no-response = কোনো সাড়া নেই
 outcome-not-possible = সম্ভব নয়
 outcome-connect = { $talker } থেকে { $listener }-এ সংযোগ করা যায়নি: { $reason }।
 outcome-disconnect = { $listener }-এর সংযোগ বিচ্ছিন্ন করা যায়নি: { $reason }।
+outcome-disconnect-listener = { $talker } থেকে { $listener }-এর সংযোগ বিচ্ছিন্ন করা যায়নি: { $reason }।
 outcome-identify = { $entity }-কে identify করা যায়নি: { $reason }।
 outcome-rename = { $what }-এর নাম বদলে “{ $name }” করা যায়নি: { $reason }।
 outcome-rename-group = { $entity }-এর গ্রুপের নাম বদলে “{ $name }” করা যায়নি: { $reason }।
@@ -774,7 +778,7 @@ host-default-device = ডিফল্ট ডিভাইস
 host-remove = এই কম্পিউটার থেকে সরান
 
 mac-audio-device = অডিও ডিভাইস
-mac-no-audio-device = নেই
-mac-entity-note = macOS এই Entity চালায়। অ্যাপগুলো এর অডিও ডিভাইসে বাজায় ও সেখান থেকে রেকর্ড করে, আর এর কনফিগারেশন ঠিক করে প্রতিদিকে কতগুলো চ্যানেল থাকবে।
+mac-no-audio-device = কোনো stream সংযুক্ত না থাকলে নেই
+mac-entity-note = macOS এই Entity চালায়। এর কোনো stream সংযুক্ত থাকলে macOS সেই অডিও ডিভাইস তৈরি করে যেখানে অ্যাপগুলো বাজায় ও রেকর্ড করে, প্রতিদিকে কনফিগারেশন অনুযায়ী চ্যানেল নিয়ে।
 mac-open-audio-midi-setup = Audio MIDI Setup খুলুন
 mac-avb-off = { $interface }-এ AVB বন্ধ, তাই এই Mac-এর নিজের কোনো AVB Entity নেই। Audio MIDI Setup-এর Network Device Browser-এ এটি চালু করুন।

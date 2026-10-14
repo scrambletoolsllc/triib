@@ -160,6 +160,9 @@ stream-format = Muundo
 stream-id = ID ya mtiririko
 stream-destination = Lengwa
 stream-max-transit = Muda wa juu wa kupita
+stream-listeners = Wasikilizaji
+stream-listener-gone = { $entity } ingizo { $input }, nje ya mtandao
+stream-disconnect-listener = Tenganisha
 
 avb-interfaces = Violesura vya AVB
 avb-interface = Kiolesura
@@ -259,6 +262,7 @@ outcome-no-response = hakuna jibu
 outcome-not-possible = haiwezekani
 outcome-connect = Imeshindwa kuunganisha { $talker } na { $listener }: { $reason }.
 outcome-disconnect = Imeshindwa kutenganisha { $listener }: { $reason }.
+outcome-disconnect-listener = Imeshindwa kutenganisha { $listener } na { $talker }: { $reason }.
 outcome-identify = Imeshindwa kutambua { $entity }: { $reason }.
 outcome-rename = Imeshindwa kubadilisha jina la { $what } kuwa "{ $name }": { $reason }.
 outcome-rename-group = Imeshindwa kubadilisha jina la kikundi cha { $entity } kuwa "{ $name }": { $reason }.
@@ -781,7 +785,7 @@ host-default-device = Kifaa chaguomsingi
 host-remove = Ondoa kwenye kompyuta hii
 
 mac-audio-device = Kifaa cha sauti
-mac-no-audio-device = Hakuna
-mac-entity-note = macOS huendesha huluki hii. Programu hucheza na kurekodi kupitia kifaa chake cha sauti, na usanidi wake huamua idadi ya chaneli kila upande.
+mac-no-audio-device = Hakuna wakati hakuna mtiririko uliounganishwa
+mac-entity-note = macOS huendesha huluki hii. Mradi mmoja wa mitiririko yake umeunganishwa, macOS huunda kifaa cha sauti ambacho programu hucheza na kurekodi kupitia, chenye chaneli kila upande kama usanidi unavyoweka.
 mac-open-audio-midi-setup = Fungua Audio MIDI Setup
 mac-avb-off = AVB imezimwa kwenye { $interface }, kwa hiyo Mac hii haina huluki yake ya AVB. Iwashe katika Network Device Browser ya Audio MIDI Setup.

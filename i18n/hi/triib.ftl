@@ -160,6 +160,9 @@ stream-format = Format
 stream-id = Stream ID
 stream-destination = गंतव्य
 stream-max-transit = अधिकतम transit time
+stream-listeners = Listeners
+stream-listener-gone = { $entity } इनपुट { $input }, ऑनलाइन नहीं
+stream-disconnect-listener = डिसकनेक्ट करें
 
 avb-interfaces = AVB interfaces
 avb-interface = Interface
@@ -259,6 +262,7 @@ outcome-no-response = कोई जवाब नहीं
 outcome-not-possible = संभव नहीं
 outcome-connect = { $talker } को { $listener } से कनेक्ट नहीं किया जा सका: { $reason }।
 outcome-disconnect = { $listener } को डिसकनेक्ट नहीं किया जा सका: { $reason }।
+outcome-disconnect-listener = { $listener } को { $talker } से डिसकनेक्ट नहीं किया जा सका: { $reason }।
 outcome-identify = { $entity } को identify नहीं किया जा सका: { $reason }।
 outcome-rename = { $what } का नाम बदलकर “{ $name }” नहीं किया जा सका: { $reason }।
 outcome-rename-group = { $entity } के समूह का नाम बदलकर “{ $name }” नहीं किया जा सका: { $reason }।
@@ -774,7 +778,7 @@ host-default-device = डिफ़ॉल्ट डिवाइस
 host-remove = इस कंप्यूटर से हटाएँ
 
 mac-audio-device = ऑडियो डिवाइस
-mac-no-audio-device = कोई नहीं
-mac-entity-note = macOS इस Entity को चलाता है। ऐप्स इसके ऑडियो डिवाइस से चलाते और रिकॉर्ड करते हैं, और इसका कॉन्फ़िगरेशन तय करता है कि हर दिशा में कितने चैनल हों।
+mac-no-audio-device = कोई stream जुड़ा न होने तक कोई नहीं
+mac-entity-note = macOS इस Entity को चलाता है। जब तक इसका कोई stream जुड़ा रहता है, macOS वह ऑडियो डिवाइस बनाता है जिससे ऐप्स चलाते और रिकॉर्ड करते हैं, हर दिशा में उतने चैनल के साथ जितने कॉन्फ़िगरेशन तय करता है।
 mac-open-audio-midi-setup = Audio MIDI Setup खोलें
 mac-avb-off = { $interface } पर AVB बंद है, इसलिए इस Mac की अपनी कोई AVB Entity नहीं है। इसे Audio MIDI Setup के Network Device Browser में चालू करें।

@@ -162,6 +162,9 @@ stream-format = Format
 stream-id = Stream-ID
 stream-destination = Ziel
 stream-max-transit = Max. Laufzeit
+stream-listeners = Listener
+stream-listener-gone = { $entity } Eingang { $input }, nicht online
+stream-disconnect-listener = Trennen
 
 avb-interfaces = AVB-Schnittstellen
 avb-interface = Schnittstelle
@@ -261,6 +264,7 @@ outcome-no-response = keine Antwort
 outcome-not-possible = nicht möglich
 outcome-connect = { $talker } konnte nicht mit { $listener } verbunden werden: { $reason }.
 outcome-disconnect = { $listener } konnte nicht getrennt werden: { $reason }.
+outcome-disconnect-listener = { $listener } konnte nicht von { $talker } getrennt werden: { $reason }.
 outcome-identify = { $entity } konnte nicht identifiziert werden: { $reason }.
 outcome-rename = { $what } konnte nicht in „{ $name }“ umbenannt werden: { $reason }.
 outcome-rename-group = Die Gruppe von { $entity } konnte nicht in „{ $name }“ umbenannt werden: { $reason }.
@@ -784,7 +788,7 @@ host-default-device = Standardgerät
 host-remove = Von diesem Computer entfernen
 
 mac-audio-device = Audiogerät
-mac-no-audio-device = Keines
-mac-entity-note = macOS betreibt diese Entität. Apps spielen über ihr Audiogerät ab und nehmen darüber auf, und ihre Konfiguration legt fest, wie viele Kanäle sie in jede Richtung hat.
+mac-no-audio-device = Keines, solange kein Stream verbunden ist
+mac-entity-note = macOS betreibt diese Entität. Solange einer ihrer Streams verbunden ist, stellt macOS das Audiogerät bereit, über das Apps abspielen und aufnehmen, mit so vielen Kanälen in jede Richtung, wie die Konfiguration festlegt.
 mac-open-audio-midi-setup = Audio-MIDI-Setup öffnen
 mac-avb-off = AVB ist auf { $interface } ausgeschaltet, daher hat dieser Mac keine eigene AVB-Entität. Schalten Sie es im Netzwerkgeräte-Browser von Audio-MIDI-Setup ein.

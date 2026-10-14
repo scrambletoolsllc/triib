@@ -160,6 +160,9 @@ stream-format = פורמט
 stream-id = ID של הזרם
 stream-destination = יעד
 stream-max-transit = זמן מעבר מרבי
+stream-listeners = מאזינים
+stream-listener-gone = { $entity } כניסה { $input }, לא מחובר
+stream-disconnect-listener = ניתוק
 
 avb-interfaces = ממשקי AVB
 avb-interface = ממשק
@@ -264,6 +267,7 @@ outcome-no-response = אין תגובה
 outcome-not-possible = לא אפשרי
 outcome-connect = לא ניתן היה לחבר את { $talker } אל { $listener }: { $reason }.
 outcome-disconnect = לא ניתן היה לנתק את { $listener }: { $reason }.
+outcome-disconnect-listener = לא ניתן היה לנתק את { $listener } מ-{ $talker }: { $reason }.
 outcome-identify = לא ניתן היה לזהות את { $entity }: { $reason }.
 outcome-rename = לא ניתן היה לשנות את השם של { $what } ל-"{ $name }": { $reason }.
 outcome-rename-group = לא ניתן היה לשנות את שם הקבוצה של { $entity } ל-"{ $name }": { $reason }.
@@ -812,7 +816,7 @@ host-default-device = התקן ברירת מחדל
 host-remove = הסרה מהמחשב הזה
 
 mac-audio-device = התקן שמע
-mac-no-audio-device = אין
-mac-entity-note = macOS מפעיל את הישות הזו. אפליקציות מנגנות ומקליטות דרך התקן השמע שלה, והתצורה שלה קובעת כמה ערוצים יש לה בכל כיוון.
+mac-no-audio-device = אין, כל עוד אף זרם אינו מחובר
+mac-entity-note = macOS מפעיל את הישות הזו. כל עוד אחד הזרמים שלה מחובר, macOS יוצר את התקן השמע שדרכו אפליקציות מנגנות ומקליטות, עם מספר הערוצים בכל כיוון שהתצורה קובעת.
 mac-open-audio-midi-setup = פתיחת Audio MIDI Setup
 mac-avb-off = AVB כבוי ב-{ $interface }, ולכן ל-Mac הזה אין ישות AVB משלו. הפעילו אותו בדפדפן התקני הרשת של Audio MIDI Setup.

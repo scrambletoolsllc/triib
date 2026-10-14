@@ -160,6 +160,9 @@ stream-format = فارمیٹ
 stream-id = اسٹریم ID
 stream-destination = منزل
 stream-max-transit = زیادہ سے زیادہ ٹرانزٹ ٹائم
+stream-listeners = سامعین
+stream-listener-gone = { $entity } ان پٹ { $input }، آف لائن
+stream-disconnect-listener = منقطع کریں
 
 avb-interfaces = AVB انٹرفیسز
 avb-interface = انٹرفیس
@@ -259,6 +262,7 @@ outcome-no-response = کوئی جواب نہیں
 outcome-not-possible = ممکن نہیں
 outcome-connect = { $talker } کو { $listener } سے منسلک نہیں کیا جا سکا: { $reason }۔
 outcome-disconnect = { $listener } کو منقطع نہیں کیا جا سکا: { $reason }۔
+outcome-disconnect-listener = { $listener } کو { $talker } سے منقطع نہیں کیا جا سکا: { $reason }۔
 outcome-identify = { $entity } کی شناخت نہیں کرائی جا سکی: { $reason }۔
 outcome-rename = { $what } کا نام بدل کر "{ $name }" نہیں کیا جا سکا: { $reason }۔
 outcome-rename-group = { $entity } کے گروپ کا نام بدل کر "{ $name }" نہیں کیا جا سکا: { $reason }۔
@@ -774,7 +778,7 @@ host-default-device = طے شدہ آلہ
 host-remove = اس کمپیوٹر سے ہٹائیں
 
 mac-audio-device = آڈیو ڈیوائس
-mac-no-audio-device = کوئی نہیں
-mac-entity-note = اس اینٹیٹی کو macOS چلاتا ہے۔ ایپس اس کی آڈیو ڈیوائس کے ذریعے چلاتی اور ریکارڈ کرتی ہیں، اور اس کی کنفیگریشن طے کرتی ہے کہ ہر سمت میں کتنے چینل ہوں۔
+mac-no-audio-device = جب تک کوئی اسٹریم جڑا نہ ہو، کوئی نہیں
+mac-entity-note = اس اینٹیٹی کو macOS چلاتا ہے۔ جب تک اس کا کوئی اسٹریم جڑا رہے، macOS وہ آڈیو ڈیوائس بناتا ہے جس سے ایپس چلاتی اور ریکارڈ کرتی ہیں، ہر سمت میں اتنے چینلز کے ساتھ جتنے کنفیگریشن طے کرے۔
 mac-open-audio-midi-setup = Audio MIDI Setup کھولیں
 mac-avb-off = { $interface } پر AVB بند ہے، اس لیے اس Mac کی اپنی کوئی AVB اینٹیٹی نہیں۔ اسے Audio MIDI Setup کے Network Device Browser میں آن کریں۔

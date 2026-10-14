@@ -160,6 +160,9 @@ stream-format = Формат
 stream-id = ID потоку
 stream-destination = Призначення
 stream-max-transit = Макс. час проходження
+stream-listeners = Слухачі
+stream-listener-gone = { $entity }, вхід { $input }, не в мережі
+stream-disconnect-listener = Відключити
 
 avb-interfaces = Інтерфейси AVB
 avb-interface = Інтерфейс
@@ -269,6 +272,7 @@ outcome-no-response = немає відповіді
 outcome-not-possible = неможливо
 outcome-connect = Не вдалося підключити { $talker } до { $listener }: { $reason }.
 outcome-disconnect = Не вдалося відключити { $listener }: { $reason }.
+outcome-disconnect-listener = Не вдалося відключити { $listener } від { $talker }: { $reason }.
 outcome-identify = Не вдалося ідентифікувати { $entity }: { $reason }.
 outcome-rename = Не вдалося перейменувати { $what } на «{ $name }»: { $reason }.
 outcome-rename-group = Не вдалося перейменувати групу сутності { $entity } на «{ $name }»: { $reason }.
@@ -865,7 +869,7 @@ host-default-device = Типовий пристрій
 host-remove = Вилучити з цього комп'ютера
 
 mac-audio-device = Аудіопристрій
-mac-no-audio-device = Немає
-mac-entity-note = Цю сутність запускає macOS. Застосунки відтворюють і записують через її аудіопристрій, а її конфігурація визначає кількість каналів у кожен бік.
+mac-no-audio-device = Немає, поки не підключено жодного потоку
+mac-entity-note = Цю сутність запускає macOS. Поки підключено хоча б один її потік, macOS створює аудіопристрій, через який застосунки відтворюють і записують, із кількістю каналів у кожен бік, заданою конфігурацією.
 mac-open-audio-midi-setup = Відкрити «Налаштування Audio-MIDI»
 mac-avb-off = AVB вимкнено на { $interface }, тому цей Mac не має власної сутності AVB. Увімкніть його в оглядачі мережевих пристроїв програми «Налаштування Audio-MIDI».

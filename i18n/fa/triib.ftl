@@ -160,6 +160,9 @@ stream-format = قالب
 stream-id = ID جریان
 stream-destination = مقصد
 stream-max-transit = بیشینه زمان عبور
+stream-listeners = شنوندگان
+stream-listener-gone = { $entity } ورودی { $input }، آفلاین
+stream-disconnect-listener = قطع اتصال
 
 avb-interfaces = واسط‌های AVB
 avb-interface = واسط
@@ -259,6 +262,7 @@ outcome-no-response = بدون پاسخ
 outcome-not-possible = ممکن نیست
 outcome-connect = وصل کردن { $talker } به { $listener } ممکن نشد: { $reason }.
 outcome-disconnect = قطع اتصال { $listener } ممکن نشد: { $reason }.
+outcome-disconnect-listener = قطع اتصال { $listener } از { $talker } ممکن نشد: { $reason }.
 outcome-identify = شناسایی { $entity } ممکن نشد: { $reason }.
 outcome-rename = تغییر نام { $what } به «{ $name }» ممکن نشد: { $reason }.
 outcome-rename-group = تغییر نام گروه { $entity } به «{ $name }» ممکن نشد: { $reason }.
@@ -774,7 +778,7 @@ host-default-device = دستگاه پیش‌فرض
 host-remove = حذف از این رایانه
 
 mac-audio-device = دستگاه صوتی
-mac-no-audio-device = هیچ
-mac-entity-note = macOS این موجودیت را اجرا می‌کند. برنامه‌ها از طریق دستگاه صوتی آن پخش و ضبط می‌کنند و پیکربندی‌اش تعیین می‌کند در هر جهت چند کانال دارد.
+mac-no-audio-device = تا وقتی هیچ جریانی متصل نیست، هیچ
+mac-entity-note = macOS این موجودیت را اجرا می‌کند. تا وقتی یکی از جریان‌هایش متصل است، macOS دستگاه صوتی‌ای را می‌سازد که برنامه‌ها از طریق آن پخش و ضبط می‌کنند، با همان تعداد کانال در هر جهت که پیکربندی تعیین می‌کند.
 mac-open-audio-midi-setup = باز کردن Audio MIDI Setup
 mac-avb-off = AVB روی { $interface } خاموش است، بنابراین این Mac موجودیت AVB خودش را ندارد. آن را در مرورگر دستگاه‌های شبکهٔ Audio MIDI Setup روشن کنید.

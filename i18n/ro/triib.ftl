@@ -163,6 +163,9 @@ stream-format = Format
 stream-id = ID-ul fluxului
 stream-destination = Destinație
 stream-max-transit = Timp maxim de tranzit
+stream-listeners = Ascultători
+stream-listener-gone = { $entity } intrarea { $input }, offline
+stream-disconnect-listener = Deconectează
 
 avb-interfaces = Interfețe AVB
 avb-interface = Interfață
@@ -267,6 +270,7 @@ outcome-no-response = niciun răspuns
 outcome-not-possible = imposibil
 outcome-connect = Nu s-a putut conecta { $talker } la { $listener }: { $reason }.
 outcome-disconnect = Nu s-a putut deconecta { $listener }: { $reason }.
+outcome-disconnect-listener = Nu s-a putut deconecta { $listener } de la { $talker }: { $reason }.
 outcome-identify = Nu s-a putut identifica { $entity }: { $reason }.
 outcome-rename = Nu s-a putut redenumi { $what } în „{ $name }”: { $reason }.
 outcome-rename-group = Nu s-a putut redenumi grupul entității { $entity } în „{ $name }”: { $reason }.
@@ -854,7 +858,7 @@ host-default-device = Dispozitiv implicit
 host-remove = Elimină de pe acest computer
 
 mac-audio-device = Dispozitiv audio
-mac-no-audio-device = Niciunul
-mac-entity-note = macOS rulează această entitate. Aplicațiile redau și înregistrează prin dispozitivul ei audio, iar configurația ei stabilește câte canale are în fiecare sens.
+mac-no-audio-device = Niciunul cât timp niciun flux nu e conectat
+mac-entity-note = macOS rulează această entitate. Cât timp unul dintre fluxurile ei este conectat, macOS creează dispozitivul audio prin care aplicațiile redau și înregistrează, cu atâtea canale în fiecare sens câte stabilește configurația.
 mac-open-audio-midi-setup = Deschide Audio MIDI Setup
 mac-avb-off = AVB este oprit pe { $interface }, așa că acest Mac nu are o entitate AVB proprie. Pornește-l din Network Device Browser în Audio MIDI Setup.

@@ -160,6 +160,9 @@ stream-format = Format
 stream-id = Stream ID
 stream-destination = இலக்கு
 stream-max-transit = அதிகபட்ச transit time
+stream-listeners = Listeners
+stream-listener-gone = { $entity } உள்ளீடு { $input }, இணைப்பில் இல்லை
+stream-disconnect-listener = துண்டி
 
 avb-interfaces = AVB interfaces
 avb-interface = Interface
@@ -259,6 +262,7 @@ outcome-no-response = பதில் இல்லை
 outcome-not-possible = சாத்தியமில்லை
 outcome-connect = { $talker }-ஐ { $listener }-உடன் இணைக்க முடியவில்லை: { $reason }.
 outcome-disconnect = { $listener }-ஐத் துண்டிக்க முடியவில்லை: { $reason }.
+outcome-disconnect-listener = { $talker }-இலிருந்து { $listener }-ஐத் துண்டிக்க முடியவில்லை: { $reason }.
 outcome-identify = { $entity }-ஐ identify செய்ய முடியவில்லை: { $reason }.
 outcome-rename = { $what }-இன் பெயரை “{ $name }” என மாற்ற முடியவில்லை: { $reason }.
 outcome-rename-group = { $entity }-இன் குழுவின் பெயரை “{ $name }” என மாற்ற முடியவில்லை: { $reason }.
@@ -774,7 +778,7 @@ host-default-device = இயல்புநிலைச் சாதனம்
 host-remove = இந்தக் கணினியிலிருந்து அகற்று
 
 mac-audio-device = ஆடியோ சாதனம்
-mac-no-audio-device = இல்லை
-mac-entity-note = இந்த Entity-ஐ macOS இயக்குகிறது. ஆப்கள் அதன் ஆடியோ சாதனம் வழியாக இயக்கிப் பதிவுசெய்கின்றன, அதன் உள்ளமைவு ஒவ்வொரு திசையிலும் எத்தனை சேனல்கள் என்பதைத் தீர்மானிக்கிறது.
+mac-no-audio-device = எந்த stream-உம் இணைக்கப்படாதவரை இல்லை
+mac-entity-note = இந்த Entity-ஐ macOS இயக்குகிறது. அதன் streams-இல் ஏதேனும் இணைக்கப்பட்டிருக்கும்வரை, ஆப்கள் இயக்கிப் பதிவுசெய்யும் ஆடியோ சாதனத்தை macOS உருவாக்குகிறது, ஒவ்வொரு திசையிலும் உள்ளமைவு நிர்ணயிக்கும் அளவு சேனல்களுடன்.
 mac-open-audio-midi-setup = Audio MIDI Setup-ஐத் திற
 mac-avb-off = { $interface }-இல் AVB அணைக்கப்பட்டுள்ளது, எனவே இந்த Mac-க்கு சொந்த AVB Entity இல்லை. Audio MIDI Setup-இன் Network Device Browser-இல் அதை இயக்கவும்.

@@ -160,6 +160,9 @@ stream-format = Формат
 stream-id = ID потока
 stream-destination = Назначение
 stream-max-transit = Макс. время прохождения
+stream-listeners = Слушатели
+stream-listener-gone = { $entity }, вход { $input }, не в сети
+stream-disconnect-listener = Отключить
 
 avb-interfaces = Интерфейсы AVB
 avb-interface = Интерфейс
@@ -269,6 +272,7 @@ outcome-no-response = нет ответа
 outcome-not-possible = невозможно
 outcome-connect = Не удалось подключить { $talker } к { $listener }: { $reason }.
 outcome-disconnect = Не удалось отключить { $listener }: { $reason }.
+outcome-disconnect-listener = Не удалось отключить { $listener } от { $talker }: { $reason }.
 outcome-identify = Не удалось идентифицировать { $entity }: { $reason }.
 outcome-rename = Не удалось переименовать { $what } в «{ $name }»: { $reason }.
 outcome-rename-group = Не удалось переименовать группу сущности { $entity } в «{ $name }»: { $reason }.
@@ -865,7 +869,7 @@ host-default-device = Устройство по умолчанию
 host-remove = Удалить с этого компьютера
 
 mac-audio-device = Аудиоустройство
-mac-no-audio-device = Нет
-mac-entity-note = Эту сущность запускает macOS. Приложения воспроизводят и записывают через её аудиоустройство, а её конфигурация задаёт число каналов в каждую сторону.
+mac-no-audio-device = Нет, пока не подключён ни один поток
+mac-entity-note = Эту сущность запускает macOS. Пока подключён хотя бы один её поток, macOS создаёт аудиоустройство, через которое приложения воспроизводят и записывают, с числом каналов в каждую сторону, заданным конфигурацией.
 mac-open-audio-midi-setup = Открыть «Настройка Audio-MIDI»
 mac-avb-off = AVB выключен на { $interface }, поэтому у этого Mac нет собственной сущности AVB. Включите его в браузере сетевых устройств программы «Настройка Audio-MIDI».

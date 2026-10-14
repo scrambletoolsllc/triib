@@ -162,6 +162,9 @@ stream-format = Μορφή
 stream-id = ID ροής
 stream-destination = Προορισμός
 stream-max-transit = Μέγ. χρόνος διέλευσης
+stream-listeners = Ακροατές
+stream-listener-gone = { $entity } είσοδος { $input }, εκτός σύνδεσης
+stream-disconnect-listener = Αποσύνδεση
 
 avb-interfaces = Διεπαφές AVB
 avb-interface = Διεπαφή
@@ -264,6 +267,7 @@ outcome-no-response = καμία απόκριση
 outcome-not-possible = δεν είναι δυνατό
 outcome-connect = Δεν ήταν δυνατή η σύνδεση της ροής { $talker } με τη ροή { $listener }: { $reason }.
 outcome-disconnect = Δεν ήταν δυνατή η αποσύνδεση της ροής { $listener }: { $reason }.
+outcome-disconnect-listener = Δεν ήταν δυνατή η αποσύνδεση του { $listener } από το { $talker }: { $reason }.
 outcome-identify = Δεν ήταν δυνατή η αναγνώριση της οντότητας { $entity }: { $reason }.
 outcome-rename = Δεν ήταν δυνατή η μετονομασία του { $what } σε «{ $name }»: { $reason }.
 outcome-rename-group = Δεν ήταν δυνατή η μετονομασία της ομάδας της οντότητας { $entity } σε «{ $name }»: { $reason }.
@@ -797,7 +801,7 @@ host-default-device = Προεπιλεγμένη συσκευή
 host-remove = Αφαίρεση από αυτόν τον υπολογιστή
 
 mac-audio-device = Συσκευή ήχου
-mac-no-audio-device = Καμία
-mac-entity-note = Το macOS εκτελεί αυτή την οντότητα. Οι εφαρμογές αναπαράγουν και ηχογραφούν μέσω της συσκευής ήχου της, και η διαμόρφωσή της ορίζει πόσα κανάλια έχει προς κάθε κατεύθυνση.
+mac-no-audio-device = Καμία όσο δεν είναι συνδεδεμένη καμία ροή
+mac-entity-note = Το macOS εκτελεί αυτή την οντότητα. Όσο είναι συνδεδεμένη κάποια ροή της, το macOS δημιουργεί τη συσκευή ήχου μέσω της οποίας οι εφαρμογές αναπαράγουν και ηχογραφούν, με όσα κανάλια προς κάθε κατεύθυνση ορίζει η διαμόρφωση.
 mac-open-audio-midi-setup = Άνοιγμα Audio MIDI Setup
 mac-avb-off = Το AVB είναι απενεργοποιημένο στο { $interface }, οπότε αυτό το Mac δεν έχει δική του οντότητα AVB. Ενεργοποιήστε το στο πρόγραμμα περιήγησης συσκευών δικτύου του Audio MIDI Setup.

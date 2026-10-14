@@ -225,6 +225,12 @@ stream-id = Stream ID
 # The MAC address a stream is sent to.
 stream-destination = Destination
 stream-max-transit = Max transit time
+# The listeners a talker counts for a stream output, as it keeps them.
+stream-listeners = Listeners
+# A listener the talker still counts that is not on the network.
+stream-listener-gone = { $entity } input { $input }, not online
+# Tells the talker the listener no longer takes the stream.
+stream-disconnect-listener = Disconnect
 
 avb-interfaces = AVB interfaces
 avb-interface = Interface
@@ -347,6 +353,7 @@ outcome-not-possible = not possible
 # $talker and $listener are streams, as in "Mac mini: Audio Output Stream 1".
 outcome-connect = Could not connect { $talker } to { $listener }: { $reason }.
 outcome-disconnect = Could not disconnect { $listener }: { $reason }.
+outcome-disconnect-listener = Could not disconnect { $listener } from { $talker }: { $reason }.
 outcome-identify = Could not identify { $entity }: { $reason }.
 # $what is an entity or a stream, $name the name it was to get.
 outcome-rename = Could not rename { $what } to "{ $name }": { $reason }.
@@ -1016,8 +1023,8 @@ host-remove = Remove from this computer
 
 # The Core Audio device macOS makes of the Mac's own entity.
 mac-audio-device = Audio device
-mac-no-audio-device = None
-mac-entity-note = macOS runs this entity. Apps play into and record from its audio device, and its configuration sets how many channels it has each way.
+mac-no-audio-device = None while no stream is connected
+mac-entity-note = macOS runs this entity. While one of its streams is connected, macOS makes the audio device apps play into and record from, with as many channels each way as the configuration sets.
 # Audio MIDI Setup is the macOS app's name.
 mac-open-audio-midi-setup = Open Audio MIDI Setup
 # $interface is a network interface, such as en0.

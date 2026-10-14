@@ -160,6 +160,9 @@ stream-format = Formát
 stream-id = ID streamu
 stream-destination = Cíl
 stream-max-transit = Max. doba průchodu
+stream-listeners = Posluchači
+stream-listener-gone = { $entity } vstup { $input }, není online
+stream-disconnect-listener = Odpojit
 
 avb-interfaces = Rozhraní AVB
 avb-interface = Rozhraní
@@ -269,6 +272,7 @@ outcome-no-response = žádná odpověď
 outcome-not-possible = není možné
 outcome-connect = Nepodařilo se připojit { $talker } k { $listener }: { $reason }.
 outcome-disconnect = Nepodařilo se odpojit { $listener }: { $reason }.
+outcome-disconnect-listener = Nepodařilo se odpojit { $listener } od { $talker }: { $reason }.
 outcome-identify = Nepodařilo se identifikovat { $entity }: { $reason }.
 outcome-rename = Nepodařilo se přejmenovat { $what } na „{ $name }“: { $reason }.
 outcome-rename-group = Nepodařilo se přejmenovat skupinu entity { $entity } na „{ $name }“: { $reason }.
@@ -867,7 +871,7 @@ host-default-device = Výchozí zařízení
 host-remove = Odebrat z tohoto počítače
 
 mac-audio-device = Zvukové zařízení
-mac-no-audio-device = Žádné
-mac-entity-note = Tuto entitu spouští macOS. Aplikace přehrávají do jejího zvukového zařízení a nahrávají z něj a její konfigurace určuje, kolik má kanálů v každém směru.
+mac-no-audio-device = Žádné, dokud není připojen žádný stream
+mac-entity-note = Tuto entitu spouští macOS. Dokud je připojen některý z jejích streamů, macOS vytváří zvukové zařízení, do kterého aplikace přehrávají a ze kterého nahrávají, s tolika kanály v každém směru, kolik určuje konfigurace.
 mac-open-audio-midi-setup = Otevřít Nastavení Audio MIDI
 mac-avb-off = AVB je na rozhraní { $interface } vypnuté, takže tento Mac nemá vlastní entitu AVB. Zapněte ho v prohlížeči síťových zařízení v Nastavení Audio MIDI.

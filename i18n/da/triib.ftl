@@ -162,6 +162,9 @@ stream-format = Format
 stream-id = Stream-ID
 stream-destination = Destination
 stream-max-transit = Maks. transittid
+stream-listeners = Lyttere
+stream-listener-gone = { $entity } indgang { $input }, ikke online
+stream-disconnect-listener = Frakobl
 
 avb-interfaces = AVB-interfaces
 avb-interface = Interface
@@ -261,6 +264,7 @@ outcome-no-response = intet svar
 outcome-not-possible = ikke muligt
 outcome-connect = Kunne ikke forbinde { $talker } til { $listener }: { $reason }.
 outcome-disconnect = Kunne ikke frakoble { $listener }: { $reason }.
+outcome-disconnect-listener = Kunne ikke frakoble { $listener } fra { $talker }: { $reason }.
 outcome-identify = Kunne ikke identificere { $entity }: { $reason }.
 outcome-rename = Kunne ikke omdøbe { $what } til »{ $name }«: { $reason }.
 outcome-rename-group = Kunne ikke omdøbe gruppen for { $entity } til »{ $name }«: { $reason }.
@@ -784,7 +788,7 @@ host-default-device = Standardenhed
 host-remove = Fjern fra denne computer
 
 mac-audio-device = Lydenhed
-mac-no-audio-device = Ingen
-mac-entity-note = macOS kører denne entitet. Apps afspiller til og optager fra dens lydenhed, og dens konfiguration bestemmer, hvor mange kanaler den har hver vej.
+mac-no-audio-device = Ingen, så længe ingen stream er forbundet
+mac-entity-note = macOS kører denne entitet. Så længe en af dens streams er forbundet, laver macOS den lydenhed, apps afspiller til og optager fra, med så mange kanaler hver vej, som konfigurationen angiver.
 mac-open-audio-midi-setup = Åbn Lyd-MIDI-opsætning
 mac-avb-off = AVB er slået fra på { $interface }, så denne Mac har ingen egen AVB-entitet. Slå det til i netværksenhedsbrowseren i Lyd-MIDI-opsætning.

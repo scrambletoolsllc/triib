@@ -1392,6 +1392,9 @@ fn stream_details<'a>(
             transit_picker(triib, entity_id, stream.index, nanoseconds),
         ));
     }
+    if !input {
+        items.extend(listener_rows(triib, entity_id, model, stream.index));
+    }
     items.extend(crate::host_view::remove_stream(
         triib,
         entity_id,
@@ -1399,6 +1402,52 @@ fn stream_details<'a>(
         stream.index,
     ));
     items
+}
+
+/// Who listens to a stream output, as its talker keeps them: each by its
+/// input's name, or marked where it is not online, as a talker outside
+/// Milan counts one that left without saying, with a button that tells
+/// the talker the listener no longer takes the stream.
+fn listener_rows<'a>(
+    triib: &'a Triib,
+    talker: EntityId,
+    model: &EntityModel,
+    output: u16,
+) -> Vec<Element<'a, Message>> {
+    let listeners: Vec<(EntityId, u16)> = model.tx_connections(output).collect();
+    if listeners.is_empty() {
+        return Vec::new();
+    }
+    let rows = listeners
+        .into_iter()
+        .map(|listener| -> Element<'a, Message> {
+            let action = Action::DisconnectTalker {
+                talker: (talker, output),
+                listener,
+            };
+            let busy = triib.pending.contains(&action);
+            let name = describe::listener_name(triib, listener);
+            let gone = !triib.entities.contains_key(&listener.0);
+            let name = styled(name, Type::BodyMedium).width(Fill);
+            let name = if gone {
+                name.style(style::on_surface_variant)
+            } else {
+                name
+            };
+            scramble_ui::row![
+                name,
+                button::button(Kind::Outlined, fl!("stream-disconnect-listener"))
+                    .size(button::Size::ExtraSmall)
+                    .on_press_maybe((!busy).then_some(Message::Act(action))),
+            ]
+            .spacing(8)
+            .align_y(Center)
+            .into()
+        });
+    vec![stacked(
+        fl!("stream-listeners"),
+        iced::widget::Column::with_children(rows).spacing(4),
+    )]
 }
 
 /// Each AVB interface with what it reports of gPTP and its counters.
@@ -1962,6 +2011,7 @@ pub(crate) mod tests {
         config.read_counters = false;
         config.read_transit_times = false;
         config.read_configurations = false;
+        config.read_talker_state = false;
         config.lite_status = false;
         config.wireless_status = false;
         config.first_sequence_id = first_sequence_id;

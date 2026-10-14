@@ -162,6 +162,9 @@ stream-format = Biçim
 stream-id = Akış ID'si
 stream-destination = Hedef
 stream-max-transit = Azami geçiş süresi
+stream-listeners = Dinleyiciler
+stream-listener-gone = { $entity } giriş { $input }, çevrim dışı
+stream-disconnect-listener = Bağlantıyı kes
 
 avb-interfaces = AVB arayüzleri
 avb-interface = Arayüz
@@ -261,6 +264,7 @@ outcome-no-response = yanıt yok
 outcome-not-possible = mümkün değil
 outcome-connect = { $talker } ile { $listener } bağlanamadı: { $reason }.
 outcome-disconnect = { $listener } bağlantısı kesilemedi: { $reason }.
+outcome-disconnect-listener = { $listener }, { $talker } bağlantısından ayrılamadı: { $reason }.
 outcome-identify = { $entity } tanımlanamadı: { $reason }.
 outcome-rename = { $what } “{ $name }” olarak yeniden adlandırılamadı: { $reason }.
 outcome-rename-group = { $entity } varlığının grubu “{ $name }” olarak yeniden adlandırılamadı: { $reason }.
@@ -776,7 +780,7 @@ host-default-device = Varsayılan aygıt
 host-remove = Bu bilgisayardan kaldır
 
 mac-audio-device = Ses aygıtı
-mac-no-audio-device = Yok
-mac-entity-note = Bu varlığı macOS çalıştırır. Uygulamalar onun ses aygıtı üzerinden çalar ve kaydeder; yapılandırması da her yönde kaç kanalı olduğunu belirler.
+mac-no-audio-device = Hiçbir akış bağlı değilken yok
+mac-entity-note = Bu varlığı macOS çalıştırır. Akışlarından biri bağlı olduğu sürece macOS, uygulamaların çalıp kaydettiği ses aygıtını oluşturur; her yöndeki kanal sayısını yapılandırma belirler.
 mac-open-audio-midi-setup = Audio MIDI Ayarı’nı aç
 mac-avb-off = { $interface } üzerinde AVB kapalı, bu yüzden bu Mac’in kendine ait bir AVB varlığı yok. Audio MIDI Ayarı’nın ağ aygıtı tarayıcısında açın.

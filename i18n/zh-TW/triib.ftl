@@ -163,6 +163,9 @@ stream-format = 格式
 stream-id = 串流 ID
 stream-destination = 目的地
 stream-max-transit = 最大傳輸時間
+stream-listeners = 收聽端
+stream-listener-gone = { $entity } 輸入 { $input }，離線
+stream-disconnect-listener = 中斷連線
 
 avb-interfaces = AVB 介面
 avb-interface = 介面
@@ -247,6 +250,7 @@ outcome-no-response = 無回應
 outcome-not-possible = 無法執行
 outcome-connect = 無法將 { $talker } 連線至 { $listener }：{ $reason }。
 outcome-disconnect = 無法中斷 { $listener } 的連線：{ $reason }。
+outcome-disconnect-listener = 無法將 { $listener } 與 { $talker } 中斷連線：{ $reason }。
 outcome-identify = 無法讓 { $entity } 執行識別：{ $reason }。
 outcome-rename = 無法將 { $what } 重新命名為「{ $name }」：{ $reason }。
 outcome-rename-group = 無法將 { $entity } 的群組重新命名為「{ $name }」：{ $reason }。
@@ -678,7 +682,7 @@ host-default-device = 預設裝置
 host-remove = 從本機移除
 
 mac-audio-device = 音訊裝置
-mac-no-audio-device = 無
-mac-entity-note = 此實體由 macOS 執行。App 透過其音訊裝置播放和錄音，其組態決定每個方向有多少聲道。
+mac-no-audio-device = 沒有串流連線時無
+mac-entity-note = 此實體由 macOS 執行。只要其中一個串流已連線，macOS 就會建立供 App 播放和錄音的音訊裝置，每個方向的聲道數由組態決定。
 mac-open-audio-midi-setup = 打開「音訊 MIDI 設定」
 mac-avb-off = { $interface } 上的 AVB 已關閉，因此這部 Mac 沒有自己的 AVB 實體。請在「音訊 MIDI 設定」的網路裝置瀏覽器中開啟。

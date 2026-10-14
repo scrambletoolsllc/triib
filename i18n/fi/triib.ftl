@@ -162,6 +162,9 @@ stream-format = Muoto
 stream-id = Striimin ID
 stream-destination = Kohde
 stream-max-transit = Suurin läpikulkuaika
+stream-listeners = Kuuntelijat
+stream-listener-gone = { $entity } tulo { $input }, ei verkossa
+stream-disconnect-listener = Katkaise
 
 avb-interfaces = AVB-liitännät
 avb-interface = Liitäntä
@@ -267,6 +270,7 @@ outcome-no-response = ei vastausta
 outcome-not-possible = ei mahdollista
 outcome-connect = Striimiä { $talker } ei voitu yhdistää striimiin { $listener }: { $reason }.
 outcome-disconnect = Striimin { $listener } yhteyttä ei voitu katkaista: { $reason }.
+outcome-disconnect-listener = Kohteen { $listener } yhteyttä kohteeseen { $talker } ei voitu katkaista: { $reason }.
 outcome-identify = Entiteettiä { $entity } ei voitu tunnistaa: { $reason }.
 outcome-rename = Kohteen { $what } uudeksi nimeksi ei voitu asettaa ”{ $name }”: { $reason }.
 outcome-rename-group = Entiteetin { $entity } ryhmän uudeksi nimeksi ei voitu asettaa ”{ $name }”: { $reason }.
@@ -803,7 +807,7 @@ host-default-device = Oletuslaite
 host-remove = Poista tästä tietokoneesta
 
 mac-audio-device = Äänilaite
-mac-no-audio-device = Ei mitään
-mac-entity-note = macOS ajaa tätä entiteettiä. Apit toistavat ja nauhoittavat sen äänilaitteen kautta, ja sen kokoonpano määrää, montako kanavaa sillä on kumpaankin suuntaan.
+mac-no-audio-device = Ei mitään, kun mikään striimi ei ole yhdistetty
+mac-entity-note = macOS ajaa tätä entiteettiä. Kun jokin sen striimeistä on yhdistetty, macOS luo äänilaitteen, jonka kautta apit toistavat ja nauhoittavat, ja siinä on kumpaankin suuntaan niin monta kanavaa kuin kokoonpano määrää.
 mac-open-audio-midi-setup = Avaa Audio-MIDI-asetukset
 mac-avb-off = AVB on pois päältä liitännässä { $interface }, joten tällä Macilla ei ole omaa AVB-entiteettiä. Laita se päälle Audio-MIDI-asetusten verkkolaiteselaimessa.

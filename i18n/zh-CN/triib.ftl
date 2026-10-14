@@ -163,6 +163,9 @@ stream-format = 格式
 stream-id = 流 ID
 stream-destination = 目标
 stream-max-transit = 最大传输时间
+stream-listeners = 收听方
+stream-listener-gone = { $entity } 输入 { $input }，离线
+stream-disconnect-listener = 断开
 
 avb-interfaces = AVB 接口
 avb-interface = 接口
@@ -247,6 +250,7 @@ outcome-no-response = 无响应
 outcome-not-possible = 无法执行
 outcome-connect = 无法将 { $talker } 连接到 { $listener }：{ $reason }。
 outcome-disconnect = 无法断开 { $listener } 的连接：{ $reason }。
+outcome-disconnect-listener = 无法将 { $listener } 与 { $talker } 断开：{ $reason }。
 outcome-identify = 无法让 { $entity } 执行识别：{ $reason }。
 outcome-rename = 无法将 { $what } 重命名为“{ $name }”：{ $reason }。
 outcome-rename-group = 无法将 { $entity } 的组重命名为“{ $name }”：{ $reason }。
@@ -678,7 +682,7 @@ host-default-device = 默认设备
 host-remove = 从本机移除
 
 mac-audio-device = 音频设备
-mac-no-audio-device = 无
-mac-entity-note = 此实体由 macOS 运行。App 通过其音频设备播放和录音，其配置决定每个方向有多少声道。
+mac-no-audio-device = 没有流连接时无
+mac-entity-note = 此实体由 macOS 运行。只要其中一个流已连接，macOS 就会创建供 App 播放和录音的音频设备，每个方向的声道数由配置决定。
 mac-open-audio-midi-setup = 打开“音频 MIDI 设置”
 mac-avb-off = { $interface } 上的 AVB 已关闭，因此这台 Mac 没有自己的 AVB 实体。请在“音频 MIDI 设置”的网络设备浏览器中打开它。

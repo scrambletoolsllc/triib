@@ -162,6 +162,9 @@ stream-format = Formátum
 stream-id = Stream-ID
 stream-destination = Cél
 stream-max-transit = Max. átfutási idő
+stream-listeners = Hallgatók
+stream-listener-gone = { $entity } { $input }. bemenet, nem érhető el
+stream-disconnect-listener = Leválasztás
 
 avb-interfaces = AVB-interfészek
 avb-interface = Interfész
@@ -261,6 +264,7 @@ outcome-no-response = nincs válasz
 outcome-not-possible = nem lehetséges
 outcome-connect = A csatlakoztatás nem sikerült ({ $talker } → { $listener }): { $reason }.
 outcome-disconnect = A leválasztás nem sikerült ({ $listener }): { $reason }.
+outcome-disconnect-listener = { $listener } nem választható le erről: { $talker }: { $reason }.
 outcome-identify = Az azonosítás nem sikerült ({ $entity }): { $reason }.
 outcome-rename = Az átnevezés nem sikerült ({ $what } → „{ $name }”): { $reason }.
 outcome-rename-group = A csoport átnevezése nem sikerült ({ $entity } → „{ $name }”): { $reason }.
@@ -776,7 +780,7 @@ host-default-device = Alapértelmezett eszköz
 host-remove = Eltávolítás erről a számítógépről
 
 mac-audio-device = Hangeszköz
-mac-no-audio-device = Nincs
-mac-entity-note = Ezt az entitást a macOS futtatja. Az alkalmazások a hangeszközén keresztül játszanak le és vesznek fel, a konfigurációja pedig megadja, hány csatornája van mindkét irányban.
+mac-no-audio-device = Nincs, amíg egy stream sincs csatlakoztatva
+mac-entity-note = Ezt az entitást a macOS futtatja. Amíg valamelyik streamje csatlakoztatva van, a macOS létrehozza azt a hangeszközt, amelyen az alkalmazások lejátszanak és felvesznek, mindkét irányban annyi csatornával, amennyit a konfiguráció megad.
 mac-open-audio-midi-setup = Audio MIDI Setup megnyitása
 mac-avb-off = Az AVB ki van kapcsolva ezen: { $interface }, így ennek a Macnek nincs saját AVB-entitása. Kapcsolja be az Audio MIDI Setup hálózati eszközböngészőjében.

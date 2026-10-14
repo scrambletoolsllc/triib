@@ -163,6 +163,9 @@ stream-format = Formato
 stream-id = ID del flusso
 stream-destination = Destinazione
 stream-max-transit = Tempo di transito max
+stream-listeners = Ascoltatori
+stream-listener-gone = { $entity } ingresso { $input }, non in linea
+stream-disconnect-listener = Disconnetti
 
 avb-interfaces = Interfacce AVB
 avb-interface = Interfaccia
@@ -275,6 +278,7 @@ outcome-no-response = nessuna risposta
 outcome-not-possible = non possibile
 outcome-connect = Impossibile connettere { $talker } a { $listener }: { $reason }.
 outcome-disconnect = Impossibile disconnettere { $listener }: { $reason }.
+outcome-disconnect-listener = Impossibile disconnettere { $listener } da { $talker }: { $reason }.
 outcome-identify = Impossibile identificare { $entity }: { $reason }.
 outcome-rename = Impossibile rinominare { $what } in “{ $name }”: { $reason }.
 outcome-rename-group = Impossibile rinominare il gruppo di { $entity } in “{ $name }”: { $reason }.
@@ -846,7 +850,7 @@ host-default-device = Dispositivo predefinito
 host-remove = Rimuovi da questo computer
 
 mac-audio-device = Dispositivo audio
-mac-no-audio-device = Nessuno
-mac-entity-note = macOS esegue questa entità. Le app riproducono e registrano tramite il suo dispositivo audio, e la sua configurazione stabilisce quanti canali ha in ogni direzione.
+mac-no-audio-device = Nessuno finché nessun flusso è connesso
+mac-entity-note = macOS esegue questa entità. Finché uno dei suoi flussi è connesso, macOS crea il dispositivo audio tramite cui le app riproducono e registrano, con tanti canali in ogni direzione quanti ne stabilisce la configurazione.
 mac-open-audio-midi-setup = Apri Configurazione MIDI Audio
 mac-avb-off = AVB è disattivato su { $interface }, quindi questo Mac non ha un’entità AVB propria. Attivalo nel browser dei dispositivi di rete di Configurazione MIDI Audio.

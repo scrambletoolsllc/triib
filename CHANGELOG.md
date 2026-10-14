@@ -24,12 +24,17 @@ computer's talkers and listeners folded into its entities.
   entity's channel mappings, which are its audio streams'.
 - The matrix remembers which entities are folded, across restarts.
 - An entity with several configurations has a configuration picker,
-  each by its own name, or where its names repeat, as the Mac's ten do,
-  by what it holds: "16 in, 16 out, 8 ch streams". `triib-cli
-  configuration` changes it, and `triib-cli describe` lists them.
+  each by its own name, read from its own strings, or by what it holds
+  where names are missing or repeat: "16 in, 16 out, 8 ch streams".
+  `triib-cli configuration` changes it, and `triib-cli describe` lists
+  them.
+- A stream output's details list its listeners where its talker keeps
+  them, as talkers outside Milan do, those not online marked, each with
+  a button that disconnects it; `triib-cli streams` lists them too.
 - On a Mac, the Mac's own AVB entity shows as this computer's, with its
-  Core Audio device and a button that opens Audio MIDI Setup; where AVB
-  is off, the Entities view says where to turn it on.
+  Core Audio device, which macOS makes only while one of its streams is
+  connected, and a button that opens Audio MIDI Setup; where AVB is
+  off, the Entities view says where to turn it on.
 - Controllers that do not advertise, as the Mac's own does not, are
   listed from the commands triib hears them send: their connection
   commands, which reach every station, and their commands to this

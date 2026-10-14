@@ -126,6 +126,10 @@ pub struct Config {
     /// Read an entity's other configurations and their streams once it is
     /// read, to tell them apart.
     pub read_configurations: bool,
+    /// Ask a talker for each stream output's state, and the listeners of
+    /// its connections where it keeps them, as talkers outside Milan do,
+    /// once the output's stream info is read and whenever it changes.
+    pub read_talker_state: bool,
     /// Ask each entity for its AVB Lite status once it is read, and keep
     /// asking those that answer every `lite_poll`, zero for never, to
     /// follow their PTP offset.
@@ -159,6 +163,7 @@ impl Config {
             read_counters: true,
             read_transit_times: true,
             read_configurations: true,
+            read_talker_state: true,
             lite_status: true,
             lite_poll: Duration::from_secs(5),
             wireless_status: true,
@@ -367,7 +372,7 @@ enum Request {
     GetTxConnection {
         output: u16,
         index: u16,
-        command: CommandId,
+        command: Option<CommandId>,
     },
     /// DISCONNECT_TX to a talker, for a listener's stream input, without
     /// the listener taking part.
@@ -472,7 +477,6 @@ impl Request {
             | Request::SetConfiguration { command, .. }
             | Request::SetControl { command, .. }
             | Request::DisconnectTx { command, .. }
-            | Request::GetTxConnection { command, .. }
             | Request::SetMaxTransitTime { command, .. }
             | Request::ReadForCaller { command, .. }
             | Request::SetLiteConfig { command, .. }
@@ -480,6 +484,7 @@ impl Request {
             | Request::ChangeMappings { command, .. } => Some(command),
             Request::Identify { command, .. }
             | Request::GetTxState { command, .. }
+            | Request::GetTxConnection { command, .. }
             | Request::GetMaxTransitTime { command, .. } => command,
             _ => None,
         }
@@ -1423,6 +1428,23 @@ impl Controller {
         if descriptor_type == DescriptorType::CONFIGURATION
             && let Some(Ok(descriptor)) = bytes.map(ConfigurationDescriptor::decode)
         {
+            // Its name, from its own strings, where it has no name of its
+            // own.
+            if descriptor.object_name.is_empty()
+                && let Some(strings) = self
+                    .models
+                    .get(&entity_id)
+                    .and_then(|model| model.strings_of(descriptor.localized_description))
+            {
+                self.queue_query(
+                    entity_id,
+                    Request::ReadOther {
+                        configuration,
+                        descriptor_type: DescriptorType::STRINGS,
+                        index: strings,
+                    },
+                );
+            }
             for (stream_type, count) in descriptor.descriptor_counts().filter(|(found, _)| {
                 matches!(
                     *found,
@@ -1582,6 +1604,18 @@ impl Controller {
             && model.set_stream_info(info)
         {
             self.events.push_back(Event::EntityModelChanged(entity_id));
+            // A stream output that changed may have other listeners.
+            if self.config.read_talker_state
+                && info.descriptor_type == DescriptorType::STREAM_OUTPUT
+            {
+                self.queue_query(
+                    entity_id,
+                    Request::GetTxState {
+                        output: info.index,
+                        command: None,
+                    },
+                );
+            }
         }
     }
 
@@ -1643,11 +1677,47 @@ impl Controller {
                     connection_count: acmpdu.connection_count,
                     vlan_id: acmpdu.stream_vlan_id,
                 };
-                if let Some(model) = self.models.get_mut(&addressed)
-                    && model.set_tx_state(output, state)
-                {
-                    self.events.push_back(Event::EntityModelChanged(addressed));
+                if let Some(model) = self.models.get_mut(&addressed) {
+                    let mut changed = model.set_tx_state(output, state);
+                    changed |= model.trim_tx_connections(output, state.connection_count);
+                    if changed {
+                        self.events.push_back(Event::EntityModelChanged(addressed));
+                    }
+                    // Who listens, from a talker that keeps its listeners.
+                    if self.config.read_talker_state
+                        && model.tx_connections_supported != Some(false)
+                    {
+                        for index in 0..state.connection_count {
+                            self.queue_query(
+                                addressed,
+                                Request::GetTxConnection {
+                                    output,
+                                    index,
+                                    command: None,
+                                },
+                            );
+                        }
+                    }
                 }
+            }
+            if let Request::GetTxConnection { .. } = inflight.request
+                && acmpdu.status == AcmpStatus::NOT_SUPPORTED
+                && let Some(model) = self.models.get_mut(&addressed)
+            {
+                model.tx_connections_supported = Some(false);
+            }
+            // A listener let go: who listens now.
+            if let Request::DisconnectTx { output, .. } = inflight.request
+                && acmpdu.status.is_success()
+                && self.config.read_talker_state
+            {
+                self.queue_query(
+                    addressed,
+                    Request::GetTxState {
+                        output,
+                        command: None,
+                    },
+                );
             }
             if let Request::GetTxConnection { output, index, .. } = inflight.request
                 && acmpdu.status.is_success()
@@ -2882,7 +2952,7 @@ impl Controller {
         let request = Request::GetTxConnection {
             output: talker.1,
             index,
-            command,
+            command: Some(command),
         };
         self.queue_command(now, talker.0, command, request);
         command

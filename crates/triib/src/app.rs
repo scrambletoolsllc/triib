@@ -39,6 +39,10 @@ const HOST_RESTART: Duration = Duration::from_secs(20);
 /// triib's own accent, when the desktop gives none.
 pub const TRIIB_SEED: Color = Color::from_rgb8(0x00, 0x89, 0x7b);
 
+/// How often the Mac's audio device is looked for while its entity is
+/// listed.
+const MAC_AUDIO_CHECK: std::time::Duration = std::time::Duration::from_secs(2);
+
 pub struct Triib {
     pub settings: Settings,
     theme: Theme,
@@ -92,8 +96,10 @@ pub struct Triib {
     /// Whether macOS runs AVB on the interface, giving the Mac an entity
     /// of its own; `None` off macOS.
     pub avb_enabled: Option<bool>,
-    /// The Core Audio device macOS makes of the Mac's own entity.
+    /// The Core Audio device macOS makes of the Mac's own entity, while
+    /// one of its streams is connected, and when it was last looked for.
     pub mac_audio_device: Option<String>,
+    mac_audio_checked: Option<std::time::Instant>,
     /// Entities that took another configuration and are being read again
     /// in it, with the one they took.
     pub reconfiguring: BTreeMap<EntityId, u16>,
@@ -351,6 +357,7 @@ impl Triib {
             endpoints: None,
             avb_enabled: None,
             mac_audio_device: None,
+            mac_audio_checked: None,
             reconfiguring: BTreeMap::new(),
             endpoints_elsewhere: None,
             audio_devices: (Vec::new(), Vec::new()),
@@ -416,6 +423,7 @@ impl Triib {
             endpoints: None,
             avb_enabled: None,
             mac_audio_device: None,
+            mac_audio_checked: None,
             reconfiguring: BTreeMap::new(),
             endpoints_elsewhere: None,
             audio_devices: (Vec::new(), Vec::new()),
@@ -511,6 +519,7 @@ impl Triib {
 
     /// Looks up the Core Audio device macOS made of the Mac's own entity.
     fn refresh_mac_audio_device(&mut self, entity_id: EntityId) {
+        self.mac_audio_checked = Some(std::time::Instant::now());
         #[cfg(target_os = "macos")]
         {
             self.mac_audio_device = crate::mac::audio_device_of(entity_id);
@@ -1218,6 +1227,19 @@ impl Triib {
             ReportKind::Neighbor(neighbor) => self.neighbor = neighbor,
             ReportKind::CannotListen(reason) => self.cannot_listen = Some(reason),
             ReportKind::Frames(frames) => {
+                // The Mac's audio device comes and goes a few seconds
+                // after its streams connect and disconnect.
+                if self
+                    .mac_audio_checked
+                    .is_none_or(|checked| checked.elapsed() >= MAC_AUDIO_CHECK)
+                    && let Some(entity_id) = self
+                        .entities
+                        .keys()
+                        .copied()
+                        .find(|&entity_id| self.is_this_mac(entity_id))
+                {
+                    self.refresh_mac_audio_device(entity_id);
+                }
                 let own = match self.network_state {
                     NetworkState::Running { controller } => Some(controller),
                     _ => None,

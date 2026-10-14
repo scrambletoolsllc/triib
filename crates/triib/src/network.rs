@@ -75,6 +75,13 @@ pub enum Action {
     },
     /// Unbind a listener's stream input.
     Disconnect { listener: (EntityId, u16) },
+    /// Tell a talker that a listener's stream input no longer takes a
+    /// stream output (DISCONNECT_TX), as for a listener gone that the
+    /// talker still counts.
+    DisconnectTalker {
+        talker: (EntityId, u16),
+        listener: (EntityId, u16),
+    },
     /// Make an entity identify itself for a few seconds.
     Identify(EntityId),
     /// Make another of an entity's configurations its current one.
@@ -374,6 +381,9 @@ fn run(
                             controller.connect(now, talker, listener)
                         }
                         Action::Disconnect { listener } => controller.disconnect(now, listener),
+                        Action::DisconnectTalker { talker, listener } => {
+                            controller.disconnect_talker(now, talker, listener)
+                        }
                         Action::Identify(entity_id) => {
                             controller.identify(now, entity_id, IDENTIFY)
                         }

@@ -469,9 +469,9 @@ impl FakeEntity {
         // TX commands go to the talker, RX ones to the listener; the
         // entity is both.
         let addressed = match command.message_type {
-            AcmpMessageType::GET_TX_STATE_COMMAND | AcmpMessageType::DISCONNECT_TX_COMMAND => {
-                command.talker_entity_id
-            }
+            AcmpMessageType::GET_TX_STATE_COMMAND
+            | AcmpMessageType::GET_TX_CONNECTION_COMMAND
+            | AcmpMessageType::DISCONNECT_TX_COMMAND => command.talker_entity_id,
             _ => command.listener_entity_id,
         };
         if addressed != TALKER || !self.answers_acmp {
@@ -508,6 +508,12 @@ impl FakeEntity {
                 response.stream_dest_mac = MacAddress([0x91, 0xe0, 0xf0, 0x00, 0xfe, 0x01]);
                 response.connection_count = 2;
                 response.stream_vlan_id = 2;
+            }
+            // Its two listeners, by connection index.
+            AcmpMessageType::GET_TX_CONNECTION_COMMAND => {
+                response.listener_entity_id =
+                    EntityId(0x00aa_0000 + u64::from(command.connection_count));
+                response.listener_unique_id = command.connection_count;
             }
             AcmpMessageType::DISCONNECT_TX_COMMAND => {
                 self.tx_disconnects.push((
@@ -1798,6 +1804,20 @@ fn other_configurations_are_read() {
     assert_eq!(other.outputs.len(), current.outputs.len());
     assert!(!other.outputs.is_empty());
     assert_eq!(other.name, current.name);
+}
+
+/// A talker's stream outputs are asked who listens once their stream
+/// info is read: the state, then each connection's listener.
+#[test]
+fn a_talkers_listeners_are_read() {
+    let (controller, _) = enumerated();
+    let model = controller.model(TALKER).unwrap();
+    let output = model.streams(false).next().unwrap().index;
+    assert_eq!(model.tx_state(output).unwrap().connection_count, 2);
+    assert_eq!(
+        model.tx_connections(output).collect::<Vec<_>>(),
+        [(EntityId(0x00aa_0000), 0), (EntityId(0x00aa_0001), 1)]
+    );
 }
 
 #[test]

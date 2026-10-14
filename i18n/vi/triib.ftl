@@ -163,6 +163,9 @@ stream-format = Định dạng
 stream-id = ID luồng
 stream-destination = Đích
 stream-max-transit = Thời gian truyền tối đa
+stream-listeners = Bên nghe
+stream-listener-gone = { $entity } đầu vào { $input }, ngoại tuyến
+stream-disconnect-listener = Ngắt kết nối
 
 avb-interfaces = Giao diện AVB
 avb-interface = Giao diện
@@ -247,6 +250,7 @@ outcome-no-response = không có phản hồi
 outcome-not-possible = không thể thực hiện
 outcome-connect = Không thể kết nối { $talker } tới { $listener }: { $reason }.
 outcome-disconnect = Không thể ngắt kết nối { $listener }: { $reason }.
+outcome-disconnect-listener = Không thể ngắt kết nối { $listener } khỏi { $talker }: { $reason }.
 outcome-identify = Không thể gửi lệnh nhận dạng tới { $entity }: { $reason }.
 outcome-rename = Không thể đổi tên { $what } thành “{ $name }”: { $reason }.
 outcome-rename-group = Không thể đổi tên nhóm của { $entity } thành “{ $name }”: { $reason }.
@@ -678,7 +682,7 @@ host-default-device = Thiết bị mặc định
 host-remove = Gỡ khỏi máy tính này
 
 mac-audio-device = Thiết bị âm thanh
-mac-no-audio-device = Không có
-mac-entity-note = macOS chạy thực thể này. Ứng dụng phát và ghi qua thiết bị âm thanh của nó, và cấu hình của nó quyết định số kênh mỗi chiều.
+mac-no-audio-device = Không có khi chưa luồng nào được kết nối
+mac-entity-note = macOS chạy thực thể này. Khi có luồng của nó được kết nối, macOS tạo thiết bị âm thanh mà ứng dụng dùng để phát và ghi, với số kênh mỗi chiều do cấu hình quy định.
 mac-open-audio-midi-setup = Mở Audio MIDI Setup
 mac-avb-off = AVB đang tắt trên { $interface }, nên máy Mac này không có thực thể AVB riêng. Hãy bật nó trong Network Device Browser của Audio MIDI Setup.

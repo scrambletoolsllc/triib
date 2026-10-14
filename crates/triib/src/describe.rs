@@ -176,8 +176,7 @@ pub fn milan(model: &EntityModel) -> String {
 
 /// Each of an entity's configurations, labelled to choose among them: by
 /// its name where each has a name of its own, else by what it holds, as
-/// "16 in, 16 out, 8 ch streams" for one the Mac names "8 in, 8 out, 8 ch
-/// streams" as it does all ten of its own.
+/// "16 in, 16 out, 8 ch streams", in the words the Mac names its own.
 pub fn configurations(model: &EntityModel) -> Vec<(u16, String)> {
     let summaries = model.configurations();
     let names: std::collections::HashSet<&str> =
@@ -251,6 +250,20 @@ fn holding(inputs: &[u16], outputs: &[u16]) -> String {
     }
 }
 
+/// A talker's listener by its stream input's name, or where it is not
+/// online, by its entity ID and input.
+pub fn listener_name(triib: &Triib, listener: (EntityId, u16)) -> String {
+    if triib.entities.contains_key(&listener.0) {
+        triib.stream_name(listener.0, DescriptorType::STREAM_INPUT, listener.1)
+    } else {
+        fl!(
+            "stream-listener-gone",
+            entity = listener.0.to_string(),
+            input = listener.1
+        )
+    }
+}
+
 /// What went wrong with an action, in words, or `None` when it worked.
 pub fn outcome(triib: &Triib, action: Action, outcome: Outcome) -> Option<String> {
     let reason = match outcome {
@@ -274,6 +287,12 @@ pub fn outcome(triib: &Triib, action: Action, outcome: Outcome) -> Option<String
         Action::Disconnect { listener } => fl!(
             "outcome-disconnect",
             listener = triib.stream_name(listener.0, DescriptorType::STREAM_INPUT, listener.1),
+            reason = reason
+        ),
+        Action::DisconnectTalker { talker, listener } => fl!(
+            "outcome-disconnect-listener",
+            talker = triib.stream_name(talker.0, DescriptorType::STREAM_OUTPUT, talker.1),
+            listener = listener_name(triib, listener),
             reason = reason
         ),
         Action::Identify(entity_id) => fl!(

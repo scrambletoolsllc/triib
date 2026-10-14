@@ -160,6 +160,9 @@ stream-format = Format
 stream-id = ID strim
 stream-destination = Destinasi
 stream-max-transit = Masa transit maks.
+stream-listeners = Pendengar
+stream-listener-gone = { $entity } input { $input }, tidak dalam talian
+stream-disconnect-listener = Putuskan
 
 avb-interfaces = Antara muka AVB
 avb-interface = Antara muka
@@ -244,6 +247,7 @@ outcome-no-response = tiada tindak balas
 outcome-not-possible = tidak mungkin
 outcome-connect = Gagal menyambungkan { $talker } ke { $listener }: { $reason }.
 outcome-disconnect = Gagal memutuskan sambungan { $listener }: { $reason }.
+outcome-disconnect-listener = Gagal memutuskan { $listener } daripada { $talker }: { $reason }.
 outcome-identify = Gagal mengenal pasti { $entity }: { $reason }.
 outcome-rename = Gagal menamakan semula { $what } kepada "{ $name }": { $reason }.
 outcome-rename-group = Gagal menamakan semula kumpulan { $entity } kepada "{ $name }": { $reason }.
@@ -683,7 +687,7 @@ host-default-device = Peranti lalai
 host-remove = Alih keluar daripada komputer ini
 
 mac-audio-device = Peranti audio
-mac-no-audio-device = Tiada
-mac-entity-note = macOS menjalankan entiti ini. Apl memainkan dan merakam melalui peranti audionya, dan konfigurasinya menetapkan bilangan saluran pada setiap arah.
+mac-no-audio-device = Tiada selagi tiada strim disambungkan
+mac-entity-note = macOS menjalankan entiti ini. Selagi salah satu strimnya disambungkan, macOS mencipta peranti audio tempat apl memainkan dan merakam, dengan bilangan saluran pada setiap arah seperti yang ditetapkan konfigurasi.
 mac-open-audio-midi-setup = Buka Audio MIDI Setup
 mac-avb-off = AVB dimatikan pada { $interface }, jadi Mac ini tiada entiti AVB sendiri. Hidupkannya dalam Network Device Browser pada Audio MIDI Setup.

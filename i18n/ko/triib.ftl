@@ -163,6 +163,9 @@ stream-format = 포맷
 stream-id = 스트림 ID
 stream-destination = 대상
 stream-max-transit = 최대 전송 시간
+stream-listeners = 리스너
+stream-listener-gone = { $entity } 입력 { $input }, 오프라인
+stream-disconnect-listener = 연결 끊기
 
 avb-interfaces = AVB 인터페이스
 avb-interface = 인터페이스
@@ -247,6 +250,7 @@ outcome-no-response = 응답 없음
 outcome-not-possible = 불가능
 outcome-connect = { $talker }을(를) { $listener }에 연결할 수 없습니다: { $reason }.
 outcome-disconnect = { $listener }의 연결을 끊을 수 없습니다: { $reason }.
+outcome-disconnect-listener = { $talker }에서 { $listener }의 연결을 끊을 수 없습니다: { $reason }.
 outcome-identify = { $entity }을(를) 식별할 수 없습니다: { $reason }.
 outcome-rename = { $what }의 이름을 “{ $name }”(으)로 바꿀 수 없습니다: { $reason }.
 outcome-rename-group = { $entity }의 그룹 이름을 “{ $name }”(으)로 바꿀 수 없습니다: { $reason }.
@@ -678,7 +682,7 @@ host-default-device = 기본 장치
 host-remove = 이 컴퓨터에서 제거
 
 mac-audio-device = 오디오 기기
-mac-no-audio-device = 없음
-mac-entity-note = 이 엔티티는 macOS가 실행합니다. 앱은 이 엔티티의 오디오 기기로 재생하고 녹음하며, 구성에 따라 방향별 채널 수가 정해집니다.
+mac-no-audio-device = 연결된 스트림이 없는 동안은 없음
+mac-entity-note = 이 엔티티는 macOS가 실행합니다. 스트림 중 하나가 연결되어 있는 동안 macOS는 앱이 재생하고 녹음하는 오디오 기기를 만들며, 방향별 채널 수는 구성에 따릅니다.
 mac-open-audio-midi-setup = Audio MIDI 설정 열기
 mac-avb-off = { $interface }에서 AVB가 꺼져 있어 이 Mac에는 자체 AVB 엔티티가 없습니다. Audio MIDI 설정의 네트워크 기기 브라우저에서 켜세요.

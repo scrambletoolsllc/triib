@@ -160,6 +160,9 @@ stream-format = التنسيق
 stream-id = ID التدفق
 stream-destination = الوجهة
 stream-max-transit = أقصى زمن عبور
+stream-listeners = المستمعون
+stream-listener-gone = { $entity } الدخل { $input }، غير متصل
+stream-disconnect-listener = فصل
 
 avb-interfaces = واجهات AVB
 avb-interface = الواجهة
@@ -279,6 +282,7 @@ outcome-no-response = لا استجابة
 outcome-not-possible = غير ممكن
 outcome-connect = تعذّر توصيل { $talker } بـ{ $listener }: { $reason }.
 outcome-disconnect = تعذّر فصل { $listener }: { $reason }.
+outcome-disconnect-listener = تعذّر فصل { $listener } عن { $talker }: { $reason }.
 outcome-identify = تعذّر تعريف { $entity }: { $reason }.
 outcome-rename = تعذّرت إعادة تسمية { $what } إلى «{ $name }»: { $reason }.
 outcome-rename-group = تعذّرت إعادة تسمية مجموعة { $entity } إلى «{ $name }»: { $reason }.
@@ -918,7 +922,7 @@ host-default-device = الجهاز الافتراضي
 host-remove = إزالة من هذا الحاسوب
 
 mac-audio-device = جهاز الصوت
-mac-no-audio-device = لا يوجد
-mac-entity-note = يشغّل macOS هذا الكيان. تشغّل التطبيقات الصوت عبر جهاز الصوت الخاص به وتسجّل منه، ويحدّد تكوينه عدد قنواته في كل اتجاه.
+mac-no-audio-device = لا يوجد ما دام لا تدفق متصل
+mac-entity-note = يشغّل macOS هذا الكيان. ما دام أحد تدفقاته متصلًا، ينشئ macOS جهاز الصوت الذي تشغّل التطبيقات الصوت عبره وتسجّل منه، بعدد القنوات في كل اتجاه الذي يحدّده التكوين.
 mac-open-audio-midi-setup = فتح Audio MIDI Setup
 mac-avb-off = خاصية AVB متوقفة على { $interface }، لذا ليس لهذا الـ Mac كيان AVB خاص به. شغّلها في متصفح أجهزة الشبكة في Audio MIDI Setup.

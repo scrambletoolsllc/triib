@@ -147,6 +147,9 @@ pub struct EntityModel {
     /// Each stream output's listeners, by connection index, as the talker
     /// answers GET_TX_CONNECTION.
     tx_connections: BTreeMap<(u16, u16), (EntityId, u16)>,
+    /// Whether the entity answers GET_TX_CONNECTION, as a talker outside
+    /// Milan does; `None` until refused.
+    pub tx_connections_supported: Option<bool>,
     max_transit_times: BTreeMap<u16, u64>,
     /// Whether it answers the AVB Lite status query; `None` until asked.
     pub lite_supported: Option<bool>,
@@ -463,6 +466,15 @@ impl EntityModel {
             .map(|(_, listener)| *listener)
     }
 
+    /// Forgets a stream output's connections past `count`, as its talker
+    /// now counts; whether any went.
+    pub(crate) fn trim_tx_connections(&mut self, output: u16, count: u16) -> bool {
+        let before = self.tx_connections.len();
+        self.tx_connections
+            .retain(|&(at, index), _| at != output || index < count);
+        self.tx_connections.len() != before
+    }
+
     pub(crate) fn set_tx_connection(
         &mut self,
         output: u16,
@@ -618,11 +630,14 @@ impl EntityModel {
                     && inputs.len() == count(DescriptorType::STREAM_INPUT)
                     && outputs.len() == count(DescriptorType::STREAM_OUTPUT);
                 let name = descriptor.map_or("", |descriptor| {
-                    if descriptor.object_name.is_empty() {
+                    if !descriptor.object_name.is_empty() {
+                        descriptor.object_name
+                    } else if index == self.configuration {
                         self.localized(descriptor.localized_description)
                             .unwrap_or_default()
                     } else {
-                        descriptor.object_name
+                        self.localized_in(index, descriptor.localized_description)
+                            .unwrap_or_default()
                     }
                 });
                 ConfigurationSummary {
@@ -734,15 +749,37 @@ impl EntityModel {
 
     /// A localized string, from the first locale.
     pub fn localized(&self, reference: LocalizedStringRef) -> Option<&str> {
+        let strings = self.strings_of(reference)?;
+        let strings =
+            StringsDescriptor::decode(self.descriptor(DescriptorType::STRINGS, strings)?).ok()?;
+        strings
+            .strings
+            .get(usize::from(reference.index()))
+            .copied()
+            .filter(|text| !text.is_empty())
+    }
+
+    /// The STRINGS descriptor a localized string reference is in, by the
+    /// LOCALE read.
+    pub(crate) fn strings_of(&self, reference: LocalizedStringRef) -> Option<u16> {
         if reference.is_none() {
             return None;
         }
         let (_, locale) = self.descriptors(DescriptorType::LOCALE).next()?;
         let locale = LocaleDescriptor::decode(locale).ok()?;
-        let strings = locale.base_strings.checked_add(reference.offset())?;
-        let strings =
-            StringsDescriptor::decode(self.descriptor(DescriptorType::STRINGS, strings)?).ok()?;
-        strings
+        locale.base_strings.checked_add(reference.offset())
+    }
+
+    /// A localized string of another configuration, from its own STRINGS
+    /// descriptor, read with it: each configuration has its own strings,
+    /// so one reference names different things in each.
+    fn localized_in(&self, configuration: u16, reference: LocalizedStringRef) -> Option<&str> {
+        let strings = self.strings_of(reference)?;
+        let bytes = self
+            .others
+            .get(&(configuration, DescriptorType::STRINGS, strings))?;
+        StringsDescriptor::decode(bytes)
+            .ok()?
             .strings
             .get(usize::from(reference.index()))
             .copied()

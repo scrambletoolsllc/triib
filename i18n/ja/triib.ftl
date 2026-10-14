@@ -163,6 +163,9 @@ stream-format = フォーマット
 stream-id = ストリーム ID
 stream-destination = 宛先
 stream-max-transit = 最大伝送時間
+stream-listeners = リスナー
+stream-listener-gone = { $entity } 入力 { $input }（オフライン）
+stream-disconnect-listener = 切断
 
 avb-interfaces = AVB インターフェイス
 avb-interface = インターフェイス
@@ -247,6 +250,7 @@ outcome-no-response = 応答なし
 outcome-not-possible = 実行できません
 outcome-connect = { $talker } を { $listener } に接続できませんでした：{ $reason }。
 outcome-disconnect = { $listener } を切断できませんでした：{ $reason }。
+outcome-disconnect-listener = { $listener } を { $talker } から切断できませんでした：{ $reason }。
 outcome-identify = { $entity } を識別できませんでした：{ $reason }。
 outcome-rename = { $what } の名前を「{ $name }」に変更できませんでした：{ $reason }。
 outcome-rename-group = { $entity } のグループ名を「{ $name }」に変更できませんでした：{ $reason }。
@@ -678,7 +682,7 @@ host-default-device = 既定のデバイス
 host-remove = このコンピューターから削除
 
 mac-audio-device = オーディオデバイス
-mac-no-audio-device = なし
-mac-entity-note = このエンティティは macOS が実行しています。アプリはそのオーディオデバイスで再生・録音し、その構成で各方向のチャンネル数が決まります。
+mac-no-audio-device = ストリームが接続されていない間はなし
+mac-entity-note = このエンティティは macOS が実行しています。ストリームのいずれかが接続されている間、macOS はアプリが再生・録音するオーディオデバイスを作成し、各方向のチャンネル数は構成に従います。
 mac-open-audio-midi-setup = Audio MIDI設定を開く
 mac-avb-off = { $interface } で AVB がオフのため、この Mac には自身の AVB エンティティがありません。Audio MIDI設定のネットワークデバイスブラウザでオンにしてください。

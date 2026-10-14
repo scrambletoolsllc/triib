@@ -160,6 +160,9 @@ stream-format = รูปแบบ
 stream-id = ID สตรีม
 stream-destination = ปลายทาง
 stream-max-transit = เวลาส่งผ่านสูงสุด
+stream-listeners = ผู้รับฟัง
+stream-listener-gone = { $entity } อินพุต { $input } ออฟไลน์
+stream-disconnect-listener = ตัดการเชื่อมต่อ
 
 avb-interfaces = อินเทอร์เฟซ AVB
 avb-interface = อินเทอร์เฟซ
@@ -244,6 +247,7 @@ outcome-no-response = ไม่มีการตอบกลับ
 outcome-not-possible = ทำไม่ได้
 outcome-connect = เชื่อมต่อ { $talker } กับ { $listener } ไม่ได้: { $reason }
 outcome-disconnect = ตัดการเชื่อมต่อ { $listener } ไม่ได้: { $reason }
+outcome-disconnect-listener = ตัดการเชื่อมต่อ { $listener } จาก { $talker } ไม่ได้: { $reason }
 outcome-identify = ระบุตัว { $entity } ไม่ได้: { $reason }
 outcome-rename = เปลี่ยนชื่อ { $what } เป็น “{ $name }” ไม่ได้: { $reason }
 outcome-rename-group = เปลี่ยนชื่อกลุ่มของ { $entity } เป็น “{ $name }” ไม่ได้: { $reason }
@@ -675,7 +679,7 @@ host-default-device = อุปกรณ์เริ่มต้น
 host-remove = นำออกจากคอมพิวเตอร์เครื่องนี้
 
 mac-audio-device = อุปกรณ์เสียง
-mac-no-audio-device = ไม่มี
-mac-entity-note = macOS เป็นผู้รันเอนทิตีนี้ แอปเล่นและบันทึกผ่านอุปกรณ์เสียงของมัน และการกำหนดค่าเป็นตัวกำหนดจำนวนช่องในแต่ละทิศทาง
+mac-no-audio-device = ไม่มีขณะที่ไม่มีสตรีมเชื่อมต่อ
+mac-entity-note = macOS เป็นผู้รันเอนทิตีนี้ ขณะที่สตรีมใดสตรีมหนึ่งของมันเชื่อมต่ออยู่ macOS จะสร้างอุปกรณ์เสียงที่แอปใช้เล่นและบันทึก โดยมีจำนวนช่องในแต่ละทิศทางตามที่การกำหนดค่ากำหนด
 mac-open-audio-midi-setup = เปิด Audio MIDI Setup
 mac-avb-off = AVB ปิดอยู่บน { $interface } Mac เครื่องนี้จึงไม่มีเอนทิตี AVB ของตัวเอง เปิดได้ใน Network Device Browser ของ Audio MIDI Setup
