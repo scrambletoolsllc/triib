@@ -776,6 +776,55 @@ fn streams(interface: &str, entity: EntityId) -> std::io::Result<()> {
             }
         }
     }
+    // Each output's listeners, one connection at a time.
+    let counts: Vec<(u16, u16)> = outputs
+        .iter()
+        .filter_map(|&output| {
+            let model = driver.controller().model(entity)?;
+            Some((output, model.tx_state(output)?.connection_count))
+        })
+        .collect();
+    let now = driver.now();
+    let mut waiting: BTreeSet<_> = counts
+        .iter()
+        .flat_map(|&(output, count)| (0..count).map(move |index| (output, index)))
+        .map(|(output, index)| {
+            driver
+                .controller_mut()
+                .tx_connection(now, (entity, output), index)
+        })
+        .collect();
+    let started = Instant::now();
+    while !waiting.is_empty() && started.elapsed() < LIMIT {
+        driver.turn(Duration::from_millis(100))?;
+        while let Some(event) = driver.controller_mut().poll_event() {
+            if let Event::CommandFinished(command, _) = event {
+                waiting.remove(&command);
+            }
+        }
+    }
+    // Whether each listener is there, asked of it, as only the talker was
+    // looked for.
+    let listeners: BTreeSet<EntityId> = driver
+        .controller()
+        .model(entity)
+        .map(|model| {
+            outputs
+                .iter()
+                .flat_map(|&output| model.tx_connections(output).map(|(listener, _)| listener))
+                .collect()
+        })
+        .unwrap_or_default();
+    if !listeners.is_empty() {
+        for &listener in &listeners {
+            driver.controller_mut().discover(Some(listener));
+        }
+        let asked = Instant::now();
+        while asked.elapsed() < Duration::from_secs(2) {
+            driver.turn(Duration::from_millis(100))?;
+            while driver.controller_mut().poll_event().is_some() {}
+        }
+    }
     println!("{}", summary(&found));
     let controller = driver.controller();
     let Some(model) = controller.model(entity) else {
@@ -851,6 +900,19 @@ fn streams(interface: &str, entity: EntityId) -> std::io::Result<()> {
                         "      sends {} to {}, VLAN {}, {} listener{plural}",
                         state.stream_id, state.destination, state.vlan_id, state.connection_count
                     );
+                }
+                for (listener, input) in model.tx_connections(stream.index) {
+                    let known = controller
+                        .model(listener)
+                        .and_then(|model| model.entity_name().map(str::to_owned))
+                        .or_else(|| controller.entity(listener).map(|_| String::new()));
+                    match known {
+                        Some(name) if !name.is_empty() => {
+                            println!("      to {listener} input {input}, \"{name}\"")
+                        }
+                        Some(_) => println!("      to {listener} input {input}"),
+                        None => println!("      to {listener} input {input}, not online"),
+                    }
                 }
                 if let Some(nanoseconds) = model.max_transit_time(stream.index) {
                     println!(

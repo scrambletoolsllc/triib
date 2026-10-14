@@ -362,6 +362,13 @@ enum Request {
         output: u16,
         command: Option<CommandId>,
     },
+    /// GET_TX_CONNECTION to a talker: the listener of one of a stream
+    /// output's connections, by its index.
+    GetTxConnection {
+        output: u16,
+        index: u16,
+        command: CommandId,
+    },
     /// DISCONNECT_TX to a talker, for a listener's stream input, without
     /// the listener taking part.
     DisconnectTx {
@@ -434,6 +441,7 @@ impl Request {
             | Request::Bind { .. }
             | Request::Unbind { .. }
             | Request::GetTxState { .. }
+            | Request::GetTxConnection { .. }
             | Request::DisconnectTx { .. } => Channel::Acmp,
             _ => Channel::Aem,
         }
@@ -445,6 +453,7 @@ impl Request {
             Request::GetRxState { .. } => Some(AcmpMessageType::GET_RX_STATE_COMMAND),
             Request::Bind { .. } => Some(AcmpMessageType::CONNECT_RX_COMMAND),
             Request::GetTxState { .. } => Some(AcmpMessageType::GET_TX_STATE_COMMAND),
+            Request::GetTxConnection { .. } => Some(AcmpMessageType::GET_TX_CONNECTION_COMMAND),
             Request::DisconnectTx { .. } => Some(AcmpMessageType::DISCONNECT_TX_COMMAND),
             Request::Unbind { .. } => Some(AcmpMessageType::DISCONNECT_RX_COMMAND),
             _ => None,
@@ -463,6 +472,7 @@ impl Request {
             | Request::SetConfiguration { command, .. }
             | Request::SetControl { command, .. }
             | Request::DisconnectTx { command, .. }
+            | Request::GetTxConnection { command, .. }
             | Request::SetMaxTransitTime { command, .. }
             | Request::ReadForCaller { command, .. }
             | Request::SetLiteConfig { command, .. }
@@ -1387,6 +1397,7 @@ impl Controller {
             | Request::Bind { .. }
             | Request::Unbind { .. }
             | Request::GetTxState { .. }
+            | Request::GetTxConnection { .. }
             | Request::DisconnectTx { .. } => {}
         }
         self.check_complete(entity_id);
@@ -1637,6 +1648,18 @@ impl Controller {
                 {
                     self.events.push_back(Event::EntityModelChanged(addressed));
                 }
+            }
+            if let Request::GetTxConnection { output, index, .. } = inflight.request
+                && acmpdu.status.is_success()
+                && acmpdu.talker_unique_id == output
+                && let Some(model) = self.models.get_mut(&addressed)
+                && model.set_tx_connection(
+                    output,
+                    index,
+                    (acmpdu.listener_entity_id, acmpdu.listener_unique_id),
+                )
+            {
+                self.events.push_back(Event::EntityModelChanged(addressed));
             }
             if let Some(command) = inflight.request.command() {
                 let outcome = if acmpdu.status.is_success() {
@@ -2486,6 +2509,18 @@ impl Controller {
                 sequence_id,
             )
             .encode(&mut out),
+            // The connection's index goes in connection_count (8.2.1.18).
+            Request::GetTxConnection { output, index, .. } => Acmpdu {
+                connection_count: index,
+                ..Acmpdu::command(
+                    AcmpMessageType::GET_TX_CONNECTION_COMMAND,
+                    addressing.controller,
+                    (addressing.target, output),
+                    (EntityId(0), 0),
+                    sequence_id,
+                )
+            }
+            .encode(&mut out),
             Request::DisconnectTx {
                 output,
                 listener,
@@ -2829,6 +2864,25 @@ impl Controller {
         let request = Request::GetTxState {
             output: talker.1,
             command: Some(command),
+        };
+        self.queue_command(now, talker.0, command, request);
+        command
+    }
+
+    /// Asks a talker for the listener of one of a stream output's
+    /// connections, by its index below the output's connection count
+    /// (GET_TX_CONNECTION), which the model then holds.
+    pub fn tx_connection(
+        &mut self,
+        now: Instant,
+        talker: (EntityId, u16),
+        index: u16,
+    ) -> CommandId {
+        let command = self.next_command();
+        let request = Request::GetTxConnection {
+            output: talker.1,
+            index,
+            command,
         };
         self.queue_command(now, talker.0, command, request);
         command
@@ -3465,6 +3519,7 @@ fn command_type_of(request: Request) -> AemCommandType {
         | Request::Bind { .. }
         | Request::Unbind { .. }
         | Request::GetTxState { .. }
+        | Request::GetTxConnection { .. }
         | Request::DisconnectTx { .. } => AemCommandType(0xffff),
     }
 }

@@ -144,6 +144,9 @@ pub struct EntityModel {
     audio_maps: BTreeMap<(DescriptorType, u16), DynamicMap>,
     media_clock_references: BTreeMap<u16, MediaClockReference>,
     tx_states: BTreeMap<u16, TxState>,
+    /// Each stream output's listeners, by connection index, as the talker
+    /// answers GET_TX_CONNECTION.
+    tx_connections: BTreeMap<(u16, u16), (EntityId, u16)>,
     max_transit_times: BTreeMap<u16, u64>,
     /// Whether it answers the AVB Lite status query; `None` until asked.
     pub lite_supported: Option<bool>,
@@ -452,6 +455,23 @@ impl EntityModel {
     }
 
     /// What the talker last said of a stream output, when asked.
+    /// The listeners a talker says a stream output's connections go to,
+    /// as far as asked: each listener's entity ID and stream input.
+    pub fn tx_connections(&self, output: u16) -> impl Iterator<Item = (EntityId, u16)> + '_ {
+        self.tx_connections
+            .range((output, 0)..=(output, u16::MAX))
+            .map(|(_, listener)| *listener)
+    }
+
+    pub(crate) fn set_tx_connection(
+        &mut self,
+        output: u16,
+        index: u16,
+        listener: (EntityId, u16),
+    ) -> bool {
+        self.tx_connections.insert((output, index), listener) != Some(listener)
+    }
+
     pub fn tx_state(&self, output: u16) -> Option<&TxState> {
         self.tx_states.get(&output)
     }
