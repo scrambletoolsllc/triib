@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>triib: an AVB and Milan controller for Linux, Windows and macOS</title>
-<meta name="description" content="triib is a free, open source ATDECC (IEEE 1722.1) controller with Milan and AVB Lite support: it finds the AVB devices on your network, connects their streams, maps the network and its clocks, and on Linux runs entities of its own.">
+<meta name="description" content="triib is a free, open source ATDECC (IEEE 1722.1) controller with Milan and AVB Lite support: it finds the AVB devices on your network, connects their streams, maps the network and its clocks, and on Linux runs entities on the local host.">
 <link rel="icon" href="favicon.png" type="image/png">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -26,7 +26,7 @@
     <img class="hero-icon" src="icon.png" alt="The triib icon" width="128" height="128">
     <h1>triib</h1>
     <p class="lede"><span class="lede-first">See, connect and look after your AVB network.</span>
-      <span class="lede-rest">Find every Milan and AVB device, connect their streams in a matrix, follow each stream and clock across the network, and change formats, clocks, channel maps and controls. On Linux, add entities of your own, routed to the computer's&nbsp;audio.</span></p>
+      <span class="lede-rest">Find every Milan and AVB device, connect their streams in a matrix, follow each stream and clock across the network, and change formats, clocks, channel maps and controls. On Linux, add host entities, routed to the computer's&nbsp;audio.</span></p>
     <p class="actions">
       <a class="button filled" href="#download">Download 1.0.0</a>
       <a class="button tonal" href="https://github.com/scrambletoolsllc/triib">Source on GitHub</a>
@@ -71,12 +71,12 @@
         <p>Wi-Fi stations and access points under the <a href="https://github.com/avbcommunity/profiles">AVB Wireless</a> profile: each station's link and time, the access point it follows, and whether an access point can carry Class A.</p>
       </article>
       <article>
-        <h3>Entities of your own</h3>
+        <h3>Host entities</h3>
         <p>On Linux, with a PTP hardware clock and ptp4l, triib runs Milan entities with any number of streams each way: AAF or AM824 audio at 48, 96 or 192 kHz, each stream with its own virtual audio device or one of the computer's, and CRF media clock streams, any input the entity's clock source.</p>
       </article>
       <article>
         <h3>The Mac's own entity</h3>
-        <p>On a Mac, the Mac's own AVB entity shows as this computer's, with its audio device and its configurations, and Listen plays what it receives, or what apps send through it, on an output you pick.</p>
+        <p>On a Mac, the Mac's own AVB entity shows as a host entity, with its audio device and its configurations, and Listen plays what it receives, or what apps send through it, on an output you pick.</p>
       </article>
       <article>
         <h3>Help from AI agents</h3>
@@ -116,7 +116,7 @@
         </tbody>
       </table>
     </div>
-    <p class="small">The Linux packages set <code>CAP_NET_RAW</code> on the three programs as they install, and recommend linuxptp for this computer's entities. The Windows installer and programs are signed by Scramble Tools LLC. See the <a href="https://github.com/scrambletoolsllc/triib#installing">install notes</a> for what differs between packages, or build it from source with Rust: <code>cargo run -p triib</code> in a clone of the repository.</p>
+    <p class="small">The Linux packages set <code>CAP_NET_RAW</code> on the three programs as they install, and recommend linuxptp for host entities. The Windows installer and programs are signed by Scramble Tools LLC. See the <a href="https://github.com/scrambletoolsllc/triib#installing">install notes</a> for what differs between packages, or build it from source with Rust: <code>cargo run -p triib</code> in a clone of the repository.</p>
   </section>
 
   <section id="code-signing" class="policy">

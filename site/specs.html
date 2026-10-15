@@ -29,7 +29,7 @@
 <li><a href="#systems">Systems</a></li>
 <li><a href="#standards">Standards</a></li>
 <li><a href="#controller">Controller</a></li>
-<li><a href="#endpoints">This computer's entities</a></li>
+<li><a href="#endpoints">Host entities</a></li>
 <li><a href="#avb-lite">AVB Lite</a></li>
 <li><a href="#avb-wireless">AVB Wireless</a></li>
 <li><a href="#languages">Languages</a></li>
@@ -52,8 +52,8 @@
 <tr><th>Network</th><td>A wired Ethernet interface, through raw sockets on Linux (<code>CAP_NET_RAW</code>), BPF on macOS and Npcap on Windows</td></tr>
 <tr><th>Graphics</th><td>The GPU through Vulkan on Linux, DirectX 12 or Vulkan on Windows, and Metal on macOS; the CPU when no GPU backend starts</td></tr>
 <tr><th>Look</th><td>Material Design 3, light or dark and the accent color from the system</td></tr>
-<tr><th>The Mac's own entity</th><td>Read and controlled through Apple's AudioVideoBridging framework, as macOS never hands it what a program writes to BPF; shown as this computer's, with its audio device, and Listen, which plays what it receives, or from macOS 14.2 what apps send through it</td></tr>
-<tr><th>Not here yet</th><td>Entities of the computer's own on Windows, and on macOS beside the Mac's own</td></tr>
+<tr><th>The Mac's own entity</th><td>Read and controlled through Apple's AudioVideoBridging framework, as macOS never hands it what a program writes to BPF; shown as a host entity, with its audio device, and Listen, which plays what it receives, or from macOS 14.2 what apps send through it</td></tr>
+<tr><th>Not here yet</th><td>Entities running on the local host on Windows, and on macOS beside the Mac's own</td></tr>
 </tbody></table>
 
 <h2 id="standards">Standards and profiles</h2>
@@ -75,14 +75,14 @@
 <tr><th>Network</th><td>A map of bridges and devices from each entity's gPTP path, with audio streams, CRF streams or the clock tree drawn on it</td></tr>
 <tr><th>Changes</th><td>Names and groups, configurations, stream formats, sampling rates, clock sources, outputs' maximum transit times, channel maps, controls such as gain and mute, and identifying</td></tr>
 <tr><th>Diagnostics</th><td>How each clock domain and stream has fared, from the entity's counters, with what went wrong marked; each bound input's reservation; a talker's listeners, where it keeps them; and the descriptors themselves</td></tr>
-<tr><th>Presets</th><td>Clock sources, sampling rates, stream formats, controls and connections, and this computer's own entities; recalling one changes only what differs</td></tr>
+<tr><th>Presets</th><td>Clock sources, sampling rates, stream formats, controls and connections, and host entities; recalling one changes only what differs</td></tr>
 <tr><th>Log</th><td>Every ATDECC frame sent and heard, decoded, with the frames that break the rules marked</td></tr>
 <tr><th>AVB Wireless</th><td>Each Wi-Fi station's role, time mode, link and access point, each access point's stations and the frames a second it delivers, stations under their access point on the map, and the profile's alarms</td></tr>
 <tr><th>AI agents</th><td><code>triib --mcp</code>, a Model Context Protocol server for agents such as Claude Code: status, entities, streams, formats, clocks and connections to read, and connecting, formats, sampling rates, clock sources, names, identifying and, on a Mac, Listen to change, once you let the agent in</td></tr>
 <tr><th>Command line</th><td><code>triib-cli</code>: discover, describe, connect and disconnect, name, configurations, formats, rates, clocks, channel maps, controls, maximum transit times, identify, the network and the stream state</td></tr>
 </tbody></table>
 
-<h2 id="endpoints">Entities of the computer's own</h2>
+<h2 id="endpoints">Entities running on the local host</h2>
 <table class="spec"><tbody>
 <tr><th>Systems</th><td>Linux, on a wired interface with a PTP hardware clock (<code>ethtool -T</code> shows one)</td></tr>
 <tr><th>Time</th><td>ptp4l running gPTP on that interface, read through its read-only socket</td></tr>
@@ -98,7 +98,7 @@
 <h2 id="avb-lite">AVB Lite</h2>
 <table class="spec"><tbody>
 <tr><th>Watching</th><td>Each entity's mode and why it fell back, its PTP profile and offset, its media VLAN and what its streams take of each link, and the profile's alarms</td></tr>
-<tr><th>Falling back</th><td>This computer's entities fall back when no AVB bridge answers on the interface, and come back to AVB when the link comes up again</td></tr>
+<tr><th>Falling back</th><td>Host entities fall back when no AVB bridge answers on the interface, and come back to AVB when the link comes up again</td></tr>
 <tr><th>Streams</th><td>Unicast to each listener, to 2 a talker unless set otherwise, and multicast beyond that only where allowed</td></tr>
 <tr><th>ptp4l</th><td>Moved between gPTP and the AVB Lite PTP profile through triib's systemd units and polkit rule</td></tr>
 <tr><th>Link</th><td>Energy-Efficient Ethernet and PAUSE kept off, as the profile asks, by a systemd unit</td></tr>
@@ -113,7 +113,7 @@
 <tr><th>Class A</th><td>Admitted only by an access point that delivers 12000 frames a second or more, and allowed or kept off through SET_WIRELESS_CONFIG, as <code>triib-cli wireless-config</code> does</td></tr>
 <tr><th>Network</th><td>Each station under its access point, its Wi-Fi hop dotted, in sync while its time is locked</td></tr>
 <tr><th>Alarms</th><td>A station whose time is not locked, and listeners an access point cannot serve</td></tr>
-<tr><th>This computer's entities</th><td>An output can send in SR class B, 4000 frames a second on priority 2, as a stream to a Wi-Fi station must; this computer as a Wi-Fi station is not here yet</td></tr>
+<tr><th>Host entities</th><td>An output can send in SR class B, 4000 frames a second on priority 2, as a stream to a Wi-Fi station must; this computer as a Wi-Fi station is not here yet</td></tr>
 </tbody></table>
 
 <h2 id="languages">Languages</h2>
@@ -132,7 +132,7 @@
 <tr><th>Settings</th><td><code>triib.toml</code>, in <code>~/.config</code> on Linux, <code>%APPDATA%\triib</code> on Windows and <code>~/Library/Application Support/triib</code> on macOS</td></tr>
 <tr><th>Entity models</th><td>Kept in triib's cache, so a device seen before shows in full at once</td></tr>
 <tr><th>Presets</th><td>TOML files in the presets folder, in triib's data folder unless Settings, Storage names another</td></tr>
-<tr><th>This computer's entities</th><td><code>entities.toml</code> in triib's data folder, <code>~/.local/share/triib</code> on Linux, unless Settings, Storage names another file</td></tr>
+<tr><th>Host entities</th><td><code>entities.toml</code> in triib's data folder, <code>~/.local/share/triib</code> on Linux, unless Settings, Storage names another file</td></tr>
 </tbody></table>
 
 <h2 id="license">License and privacy</h2>

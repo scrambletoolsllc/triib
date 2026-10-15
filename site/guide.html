@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>A tour of triib</title>
-<meta name="description" content="A tour of triib, the AVB and Milan controller: picking an interface, connecting streams in the matrix, the entity list and inspector, the network map and its clocks, AVB Lite, presets, the log, this computer's own entities, the Mac's own entity, and the command line.">
+<meta name="description" content="A tour of triib, the AVB and Milan controller: picking an interface, connecting streams in the matrix, the entity list and inspector, the network map and its clocks, AVB Lite, presets, the log, host entities, the Mac's own entity, and the command line.">
 <link rel="icon" href="favicon.png" type="image/png">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -23,7 +23,7 @@
 
 <main class="guide">
   <h1>A tour of triib</h1>
-  <p class="lede-left">What each part of triib does and how to use it. The pictures show a test network of three entities, with one of this computer's beside them, and a show's network of twenty devices.</p>
+  <p class="lede-left">What each part of triib does and how to use it. The pictures show a test network of three entities, with a host entity beside them, and a show's network of twenty devices.</p>
   <nav class="contents" aria-label="Contents">
 <ul>
 <li><a href="#interface">Picking an interface</a></li>
@@ -35,7 +35,7 @@
 <li><a href="#avb-wireless">AVB Wireless</a></li>
 <li><a href="#presets">Presets</a></li>
 <li><a href="#log">Log</a></li>
-<li><a href="#own-endpoints">This computer's entities</a></li>
+<li><a href="#own-endpoints">Host entities</a></li>
 <li><a href="#mac">The Mac's own entity</a></li>
 <li><a href="#settings">Settings</a></li>
 <li><a href="#agents">AI agents</a></li>
@@ -67,9 +67,9 @@
 <p>The chips above the matrix show all streams, only audio or only media clock streams, and <em>Hide what cannot connect</em> leaves out the rows and columns with nothing to connect. The search field in the toolbar finds entities and streams by name.</p>
 
 <h2 id="entities">Entities</h2>
-<figure><img class="shot" src="screenshots/entities.png" alt="The entity list: two AVB Example Entities, Host entity 1, one of this computer's, and a Mac mini, with their product, firmware, Milan version, roles, media clock, grandmaster and state" width="1360" height="510" loading="lazy"></figure>
+<figure><img class="shot" src="screenshots/entities.png" alt="The entity list: two AVB Example Entities, the host entity Host entity 1, and a Mac mini, with their product, firmware, Milan version, roles, media clock, grandmaster and state" width="1360" height="510" loading="lazy"></figure>
 <p>The entity list has a row for each entity: its name and group, product and firmware, Milan version, roles, media clock and more. The media clock's menu changes an entity's clock source right in the list. Each column header has a menu to move or remove its column or add another, such as vendor, model, state, AVB Lite or egress.</p>
-<p>On Linux, <em>Add entity</em> adds one of the computer's own; see <a href="#own-endpoints">below</a>. Controllers that do not advertise, as the Mac's own does not, are listed from the commands triib hears them send, each named for the computer it runs on, until five minutes after their last.</p>
+<p>On Linux, <em>Add entity</em> adds a host entity; see <a href="#own-endpoints">below</a>. Controllers that do not advertise, as the Mac's own does not, are listed from the commands triib hears them send, each named for the computer it runs on, until five minutes after their last.</p>
 
 <h2 id="inspector">Inspector</h2>
 <figure><img class="shot" src="screenshots/inspector.png" alt="The inspector beside the entity list, showing an entity's name, group, product, firmware and Milan version, its clock domain and sampling rate, and its AVB Lite section with mode, the reason it fell back, PTP profile, offset, media VLAN, unicast and link speed" width="1360" height="1116" loading="lazy"></figure>
@@ -92,7 +92,7 @@
 <li><strong>gPTP:</strong> the clock tree from the grandmaster, with each device in sync or not.</li>
 </ul>
 <figure><img class="shot" src="screenshots/network-clock.png" alt="The same show's network as a clock tree, with the core bridge as grandmaster and every device marked Sync except one monitor amp marked No sync" width="1360" height="1038" loading="lazy"></figure>
-<p>Click a wire to inspect its stream, or a device to see its streams alone, until you clear it with the button above the map or click the background. Controllers are left out, as they take no part in the clock or the streams, and this computer shows as its own entities. On a narrow window the map and the panel take turns.</p>
+<p>Click a wire to inspect its stream, or a device to see its streams alone, until you clear it with the button above the map or click the background. Controllers are left out, as they take no part in the clock or the streams, and the local host shows as its host entities. On a narrow window the map and the panel take turns.</p>
 
 <h2 id="avb-lite">AVB Lite</h2>
 <figure><img class="shot" src="screenshots/avb-lite.png" alt="The network view in AVB Lite, its first chip reading PTP: the PTP tree from the grandmaster clock to one device in sync, two devices not on the PTP tree, and a panel listing them as needing attention" width="1360" height="765" loading="lazy"></figure>
@@ -114,30 +114,30 @@
 
 <h2 id="presets">Presets</h2>
 <figure><img class="shot" src="screenshots/presets.png" alt="The Presets dialog with Matinee typed in to save, Recalling Rehearsal: 3 changes, and Rehearsal and Sunday service listed with Recall buttons" width="1360" height="850" loading="lazy"></figure>
-<p>A preset keeps each entity's clock sources, sampling rates, stream formats, controls and connections, and this computer's own entities. Name it and save it from the toolbar's presets button; recalling it later changes only what differs, and says how many changes it made.</p>
+<p>A preset keeps each entity's clock sources, sampling rates, stream formats, controls and connections, and host entities. Name it and save it from the toolbar's presets button; recalling it later changes only what differs, and says how many changes it made.</p>
 
 <h2 id="log">Log</h2>
 <figure><img class="shot" src="screenshots/log.png" alt="The log below the entity list, with frames sent and heard: a Connect RX command, a Get counters response with a warning, and a response marked Not implemented" width="1360" height="850" loading="lazy"></figure>
 <p>The log lists every ATDECC frame triib sends and hears, newest first, each decoded into plain words with its time, direction and entity. A frame that breaks the rules is marked with the reason, and a response that refuses a command shows its status. Show all frames, only warnings, or only ADP, AECP or ACMP; pause the log to read it, or clear it.</p>
 
-<h2 id="own-endpoints">This computer's entities</h2>
-<p>On Linux, triib can run entities of the computer's own, which other controllers see and bind like any device. They need:</p>
+<h2 id="own-endpoints">Host entities</h2>
+<p>On Linux, triib can run entities on the local host, which other controllers see and bind like any device. They need:</p>
 <ul>
 <li>A wired interface with a PTP hardware clock; <code>ethtool -T &lt;interface&gt;</code> shows whether it has one.</li>
 <li><a href="https://linuxptp.nwtime.org">linuxptp</a>'s <code>ptp4l</code> running gPTP on that interface, so the clock keeps the network's time. triib reads its state and says when it is not there.</li>
 </ul>
-<figure class="panel"><img class="shot" src="screenshots/device.png" alt="The inspector's Streams tab for Host entity 1, one of this computer's entities: its streams Out 1 and In 1 and an Add stream button, and Out 1's name, audio from a virtual device, 8 channels, format AAF 48 kHz, 8 ch, 32-bit, and a Remove stream button" width="640" height="1100" loading="lazy"></figure>
+<figure class="panel"><img class="shot" src="screenshots/device.png" alt="The inspector's Streams tab for Host entity 1, a host entity: its streams Out 1 and In 1 and an Add stream button, and Out 1's name, audio from a virtual device, 8 channels, format AAF 48 kHz, 8 ch, 32-bit, and a Remove stream button" width="640" height="1100" loading="lazy"></figure>
 <p>Add one with <em>Add entity</em> in the entity list: a Milan entity with an audio stream each way. Its Streams tab adds more with <em>Add stream</em>, an audio or a media clock input or output, and removes them. An audio stream is AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless the inspector picks another count, in SR class A or B; a media clock stream is CRF, 48 kHz with a timestamp every 96 samples.</p>
 <p>Each audio stream has a virtual audio device of its own in PipeWire, named after the entity and the stream, such as <em>Host entity 1 Out 1</em>, for any program to play into or record from, unless the inspector picks one of the computer's devices, a test tone or silence instead. Any input can be the entity's clock source: its talkers then follow the clock recovered from that stream. <code>triib-endpointd</code> runs them all from <code>entities.toml</code>, and keeps the names, formats, bindings, clock sources and mappings controllers give, so an input binds again after a restart.</p>
 <p>Where no AVB bridge answers on the interface, they fall back to AVB Lite. The Linux packages carry systemd units that move ptp4l to AVB Lite's PTP profile when they do, and back to gPTP when the link comes up again, and keep Energy-Efficient Ethernet and PAUSE off the link, as the profile asks. The <a href="https://github.com/scrambletoolsllc/triib#host-entities">README</a> has the settings.</p>
 
 <h2 id="mac">The Mac's own entity</h2>
 <figure class="panel"><img class="shot" src="screenshots/listen.png" alt="The inspector for the Mac's own entity: its audio device, Mac mini:Ethernet, a button that opens Audio MIDI Setup, and Listen playing channels 1 and 2 of what it receives through the Mac mini's speakers at 0 dB" width="640" height="1120" loading="lazy"></figure>
-<p>On a Mac with AVB turned on in Audio MIDI Setup's Network Device Browser, triib shows the Mac's own AVB entity as this computer's. Its inspector names the audio device apps play into and record from, which macOS makes only while one of the entity's streams is connected, and opens Audio MIDI Setup. Where AVB is off, the Entities view says where to turn it on.</p>
+<p>On a Mac with AVB turned on in Audio MIDI Setup's Network Device Browser, triib shows the Mac's own AVB entity as a host entity. Its inspector names the audio device apps play into and record from, which macOS makes only while one of the entity's streams is connected, and opens Audio MIDI Setup. Where AVB is off, the Entities view says where to turn it on.</p>
 <p><em>Listen</em> plays a channel or a pair of what the entity receives, or of what apps send to one of its output streams, on an output you pick, with a gain. macOS asks once for the microphone, to hear what the Mac receives, and for audio recording, to hear what it sends, which takes macOS 14.2 or later.</p>
 
 <h2 id="settings">Settings</h2>
-<p>Settings has the language, any of 38 or the system's, and the appearance: light, dark or the system's, the colors, and whether triib animates. triib takes its colors from the system's accent color, or from the Omarchy theme, unless you pick one. Settings also has outside control: whether AI agents may control triib, and the agents you have allowed, which <em>Forget</em> clears; and storage: the folder presets are kept in and, where this computer runs entities of its own, the file they are listed in.</p>
+<p>Settings has the language, any of 38 or the system's, and the appearance: light, dark or the system's, the colors, and whether triib animates. triib takes its colors from the system's accent color, or from the Omarchy theme, unless you pick one. Settings also has outside control: whether AI agents may control triib, and the agents you have allowed, which <em>Forget</em> clears; and storage: the folder presets are kept in and, where host entities can run, the file they are listed in.</p>
 
 <h2 id="agents">AI agents</h2>
 <figure><img class="shot" src="screenshots/settings.png" alt="Settings, General: the language, and Outside control with Allow outside control switched on" width="1360" height="850" loading="lazy"></figure>
