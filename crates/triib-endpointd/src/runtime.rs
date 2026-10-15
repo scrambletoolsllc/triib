@@ -109,6 +109,12 @@ const STAMPED_RUN: u32 = 16;
 /// How long after running the link unit, where AVB Lite held, the link
 /// coming up is its doing, not a new link.
 const LINK_OWN: Duration = Duration::from_secs(30);
+/// How long ptp4l has to answer for the interface before the daemon starts
+/// triib's unit for it: a few of the gPTP watch's turns.
+const PTP4L_WAIT: Duration = Duration::from_secs(8);
+/// The least time between tries at starting triib's ptp4l unit where none
+/// answers.
+const PTP4L_AGAIN: Duration = Duration::from_secs(120);
 
 /// What the sockets and ptp4l hand the runtime.
 enum Input {
@@ -783,6 +789,9 @@ pub struct Runtime {
     link_reset_at: Option<Duration>,
     /// When the daemon last ran the link unit again.
     link_fixed_at: Option<Duration>,
+    /// When the daemon last started triib's ptp4l unit, or found it could
+    /// not, where no ptp4l answered for the interface.
+    ptp4l_tried_at: Option<Duration>,
     /// Until when the link coming up is the link unit's doing, where AVB
     /// Lite held as the daemon ran it.
     link_own_until: Option<Duration>,
@@ -1068,6 +1077,7 @@ impl Runtime {
             stamped_run: 0,
             link_reset_at: None,
             link_fixed_at: None,
+            ptp4l_tried_at: None,
             link_own_until: None,
             clock,
             talkers: HashMap::new(),
@@ -1744,6 +1754,7 @@ impl Runtime {
         if self.steer_pending && !self.switched_at.is_some_and(|at| since < at + SWITCH_AGAIN) {
             self.steer_profile();
         }
+        self.start_ptp4l();
         if self.lite.is_none()
             && self.config.avb_lite != LiteChoice::Off
             && let Some(reason) = self.fallback.reason()
@@ -3019,6 +3030,59 @@ impl Runtime {
             (None, None) => Ptp4l::Absent,
         };
         self.fallback.set_ptp4l(since, ptp4l);
+    }
+
+    /// Starts triib's ptp4l unit on the interface where no ptp4l answers
+    /// for it and none of triib's units runs one, once ptp4l has had time to
+    /// answer, so installing triib is all the network's time takes. A ptp4l
+    /// run another way on the interface stays as it is.
+    fn start_ptp4l(&mut self) {
+        let since = self.elapsed();
+        if self.ptp_status.is_some()
+            || since < PTP4L_WAIT
+            || self
+                .ptp4l_tried_at
+                .is_some_and(|at| since < at + PTP4L_AGAIN)
+        {
+            return;
+        }
+        let Some(link) = self.link else {
+            return;
+        };
+        if link.unit.is_some() || link.carrier == Some(false) {
+            return;
+        }
+        self.ptp4l_tried_at = Some(since);
+        let interface = self.interface.clone();
+        if profile::ptp4l_on(&interface) {
+            log(format!(
+                "ptp4l: one runs on {interface} but does not answer on the read-only socket entities.toml names"
+            ));
+            return;
+        }
+        if !profile::ptp4l_installed() {
+            log(format!(
+                "ptp4l: none runs on {interface}, and linuxptp is not installed; install it for the network's time"
+            ));
+            return;
+        }
+        let profile = if self.lite.is_some() || self.config.avb_lite == LiteChoice::On {
+            Profile::Lite
+        } else {
+            Profile::Gptp
+        };
+        let unit = profile.unit(&interface);
+        log(format!(
+            "ptp4l: none answers for {interface}; starting {unit}"
+        ));
+        self.switched_at = Some(since);
+        let _ = std::thread::Builder::new()
+            .name("ptp4l unit".into())
+            .spawn(move || {
+                if let Err(error) = profile::start(&interface, profile) {
+                    log(format!("ptp4l: cannot start {unit}: {error}"));
+                }
+            });
     }
 
     /// Starts the ptp4l unit for the profile the endpoints run, where one

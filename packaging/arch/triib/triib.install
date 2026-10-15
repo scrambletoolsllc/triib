@@ -1,9 +1,13 @@
 # Lets triib, triib-cli and triib-endpointd send and receive raw Ethernet
-# without root.
+# without root, and has systemd read triib's units, which triib-endpointd
+# starts as host entities need them.
 grant() {
     setcap cap_net_raw+ep usr/bin/triib
     setcap cap_net_raw+ep usr/bin/triib-cli
     setcap cap_net_raw+ep usr/bin/triib-endpointd
+    if [ -d /run/systemd/system ]; then
+        systemctl daemon-reload || true
+    fi
 }
 
 post_install() {

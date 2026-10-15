@@ -4,8 +4,10 @@
 //! stopping the other as it starts. A polkit rule lets the people at the
 //! computer start them, so the daemon moves ptp4l to the AVB Lite profile
 //! when its endpoints fall back, and to gPTP again when the link comes
-//! back up (AVB Lite profile, 2.2). ptp4l run any other way stays as it
-//! is. A third unit, `triib-link@<interface>`, keeps Energy-Efficient
+//! back up (AVB Lite profile, 2.2). Where no ptp4l runs on the interface,
+//! the daemon starts the gPTP unit itself, so installing triib is all the
+//! network's time takes; ptp4l run any other way stays as it is. A third
+//! unit, `triib-link@<interface>`, keeps Energy-Efficient
 //! Ethernet and PAUSE off the link, as the profile asks (6); the daemon
 //! runs it again should they come back. A fourth,
 //! `triib-link-reset@<interface>`, takes the interface down and up for a
@@ -84,6 +86,39 @@ pub fn running(interface: &str) -> Option<Profile> {
     [Profile::Gptp, Profile::Lite]
         .into_iter()
         .find(|profile| active(&profile.unit(interface)))
+}
+
+/// Whether linuxptp's ptp4l is installed where systemd looks for a unit's
+/// program.
+pub fn ptp4l_installed() -> bool {
+    ["/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin"]
+        .iter()
+        .any(|folder| std::path::Path::new(folder).join("ptp4l").exists())
+}
+
+/// Whether a ptp4l process names `interface` on its command line, as one
+/// run by hand or by another unit does.
+pub fn ptp4l_on(interface: &str) -> bool {
+    let Ok(entries) = std::fs::read_dir("/proc") else {
+        return false;
+    };
+    entries.flatten().any(|entry| {
+        std::fs::read(entry.path().join("cmdline"))
+            .is_ok_and(|line| runs_ptp4l_on(&line, interface))
+    })
+}
+
+/// Whether a process's command line, its arguments each ended by a zero,
+/// runs ptp4l on `interface`.
+fn runs_ptp4l_on(line: &[u8], interface: &str) -> bool {
+    let args: Vec<&[u8]> = line.split(|&byte| byte == 0).collect();
+    let program = args
+        .first()
+        .and_then(|program| program.rsplit(|&byte| byte == b'/').next());
+    program == Some(b"ptp4l".as_slice())
+        && args
+            .windows(2)
+            .any(|pair| pair[0] == b"-i" && pair[1] == interface.as_bytes())
 }
 
 /// Starts the unit running `profile` on `interface`, which stops the
@@ -212,6 +247,16 @@ pub fn watch<T: Send + 'static>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_ptp4l_on_the_interface_is_told_from_others() {
+        let on = |line: &str| runs_ptp4l_on(line.replace(' ', "\0").as_bytes(), "enp2s0");
+        assert!(on("ptp4l -f /etc/triib/ptp4l-gptp.cfg -i enp2s0"));
+        assert!(on("/usr/sbin/ptp4l -i enp2s0 -m"));
+        assert!(!on("ptp4l -i enp6s0"));
+        assert!(!on("phc2sys -s enp2s0 -w"));
+        assert!(!on("ptp4lx -i enp2s0"));
+    }
 
     #[test]
     fn units_are_named_for_the_interface() {

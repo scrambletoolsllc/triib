@@ -6,11 +6,9 @@ pkgdesc='Discover, connect and set up AVB and Milan devices'
 arch=('x86_64' 'aarch64')
 url='https://github.com/scrambletools/triib'
 license=('MIT OR Apache-2.0')
-depends=('alsa-lib' 'gcc-libs' 'glibc' 'libcap' 'libpipewire' 'libxkbcommon' 'vulkan-icd-loader' 'wayland')
+depends=('alsa-lib' 'ethtool' 'gcc-libs' 'glibc' 'libcap' 'libpipewire' 'libxkbcommon' 'linuxptp' 'vulkan-icd-loader' 'wayland')
 makedepends=('cargo' 'clang')
-optdepends=('linuxptp: gPTP for talkers and listeners on this computer'
-            'ethtool: EEE and PAUSE off on their link, as AVB Lite asks'
-            'libx11: running under X11'
+optdepends=('libx11: running under X11'
             'libxcursor: running under X11'
             'libxi: running under X11')
 install=triib.install

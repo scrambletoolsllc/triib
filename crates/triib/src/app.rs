@@ -118,6 +118,9 @@ pub struct Triib {
     pub monitor_status: crate::monitor::Status,
     /// The interface another user's or root's triib-endpointd holds.
     pub endpoints_elsewhere: Option<String>,
+    /// triib-endpointd was started this session for the host entities
+    /// listed, as triib opened.
+    endpoints_brought_back: bool,
     /// The audio devices' names: inputs, then outputs.
     pub audio_devices: (Vec<String>, Vec<String>),
     /// What the network view brings forward.
@@ -390,6 +393,7 @@ impl Triib {
             monitor: None,
             monitor_status: crate::monitor::Status::off(),
             endpoints_elsewhere: None,
+            endpoints_brought_back: false,
             audio_devices: (Vec::new(), Vec::new()),
             network_focus: None,
             overflow_open: false,
@@ -462,6 +466,7 @@ impl Triib {
             monitor: None,
             monitor_status: crate::monitor::Status::off(),
             endpoints_elsewhere: None,
+            endpoints_brought_back: false,
             audio_devices: (Vec::new(), Vec::new()),
             network_focus: None,
             overflow_open: false,
@@ -624,6 +629,25 @@ impl Triib {
                     && triib_endpointd::runtime::is_device_model(entity.adp.entity_model_id)
             });
         (ours || self.is_this_mac(entity_id)).then_some(scramble_ui::icon::Icon::Computer)
+    }
+
+    /// Starts triib-endpointd once a session where host entities are
+    /// listed for the chosen interface and it does not run, so they are
+    /// back on the network as triib opens, after a restart.
+    fn bring_back_endpoints(&mut self) {
+        if self.endpoints.is_some() || self.endpoints_brought_back || !self.hosts_endpoints() {
+            return;
+        }
+        let Some(interface) = self.interface().map(|interface| interface.name.clone()) else {
+            return;
+        };
+        if crate::host::endpoints(&interface).is_empty() {
+            return;
+        }
+        self.endpoints_brought_back = true;
+        if let Err(error) = crate::host::ensure_running() {
+            eprintln!("triib: could not start triib-endpointd: {error}");
+        }
     }
 
     /// Goes on with a preset recalled while this computer's endpoints
@@ -1145,6 +1169,7 @@ impl Triib {
             }
             Message::External(External::Endpoints(status)) => {
                 self.endpoints = status;
+                self.bring_back_endpoints();
                 return self.go_on_recalling();
             }
             Message::External(External::EndpointsElsewhere(interface)) => {
