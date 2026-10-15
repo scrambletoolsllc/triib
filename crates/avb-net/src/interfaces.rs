@@ -68,6 +68,16 @@ pub fn link_power(name: &str) -> std::io::Result<LinkPower> {
     ethtool::link_power(name)
 }
 
+/// Whether the interface named `name` drops VLAN-tagged frames in hardware
+/// unless their VLAN is registered with it, as Intel's igb and igc do with
+/// `rx-vlan-filter` on, read without privileges. A packet socket hears a
+/// stream's tagged frames there only with the interface promiscuous, which
+/// turns the filter off.
+#[cfg(target_os = "linux")]
+pub fn filters_vlans(name: &str) -> std::io::Result<bool> {
+    ethtool::filters_vlans(name)
+}
+
 #[cfg(target_os = "linux")]
 #[allow(unsafe_code)]
 mod ethtool {
@@ -79,7 +89,16 @@ mod ethtool {
 
     /// The ethtool commands read here (linux/ethtool.h).
     const GET_PAUSE: u32 = 0x12;
+    const GET_STRINGS: u32 = 0x1b;
+    const GET_SSET_INFO: u32 = 0x37;
+    const GET_FEATURES: u32 = 0x3a;
     const GET_EEE: u32 = 0x44;
+    /// `ETH_SS_FEATURES`, the string set naming the netdev features.
+    const FEATURE_NAMES: u32 = 4;
+    /// `ETH_GSTRING_LEN`, each name's room in a string set.
+    const NAME_LENGTH: usize = 32;
+    /// The feature that drops tagged frames of VLANs not registered.
+    const VLAN_FILTER: &[u8] = b"rx-vlan-filter";
 
     /// `struct ethtool_pauseparam`.
     #[repr(C)]
@@ -106,21 +125,19 @@ mod ethtool {
         reserved: [u32; 2],
     }
 
+    /// `struct ethtool_sset_info`, with room for the one count asked.
+    #[repr(C)]
+    #[derive(Default)]
+    struct SetInfo {
+        cmd: u32,
+        reserved: u32,
+        mask: u64,
+        count: u32,
+    }
+
     pub fn link_power(name: &str) -> io::Result<LinkPower> {
+        let socket = control(name)?;
         let bytes = name.as_bytes();
-        if bytes.is_empty() || bytes.len() >= libc::IFNAMSIZ || bytes.contains(&0) {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "no such interface name",
-            ));
-        }
-        // SAFETY: socket takes plain integers; the result is checked.
-        let fd = unsafe { libc::socket(libc::AF_INET, libc::SOCK_DGRAM | libc::SOCK_CLOEXEC, 0) };
-        if fd < 0 {
-            return Err(io::Error::last_os_error());
-        }
-        // SAFETY: fd is a new socket nothing else owns.
-        let socket = unsafe { OwnedFd::from_raw_fd(fd) };
         let mut pause = Pause {
             cmd: GET_PAUSE,
             ..Pause::default()
@@ -142,6 +159,65 @@ mod ethtool {
             Err(error) => return Err(error),
         };
         Ok(LinkPower { eee, pause })
+    }
+
+    pub fn filters_vlans(name: &str) -> io::Result<bool> {
+        let socket = control(name)?;
+        let bytes = name.as_bytes();
+        let mut info = SetInfo {
+            cmd: GET_SSET_INFO,
+            mask: 1 << FEATURE_NAMES,
+            ..SetInfo::default()
+        };
+        match ask(&socket, bytes, (&raw mut info).cast()) {
+            Ok(()) => {}
+            Err(error) if unsupported(&error) => return Ok(false),
+            Err(error) => return Err(error),
+        }
+        let count = info.count as usize;
+        // `struct ethtool_gstrings`: the command, the set and the count,
+        // then each name in its room.
+        let mut names = vec![0u32; 3 + count * NAME_LENGTH / 4];
+        names[..3].copy_from_slice(&[GET_STRINGS, FEATURE_NAMES, info.count]);
+        ask(&socket, bytes, names.as_mut_ptr().cast())?;
+        let text: Vec<u8> = names[3..]
+            .iter()
+            .flat_map(|word| word.to_ne_bytes())
+            .collect();
+        let Some(index) = text
+            .chunks(NAME_LENGTH)
+            .position(|room| room.split(|&byte| byte == 0).next() == Some(VLAN_FILTER))
+        else {
+            return Ok(false);
+        };
+        // `struct ethtool_gfeatures`: the command and the block count, then
+        // for each 32 features what is available, requested, active and
+        // never changed.
+        let blocks = count.div_ceil(32);
+        let mut features = vec![0u32; 2 + blocks * 4];
+        features[..2].copy_from_slice(&[GET_FEATURES, blocks as u32]);
+        ask(&socket, bytes, features.as_mut_ptr().cast())?;
+        let active = features[2 + index / 32 * 4 + 2];
+        Ok(active & (1 << (index % 32)) != 0)
+    }
+
+    /// A socket to hand the driver of the interface named `name` ethtool
+    /// commands through.
+    fn control(name: &str) -> io::Result<OwnedFd> {
+        let bytes = name.as_bytes();
+        if bytes.is_empty() || bytes.len() >= libc::IFNAMSIZ || bytes.contains(&0) {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "no such interface name",
+            ));
+        }
+        // SAFETY: socket takes plain integers; the result is checked.
+        let fd = unsafe { libc::socket(libc::AF_INET, libc::SOCK_DGRAM | libc::SOCK_CLOEXEC, 0) };
+        if fd < 0 {
+            return Err(io::Error::last_os_error());
+        }
+        // SAFETY: fd is a new socket nothing else owns.
+        Ok(unsafe { OwnedFd::from_raw_fd(fd) })
     }
 
     fn unsupported(error: &io::Error) -> bool {

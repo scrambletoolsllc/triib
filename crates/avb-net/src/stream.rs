@@ -225,17 +225,17 @@ mod platform {
                 return Err(io::Error::last_os_error());
             }
             bind(&fd, index, libc::ETH_P_ALL as u16)?;
-            for destination in destinations {
-                let mac = destination.0;
-                if mac[0] & 1 == 0 {
-                    continue;
-                }
+            // A membership of the socket's, which ends with it: a multicast
+            // address the interface takes, or the interface promiscuous.
+            let join = |kind: i32, mac: Option<[u8; 6]>| {
                 // SAFETY: packet_mreq is plain data, valid when zeroed.
                 let mut request: libc::packet_mreq = unsafe { zeroed() };
                 request.mr_ifindex = index;
-                request.mr_type = libc::PACKET_MR_MULTICAST as u16;
-                request.mr_alen = 6;
-                request.mr_address[..6].copy_from_slice(&mac);
+                request.mr_type = kind as u16;
+                if let Some(mac) = mac {
+                    request.mr_alen = 6;
+                    request.mr_address[..6].copy_from_slice(&mac);
+                }
                 // SAFETY: `request` is a valid packet_mreq that lives
                 // through the call, and the length passed is its size.
                 let joined = unsafe {
@@ -250,6 +250,21 @@ mod platform {
                 if joined < 0 {
                     return Err(io::Error::last_os_error());
                 }
+                Ok(())
+            };
+            for destination in destinations {
+                let mac = destination.0;
+                if mac[0] & 1 == 0 {
+                    continue;
+                }
+                join(libc::PACKET_MR_MULTICAST, Some(mac))?;
+            }
+            // Streams come tagged with their VLAN, which an interface that
+            // filters VLANs in hardware, as the I210 does, drops unless the
+            // VLAN is registered with it, as only an administrator can.
+            // Promiscuous, it takes them all.
+            if crate::interfaces::filters_vlans(interface).unwrap_or(false) {
+                join(libc::PACKET_MR_PROMISC, None)?;
             }
             Ok(Self { fd })
         }
