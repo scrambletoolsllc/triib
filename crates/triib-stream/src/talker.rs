@@ -85,6 +85,9 @@ pub struct GroupStream {
     pub max_transit_time: Duration,
     /// Where its samples come from.
     pub source: Source,
+    /// The channels its source gives, which go out as the format's first,
+    /// with silence in the rest, and those past the format's not at all.
+    pub channels: u16,
 }
 
 /// A talker's counters.
@@ -207,7 +210,7 @@ impl TalkerGroup {
                 if media.is_clock() {
                     None
                 } else {
-                    Some(Input::open(&stream.source, media.channels(), self.rate)?)
+                    Some(Input::open(&stream.source, stream.channels, self.rate)?)
                 }
             }
             None => None,
@@ -362,6 +365,7 @@ impl Talker {
                 format: config.format,
                 max_transit_time: config.max_transit_time,
                 source: config.source,
+                channels: media.channels(),
             }),
         )?;
         Ok(Talker { group })
@@ -398,6 +402,8 @@ struct Running {
     packetizer: Packetizer,
     frame: Vec<u8>,
     samples: Vec<f32>,
+    /// The format's channels, which its samples' frames have.
+    channels: usize,
     /// The group's samples each of its frames spans.
     frame_samples: u64,
     /// The first sample of its next frame.
@@ -422,6 +428,7 @@ impl Running {
             input,
             frame,
             samples,
+            channels: usize::from(media.channels()),
             frame_samples: frame_samples.max(1),
             next: 0,
         }
@@ -694,7 +701,7 @@ fn run(
             continue;
         }
         if let Some(input) = &mut stream.input {
-            input.read(&mut stream.samples);
+            input.read_as(&mut stream.samples, stream.channels);
         }
         stream.packetizer.write(
             due + transit,

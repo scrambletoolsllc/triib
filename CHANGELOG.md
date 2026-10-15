@@ -126,6 +126,15 @@ it receives and sends.
   behind, telling frames lost here from frames lost on the way, and the
   socket holds about a tenth of a second of a stream rather than a few
   hundredths, where the system allows.
+- Every audio stream takes 2 and 8 channels as well as its own count, as
+  the AVB community's Basic Audio profile has every talker and listener
+  do, and the profile's 16 and 32 below a larger stream's own, at its
+  own rates, so a stereo talker and an 8-channel input meet once a
+  controller picks the format both take. A talker sends its audio's
+  channels as the stream's first, with silence in the rest; a listener
+  plays the stream's channels from the first, with silence where the
+  stream has fewer. A format chosen so is kept. The entities' model IDs
+  change, so controllers read them again once.
 - Talkers and listeners are folded into entities of any number of
   streams, as one of one stream does what they did. The Entities view's
   one button, Add entity, adds an entity with a stream each way, and its

@@ -79,7 +79,9 @@ entity with any number of streams each way, which controllers,
 triib among them, bind like any other. Add entity adds one with an
 audio stream each way, and the inspector's Streams tab adds and removes
 streams: audio streams of AAF or AM824 at 48, 96 or 192 kHz, 8 channels
-unless it picks another count, each by default with a virtual audio
+unless it picks another count, each taking 2 and 8 channels too, as the
+[Basic Audio](https://github.com/avbcommunity/profiles/blob/main/audio_basic.md)
+profile has every stream do, and each by default with a virtual audio
 device of its own that apps play into or record from, or a test tone,
 silence or one of the computer's devices; and media clock streams of
 CRF. Any input can be the entity's clock source, its talkers then

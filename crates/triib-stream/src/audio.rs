@@ -624,6 +624,8 @@ where
 pub struct Input {
     kind: InputKind,
     channels: usize,
+    /// Its frames on their way to a stream of other channels.
+    spread: Vec<f32>,
 }
 
 enum InputKind {
@@ -723,6 +725,7 @@ impl Input {
         Ok(Input {
             kind,
             channels: usize::from(channels),
+            spread: Vec::new(),
         })
     }
 
@@ -775,6 +778,37 @@ impl Input {
                 out[..made.len()].copy_from_slice(made);
             }
         }
+    }
+
+    /// Fills `out` with interleaved frames of `channels`, as a stream of
+    /// other channels than its source takes them: the source's from the
+    /// first, silence past them, and those past `channels` left out.
+    pub fn read_as(&mut self, out: &mut [f32], channels: usize) {
+        let channels = channels.max(1);
+        if channels == self.channels.max(1) {
+            self.read(out);
+            return;
+        }
+        let mut spread = std::mem::take(&mut self.spread);
+        spread.resize(out.len() / channels * self.channels.max(1), 0.0);
+        self.read(&mut spread);
+        respread(&spread, self.channels, out, channels);
+        self.spread = spread;
+    }
+}
+
+/// `samples`, frames of `channels` interleaved, into `out`'s frames of
+/// `out_channels`: each channel where it was, silence in those past
+/// `channels`, and those past `out_channels` left out.
+fn respread(samples: &[f32], channels: usize, out: &mut [f32], out_channels: usize) {
+    let (channels, out_channels) = (channels.max(1), out_channels.max(1));
+    let kept = channels.min(out_channels);
+    for (to, from) in out
+        .chunks_exact_mut(out_channels)
+        .zip(samples.chunks_exact(channels))
+    {
+        to[..kept].copy_from_slice(&from[..kept]);
+        to[kept..].fill(0.0);
     }
 }
 
@@ -1320,5 +1354,24 @@ mod tests {
                 .all(|frame| frame[0] == frame[1])
         );
         assert!(out.iter().any(|sample| sample.abs() > 0.4));
+    }
+
+    /// Two channels go into an eight-channel stream as its first two,
+    /// with silence in the rest, and eight into a stereo one as their
+    /// first two.
+    #[test]
+    fn a_stream_of_other_channels_takes_the_first() {
+        let stereo = [0.1, 0.2, 0.3, 0.4];
+        let mut eight = [9.0; 16];
+        respread(&stereo, 2, &mut eight, 8);
+        assert_eq!(
+            eight,
+            [
+                0.1, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.3, 0.4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+            ]
+        );
+        let mut two = [9.0; 4];
+        respread(&eight, 8, &mut two, 2);
+        assert_eq!(two, stereo);
     }
 }

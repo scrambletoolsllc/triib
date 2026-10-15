@@ -182,12 +182,18 @@ fn am824(rate: u32, channels: u16) -> StreamFormat {
     StreamFormat((0xa0 << 48) | (sfc << 40) | (quadlets << 32) | (0x40 << 24) | (quadlets << 8))
 }
 
+/// The stream sizes of the Basic Audio profile, in channels.
+const PROFILE_SIZES: [u16; 4] = [32, 16, 8, 2];
+
 /// The formats offered for `channels`: each packing at every rate where
 /// all of them fit one Ethernet frame, so a change of rate finds the
 /// same packing there. Milan's, a frame each class A interval, come
 /// first; AAF a frame each class B interval follows, at half the frames,
 /// where it fits, and comes first for a class B talker, whose default it
-/// is.
+/// is. The stream's own channels come first, then the Basic Audio
+/// profile's stream sizes it takes as well, at its own rates: 2 and 8
+/// channels, as every talker and listener does, and 16 and 32 below a
+/// larger stream's own.
 fn offered_formats(channels: u16, class_b: bool) -> Vec<StreamFormat> {
     let fits = |formats: &[StreamFormat]| {
         formats.iter().all(|format| {
@@ -195,34 +201,49 @@ fn offered_formats(channels: u16, class_b: bool) -> Vec<StreamFormat> {
                 .is_some_and(|media| media.pdu_length() <= MOST_PDU)
         })
     };
-    let milan: Vec<StreamFormat> = RATES
-        .iter()
-        .map(|rate| {
-            [
-                aaf(*rate, channels, 32, CLASS_A_FRAMES),
-                aaf(*rate, channels, 24, CLASS_A_FRAMES),
-                am824(*rate, channels),
-            ]
-        })
-        .filter(|formats| fits(formats))
-        .flatten()
+    let milan = |rate: u32, channels: u16| {
+        [
+            aaf(rate, channels, 32, CLASS_A_FRAMES),
+            aaf(rate, channels, 24, CLASS_A_FRAMES),
+            am824(rate, channels),
+        ]
+    };
+    let wireless = |rate: u32, channels: u16| {
+        [
+            aaf(rate, channels, 32, CLASS_B_FRAMES),
+            aaf(rate, channels, 24, CLASS_B_FRAMES),
+        ]
+    };
+    let rates: Vec<u32> = RATES
+        .into_iter()
+        .filter(|rate| fits(&milan(*rate, channels)))
         .collect();
-    let wireless: Vec<StreamFormat> = RATES
-        .iter()
-        .map(|rate| {
-            [
-                aaf(*rate, channels, 32, CLASS_B_FRAMES),
-                aaf(*rate, channels, 24, CLASS_B_FRAMES),
-            ]
+    let sizes = std::iter::once(channels).chain(
+        PROFILE_SIZES
+            .into_iter()
+            .filter(|size| *size != channels && (*size <= 8 || *size < channels)),
+    );
+    sizes
+        .flat_map(|size| {
+            let milan: Vec<StreamFormat> = rates
+                .iter()
+                .map(|rate| milan(*rate, size))
+                .filter(|formats| fits(formats))
+                .flatten()
+                .collect();
+            let wireless: Vec<StreamFormat> = rates
+                .iter()
+                .map(|rate| wireless(*rate, size))
+                .filter(|formats| fits(formats))
+                .flatten()
+                .collect();
+            if class_b {
+                [wireless, milan].concat()
+            } else {
+                [milan, wireless].concat()
+            }
         })
-        .filter(|formats| fits(formats))
-        .flatten()
-        .collect();
-    if class_b {
-        [wireless, milan].concat()
-    } else {
-        [milan, wireless].concat()
-    }
+        .collect()
 }
 
 /// Whether two formats pack samples alike, whatever their channels.
@@ -466,13 +487,17 @@ impl Endpoint {
             let channels = stream.channels.clamp(1, 60);
             let class_b = output && stream.class == SrClass::B;
             let formats = offered_formats(channels, class_b);
+            // The format chosen last, or, where the stream's channels
+            // changed since, its packing at the channels it has now.
             let current_format = stream
                 .stream_format()
                 .and_then(|wanted| {
-                    formats
-                        .iter()
-                        .copied()
-                        .find(|offered| same_packing(*offered, wanted))
+                    formats.contains(&wanted).then_some(wanted).or_else(|| {
+                        formats
+                            .iter()
+                            .copied()
+                            .find(|offered| same_packing(*offered, wanted))
+                    })
                 })
                 .unwrap_or(formats[0]);
             StreamModel {
@@ -2251,6 +2276,7 @@ impl Runtime {
             format,
             max_transit_time: Duration::from_nanos(u64::from(transit)),
             source,
+            channels: stream.channels,
         };
         // Every output sends from the endpoint's one group; one at another
         // rate, as the entity's moved, starts a new group.
@@ -2419,7 +2445,9 @@ impl Runtime {
             },
             recovered: Some(self.input(input).recovered.clone()),
             // Each of its audio's channels the stream channel its cluster
-            // is mapped from, where a controller mapped them otherwise.
+            // is mapped from, where a controller mapped them otherwise, or
+            // its own where the stream has other channels than its audio,
+            // silence past the stream's.
             channel_map: (!endpoint.entity.input_mappings_are_default(input.1))
                 .then(|| endpoint.entity.input_mappings(input.1))
                 .flatten()
@@ -2431,6 +2459,13 @@ impl Runtime {
                         }
                     }
                     map
+                })
+                .or_else(|| {
+                    model
+                        .current_format
+                        .channels()
+                        .is_some_and(|channels| channels != model.channels)
+                        .then(|| (0..model.channels).map(Some).collect())
                 }),
         };
         // Every input takes its stream on the endpoint's one listening
@@ -3992,10 +4027,12 @@ mod tests {
         assert!(!same_packing(milan(48_000, 8, 32), wireless));
     }
 
-    /// The rates `formats` offer at `frames` a second, in order.
-    fn rates_at(formats: &[StreamFormat], frames: u32) -> Vec<u32> {
+    /// The rates `formats` offer at `frames` a second, in order, for
+    /// `channels`.
+    fn rates_at(formats: &[StreamFormat], frames: u32, channels: u16) -> Vec<u32> {
         let mut rates: Vec<u32> = formats
             .iter()
+            .filter(|format| format.channels() == Some(channels))
             .filter(|format| {
                 let Some(rate) = format.sample_rate() else {
                     return false;
@@ -4016,13 +4053,81 @@ mod tests {
     /// interval holds twice the samples, so fewer channels fit.
     #[test]
     fn more_channels_take_fewer_rates() {
-        let rates = |channels| rates_at(&offered_formats(channels, false), CLASS_A_FRAMES);
+        let rates =
+            |channels| rates_at(&offered_formats(channels, false), CLASS_A_FRAMES, channels);
         assert_eq!(rates(8), [48_000, 96_000, 192_000]);
         assert_eq!(rates(16), [48_000, 96_000]);
         assert_eq!(rates(60), [48_000]);
-        let wireless = |channels| rates_at(&offered_formats(channels, false), CLASS_B_FRAMES);
+        let wireless =
+            |channels| rates_at(&offered_formats(channels, false), CLASS_B_FRAMES, channels);
         assert_eq!(wireless(8), [48_000, 96_000]);
         assert_eq!(wireless(60), Vec::<u32>::new());
+    }
+
+    /// Every stream takes 2 and 8 channels as well as its own, as the
+    /// Basic Audio profile has every talker and listener do, and the
+    /// profile's 16 and 32 below its own, each at its own rates, which
+    /// stay the entity's; its own come first.
+    #[test]
+    fn every_stream_takes_the_profiles_sizes() {
+        let sizes = |channels| {
+            let mut sizes: Vec<u16> = offered_formats(channels, false)
+                .iter()
+                .filter_map(|format| format.channels())
+                .collect();
+            sizes.dedup();
+            sizes
+        };
+        assert_eq!(sizes(1), [1, 8, 2]);
+        assert_eq!(sizes(2), [2, 8]);
+        assert_eq!(sizes(6), [6, 8, 2]);
+        assert_eq!(sizes(8), [8, 2]);
+        assert_eq!(sizes(12), [12, 8, 2]);
+        assert_eq!(sizes(16), [16, 8, 2]);
+        assert_eq!(sizes(60), [60, 32, 16, 8, 2]);
+        for channels in [1, 2, 6, 8, 16, 60] {
+            let formats = offered_formats(channels, false);
+            let own = rates_at(&formats, CLASS_A_FRAMES, channels);
+            for size in [2, 8] {
+                assert_eq!(rates_at(&formats, CLASS_A_FRAMES, size), own, "{channels}");
+            }
+        }
+        // A frame each class B interval at 2 channels, where the stream's
+        // own channels have none.
+        let formats = offered_formats(60, false);
+        assert_eq!(rates_at(&formats, CLASS_B_FRAMES, 2), [48_000]);
+    }
+
+    /// However many channels, a stream's formats fit its descriptor in a
+    /// READ_DESCRIPTOR response, after its 138 octets before them and the
+    /// configuration index and reserved field.
+    #[test]
+    fn the_formats_fit_a_descriptor() {
+        let room = (atdecc::aem::MAX_AEM_PAYLOAD - 4 - 138) / 8;
+        for channels in 1..=60 {
+            for class_b in [false, true] {
+                let count = offered_formats(channels, class_b).len();
+                assert!(count <= room, "{channels} channels: {count} formats");
+            }
+        }
+    }
+
+    /// A stream keeps the format a controller chose of the profile's other
+    /// sizes, and one chosen at other channels than its own, as when they
+    /// changed, comes back as its packing at its own.
+    #[test]
+    fn a_chosen_format_comes_back() {
+        let milan = |channels, bits| aaf(48_000, channels, bits, CLASS_A_FRAMES);
+        let chosen = |channels, format: StreamFormat| {
+            let device = endpoint(vec![StreamConfig {
+                format: Some(format!("{:#018x}", format.0)),
+                ..stream(Direction::In, channels)
+            }]);
+            device.entity.model().inputs[0].current_format
+        };
+        assert_eq!(chosen(8, milan(2, 24)), milan(2, 24));
+        assert_eq!(chosen(2, milan(8, 32)), milan(8, 32));
+        assert_eq!(chosen(6, milan(4, 24)), milan(6, 24));
     }
 
     /// A class B talker offers its own formats first, so a frame each

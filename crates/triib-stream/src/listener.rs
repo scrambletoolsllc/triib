@@ -45,8 +45,9 @@ pub struct ListenerConfig {
     /// from its presentation times.
     pub recovered: Option<RecoveredClock>,
     /// For each of the sink's channels, the stream channel it plays, none
-    /// for silence, as a controller mapped them; the stream's own order
-    /// when left out.
+    /// for silence, as a controller mapped them or as a stream of other
+    /// channels than the sink's fills it; the stream's own channels, in
+    /// order, when left out.
     pub channel_map: Option<Vec<Option<u16>>>,
 }
 
@@ -186,14 +187,15 @@ impl ListenerGroup {
                 })?;
                 let receiver =
                     FrameReceiver::open(&config.interface, media.subtype(), &config.destinations)?;
+                // The sink has the channels its map has, where it has one.
+                let channels = config
+                    .channel_map
+                    .as_ref()
+                    .map_or(media.channels(), |map| map.len() as u16);
                 let output = if media.is_clock() {
                     None
                 } else {
-                    Some(Output::open(
-                        &config.sink,
-                        media.channels(),
-                        media.sample_rate(),
-                    )?)
+                    Some(Output::open(&config.sink, channels, media.sample_rate())?)
                 };
                 Some(Opened {
                     config,
