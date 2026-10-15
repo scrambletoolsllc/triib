@@ -31,6 +31,7 @@
 <li><a href="#controller">Controller</a></li>
 <li><a href="#endpoints">This computer's entities</a></li>
 <li><a href="#avb-lite">AVB Lite</a></li>
+<li><a href="#avb-wireless">AVB Wireless</a></li>
 <li><a href="#languages">Languages</a></li>
 <li><a href="#technology">Technology</a></li>
 <li><a href="#files">Settings and data</a></li>
@@ -101,6 +102,18 @@
 <tr><th>Streams</th><td>Unicast to each listener, to 2 a talker unless set otherwise, and multicast beyond that only where allowed</td></tr>
 <tr><th>ptp4l</th><td>Moved between gPTP and the AVB Lite PTP profile through triib's systemd units and polkit rule</td></tr>
 <tr><th>Link</th><td>Energy-Efficient Ethernet and PAUSE kept off, as the profile asks, by a systemd unit</td></tr>
+</tbody></table>
+
+<h2 id="avb-wireless">AVB Wireless</h2>
+<table class="spec"><tbody>
+<tr><th>Profile</th><td>The <a href="https://github.com/avbcommunity/profiles">AVB Wireless</a> community profile, 1.1 draft: AVB and AVB Lite over one Wi-Fi hop, from an access point that is a bridge on its wired port to Wi-Fi stations as talkers and listeners</td></tr>
+<tr><th>Watching</th><td>Each AVB interface's wireless status, asked once an entity is read and every 5 seconds on a wireless interface, and followed through its unsolicited responses</td></tr>
+<tr><th>Stations</th><td>Role, time mode, Mode A over FTM or TM or Mode B, and whether its time holds; link, signal and rate; and the access point it follows</td></tr>
+<tr><th>Access points</th><td>Their stations, the listeners they cannot serve, and the frames a second they deliver</td></tr>
+<tr><th>Class A</th><td>Admitted only by an access point that delivers 12000 frames a second or more, and allowed or kept off through SET_WIRELESS_CONFIG, as <code>triib-cli wireless-config</code> does</td></tr>
+<tr><th>Network</th><td>Each station under its access point, its Wi-Fi hop dotted, in sync while its time is locked</td></tr>
+<tr><th>Alarms</th><td>A station whose time is not locked, and listeners an access point cannot serve</td></tr>
+<tr><th>This computer's entities</th><td>An output can send in SR class B, 4000 frames a second on priority 2, as a stream to a Wi-Fi station must; this computer as a Wi-Fi station is not here yet</td></tr>
 </tbody></table>
 
 <h2 id="languages">Languages</h2>

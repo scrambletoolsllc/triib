@@ -1103,6 +1103,58 @@
   "page": "specs.html",
   "text": "Energy-Efficient Ethernet and PAUSE kept off, as the profile asks, by a systemd unit"
  },
+ "ff4fc0276e96": {
+  "page": "specs.html",
+  "text": "Profile"
+ },
+ "e4e59fe5c290": {
+  "page": "specs.html",
+  "text": "The <a1>AVB Wireless</a1> community profile, 1.1 draft: AVB and AVB Lite over one Wi-Fi hop, from an access point that is a bridge on its wired port to Wi-Fi stations as talkers and listeners"
+ },
+ "bbcb5dc0455a": {
+  "page": "specs.html",
+  "text": "Each AVB interface's wireless status, asked once an entity is read and every 5 seconds on a wireless interface, and followed through its unsolicited responses"
+ },
+ "bb42c5a70058": {
+  "page": "specs.html",
+  "text": "Stations"
+ },
+ "2392d7b9552d": {
+  "page": "specs.html",
+  "text": "Role, time mode, Mode A over FTM or TM or Mode B, and whether its time holds; link, signal and rate; and the access point it follows"
+ },
+ "8c04b4278f43": {
+  "page": "specs.html",
+  "text": "Access points"
+ },
+ "eafeae00d8b9": {
+  "page": "specs.html",
+  "text": "Their stations, the listeners they cannot serve, and the frames a second they deliver"
+ },
+ "65ea6ad132c8": {
+  "page": "specs.html",
+  "text": "Class A"
+ },
+ "d4de0e7acd3c": {
+  "page": "specs.html",
+  "text": "Admitted only by an access point that delivers 12000 frames a second or more, and allowed or kept off through SET_WIRELESS_CONFIG, as <code>triib-cli wireless-config</code> does"
+ },
+ "c132ec7399e3": {
+  "page": "specs.html",
+  "text": "Each station under its access point, its Wi-Fi hop dotted, in sync while its time is locked"
+ },
+ "131dd3d64a58": {
+  "page": "specs.html",
+  "text": "Alarms"
+ },
+ "47007bfe4c12": {
+  "page": "specs.html",
+  "text": "A station whose time is not locked, and listeners an access point cannot serve"
+ },
+ "c5516c5412ad": {
+  "page": "specs.html",
+  "text": "An output can send in SR class B, 4000 frames a second on priority 2, as a stream to a Wi-Fi station must; this computer as a Wi-Fi station is not here yet"
+ },
  "db07be184479": {
   "page": "specs.html",
   "text": "Languages"
