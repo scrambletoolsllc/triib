@@ -78,6 +78,26 @@ Listen controls for what it receives and sends.
 - `triib-cli streams` prints each input's counters, and its probing
   state and last ACMP answer where Milan's stream info gives them.
 - The new app icon.
+- The inspector is titled by the picked entity's name, cut short to
+  leave the close button its room.
+- In the inspector, a value short enough to sit beside its label does:
+  a rate, a channel count, a format, or a picker whose widest choice
+  fits. Longer ones stay under their labels.
+- The entity list's rows are 40 pixels tall rather than 56, its Name
+  heading lines up with the names rather than their icons, and the line
+  after the names ends with the last row.
+- Each view has the same 16 pixel margin at the window's sides, below
+  the toolbar and above the status bar; the matrix's sides were 24.
+- On a narrow window, the matrix's Hide what cannot connect shrinks to
+  its icon, its label a tooltip, and the network view's "Showing …
+  streams" goes below the map, so neither moves the view down.
+- Every scroll bar is as thin as the matrix's; the stream list's was
+  thicker.
+- Settings and Presets open at once, rather than growing in.
+- On macOS, the toolbar's color runs up behind the title bar, which is
+  transparent, rather than the system's tinted bar with a seam under
+  it; a double-click there zooms or minimizes as the system's setting
+  says.
 
 ### This computer's entities (Linux)
 

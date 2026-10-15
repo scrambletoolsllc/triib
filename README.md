@@ -18,8 +18,9 @@ Website: **[triib.run](https://triib.run)**, with
 > entity models (names, streams, clocks, Milan support) and keeps them for
 > next time, shows and changes stream connections in a matrix, maps the
 > network from each entity's gPTP path, identifies entities, renames
-> them, changes their stream formats, sampling rates and clock sources
-> (each entity's media clock right in the entity list), shows and
+> them, changes their configurations, stream formats, sampling rates,
+> clock sources (each entity's media clock right in the entity list) and
+> outputs' max transit times, lists a talker's listeners, shows and
 > changes how their channels map to streams, shows and sets their
 > controls, such as gain and mute, saves and recalls presets of all of
 > that and the connections, logs every ATDECC frame sent and heard,
@@ -27,13 +28,16 @@ Website: **[triib.run](https://triib.run)**, with
 > Lite, what their streams take of each link and the alarms the AVB Lite
 > profile calls for, and what Wi-Fi stations and access points report
 > under [AVB Wireless](https://github.com/avbcommunity/profiles/blob/main/avb_wireless.md),
-> each station under its access point in the network view. On a Mac it
-> reaches the Mac's own AVB entity too. AI agents can use it through
-> `triib --mcp`. On Linux it runs talkers, listeners and devices of its
-> own, Milan entities streaming AAF or AM824 at 48, 96 or 192 kHz to and
-> from the computer's audio devices, each of a device's streams with its
-> own virtual audio device. It speaks 38 languages, following the
-> system's or the one picked in Settings. See the [plan](docs/PLAN.md).
+> each station under its access point in the network view. AI agents can
+> use it through `triib --mcp`. On Linux it runs entities of its own,
+> Milan entities with any number of streams each way: AAF or AM824 audio
+> at 48, 96 or 192 kHz to and from the computer's audio devices, each
+> stream with its own virtual audio device by default, and CRF media
+> clock streams, any input the entity's clock source. On a Mac it shows
+> the Mac's own AVB entity as this computer's, and plays what that entity
+> receives or sends through an output picked. It speaks 38 languages,
+> following the system's or the one picked in Settings. See the
+> [plan](docs/PLAN.md).
 
 ![triib in dark mode with the connection matrix of three entities, talker outputs across the top and listener inputs down the side, and the inspector on the right showing the selected Mac mini's name, product, firmware, media clock and sampling rate](docs/screenshots/matrix.png)
 
@@ -53,8 +57,9 @@ receive raw Ethernet:
 | macOS (Apple Silicon) | .pkg | access to `/dev/bpf*` for the user installing it, at every start, as Wireshark's ChmodBPF does; `triib-cli` in /usr/local/bin |
 | Windows | .msi, .zip | nothing itself: install [Npcap](https://npcap.com) first, which the installer and triib point to when it is missing |
 
-On macOS the Mac's own AVB entity cannot be read from the same Mac, as
-the system never hands it the commands triib writes; triib says so.
+On macOS, triib reaches the Mac's own AVB entity through Apple's
+AudioVideoBridging framework, as the system never hands that entity the
+commands a program writes to BPF; see [the Mac's own entity](#the-macs-own-entity).
 [docs/RELEASING.md](docs/RELEASING.md) has the details.
 
 ## This computer's entities
@@ -67,14 +72,18 @@ interface, as with its `configs/gPTP.cfg`, so the clock keeps the
 network's time; triib reads ptp4l's state through its read-only socket,
 `/var/run/ptp4lro`, and says when ptp4l isn't there. Each is a Milan
 entity with any number of streams each way, which controllers,
-triib among them, bind like any other. The inspector's Streams tab adds
-and removes them: audio streams of AAF or AM824 at 48, 96 or 192 kHz, 8
-channels unless it picks another count, each by default with a virtual
-audio device of its own that apps play into or record from, or a test
-tone, silence or one of the computer's devices; and media clock streams
-of CRF, a media clock input being a clock source the entity can follow.
-Talkers take their stream addresses with MAAP, and the stream threads
-ask RealtimeKit for real-time scheduling, as PipeWire does.
+triib among them, bind like any other. Add entity adds one with an
+audio stream each way, and the inspector's Streams tab adds and removes
+streams: audio streams of AAF or AM824 at 48, 96 or 192 kHz, 8 channels
+unless it picks another count, each by default with a virtual audio
+device of its own that apps play into or record from, or a test tone,
+silence or one of the computer's devices; and media clock streams of
+CRF. Any input can be the entity's clock source, its talkers then
+following the clock recovered from that stream. Talkers take their
+stream addresses with MAAP, and the stream threads ask RealtimeKit for
+real-time scheduling, as PipeWire does.
+
+<img src="docs/screenshots/device.png" width="320" alt="The inspector's Streams tab for Host entity 1, one of this computer's entities: its streams Out 1 and In 1 and an Add stream button, and Out 1's name, audio from a virtual device, 8 channels, format AAF 48 kHz, 8 ch, 32-bit, and a Remove stream button">
 
 The entities are listed in `entities.toml` in triib's data folder
 (`~/.local/share/triib` on Linux), or in another file Settings, Storage
@@ -111,7 +120,7 @@ triib 1.0's `endpoints.toml` moves to `entities.toml`, and its talkers
 and listeners, `kind = "talker"` and `kind = "listener"` entries, read
 as entities of their one stream.
 
-Where no AVB bridge answers on the interface, the endpoints fall back to
+Where no AVB bridge answers on the interface, the entities fall back to
 [AVB Lite](https://github.com/avbcommunity/profiles/blob/main/avb_lite.md),
 a working if degraded path over switches that are not AVB bridges: CVU
 SRP declarations in place of MSRP, and streams unicast to each listener.
@@ -132,11 +141,11 @@ ptp4l cannot switch to AVB Lite's PTP profile by itself. The Linux
 packages install `triib-ptp4l-gptp@<interface>` and
 `triib-ptp4l-lite@<interface>` units and a polkit rule; with ptp4l run
 by `systemctl enable --now triib-ptp4l-gptp@enp2s0`, the daemon moves it
-to the AVB Lite profile when its endpoints fall back, and back when the
+to the AVB Lite profile when its entities fall back, and back when the
 link comes up again.
 
 AVB Lite also asks for Energy-Efficient Ethernet and PAUSE off the
-endpoint's link. The `triib-link@<interface>` unit turns them off with
+interface's link. The `triib-link@<interface>` unit turns them off with
 `ethtool`; the ptp4l units pull it in, or
 `systemctl enable --now triib-link@enp2s0` runs it at every boot. Where
 it changes them on an interface that is up, it takes the interface down
@@ -148,12 +157,35 @@ after the link renegotiates, as when a cable goes back in, and ptp4l
 drops every frame until the interface goes down and up; the daemon sees
 them and restarts the interface through `triib-link-reset@<interface>`.
 
-The daemon runs MSRP and MVRP once for the port, for all its endpoints,
+The daemon runs MSRP and MVRP once for the port, for all its entities,
 as MRP runs per port: two participants on one point-to-point port do not
 hear each other's Leave, so one withdrawing VLAN 2 would take it from the
 bridge while the other still needs it. So one daemon runs on an interface
 whichever user starts it, and triib says when another user's holds it, or
 when another program on this computer declares MSRP or MVRP on the port.
+
+## The Mac's own entity
+
+On a Mac with AVB turned on in Audio MIDI Setup's Network Device Browser,
+triib shows the Mac's own AVB entity as this computer's, in the entity
+list and the network view. Its inspector names the Core Audio device
+apps play into and record from, which macOS makes only while one of the
+entity's streams is connected, and opens Audio MIDI Setup. The entity's
+configurations are picked by name, as any entity's are. Where AVB is
+off, the Entities view says where to turn it on.
+
+<img src="docs/screenshots/listen.png" width="320" alt="The inspector for the Mac's own entity: its audio device, Mac mini:Ethernet, a button that opens Audio MIDI Setup, and Listen playing channels 1 and 2 of what it receives through the Mac mini's speakers at 0 dB">
+
+Listen plays a channel or a pair of what the entity receives, or of what
+apps send to one of its output streams, through an output picked, with
+a gain. Hearing what it sends takes a Core Audio tap, which macOS 14.2
+and later have; on older systems Listen offers what it receives alone
+and says why. macOS asks once for the microphone, to hear what the Mac
+receives, and for audio recording, to hear what it sends. The audio
+plays in a helper, `triib --monitor`, which triib starts again should it
+end or hang, and which waits for a device that is not there yet; the
+choice is kept across restarts. AI agents set it through the
+`set_audio_monitor` tool.
 
 ## Using triib with AI agents
 
@@ -179,7 +211,7 @@ allowed and has a switch to turn outside control off.
 ## Building
 
 ```
-git clone https://github.com/scrambletools/triib
+git clone https://github.com/scrambletoolsllc/triib
 cd triib
 cargo run -p triib          # the app
 cargo run -p triib-cli -- interfaces
@@ -198,9 +230,13 @@ cargo run -p triib-cli -- control <interface> <entity-id> <control> <value>...
 cargo run -p triib-cli -- connect <interface> <talker-id>:<output> <listener-id>:<input>
 cargo run -p triib-cli -- disconnect <interface> <listener-id>:<input>
 cargo run -p triib-cli -- disconnect-talker <interface> <talker-id>:<output> <listener-id>:<input>
+cargo run -p triib-cli -- configuration <interface> <entity-id> <configuration>
 cargo run -p triib-cli -- identify <interface> <entity-id> [seconds]
 cargo run -p triib-cli -- streams <interface> <entity-id>
+cargo run -p triib-cli -- lite <interface> <entity-id> [seconds]
+cargo run -p triib-cli -- lite-config <interface> <entity-id> <avb-interface> <on|off>
 cargo run -p triib-cli -- wireless <interface> <entity-id>
+cargo run -p triib-cli -- wireless-config <interface> <entity-id> <avb-interface> <on|off>
 cargo run -p triib-cli -- transit <interface> <entity-id> <output> [nanoseconds]
 cargo run -p triib-cli -- descriptor <interface> <entity-id> <type:index>
 cargo run -p triib-cli -- harvest <interface> <entity-id> [repeat]

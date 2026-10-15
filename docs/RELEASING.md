@@ -41,8 +41,8 @@ triib sends and receives raw Ethernet, which each system guards:
   on the three programs. There is no AppImage or Flatpak, as neither can
   carry the capability. The packages depend on ALSA's and PipeWire's
   libraries for audio, PipeWire's for the virtual audio devices of this
-  computer's streams, and recommend linuxptp, whose ptp4l this computer's talkers and
-  listeners need; triib-endpointd reads the PTP hardware clock, which
+  computer's streams, and recommend linuxptp, whose ptp4l this computer's
+  entities need; triib-endpointd reads the PTP hardware clock, which
   systemd's rules let everyone read.
 - **macOS:** read and write access to the BPF devices, `/dev/bpf*`,
   which are root's alone at every start. The installer package puts

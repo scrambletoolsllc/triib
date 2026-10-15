@@ -4,9 +4,10 @@ triib is a lightweight ATDECC (IEEE 1722.1-2021) controller with first class
 Milan 1.3 and AVB Lite support, for Linux, Windows and macOS, in the spirit
 of Hive. It discovers entities, shows and edits their entity model, connects
 streams, manages media clocks and diagnoses problems. On a Linux computer
-with a hardware timestamping Ethernet interface it also runs talkers and
-listeners of its own, routed to the computer's audio, which appear in the
-connection matrix like any other entity. Written in Rust with iced, sharing
+with a hardware timestamping Ethernet interface it also runs entities of
+its own, routed to the computer's audio, which appear in the connection
+matrix like any other entity; on a Mac it shows the Mac's own AVB entity
+as this computer's. Written in Rust with iced, sharing
 prev's look, widgets and window layout through scramble-ui.
 
 ## Status
@@ -24,7 +25,9 @@ prev's look, widgets and window layout through scramble-ui.
 - Done since 1.0.0, for the next release: on a Mac, the Mac's own AVB
   entity as this computer's, its configurations picked, and Listen,
   which plays what it receives or what apps send through it, routed by
-  hand or through `triib --mcp`.
+  hand or through `triib --mcp`; the inspector titled by its entity,
+  short values beside their labels, one margin for every view, and on
+  macOS the toolbar's color behind the transparent title bar.
 - Next: P4's rest, whether Windows and then macOS can run talkers and
   listeners of their own, starting with the I210 card for the Windows
   PC.
@@ -59,13 +62,13 @@ dependency.
 | Design | Material 3 Expressive, with Omarchy's or the system's accent, from `scramble-ui`, the crate prev and triib share |
 | License | MIT OR Apache-2.0 (see Licensing) |
 | Devices | Milan entities first class; plain 1722.1 entities get what they offer |
-| Virtual endpoints | One ATDECC entity per talker or listener; from P4 also entities with several stream inputs and outputs, beside them |
+| Virtual endpoints | ATDECC entities of this computer's own, each with any number of stream inputs and outputs, audio or CRF; 1.0's talkers and listeners, entities of one stream, folded into them |
 | Controller entity | triib advertises itself as a controller (valid time 62 s, entity model ID `0x8c1f6436c0000001` under the Scramble Tools MA-S `8C-1F-64-36-C`), answers CONTROLLER_AVAILABLE, and registers for unsolicited notifications from each entity it reads |
 | ATDECC | Our own Rust stack, controller and entity roles, in the reusable `atdecc` crate, see below |
 | PTP | linuxptp's ptp4l on Linux, in gPTP or the AVB Lite PTP profile, run by triib's systemd units; the daemon reads it through its read-only socket. Our own engine (`avb-ptp`) only where P4 shows a platform needs one |
 | SRP | Our own MRP, MSRP and MVRP in the reusable `avb-mrp` crate; MAAP and AVB Lite's CVU SRP framing in `atdecc`, its attribute lists in `avb-mrp` |
 | Concurrency | No tokio. Network thread per interface with a poll loop and timers; real time threads for streaming and audio; `std::sync::mpsc` into an iced subscription (prev's `External` + `post()` pattern) |
-| Processes | GUI process (controller) and `triib-endpointd` for this computer's talkers and listeners, so audio survives GUI restarts |
+| Processes | GUI process (controller) and `triib-endpointd` for this computer's entities, so audio survives GUI restarts; on a Mac, `triib --monitor` for Listen, so a Core Audio call that hangs leaves the app alone |
 | Platform layer | `avb-net`: raw Ethernet frames, interfaces and hardware timestamps per operating system, the only platform code the protocol crates use. Audio (cpal) and the media clock live in `triib-stream` |
 | Settings, cache, presets | TOML settings through `triib-store`; the entity model cache keeps raw descriptor bytes, decoded by `atdecc` on load, so the protocol crates need no serde; TOML presets in the data folder |
 | Interface text | Fluent files under `i18n/`, 38 languages, as prev |
@@ -138,7 +141,7 @@ crates/
   triib-store     settings and cache files
   triib-stream    AAF and AM824 talkers and listeners, the media clock,
                   audio through cpal, drift and resampling
-  triib-endpointd daemon running this computer's talkers and listeners
+  triib-endpointd daemon running this computer's entities
   triib-cli       headless controller
   triib           the iced app, including the entity store the GUI draws
 ```
@@ -155,9 +158,9 @@ crates/
 
 `avb_net::check_access` says whether raw Ethernet is ready and, when not,
 why: no `CAP_NET_RAW`, no access to `/dev/bpf*`, or Npcap missing or for
-administrators only. The app shows the fix. This computer's talkers and
-listeners are offered per interface where it reports a PTP hardware clock
-and a wired link.
+administrators only. The app shows the fix. This computer's entities are
+offered per interface where it reports a PTP hardware clock and a wired
+link.
 
 On Linux the app, `triib-cli` and `triib-endpointd` need `CAP_NET_RAW`,
 which the packages set; the PHC is readable by everyone under systemd's
@@ -281,15 +284,19 @@ triib is MIT OR Apache-2.0. Things to keep that true:
 ## Window layout
 
 - **Toolbar**: interface picker with link and timestamping capability,
-  the views (Connections, Network, Entities), asking every entity to
-  announce itself, search, presets, log, inspector and settings. Tools
-  that do not fit move into a "More" menu, as in prev.
+  and a filter of virtual, wireless and PTP-less interfaces, the views
+  (Connections, Network, Entities), asking every entity to announce
+  itself, search, presets, log, inspector and settings. Tools that do
+  not fit move into a "More" menu, as in prev. On macOS its color runs
+  up behind the system's title bar, which is transparent.
 - **Content**: the active view, Connections by default. Each view selects
   entities its own way (the matrix's headings, the entity table, the
   network's cards); there is no entity sidebar.
-- **Right inspector**: the selected entity in tabs (Entity, Streams,
-  Controls, Diagnostics, Descriptors); for this computer's endpoints also
-  their audio and stream state.
+- **Right inspector**: the selected entity, titled by its name, in tabs
+  (Entity, Streams, Controls, Diagnostics, Descriptors), a short value
+  beside its label and a longer one under it; for this computer's
+  entities also their audio and stream state, and for the Mac's own its
+  audio device and Listen.
 - **Log**: a panel under the view, resized from its top edge.
 - **Status bar**: the interface and its state, AVB Lite alarms, the entity
   count and the controller's entity ID.
@@ -329,7 +336,8 @@ or picked in Settings, right to left languages mirrored; the terms follow
 
 The controller through BPF on macOS and Npcap on Windows, everything of P0
 and P1 on both, and packages with what each system needs set up. The Mac's
-own AVB entity cannot be read from the same Mac, which triib says.
+own AVB entity could not be read from the same Mac, which triib said;
+since 1.0.0 triib reaches it through the AudioVideoBridging framework.
 
 - To do: try the macOS package's install on a Mac (it needs an
   administrator's password); its contents, scripts and app are checked.
