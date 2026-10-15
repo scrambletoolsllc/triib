@@ -1429,7 +1429,14 @@ fn stream_list<'a>(
                 button::custom(
                     Kind::Row,
                     scramble_ui::row![
-                        icon::icon(if *input { Icon::Input } else { Icon::Output }, 18),
+                        icon::icon(
+                            if *input {
+                                Icon::InputCircleLeft
+                            } else {
+                                Icon::OutputCircleRight
+                            },
+                            18,
+                        ),
                         styled(name, Type::BodyMedium)
                             .width(Fill)
                             .wrapping(iced::widget::text::Wrapping::None),

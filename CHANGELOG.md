@@ -93,6 +93,8 @@ it receives and sends.
   streams" goes below the map, so neither moves the view down.
 - Every scroll bar is as thin as the matrix's; the stream list's was
   thicker.
+- The Streams tab marks an output with an arrow out of a circle,
+  pointing right, and an input with one into a circle, pointing left.
 - Settings and Presets open at once, rather than growing in.
 - On macOS, the toolbar's color runs up behind the title bar, which is
   transparent, rather than the system's tinted bar with a seam under
