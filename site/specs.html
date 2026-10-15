@@ -85,7 +85,7 @@
 <h2 id="endpoints">Entities running on the local host</h2>
 <table class="spec"><tbody>
 <tr><th>Systems</th><td>Linux, on a wired interface with a PTP hardware clock (<code>ethtool -T</code> shows one)</td></tr>
-<tr><th>Time</th><td>ptp4l running gPTP on that interface, read through its read-only socket</td></tr>
+<tr><th>Time</th><td>ptp4l running gPTP on that interface, started through triib's own systemd unit where none runs, and read through its read-only socket</td></tr>
 <tr><th>Entities</th><td>Milan entities with any number of streams each way; any controller binds them</td></tr>
 <tr><th>Formats</th><td>Audio: AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless another count is picked, in SR class A or B. Media clock: CRF, 48 kHz with a timestamp every 96 samples</td></tr>
 <tr><th>Audio</th><td>To and from the computer's audio devices; each audio stream with a virtual audio device of its own in PipeWire unless it uses a sound card; an output can send a tone or silence instead, and an input can discard what it receives</td></tr>
@@ -100,7 +100,7 @@
 <tr><th>Watching</th><td>Each entity's mode and why it fell back, its PTP profile and offset, its media VLAN and what its streams take of each link, and the profile's alarms</td></tr>
 <tr><th>Falling back</th><td>Host entities fall back when no AVB bridge answers on the interface, and come back to AVB when the link comes up again</td></tr>
 <tr><th>Streams</th><td>Unicast to each listener, to 2 a talker unless set otherwise, and multicast beyond that only where allowed</td></tr>
-<tr><th>ptp4l</th><td>Moved between gPTP and the AVB Lite PTP profile through triib's systemd units and polkit rule</td></tr>
+<tr><th>ptp4l</th><td>Started where none runs, and moved between gPTP and the AVB Lite PTP profile, through triib's systemd units and polkit rule</td></tr>
 <tr><th>Link</th><td>Energy-Efficient Ethernet and PAUSE kept off, as the profile asks, by a systemd unit</td></tr>
 </tbody></table>
 

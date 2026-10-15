@@ -72,7 +72,7 @@
       </article>
       <article>
         <h3>Host entities</h3>
-        <p>On Linux, with a PTP hardware clock and ptp4l, triib runs Milan entities with any number of streams each way: AAF or AM824 audio at 48, 96 or 192 kHz, each stream with its own virtual audio device or one of the computer's, and CRF media clock streams, any input the entity's clock source.</p>
+        <p>On Linux, on an interface with a PTP hardware clock, with nothing to set up, triib runs Milan entities with any number of streams each way: AAF or AM824 audio at 48, 96 or 192 kHz, each stream with its own virtual audio device or one of the computer's, and CRF media clock streams, any input the entity's clock source.</p>
       </article>
       <article>
         <h3>The Mac's own entity</h3>
@@ -116,7 +116,7 @@
         </tbody>
       </table>
     </div>
-    <p class="small">The Linux packages set <code>CAP_NET_RAW</code> on the three programs as they install, and recommend linuxptp for host entities. The Windows installer and programs are signed by Scramble Tools LLC. See the <a href="https://github.com/scrambletoolsllc/triib#installing">install notes</a> for what differs between packages, or build it from source with Rust: <code>cargo run -p triib</code> in a clone of the repository.</p>
+    <p class="small">The Linux packages set <code>CAP_NET_RAW</code> on the three programs as they install, and bring in linuxptp and ethtool for host entities. The Windows installer and programs are signed by Scramble Tools LLC. See the <a href="https://github.com/scrambletoolsllc/triib#installing">install notes</a> for what differs between packages, or build it from source with Rust: <code>cargo run -p triib</code> in a clone of the repository.</p>
   </section>
 
   <section id="code-signing" class="policy">

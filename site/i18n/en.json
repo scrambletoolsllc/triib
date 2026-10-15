@@ -115,9 +115,9 @@
   "page": "index.html",
   "text": "Host entities"
  },
- "db6e620b810d": {
+ "dd2686ed3486": {
   "page": "index.html",
-  "text": "On Linux, with a PTP hardware clock and ptp4l, triib runs Milan entities with any number of streams each way: AAF or AM824 audio at 48, 96 or 192 kHz, each stream with its own virtual audio device or one of the computer's, and CRF media clock streams, any input the entity's clock source."
+  "text": "On Linux, on an interface with a PTP hardware clock, with nothing to set up, triib runs Milan entities with any number of streams each way: AAF or AM824 audio at 48, 96 or 192 kHz, each stream with its own virtual audio device or one of the computer's, and CRF media clock streams, any input the entity's clock source."
  },
  "924e1dc5ea71": {
   "page": "index.html",
@@ -259,9 +259,9 @@
   "page": "index.html",
   "text": "<code>sudo tar -C / -xzf triib-{v}-*-linux.tar.gz</code>, then <code>sudo setcap cap_net_raw+ep</code> on <code>/usr/bin/triib</code>, <code>triib-cli</code> and <code>triib-endpointd</code>"
  },
- "9aa6c85b4087": {
+ "b30c64c168f4": {
   "page": "index.html",
-  "text": "The Linux packages set <code>CAP_NET_RAW</code> on the three programs as they install, and recommend linuxptp for host entities. The Windows installer and programs are signed by Scramble Tools LLC. See the <a1>install notes</a1> for what differs between packages, or build it from source with Rust: <code>cargo run -p triib</code> in a clone of the repository."
+  "text": "The Linux packages set <code>CAP_NET_RAW</code> on the three programs as they install, and bring in linuxptp and ethtool for host entities. The Windows installer and programs are signed by Scramble Tools LLC. See the <a1>install notes</a1> for what differs between packages, or build it from source with Rust: <code>cargo run -p triib</code> in a clone of the repository."
  },
  "321062598d1b": {
   "page": "index.html",
@@ -607,9 +607,9 @@
   "page": "guide.html",
   "text": "A wired interface with a PTP hardware clock; <code>ethtool -T &lt;interface&gt;</code> shows whether it has one."
  },
- "6c35d03d2b69": {
+ "99fe24ff157b": {
   "page": "guide.html",
-  "text": "<a1>linuxptp</a1>'s <code>ptp4l</code> running gPTP on that interface, so the clock keeps the network's time. triib reads its state and says when it is not there."
+  "text": "<a1>linuxptp</a1>'s <code>ptp4l</code> running gPTP on that interface, so the clock keeps the network's time. Where none runs there, triib starts it through its own systemd unit, reads its state, and says when linuxptp is missing."
  },
  "8cf3c5c94ed4": {
   "page": "guide.html",
@@ -619,9 +619,9 @@
   "page": "guide.html",
   "text": "Each audio stream has a virtual audio device of its own in PipeWire, named after the entity and the stream, such as <em>Host entity 1 Out 1</em>, for any program to play into or record from, unless the inspector picks one of the computer's devices, a test tone or silence instead. Any input can be the entity's clock source: its talkers then follow the clock recovered from that stream. <code>triib-endpointd</code> runs them all from <code>entities.toml</code>, and keeps the names, formats, bindings, clock sources and mappings controllers give, so an input binds again after a restart."
  },
- "93f90e88c29d": {
+ "35a61f4600cc": {
   "page": "guide.html",
-  "text": "Where no AVB bridge answers on the interface, they fall back to AVB Lite. The Linux packages carry systemd units that move ptp4l to AVB Lite's PTP profile when they do, and back to gPTP when the link comes up again, and keep Energy-Efficient Ethernet and PAUSE off the link, as the profile asks. The <a1>README</a1> has the settings."
+  "text": "Where no AVB bridge answers on the interface, they fall back to AVB Lite. The Linux packages carry systemd units that run ptp4l and move it to AVB Lite's PTP profile when they do, and back to gPTP when the link comes up again, and keep Energy-Efficient Ethernet and PAUSE off the link, as the profile asks. The <a1>README</a1> has the settings."
  },
  "193a25500056": {
   "page": "guide.html",
@@ -1007,9 +1007,9 @@
   "page": "specs.html",
   "text": "Linux, on a wired interface with a PTP hardware clock (<code>ethtool -T</code> shows one)"
  },
- "b5e4b72c514c": {
+ "199df59266c8": {
   "page": "specs.html",
-  "text": "ptp4l running gPTP on that interface, read through its read-only socket"
+  "text": "ptp4l running gPTP on that interface, started through triib's own systemd unit where none runs, and read through its read-only socket"
  },
  "ffce85390a20": {
   "page": "specs.html",
@@ -1087,9 +1087,9 @@
   "page": "specs.html",
   "text": "ptp4l"
  },
- "d3abe771d786": {
+ "f9a5d132aad0": {
   "page": "specs.html",
-  "text": "Moved between gPTP and the AVB Lite PTP profile through triib's systemd units and polkit rule"
+  "text": "Started where none runs, and moved between gPTP and the AVB Lite PTP profile, through triib's systemd units and polkit rule"
  },
  "d0517071aa37": {
   "page": "specs.html",
