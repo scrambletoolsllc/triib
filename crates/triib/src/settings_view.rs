@@ -11,7 +11,7 @@ use scramble_ui::button::{self, Kind};
 use scramble_ui::component;
 use scramble_ui::font::{Type, aligned, styled};
 use scramble_ui::icon::Icon;
-use scramble_ui::{Scheme, dropdown, enter, scheme, shape, style};
+use scramble_ui::{Scheme, dropdown, scheme, shape, style};
 
 use crate::app::{Message, TRIIB_SEED, Triib};
 use crate::fl;
@@ -112,7 +112,8 @@ pub fn dialog<'a>(triib: &'a Triib, base: Element<'a, Message>) -> Element<'a, M
     iced::widget::stack![
         base,
         mouse_area(
-            container(enter::grow(opaque(card)))
+            // The card appears at once, even where animations are on.
+            container(opaque(card))
                 .padding(24)
                 .center(Fill)
                 .style(style::scrim),
