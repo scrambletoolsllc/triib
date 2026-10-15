@@ -2680,7 +2680,7 @@ fn summary(entity: &DiscoveredEntity) -> String {
         .contains(EntityCapabilities::GPTP_SUPPORTED)
     {
         format!(
-            "BTC {} domain {}",
+            "grandmaster {} domain {}",
             adp.gptp_grandmaster_id, adp.gptp_domain_number
         )
     } else {

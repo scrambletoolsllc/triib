@@ -212,7 +212,6 @@ advert-roles = Roolit
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = Kello
-advert-btc = BTC
 advert-gptp-domain = gPTP-toimialue
 advert-sr-classes = SR-luokat
 advert-indexes = Entiteettimallin indeksit

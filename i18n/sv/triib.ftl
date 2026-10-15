@@ -212,7 +212,6 @@ advert-roles = Roller
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = Klocka
-advert-btc = BTC
 advert-gptp-domain = gPTP-domän
 advert-sr-classes = SR-klasser
 advert-indexes = Index i entitetsmodellen

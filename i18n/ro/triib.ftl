@@ -217,7 +217,6 @@ advert-roles = Roluri
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = Ceas
-advert-btc = BTC
 advert-gptp-domain = Domeniu gPTP
 advert-sr-classes = Clase SR
 advert-indexes = Indici în modelul de entitate

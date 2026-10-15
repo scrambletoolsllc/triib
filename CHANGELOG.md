@@ -78,6 +78,10 @@ it receives and sends.
 - `triib-cli streams` prints each input's counters, and its probing
   state and last ACMP answer where Milan's stream info gives them.
 - The new app icon.
+- The entity list's column and the inspector's field for the gPTP
+  grandmaster an entity advertises say Grandmaster, rather than BTC, as
+  does `triib-cli discover`; a column kept as `btc` in the settings
+  loads as it.
 - The inspector is titled by the picked entity's name, cut short to
   leave the close button its room.
 - In the inspector, a value short enough to sit beside its label does:

@@ -210,7 +210,6 @@ advert-roles = کردار
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = کلاک
-advert-btc = BTC
 advert-gptp-domain = gPTP ڈومین
 advert-sr-classes = SR کلاسز
 advert-indexes = اینٹیٹی ماڈل انڈیکس

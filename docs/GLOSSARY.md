@@ -23,8 +23,8 @@ writes them, including their case:
   and AVB Wireless's Mode A and Mode B.
 - **Protocols and their parts:** ADP, AECP, ACMP, AEM, TLV,
   control_data_length, asCapable.
-- **Other acronyms:** CRF (media clock streams), VLAN, MAC (address), BTC,
-  CRC, SR class letters A and B, FTM and TM (Wi-Fi's timing measurements),
+- **Other acronyms:** CRF (media clock streams), VLAN, MAC (address), CRC,
+  SR class letters A and B, FTM and TM (Wi-Fi's timing measurements),
   BSSID.
 - **Product names:** triib, Omarchy, Wi-Fi.
 - **Units:** Hz, kHz, MHz, GHz, ns, µs, ms, kb/s, Mb/s, Gb/s, dBm.

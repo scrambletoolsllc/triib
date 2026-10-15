@@ -212,7 +212,6 @@ advert-roles = Roller
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = Saat
-advert-btc = BTC
 advert-gptp-domain = gPTP alanı
 advert-sr-classes = SR sınıfları
 advert-indexes = Varlık modeli dizinleri

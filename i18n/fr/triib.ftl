@@ -217,7 +217,6 @@ advert-roles = Rôles
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = Horloge
-advert-btc = BTC
 advert-gptp-domain = Domaine gPTP
 advert-sr-classes = Classes SR
 advert-indexes = Index du modèle d’entité

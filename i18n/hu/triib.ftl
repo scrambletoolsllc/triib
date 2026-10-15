@@ -212,7 +212,6 @@ advert-roles = Szerepkörök
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = Óra
-advert-btc = BTC
 advert-gptp-domain = gPTP-tartomány
 advert-sr-classes = SR-osztályok
 advert-indexes = Entitásmodell-indexek

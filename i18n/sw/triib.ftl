@@ -210,7 +210,6 @@ advert-roles = Majukumu
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = Saa
-advert-btc = BTC
 advert-gptp-domain = Kikoa cha gPTP
 advert-sr-classes = Madaraja ya SR
 advert-indexes = Faharasa za modeli ya huluki

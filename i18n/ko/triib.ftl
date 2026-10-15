@@ -201,7 +201,6 @@ advert-roles = 역할
 advert-talker = 토커
 advert-listener = 리스너
 advert-clock = 클럭
-advert-btc = BTC
 advert-gptp-domain = gPTP 도메인
 advert-sr-classes = SR 클래스
 advert-indexes = 엔티티 모델 인덱스

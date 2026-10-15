@@ -74,7 +74,7 @@ pub fn classes(adp: &Adpdu) -> String {
     }
 }
 
-/// Its gPTP BTC, or that it has none.
+/// Its gPTP grandmaster, or that it has none.
 pub fn clock(adp: &Adpdu) -> String {
     if adp
         .entity_capabilities

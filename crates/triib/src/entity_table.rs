@@ -95,7 +95,7 @@ fn value(field: EntityField, entity: &DiscoveredEntity, model: Option<&EntityMod
             .map_or_else(String::new, |unit| {
                 Rate(unit.current_sampling_rate).to_string()
             }),
-        EntityField::Btc => describe::clock(&entity.adp),
+        EntityField::Grandmaster => describe::clock(&entity.adp),
         EntityField::State => describe::read_state(model),
         EntityField::EntityId => entity.entity_id().to_string(),
         EntityField::MacAddress => entity.mac.to_string(),
@@ -588,7 +588,7 @@ mod tests {
         // Group becomes Vendor; a field shown elsewhere is not taken twice.
         let _ = triib.update(Message::EntityColumn(0, Some(EntityField::Vendor)));
         assert_eq!(columns(&triib)[0], EntityField::Vendor);
-        let _ = triib.update(Message::EntityColumn(0, Some(EntityField::Btc)));
+        let _ = triib.update(Message::EntityColumn(0, Some(EntityField::Grandmaster)));
         assert_eq!(columns(&triib)[0], EntityField::Vendor);
         // Product goes; MAC address comes at the right.
         let _ = triib.update(Message::EntityColumn(1, None));
@@ -901,11 +901,11 @@ mod tests {
 
     #[test]
     fn menus_offer_only_what_no_column_shows() {
-        let columns = [EntityField::Group, EntityField::Btc];
+        let columns = [EntityField::Group, EntityField::Grandmaster];
         let offered: Vec<EntityField> = unshown(&columns).collect();
         assert_eq!(offered.len(), EntityField::ALL.len() - 2);
         assert!(!offered.contains(&EntityField::Group));
-        assert!(!offered.contains(&EntityField::Btc));
+        assert!(!offered.contains(&EntityField::Grandmaster));
         assert_eq!(offered[0], EntityField::Product);
         assert_eq!(unshown(&EntityField::ALL).count(), 0);
     }

@@ -215,7 +215,7 @@ pub enum OfflineReason {
 pub enum Event {
     /// A new entity, or one back after going offline.
     EntityOnline(EntityId),
-    /// An entity advertised different capabilities, BTC, configuration or
+    /// An entity advertised different capabilities, grandmaster, configuration or
     /// address.
     EntityChanged(EntityId),
     /// An entity's available_index went back, so it restarted; its model

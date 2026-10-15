@@ -233,7 +233,9 @@ pub enum EntityField {
     #[serde(alias = "clock-source")]
     MediaClock,
     SamplingRate,
-    Btc,
+    /// The gPTP grandmaster the entity advertises.
+    #[serde(alias = "btc")]
+    Grandmaster,
     State,
     EntityId,
     MacAddress,
@@ -262,7 +264,7 @@ impl EntityField {
         Self::Roles,
         Self::MediaClock,
         Self::SamplingRate,
-        Self::Btc,
+        Self::Grandmaster,
         Self::State,
         Self::EntityId,
         Self::MacAddress,
@@ -283,7 +285,7 @@ impl EntityField {
         Self::Milan,
         Self::Roles,
         Self::MediaClock,
-        Self::Btc,
+        Self::Grandmaster,
         Self::State,
         Self::EntityId,
     ];
@@ -301,7 +303,7 @@ impl EntityField {
             Self::Roles => crate::fl!("advert-roles"),
             Self::MediaClock => crate::fl!("entity-media-clock"),
             Self::SamplingRate => crate::fl!("entity-sampling-rate"),
-            Self::Btc => crate::fl!("advert-btc"),
+            Self::Grandmaster => crate::fl!("avb-interface-grandmaster"),
             Self::State => crate::fl!("column-state"),
             Self::EntityId => crate::fl!("advert-entity-id"),
             Self::MacAddress => crate::fl!("common-mac-address"),
@@ -408,11 +410,13 @@ mod tests {
         let file = std::env::temp_dir().join(format!("triib-renamed-{}.toml", std::process::id()));
         triib_store::save(&file, &Settings::default()).unwrap();
         // The media clock view and the clock source column, as an older
-        // triib saved them, beside the media clock column.
+        // triib saved them, beside the media clock column, and the
+        // grandmaster's column by its older name.
         let saved = std::fs::read_to_string(&file).unwrap();
         let older = saved
             .replace("view = \"matrix\"", "view = \"clocks\"")
-            .replace("\"media-clock\"", "\"clock-source\", \"media-clock\"");
+            .replace("\"media-clock\"", "\"clock-source\", \"media-clock\"")
+            .replace("\"grandmaster\"", "\"btc\"");
         assert_ne!(older, saved);
         std::fs::write(&file, older).unwrap();
         let loaded = triib_store::load_or_create::<Settings>(&file)
@@ -421,6 +425,20 @@ mod tests {
         let _ = std::fs::remove_file(&file);
         assert_eq!(loaded.view, View::Entities);
         assert_eq!(loaded.entity_columns, EntityField::DEFAULT_COLUMNS);
+
+        // A column's width kept by the grandmaster's older name.
+        let older = saved.replace(
+            "[entity_column_widths]\n",
+            "[entity_column_widths]\nbtc = 73.5\n",
+        );
+        assert_ne!(older, saved);
+        std::fs::write(&file, older).unwrap();
+        let loaded = triib_store::load_or_create::<Settings>(&file).unwrap();
+        let _ = std::fs::remove_file(&file);
+        assert_eq!(
+            loaded.entity_column_widths.get(&EntityField::Grandmaster),
+            Some(&73.5)
+        );
 
         // The log view, now a panel.
         std::fs::write(&file, saved.replace("view = \"matrix\"", "view = \"log\"")).unwrap();

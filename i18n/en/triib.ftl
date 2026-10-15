@@ -286,7 +286,6 @@ advert-roles = Roles
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = Clock
-advert-btc = BTC
 advert-gptp-domain = gPTP domain
 advert-sr-classes = SR classes
 # The indexes, in its entity model, of what the entity advertises.

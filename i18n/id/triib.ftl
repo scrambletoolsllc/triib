@@ -198,7 +198,6 @@ advert-roles = Peran
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = Clock
-advert-btc = BTC
 advert-gptp-domain = Domain gPTP
 advert-sr-classes = Kelas SR
 advert-indexes = Indeks model entitas

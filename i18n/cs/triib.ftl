@@ -218,7 +218,6 @@ advert-roles = Role
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = Hodiny
-advert-btc = BTC
 advert-gptp-domain = Doména gPTP
 advert-sr-classes = Třídy SR
 advert-indexes = Indexy v modelu entity

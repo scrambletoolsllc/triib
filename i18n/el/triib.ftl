@@ -212,7 +212,6 @@ advert-roles = Ρόλοι
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = Ρολόι
-advert-btc = BTC
 advert-gptp-domain = Τομέας gPTP
 advert-sr-classes = Κλάσεις SR
 advert-indexes = Δείκτες μοντέλου οντότητας

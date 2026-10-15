@@ -214,7 +214,6 @@ advert-roles = תפקידים
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = שעון
-advert-btc = BTC
 advert-gptp-domain = תחום gPTP
 advert-sr-classes = מחלקות SR
 advert-indexes = אינדקסים במודל הישות

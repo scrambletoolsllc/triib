@@ -218,7 +218,6 @@ advert-roles = Роли
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = Синхронизация
-advert-btc = BTC
 advert-gptp-domain = Домен gPTP
 advert-sr-classes = Классы SR
 advert-indexes = Индексы в модели сущности

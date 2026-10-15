@@ -198,7 +198,6 @@ advert-roles = บทบาท
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = คล็อก
-advert-btc = BTC
 advert-gptp-domain = โดเมน gPTP
 advert-sr-classes = คลาส SR
 advert-indexes = ดัชนีในโมเดลเอนทิตี

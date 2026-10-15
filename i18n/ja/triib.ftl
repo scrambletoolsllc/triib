@@ -201,7 +201,6 @@ advert-roles = ロール
 advert-talker = トーカー
 advert-listener = リスナー
 advert-clock = クロック
-advert-btc = BTC
 advert-gptp-domain = gPTP ドメイン
 advert-sr-classes = SR クラス
 advert-indexes = エンティティモデルのインデックス

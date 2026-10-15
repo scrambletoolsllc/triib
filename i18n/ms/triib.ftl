@@ -198,7 +198,6 @@ advert-roles = Peranan
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = Jam
-advert-btc = BTC
 advert-gptp-domain = Domain gPTP
 advert-sr-classes = Kelas SR
 advert-indexes = Indeks model entiti

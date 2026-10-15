@@ -201,7 +201,6 @@ advert-roles = 角色
 advert-talker = 發送端
 advert-listener = 接收端
 advert-clock = 時鐘
-advert-btc = BTC
 advert-gptp-domain = gPTP 域
 advert-sr-classes = SR 類別
 advert-indexes = 實體模型索引

@@ -201,7 +201,6 @@ advert-roles = Vai trò
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = Đồng hồ
-advert-btc = BTC
 advert-gptp-domain = Miền gPTP
 advert-sr-classes = Lớp SR
 advert-indexes = Chỉ mục mô hình thực thể

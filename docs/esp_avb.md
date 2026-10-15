@@ -55,16 +55,16 @@ captured may run older or newer builds.
 - **Impact:** endpoints powered up together keep advertising in step,
   bunching ADP traffic.
 
-### 4. No re-advertisement when the BTC changes (2026-10-03 23:11 PDT)
+### 4. No re-advertisement when the grandmaster changes (2026-10-03 23:11 PDT)
 
 - **Seen:** from reading the code only, not on the wire.
 - **Code:** the periodic send in `avb.c:1000` is the only trigger for
-  ENTITY_AVAILABLE; nothing sends one when the best timetransmitter clock
-  changes.
+  ENTITY_AVAILABLE; nothing sends one when the grandmaster changes.
 - **Standard:** Milan 1.3, 5.6.3.5.7: the GM_CHANGE event re-advertises
   (after the random delay), so controllers see the new
   gptp_grandmaster_id promptly.
-- **Impact:** small with a 5 s cadence; the new BTC shows up within 5 s.
+- **Impact:** small with a 5 s cadence; the new grandmaster shows up within
+  5 s.
 
 ### 5. Wi-Fi endpoints do not set CLASS_A_SUPPORTED (2026-10-03 23:11 PDT)
 
@@ -101,10 +101,10 @@ captured may run older or newer builds.
   (`avb.h:140`), `8C 1F 64 36 C0 02`, as in `profiles/avb_lite.md` 6.
 - **Fix:** update the comment.
 
-### 8. The Wi-Fi endpoint's BTC keeps changing (2026-10-03 23:22 PDT)
+### 8. The Wi-Fi endpoint's grandmaster keeps changing (2026-10-03 23:22 PDT)
 
 - **Seen:** the Wi-Fi endpoint's gptp_grandmaster_id alternates between
-  its own clock identity (`0xfc012cfffefdfe80`) and the network's BTC
+  its own clock identity (`0xfc012cfffefdfe80`) and the network's grandmaster
   (`0x0001f2fffeff3b14`, the AVB switch), which every wired entity
   reports throughout. Own clock at 22:51:39 to 22:51:49, the network's
   from 22:51:54 and at 22:52:54, its own again at 23:22:43 to 23:22:53.
@@ -165,7 +165,7 @@ captured may run older or newer builds.
 - **Seen:** found reading the code while checking what a controller can
   learn about the network's layout; not yet seen on the wire.
 - **Code:** `avb_send_aecp_rsp_get_as_path` (`atdecc.c:2624`) builds the
-  path from the BTC's identity, the selected source's identity when it
+  path from the grandmaster's identity, the selected source's identity when it
   differs, and the endpoint's own identity, instead of copying the
   pathSequence of the PathTrace TLV of the last Announce received. The
   command table in `atdecc.h:87` still marks the command unsupported.
@@ -174,11 +174,11 @@ captured may run older or newer builds.
   every PTP Instance from the grandmaster to the sender (802.1AS-2020,
   10.3.9.23). Milan 1.3, 5.4.2.24 requires the command, and an
   unsolicited response when the path changes.
-- **Impact:** with more than one bridge between the BTC and the endpoint,
-  the bridges in between are missing, so a controller cannot place the
-  endpoint in the network.
+- **Impact:** with more than one bridge between the grandmaster and the
+  endpoint, the bridges in between are missing, so a controller cannot
+  place the endpoint in the network.
 - **Seen since (2026-10-04 14:50 PDT):** the wired endpoint answered
-  GET_AS_PATH on the bench with two identities, the switch (the BTC) and
+  GET_AS_PATH on the bench with two identities, the switch (the grandmaster) and
   itself, which with one bridge happens to match.
 
 ### 13. GET_COUNTERS answers with stale bytes and a wrong length (2026-10-04 14:50 PDT)

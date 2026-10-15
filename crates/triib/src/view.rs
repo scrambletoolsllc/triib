@@ -1876,7 +1876,7 @@ fn advertisement_details(entity: &DiscoveredEntity) -> Vec<Element<'_, Message>>
             flags_text(adp.listener_capabilities.names()),
         ),
         component::section(fl!("advert-clock")),
-        property(fl!("advert-btc"), describe::clock(adp)),
+        property(fl!("avb-interface-grandmaster"), describe::clock(adp)),
         property(
             fl!("advert-gptp-domain"),
             adp.gptp_domain_number.to_string(),

@@ -226,7 +226,6 @@ advert-roles = الأدوار
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = الساعة
-advert-btc = BTC
 advert-gptp-domain = نطاق gPTP
 advert-sr-classes = فئات SR
 advert-indexes = فهارس نموذج الكيان

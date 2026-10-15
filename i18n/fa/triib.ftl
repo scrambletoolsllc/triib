@@ -210,7 +210,6 @@ advert-roles = نقش‌ها
 advert-talker = Talker
 advert-listener = Listener
 advert-clock = ساعت
-advert-btc = BTC
 advert-gptp-domain = دامنه gPTP
 advert-sr-classes = کلاس‌های SR
 advert-indexes = اندیس‌های مدل موجودیت
