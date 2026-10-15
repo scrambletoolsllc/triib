@@ -2179,6 +2179,102 @@ pub(crate) mod tests {
         lite_frames_in(true, offset, egress)
     }
 
+    /// One of this computer's entities on the bench's interface, as
+    /// triib-endpointd runs it and a controller reads it: named `name`,
+    /// with audio `outputs` and `inputs` of the formats the bench's ESP
+    /// offers.
+    fn host_entity(
+        name: &str,
+        outputs: &[&str],
+        inputs: &[&str],
+    ) -> (DiscoveredEntity, EntityModel) {
+        use std::time::Duration;
+
+        use atdecc::entity::{EndpointModel, Entity, Gptp, StreamModel};
+        use atdecc::{ADP_ACMP_MULTICAST, ClockIdentity, EntityModelId};
+
+        const CONTROLLER_MAC: MacAddress = MacAddress([0x02, 0, 0, 0, 0, 1]);
+        let (_, models) = bench();
+        let esp = models[&WIRED_ESP]
+            .streams(false)
+            .next()
+            .expect("the ESP's audio output");
+        let formats: Vec<_> = esp.formats().collect();
+        let stream = |name: &&str| StreamModel {
+            name: (*name).to_owned(),
+            formats: formats.clone(),
+            current_format: esp.current_format,
+            channels: esp.current_format.channels().unwrap_or(8),
+            class_b: false,
+        };
+        let mac = MacAddress(HOST_MAC);
+        let entity_id = triib_endpointd::runtime::entity_id(mac, 0);
+        let model = EndpointModel {
+            entity_id,
+            entity_model_id: EntityModelId(0x8c1f_6436_c001_0001),
+            entity_name: name.to_owned(),
+            group_name: String::new(),
+            vendor_name: "Scramble Tools".into(),
+            model_name: "triib entity".into(),
+            firmware_version: env!("CARGO_PKG_VERSION").into(),
+            serial_number: String::new(),
+            mac,
+            interface_name: "enp6s0".into(),
+            clock_identity: ClockIdentity(0x9c6b_00ff_fe30_9a2b),
+            sampling_rates: vec![48_000, 96_000, 192_000],
+            current_sampling_rate: 48_000,
+            outputs: outputs.iter().map(stream).collect(),
+            inputs: inputs.iter().map(stream).collect(),
+            clock_source: 0,
+            clock_source_inputs: (0..inputs.len() as u16).collect(),
+        };
+        let mut entity = Entity::new(model, &[]);
+        let mut controller = Controller::new(Config::new(EntityId(0x9c6b_00ff_fe30_9a2b)));
+        let mut now = Instant::ZERO;
+        entity.start(now);
+        // ptp4l following the bench's grandmaster.
+        let grandmaster = ClockIdentity(0x0001_f2ff_feff_3b14);
+        entity.set_gptp(
+            now,
+            Gptp {
+                grandmaster,
+                domain: 0,
+                propagation_delay: 0,
+                as_capable: true,
+                path: vec![grandmaster, ClockIdentity(0x9c6b_00ff_fe30_9a2b)],
+            },
+        );
+        controller.discover(None);
+        for _ in 0..400 {
+            now += Duration::from_millis(5);
+            controller.handle_timeout(now);
+            entity.handle_timeout(now);
+            let mut out = [0; 1500];
+            loop {
+                let mut moved = false;
+                while let Ok(Some(transmit)) = controller.poll_transmit(&mut out) {
+                    if [ADP_ACMP_MULTICAST, mac].contains(&transmit.destination) {
+                        entity.handle_frame(now, CONTROLLER_MAC, &out[..transmit.length]);
+                    }
+                    moved = true;
+                }
+                while let Some((destination, bytes)) = entity.poll_transmit() {
+                    if [ADP_ACMP_MULTICAST, CONTROLLER_MAC].contains(&destination) {
+                        let _ = controller.handle_frame(now, mac, &bytes);
+                    }
+                    moved = true;
+                }
+                if !moved {
+                    break;
+                }
+            }
+        }
+        let discovered = *controller.entity(entity_id).expect("found");
+        let model = controller.model(entity_id).expect("read").clone();
+        assert_eq!(model.state, EnumerationState::Complete, "read in full");
+        (discovered, model)
+    }
+
     /// As [`lite_frames`], with the wired ESP running AVB Lite or, when
     /// not `active`, only capable of it.
     pub(crate) fn lite_frames_in(active: bool, offset: i32, egress: u32) -> Vec<Vec<u8>> {
@@ -2592,6 +2688,14 @@ pub(crate) mod tests {
             ("matrix-hover-own", View::Matrix, false, desktop),
             ("matrix-formats", View::Matrix, false, desktop),
             ("entities-desktop", View::Entities, false, desktop),
+            // With one of this computer's entities, wide enough for its
+            // columns, the bench's empty groups and long IDs left out.
+            (
+                "entities-host",
+                View::Entities,
+                false,
+                Size::new(1440.0, 540.0),
+            ),
             (
                 "entities-wide",
                 View::Entities,
@@ -2618,9 +2722,16 @@ pub(crate) mod tests {
                 Size::new(2200.0, 760.0),
             ),
             ("inspector-editing", View::Entities, true, desktop),
-            // As one of this computer's entities, with a stream each way.
+            // One of this computer's entities, with a stream each way.
             (
                 "inspector-device",
+                View::Entities,
+                true,
+                Size::new(1280.0, 1400.0),
+            ),
+            // On a Mac, its own entity, listened to.
+            (
+                "inspector-listen",
                 View::Entities,
                 true,
                 Size::new(1280.0, 1400.0),
@@ -2723,6 +2834,18 @@ pub(crate) mod tests {
             for renderer in ["tiny-skia", "wgpu"] {
                 let _ = std::fs::remove_file(format!("{path}-{suffix}-{renderer}.png"));
             }
+            // On a Mac, the interface is the Mac's own entity's.
+            let interface = if suffix.contains("listen") {
+                Interface {
+                    name: "en0".to_owned(),
+                    mac: entities[&MAC_MINI].mac,
+                    speed: Some(1000),
+                    hardware_clock: None,
+                    ..interface.clone()
+                }
+            } else {
+                interface.clone()
+            };
             let settings = Settings {
                 interface: Some(interface.name.clone()),
                 view,
@@ -2755,7 +2878,14 @@ pub(crate) mod tests {
                 );
                 models.insert(WIRED_ESP, model);
             }
-            let mut triib = Triib::sample(settings, interface.clone(), entities.clone(), models);
+            let mut shown = entities.clone();
+            let host = (suffix.contains("host") || suffix.contains("device")).then(|| {
+                let (host, model) = host_entity("Host entity 1", &["Out 1"], &["In 1"]);
+                shown.insert(host.entity_id(), host);
+                models.insert(host.entity_id(), model);
+                host.entity_id()
+            });
+            let mut triib = Triib::sample(settings, interface, shown, models);
             triib.selected = if ["diagnostics", "controls", "lite"]
                 .iter()
                 .any(|kind| suffix.contains(kind))
@@ -2763,6 +2893,10 @@ pub(crate) mod tests {
                 Some(WIRED_ESP)
             } else if suffix.contains("wireless") {
                 Some(WIFI_ESP)
+            } else if suffix.contains("device") {
+                host
+            } else if suffix.contains("listen") {
+                Some(MAC_MINI)
             } else {
                 entities.keys().next().copied()
             };
@@ -2779,6 +2913,13 @@ pub(crate) mod tests {
             };
             if suffix.contains("filtered") {
                 triib.settings.matrix_connectable_only = true;
+            }
+            if suffix == "entities-host" {
+                use crate::settings::EntityField;
+                triib
+                    .settings
+                    .entity_columns
+                    .retain(|field| ![EntityField::Group, EntityField::EntityId].contains(field));
             }
             if suffix.contains("searching") {
                 triib.search = "Mac mini".to_owned();
@@ -2821,7 +2962,22 @@ pub(crate) mod tests {
                     row: Some(crate::matrix::Line::Stream(MAC_MINI, 0)),
                 };
             }
-            if suffix.contains("device") {
+            if suffix.contains("listen") {
+                // Listening to two of what it receives, on its speaker.
+                triib.avb_enabled = Some(true);
+                triib.mac_audio_device = Some("Mac mini:Ethernet".to_owned());
+                triib.audio_devices.1 = vec!["Mac mini Speakers".to_owned()];
+                triib.settings.listen = crate::monitor::Listen {
+                    enabled: true,
+                    output: Some("Mac mini Speakers".to_owned()),
+                    ..crate::monitor::Listen::default()
+                };
+                triib.monitor_status = crate::monitor::Status {
+                    state: crate::monitor::State::Playing,
+                    peak: 0.25,
+                };
+            }
+            if host.is_some() {
                 use triib_endpointd::config::Direction;
                 use triib_endpointd::status::{DaemonStatus, EndpointStatus, StreamStatus};
                 let stream = |direction, name: &str, state: &str| StreamStatus {
@@ -2840,8 +2996,8 @@ pub(crate) mod tests {
                     foreign_mrp: false,
                     config: None,
                     endpoints: vec![EndpointStatus {
-                        entity_id: triib.selected.map(|id| id.to_string()).unwrap_or_default(),
-                        name: "Host device 1".into(),
+                        entity_id: host.map(|id| id.to_string()).unwrap_or_default(),
+                        name: "Host entity 1".into(),
                         state: "streaming".into(),
                         streams: vec![
                             stream(Direction::Out, "Out 1", "streaming"),

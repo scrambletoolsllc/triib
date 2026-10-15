@@ -28,12 +28,14 @@ shot() {
   magick "$work/$1-tiny-skia.png" "${crop[@]}" -resize "${4:-1360}x" -strip "$out/$2.png"
 }
 shot window-matrix-desktop matrix
-shot window-entities-desktop entities
+shot window-entities-host entities
 shot window-inspector-lite inspector 2560x2100+0+0
 shot window-inspector-controls controls
 shot window-matrix-formats matrix-formats
-# The inspector alone, as its entity is a stand-in for this computer's.
-shot window-inspector-device device 640x1500+1920+140 640
+# The inspector alone: one of this computer's entities, and on a Mac its
+# own entity, whose view would have Linux's Add entity bar.
+shot window-inspector-device device 640x1100+1920+140 640
+shot window-inspector-listen listen 640x1120+1920+140 640
 shot window-inspector-wireless wireless 2560x2100+0+0
 shot window-settings-general settings
 shot window-presets-desktop presets
