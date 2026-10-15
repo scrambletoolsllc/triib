@@ -35,6 +35,10 @@ Website: **[triib.run](https://triib.run)**, with
 > own virtual audio device. It speaks 38 languages, following the
 > system's or the one picked in Settings. See the [plan](docs/PLAN.md).
 
+![triib in dark mode with the connection matrix of three entities, talker outputs across the top and listener inputs down the side, and the inspector on the right showing the selected Mac mini's name, product, firmware, media clock and sampling rate](docs/screenshots/matrix.png)
+
+![The network map of a show: a core bridge, a stage bridge and a front of house bridge, twenty devices from stage boxes to amps, and each audio stream as its own colored wire, with two failed reservations marked](docs/screenshots/network.png)
+
 ## Installing
 
 [Releases](https://github.com/scrambletoolsllc/triib/releases) have
