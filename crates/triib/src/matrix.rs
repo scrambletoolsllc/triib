@@ -14,7 +14,7 @@ use iced::{Center, Color, Element, Fill, Length, Rectangle, Theme};
 use scramble_ui::button::{self, Kind, Size};
 use scramble_ui::component;
 use scramble_ui::dropdown::{self, Entry};
-use scramble_ui::font::{Type, styled};
+use scramble_ui::font::{self, Type, styled};
 use scramble_ui::icon::{self, Icon};
 use scramble_ui::popover::popover;
 use scramble_ui::{Scheme, faded, shape, style};
@@ -24,6 +24,7 @@ use crate::app::{self, Message, Triib};
 use crate::fl;
 use crate::network::Action;
 use crate::settings::Streams;
+use crate::view::VIEW_MARGIN;
 
 const STATUS_HEIGHT: f32 = 48.0;
 
@@ -219,17 +220,17 @@ impl Group<'_> {
 
 /// The room the matrix's filters, hint, legend and padding take around the
 /// grid, with the legend on two lines.
-const AROUND_GRID: f32 = 2.0 * 16.0 + 40.0 + 16.0 + 12.0 + STATUS_HEIGHT + 12.0 + 48.0;
+const AROUND_GRID: f32 = 2.0 * VIEW_MARGIN + 40.0 + 16.0 + 12.0 + STATUS_HEIGHT + 12.0 + 48.0;
 
 pub fn view(triib: &Triib) -> Element<'_, Message> {
-    iced::widget::responsive(move |size| view_at(triib, size.height)).into()
+    iced::widget::responsive(move |size| view_at(triib, size)).into()
 }
 
-/// The matrix in `height` pixels: the grid takes what the rest leaves, or
-/// when that is too little for its headings and two rows, the whole view
-/// scrolls with the grid at that least height.
-fn view_at(triib: &Triib, height: f32) -> Element<'_, Message> {
-    let cramped = height < grid::LEAST_HEIGHT + AROUND_GRID;
+/// The matrix in `size`: the grid takes what the rest leaves, or when that
+/// is too little for its headings and two rows, the whole view scrolls with
+/// the grid at that least height.
+fn view_at(triib: &Triib, size: iced::Size) -> Element<'_, Message> {
+    let cramped = size.height < grid::LEAST_HEIGHT + AROUND_GRID;
     let mut talkers = groups(triib, Side::Talker);
     let mut listeners = groups(triib, Side::Listener);
     let count = |groups: &[Group<'_>]| {
@@ -279,9 +280,9 @@ fn view_at(triib: &Triib, height: f32) -> Element<'_, Message> {
         .spacing(12)
         .into()
     };
-    let view = column![filters(triib, hidden), body]
+    let view = column![filters(triib, hidden, size.width - 2.0 * VIEW_MARGIN), body]
         .spacing(16)
-        .padding([16, 24])
+        .padding(VIEW_MARGIN)
         .width(Fill);
     if cramped {
         component::scroll(view).height(Fill).into()
@@ -291,8 +292,11 @@ fn view_at(triib: &Triib, height: f32) -> Element<'_, Message> {
 }
 
 /// The streams shown, and whether only connectable ones are, with how
-/// many that hides.
-fn filters(triib: &Triib, hidden: Option<usize>) -> Element<'_, Message> {
+/// many that hides, in a row `room` pixels wide. Where the row has no room
+/// for the option's label or the count, the option shows its icon alone
+/// and its tooltip says them, so the row stays one line and the grid where
+/// it is.
+fn filters(triib: &Triib, hidden: Option<usize>, room: f32) -> Element<'_, Message> {
     let streams = triib.settings.matrix_streams;
     let choice = |label: String, value: Streams| {
         button::button(Kind::Filled, label)
@@ -300,41 +304,68 @@ fn filters(triib: &Triib, hidden: Option<usize>) -> Element<'_, Message> {
             .selected(streams == value)
             .on_press(Message::MatrixStreams(value))
     };
-    let mut filters: Vec<Element<'_, Message>> = vec![
-        component::connected(vec![
-            choice(fl!("matrix-all-streams"), Streams::All),
-            choice(fl!("netmap-audio"), Streams::Audio),
-            choice(fl!("entity-media-clock"), Streams::Clock),
-        ]),
-        // A secondary option, so a quiet tonal fill when on rather than
-        // the stream choices' strong one.
-        if hidden.is_some() {
-            button::with_icon(Kind::Tonal, Icon::FilterAlt, fl!("matrix-connectable-only"))
-        } else {
-            button::with_icon(
-                Kind::Filled,
-                Icon::FilterAlt,
-                fl!("matrix-connectable-only"),
-            )
-            .selected(false)
-        }
-        .size(Size::ExtraSmall)
-        .on_press(Message::MatrixConnectableOnlyToggled)
-        .into(),
+    let labels = [
+        fl!("matrix-all-streams"),
+        fl!("netmap-audio"),
+        fl!("entity-media-clock"),
     ];
-    if let Some(hidden) = hidden {
+    // The stream choices' width: each label and its padding, and the gaps
+    // between them.
+    let mut used = labels
+        .iter()
+        .map(|label| font::measure(label, Type::LabelLarge) + 2.0 * 12.0)
+        .sum::<f32>()
+        + 2.0 * 2.0;
+    let [all, audio, clock] = labels;
+    let mut filters: Vec<Element<'_, Message>> = vec![component::connected(vec![
+        choice(all, Streams::All),
+        choice(audio, Streams::Audio),
+        choice(clock, Streams::Clock),
+    ])];
+    let label = fl!("matrix-connectable-only");
+    let count = hidden.map(|hidden| match hidden {
+        0 => fl!("matrix-none-hidden"),
+        hidden => fl!("matrix-hidden", count = hidden),
+    });
+    // The option's label with its padding, icon and gap, and the count
+    // after it.
+    let labelled = font::measure(&label, Type::LabelLarge) + 2.0 * 12.0 + 20.0 + 8.0;
+    let counted = count
+        .as_ref()
+        .map_or(0.0, |count| 12.0 + font::measure(count, Type::BodyMedium));
+    used += 12.0;
+    let whole = (used + labelled + counted).ceil() <= room;
+    let count_shown = whole || (used + Size::ExtraSmall.height() + counted).ceil() <= room;
+    // A secondary option, so a quiet tonal fill when on rather than the
+    // stream choices' strong one.
+    let option = if whole {
+        button::with_icon(Kind::Filled, Icon::FilterAlt, label.clone())
+    } else {
+        button::icon_button(Icon::FilterAlt).kind(Kind::Filled)
+    };
+    let option = if hidden.is_some() {
+        option.kind(Kind::Tonal)
+    } else {
+        option.selected(false)
+    }
+    .size(Size::ExtraSmall)
+    .on_press(Message::MatrixConnectableOnlyToggled);
+    filters.push(if whole {
+        option.into()
+    } else if count_shown {
+        component::tip(option, label)
+    } else {
+        let tip = crate::i18n::list([label].into_iter().chain(count.clone()));
+        component::tip(option, tip)
+    });
+    if let Some(count) = count.filter(|_| count_shown) {
         filters.push(
-            styled(
-                match hidden {
-                    0 => fl!("matrix-none-hidden"),
-                    hidden => fl!("matrix-hidden", count = hidden),
-                },
-                Type::BodyMedium,
-            )
-            .style(style::on_surface_variant)
-            .into(),
+            styled(count, Type::BodyMedium)
+                .style(style::on_surface_variant)
+                .into(),
         );
     }
+    // Wrapping still, should even the icon not fit.
     dir::row(filters)
         .spacing(12)
         .align_y(Center)

@@ -30,6 +30,9 @@ use crate::network::{Action, Failure, NameTarget, Remedy};
 use crate::settings::View;
 
 const STATUS_BAR_HEIGHT: f32 = 28.0;
+/// Around each view, the matrix, the entity list and the network map: below
+/// the toolbar, above the status bar, and at the window's sides.
+pub(crate) const VIEW_MARGIN: f32 = 16.0;
 const SEARCH_WIDTH: f32 = 280.0;
 const INTERFACE_PICKER_WIDTH: f32 = 320.0;
 /// Between the toolbar's ends and its first and last tools.
@@ -489,8 +492,10 @@ fn content(triib: &Triib) -> Element<'_, Message> {
             state => network_state_view(triib, state),
         },
         View::Entities => {
+            // This computer's own entities are added here.
+            let bar = crate::host_view::bar(triib);
             let body = if !triib.entities.is_empty() {
-                crate::entity_table::view(triib)
+                crate::entity_table::view(triib, bar.is_some())
             } else {
                 match &triib.network_state {
                     NetworkState::Running { .. } | NetworkState::Starting => {
@@ -503,8 +508,7 @@ fn content(triib: &Triib) -> Element<'_, Message> {
                     state => return network_state_view(triib, state),
                 }
             };
-            // This computer's own entities are added here.
-            match crate::host_view::bar(triib) {
+            match bar {
                 Some(bar) => scramble_ui::column![bar, body].into(),
                 None => body,
             }
@@ -2628,6 +2632,9 @@ pub(crate) mod tests {
                 Size::new(1280.0, 3200.0),
             ),
             ("matrix-filtered", View::Matrix, false, desktop),
+            // Too narrow for the option's label and its count: its icon
+            // alone.
+            ("matrix-filtered-phone", View::Matrix, false, phone),
             // Text typed in the search field.
             ("matrix-searching", View::Matrix, false, desktop),
             (
@@ -2695,6 +2702,16 @@ pub(crate) mod tests {
                 false,
                 Size::new(760.0, 600.0),
             ),
+            // An entity's streams brought forward: beside the header's
+            // chips where they leave room, else below the map.
+            ("network-focus-phone", View::Network, false, phone),
+            (
+                "network-focus-medium",
+                View::Network,
+                false,
+                Size::new(804.0, 520.0),
+            ),
+            ("network-focus-desktop", View::Network, false, desktop),
         ] {
             if only
                 .as_ref()
@@ -2779,6 +2796,11 @@ pub(crate) mod tests {
                 let frames = crate::log_view::tests::bench_frames(&triib);
                 triib.log.add(frames);
                 triib.settings.log = true;
+            }
+            if suffix.starts_with("network-focus") {
+                triib.network_focus = Some(crate::netmap::Focus::Node(
+                    crate::netmap::NodeKey::Entity(MAC_MINI),
+                ));
             }
             if suffix.contains("narrow") {
                 // Columns dragged narrower than their text.
@@ -2960,7 +2982,7 @@ pub(crate) mod tests {
         // rows start under the bar that adds this computer's endpoints.
         let list = presses(
             View::Entities,
-            &[(640.0, 600.0), (90.0, 197.0), (380.0, 197.0)],
+            &[(640.0, 600.0), (90.0, 181.0), (380.0, 181.0)],
         );
         assert!(clears(&list[0]), "{:?}", list[0]);
         assert!(

@@ -19,7 +19,7 @@ use triib_endpointd::config::{Direction, VIRTUAL};
 use crate::app::{Message, Triib};
 use crate::fl;
 use crate::host::StreamChange;
-use crate::view::{Value, field, property};
+use crate::view::{VIEW_MARGIN, Value, field, property};
 
 /// The bar above the Entities view's table: why this computer cannot add
 /// entities of its own, or the button that adds one.
@@ -81,7 +81,9 @@ pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
             .spacing(8)
             .align_y(Center),
         )
-        .padding([8, 16])
+        // The button a view's margin from the toolbar and the table, as the
+        // other views' filters are, in a row the toggle makes 8 taller.
+        .padding([VIEW_MARGIN - 4.0, VIEW_MARGIN])
         .into(),
     )
 }
@@ -102,7 +104,8 @@ fn mac_avb_off(triib: &Triib) -> Option<Element<'_, Message>> {
             .spacing(8)
             .align_y(Center),
         )
-        .padding([8, 16])
+        // As far from the toolbar and the table as the other views' filters.
+        .padding(VIEW_MARGIN)
         .into(),
     )
 }

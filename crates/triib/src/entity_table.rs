@@ -21,21 +21,25 @@ use crate::fl;
 use crate::header_band::header_band;
 use crate::settings::EntityField;
 use crate::text::{fit, measure};
-use crate::view::Rate;
+use crate::view::{Rate, VIEW_MARGIN};
 
 /// Around each cell, around the table, and spare room for what measuring
 /// its text leaves out.
 const TABLE_PADDING: f32 = 12.0;
 /// Above and below each row's cells.
-const ROW_PADDING: f32 = 8.0;
-const TABLE_MARGIN: f32 = 16.0;
+const ROW_PADDING: f32 = 4.0;
+/// Above and below the headings.
+const HEADING_PADDING: f32 = 8.0;
 const TABLE_SLACK: f32 = 24.0;
 /// What a heading's button adds to its label: padding, a gap and the
 /// arrow.
 const MENU_ROOM: f32 = 2.0 * 12.0 + 4.0 + 18.0;
-/// What the name column adds to a name: the icon, a gap and the row
-/// button's padding.
-const NAME_ROOM: f32 = 20.0 + 8.0 + 32.0;
+/// How far a name is from its cell's edge: the row button's padding, the
+/// icon and a gap.
+const NAME_INSET: f32 = 16.0 + 20.0 + 8.0;
+/// What the name column adds to a name: its inset, and the row button's
+/// padding after it.
+const NAME_ROOM: f32 = NAME_INSET + 16.0;
 /// The width of the heading that adds a column.
 const ADD_WIDTH: f32 = 40.0;
 /// How far right of a heading its column's divider is: the cell's padding
@@ -44,8 +48,8 @@ const DIVIDER: f32 = TABLE_PADDING + 0.5;
 /// How far a picker's text is from its cell's edge: an extra small
 /// drop-down's padding.
 const PICKER_INSET: f32 = 12.0;
-/// Every row's height: the name's row button's.
-const ROW_HEIGHT: f32 = 40.0;
+/// Every row's height: the name's row button's, an extra small button's.
+const ROW_HEIGHT: f32 = 32.0;
 /// Every heading's height: the heading menus'.
 const HEADING_HEIGHT: f32 = 32.0;
 const MEDIUM: iced::Font = iced::Font {
@@ -53,8 +57,10 @@ const MEDIUM: iced::Font = iced::Font {
     ..TEXT
 };
 
-pub fn view(triib: &Triib) -> Element<'_, Message> {
-    iced::widget::responsive(move |size| view_at(triib, size.width)).into()
+/// The table, with no margin above it `under_bar`, as the bar over it has
+/// its own.
+pub fn view(triib: &Triib, under_bar: bool) -> Element<'_, Message> {
+    iced::widget::responsive(move |size| view_at(triib, size.width, under_bar)).into()
 }
 
 /// What a column's value is for an entity.
@@ -201,7 +207,7 @@ struct Row<'a> {
 /// The table for `width` pixels: across the whole width when its columns
 /// fit, each widened in proportion to its text, else at their own widths,
 /// scrolling sideways.
-fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
+fn view_at(triib: &Triib, width: f32, under_bar: bool) -> Element<'_, Message> {
     let columns: &[EntityField] = &triib.settings.entity_columns;
     let only_host = triib.settings.host_entities_only && triib.hosts_endpoints();
     let rows: Vec<Row<'_>> = triib
@@ -272,10 +278,8 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
         .zip(&dragged)
         .map(|(natural, dragged)| dragged.unwrap_or(*natural).max(MIN_WIDTH))
         .collect();
-    let room = width
-        - 2.0 * TABLE_MARGIN
-        - TABLE_SLACK
-        - widths.len() as f32 * (2.0 * TABLE_PADDING + 1.0);
+    let room =
+        width - 2.0 * VIEW_MARGIN - TABLE_SLACK - widths.len() as f32 * (2.0 * TABLE_PADDING + 1.0);
     let used: f32 = widths.iter().sum();
     let fits = used <= room;
     let stretchy: f32 = natural
@@ -303,15 +307,28 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
         .mirrored(dir::mirrored())
     };
     let name_width = widths[0];
+    // Over the names' text, past their icons.
+    let name_inset = if dir::mirrored() {
+        iced::Padding {
+            right: NAME_INSET,
+            ..iced::Padding::ZERO
+        }
+    } else {
+        iced::Padding {
+            left: NAME_INSET,
+            ..iced::Padding::ZERO
+        }
+    };
     let name_heading = heading(
         container(
             styled(
-                fit(&fl!("entity-name"), MEDIUM, 14.0, name_width).name,
+                fit(&fl!("entity-name"), MEDIUM, 14.0, name_width - NAME_INSET).name,
                 Type::LabelLarge,
             )
             .style(style::on_surface_variant)
             .wrapping(Wrapping::None),
         )
+        .padding(name_inset)
         .width(Fill)
         // As tall as the other columns' heading menus.
         .height(HEADING_HEIGHT)
@@ -339,6 +356,7 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
                 .spacing(8)
                 .align_y(Center),
             )
+            .height(ROW_HEIGHT)
             .selected(triib.selected == Some(entity_id))
             .on_press(Message::EntitySelected(entity_id)),
             name_width,
@@ -425,6 +443,8 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
     }
     // The names' band rounds its outer corner, the rest's its own.
     let name_header = header_table(vec![(name_heading.into(), name_width)], !mirrored, mirrored);
+    // The rows' height: each its cells' and the line above it.
+    let rows_height = rows.len() as f32 * (ROW_HEIGHT + 2.0 * ROW_PADDING + 1.0);
     let name_body = body_table(vec![(Box::new(name_cell), name_width)], rows.clone());
     let rest_header = header_table(headings, mirrored, !mirrored);
     let rest_body = body_table(cells, rows);
@@ -459,14 +479,20 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
         (rest_header, rest_body)
     };
     // The line between the names and the rest: as tall as the headings
-    // above, and the rows' room below.
+    // above, and below as the rows, or the room for them when they scroll,
+    // as the table's own lines end with its last row.
     let line = |height: Length| container(space()).width(1).height(height).style(separator);
-    let headings_height = Length::Fixed(HEADING_HEIGHT + 2.0 * ROW_PADDING);
+    let headings_height = Length::Fixed(HEADING_HEIGHT + 2.0 * HEADING_PADDING);
     // The names first, which a row puts on the right in right to left
     // languages.
     let top = scramble_ui::row![name_header, line(headings_height), rest_header];
-    let bottom = scramble_ui::row![name_body, line(Fill), rest_body];
-    let view = container(scramble_ui::column![top, bottom].height(Fill)).padding(TABLE_MARGIN);
+    let rows_line = container(line(Length::Fixed(rows_height))).height(Fill);
+    let bottom = scramble_ui::row![name_body, rows_line, rest_body];
+    let margin = iced::Padding {
+        top: if under_bar { 0.0 } else { VIEW_MARGIN },
+        ..iced::Padding::new(VIEW_MARGIN)
+    };
+    let view = container(scramble_ui::column![top, bottom].height(Fill)).padding(margin);
     // A press on the table is the table's; one on the space around it
     // clears the selection.
     mouse_area(view).on_press(Message::SelectionCleared).into()
@@ -487,8 +513,8 @@ fn header_table<'a>(
     });
     let table = table(columns, Vec::<Row<'a>>::new())
         .padding_x(TABLE_PADDING)
-        .padding_y(ROW_PADDING);
-    opaque(header_band(table, count, ROW_PADDING).round(left, right))
+        .padding_y(HEADING_PADDING);
+    opaque(header_band(table, count, HEADING_PADDING).round(left, right))
 }
 
 /// Rows alone, each its cells' fixed height, so the names and the rest

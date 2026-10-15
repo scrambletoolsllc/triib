@@ -28,6 +28,7 @@ use crate::topology::{
     Apart, EntityReport, HostReport, InterfaceReport, Kind as NodeKind, LiteReport, NodeId, Route,
     Topology, WirelessLink,
 };
+use crate::view::VIEW_MARGIN;
 
 const PANEL_WIDTH: f32 = 360.0;
 const NARROW_PANEL_WIDTH: f32 = 300.0;
@@ -168,7 +169,6 @@ pub fn view(triib: &Triib) -> Element<'_, Message> {
 fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
     let wide = width >= WIDE;
     let list_open = !wide && triib.network_list;
-    let padding = if wide { [16, 24] } else { [12, 12] };
     let shows = triib.settings.network_shows;
     // Where the network runs AVB Lite, the clock is PTP's, end to end.
     let lite = lite_topology(triib);
@@ -195,14 +195,22 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
         Focus::Stream(..) => streams.iter().any(|stream| stream.focus() == *focus),
         Focus::Node(key) => find(&topology, *key).is_some(),
     });
-    let header = header(&topology, ptp, shows, &streams, focus, width, list_open);
+    let (header, focused) = header(&topology, ptp, shows, &streams, focus, width, list_open);
+    // The chips a view's margin from the toolbar and 16 from what is below,
+    // as the other views' are. On narrow windows the list's toggle makes
+    // their row 8 taller.
+    let padding = iced::Padding {
+        top: if wide { VIEW_MARGIN } else { VIEW_MARGIN - 4.0 },
+        ..iced::Padding::new(VIEW_MARGIN)
+    };
+    let below = if wide { 16.0 } else { 12.0 };
 
     if topology.nodes.is_empty() {
         return column![
             header,
             component::empty_state(Icon::Hub, fl!("netmap-empty"), fl!("netmap-empty-note"),)
         ]
-        .spacing(16)
+        .spacing(below)
         .padding(padding)
         .into();
     }
@@ -246,15 +254,20 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
         Length::Fixed(NARROW_PANEL_WIDTH)
     };
     let panel = || details(triib, &topology, shows, &streams, &paints, focus).view(panel_width);
-    let body: Element<'_, Message> = if wide {
-        row![canvas, panel()].spacing(16).height(Fill).into()
-    } else if list_open {
-        panel()
-    } else {
-        canvas.into()
-    };
+    let mut body: Element<'_, Message> = if list_open { panel() } else { canvas.into() };
+    // What is brought forward when the header has no room for it: below
+    // the map, which stays where it is as it comes and goes.
+    if let Some(focused) = focused {
+        let focused = container(focused)
+            .width(Fill)
+            .align_x(dir::horizontal_start());
+        body = column![body, focused].spacing(16).height(Fill).into();
+    }
+    if wide {
+        body = row![body, panel()].spacing(16).height(Fill).into();
+    }
     column![header, body]
-        .spacing(16)
+        .spacing(below)
         .padding(padding)
         .width(Fill)
         .height(Fill)
@@ -262,7 +275,9 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
 }
 
 /// The title, the choice of what to show, a summary and what is brought
-/// forward; on narrow windows the last on a row of its own.
+/// forward, with on narrow windows the list's toggle; and what is brought
+/// forward on its own instead, for below the map, when the header's row has
+/// no room for it.
 fn header<'a>(
     topology: &Topology,
     ptp: bool,
@@ -271,22 +286,34 @@ fn header<'a>(
     focus: Option<Focus>,
     width: f32,
     list_open: bool,
-) -> Element<'a, Message> {
+) -> (Element<'a, Message>, Option<Element<'a, Message>>) {
     let wide = width >= WIDE;
+    // A labelled button's width: its label, its padding, its icon and the
+    // gap between.
+    let labelled = |label: &str| {
+        (scramble_ui::font::measure(label, Type::LabelLarge) + 2.0 * 12.0 + 20.0 + 8.0).ceil()
+    };
+    // The widths of what the row holds, to tell whether what is brought
+    // forward fits beside it.
+    let mut used: Vec<f32> = Vec::new();
     let choice = |glyph: Icon, label: String, value: NetworkShows| {
         button::with_icon(Kind::Filled, glyph, label)
             .size(Size::ExtraSmall)
             .selected(shows == value)
             .on_press(Message::NetworkShows(value))
     };
+    let labels = [
+        if ptp { "PTP" } else { "gPTP" }.to_owned(),
+        fl!("netmap-audio"),
+        "CRF".to_owned(),
+    ];
+    // The group's buttons, and the gaps between them.
+    used.push(labels.iter().map(|label| labelled(label)).sum::<f32>() + 2.0 * 2.0);
+    let [clock, audio, crf] = labels;
     let choices = component::connected(vec![
-        choice(
-            Icon::Schedule,
-            if ptp { "PTP" } else { "gPTP" }.to_owned(),
-            NetworkShows::Clock,
-        ),
-        choice(Icon::GraphicEq, fl!("netmap-audio"), NetworkShows::Audio),
-        choice(Icon::Timer, "CRF".to_owned(), NetworkShows::MediaClock),
+        choice(Icon::Schedule, clock, NetworkShows::Clock),
+        choice(Icon::GraphicEq, audio, NetworkShows::Audio),
+        choice(Icon::Timer, crf, NetworkShows::MediaClock),
     ]);
     let focused = focus.map(|focus| {
         let what = match focus {
@@ -305,17 +332,13 @@ fn header<'a>(
                 }
             }
         };
-        button::with_icon(
-            Kind::Outlined,
-            Icon::Close,
-            fl!("netmap-showing", what = what),
-        )
-        .size(Size::ExtraSmall)
-        .on_press(Message::NetworkFocused(None))
+        fl!("netmap-showing", what = what)
     });
     let mut header = line![].spacing(12).align_y(Center);
     if width >= TITLED {
-        header = header.push(styled(fl!("toolbar-network"), Type::TitleLarge));
+        let title = fl!("toolbar-network");
+        used.push(scramble_ui::font::measure(&title, Type::TitleLarge).ceil());
+        header = header.push(styled(title, Type::TitleLarge));
     }
     header = header.push(choices);
     if width >= TITLED {
@@ -340,31 +363,45 @@ fn header<'a>(
         if !topology.ptp {
             counts.push(fl!("netmap-bridges", count = bridges));
         }
-        header = header.push(
-            styled(crate::i18n::list(counts), Type::BodyMedium).style(style::on_surface_variant),
-        );
+        let counts = crate::i18n::list(counts);
+        used.push(scramble_ui::font::measure(&counts, Type::BodyMedium).ceil());
+        header = header.push(styled(counts, Type::BodyMedium).style(style::on_surface_variant));
     }
     header = header.push(space::horizontal());
-    if wide {
-        if let Some(focused) = focused {
-            header = header.push(focused);
-        }
-        return header.into();
+    used.push(0.0);
+    // The list's toggle, an icon button.
+    if !wide {
+        used.push(40.0);
     }
-    header = header.push(component::toggle_tool(
-        Icon::ViewList,
-        if list_open {
-            fl!("netmap-show-map")
-        } else {
-            fl!("netmap-show-details")
-        },
-        list_open,
-        Message::NetworkListToggled,
-    ));
-    match focused {
-        Some(focused) => column![header, focused].spacing(8).into(),
-        None => header.into(),
+    let room = width - 2.0 * VIEW_MARGIN;
+    let fits = |label: &String| {
+        used.iter().sum::<f32>() + labelled(label) + 12.0 * used.len() as f32 <= room
+    };
+    let (beside, below) = match focused {
+        Some(label) if fits(&label) => (Some(label), None),
+        label => (None, label),
+    };
+    let focused = |label: String| {
+        button::with_icon(Kind::Outlined, Icon::Close, label)
+            .size(Size::ExtraSmall)
+            .on_press(Message::NetworkFocused(None))
+    };
+    if let Some(label) = beside {
+        header = header.push(focused(label));
     }
+    if !wide {
+        header = header.push(component::toggle_tool(
+            Icon::ViewList,
+            if list_open {
+                fl!("netmap-show-map")
+            } else {
+                fl!("netmap-show-details")
+            },
+            list_open,
+            Message::NetworkListToggled,
+        ));
+    }
+    (header.into(), below.map(|label| focused(label).into()))
 }
 
 /// The entities the map shows: all but controllers, which take no part
@@ -1843,7 +1880,8 @@ mod tests {
                     focus,
                     1280.0,
                     false
-                ),
+                )
+                .0,
                 page().view(Length::Fixed(PANEL_WIDTH)),
             ]
             .spacing(16)
@@ -1941,6 +1979,24 @@ mod tests {
     /// With no AVB bridge heard and an entity in AVB Lite, the clock is
     /// PTP's: the ESP hangs under its grandmaster, in sync within 50 us
     /// and out of it past that.
+    /// What is brought forward goes beside the header's chips where its row
+    /// has room, and below the map where it has not, so the map stays where
+    /// it is as it comes and goes.
+    #[test]
+    fn what_is_brought_forward_goes_below_the_map_without_room() {
+        let (topology, streams) = bench();
+        let below = |focus: Option<Focus>, width: f32| {
+            let shows = NetworkShows::Audio;
+            let (_, below) = header(&topology, false, shows, &streams, focus, width, false);
+            below.is_some()
+        };
+        let focus = Some(streams[2].focus());
+        assert!(below(focus, 360.0));
+        assert!(!below(focus, 804.0));
+        assert!(!below(focus, 1280.0));
+        assert!(!below(None, 360.0));
+    }
+
     #[test]
     fn avb_lite_shows_the_ptp_clock() {
         let triib = lite_triib(-180);
