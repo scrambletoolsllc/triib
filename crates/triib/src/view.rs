@@ -2212,7 +2212,6 @@ pub(crate) mod tests {
             formats: formats.clone(),
             current_format: esp.current_format,
             channels: esp.current_format.channels().unwrap_or(8),
-            class_b: false,
         };
         let mac = MacAddress(HOST_MAC);
         let entity_id = triib_endpointd::runtime::entity_id(mac, 0);

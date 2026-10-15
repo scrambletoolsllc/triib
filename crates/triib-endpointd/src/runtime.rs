@@ -49,13 +49,11 @@ use crate::status::{DaemonStatus, EndpointStatus, StreamStatus, status_path};
 /// talkers and listeners had `0x8c1f_6436_c000_0002` and `_0004`.
 const DEVICE_MODELS: u64 = 0x8c1f_6436_c001_0000;
 /// The revision of every device's model, in its hash.
-const MODEL_REVISION: u8 = 4;
+const MODEL_REVISION: u8 = 5;
 /// Class A's priority; its VLAN is the port's.
 const PRIORITY: u8 = 3;
 /// Class B's priority.
 const CLASS_B_PRIORITY: u8 = 2;
-/// Class B's interval, which a reservation counts its frames over.
-const CLASS_B_INTERVAL: u64 = 250_000;
 /// How long after the last MRP from another participant on the port it
 /// is still reported.
 const FOREIGN_MRP_QUIET: Duration = Duration::from_secs(30);
@@ -376,13 +374,14 @@ fn model_id(outputs: &[StreamModel], inputs: &[StreamModel]) -> EntityModelId {
     // The model's revision, for what the streams leave the same: 1 since
     // the inputs stopped being clock sources, 2 since the model name is
     // "triib entity" and media clock inputs are clock sources, 3 since
-    // every input is, 4 since inputs' mappings are dynamic.
+    // every input is, 4 since inputs' mappings are dynamic, 5 since
+    // streams' classes follow their formats. A class B output's formats
+    // come in another order.
     take(&[MODEL_REVISION]);
     for (way, streams) in [(0u8, outputs), (1, inputs)] {
         for stream in streams {
             take(&[way]);
             take(&stream.channels.to_be_bytes());
-            take(&[u8::from(stream.class_b)]);
             for format in &stream.formats {
                 take(&format.0.to_be_bytes());
             }
@@ -479,11 +478,12 @@ impl Endpoint {
                     formats: vec![MEDIA_CLOCK],
                     current_format: MEDIA_CLOCK,
                     channels: 0,
-                    class_b: false,
                 };
             }
             // As many as six samples of each fit in one Ethernet frame,
-            // at 48 kHz; fewer offer the higher rates too.
+            // at 48 kHz; fewer offer the higher rates too. A class B
+            // output starts in class B's own formats, as the format
+            // decides the class.
             let channels = stream.channels.clamp(1, 60);
             let class_b = output && stream.class == SrClass::B;
             let formats = offered_formats(channels, class_b);
@@ -505,7 +505,6 @@ impl Endpoint {
                 current_format,
                 formats,
                 channels,
-                class_b,
             }
         };
         let outputs: Vec<StreamModel> = out_streams
@@ -749,7 +748,6 @@ impl Endpoint {
                 (
                     stream.current_format,
                     stream.channels,
-                    stream.class_b,
                     model.current_sampling_rate,
                 )
             })
@@ -1942,11 +1940,17 @@ impl Runtime {
     }
 
     /// The priority an output's frames go out on: AVB Lite's, else its SR
-    /// class's.
+    /// class's, as its format decides.
     fn priority(&self, out: Out) -> u8 {
+        let class_b = self.endpoints[out.0]
+            .entity
+            .model()
+            .outputs
+            .get(usize::from(out.1))
+            .is_some_and(StreamModel::class_b);
         if self.lite.is_some() {
             LITE_PRIORITY
-        } else if self.endpoints[out.0].out_config(out.1).class == SrClass::B {
+        } else if class_b {
             CLASS_B_PRIORITY
         } else {
             PRIORITY
@@ -1974,13 +1978,9 @@ impl Runtime {
                 VLAN
             },
             max_frame_size: media.pdu_length() as u16,
-            // A class B interval holds as many of the stream's frames as
-            // go out in 250 µs, two at 6 samples a frame and 48 kHz.
-            max_interval_frames: if endpoint.out_config(out.1).class == SrClass::B {
-                (CLASS_B_INTERVAL / media.interval_nanos().max(1)).max(1) as u16
-            } else {
-                1
-            },
+            // One frame each interval of its class, which its format
+            // decides.
+            max_interval_frames: 1,
             priority: self.priority(out),
             rank: true,
             accumulated_latency: TALKER_LATENCY,
@@ -4016,7 +4016,8 @@ mod tests {
         let wireless = aaf(48_000, 8, 32, CLASS_B_FRAMES);
         assert_eq!(wireless, StreamFormat(0x0205_0220_0200_c000));
         let media = triib_stream::media::Media::of(wireless).unwrap();
-        assert_eq!(media.interval_nanos(), CLASS_B_INTERVAL);
+        assert_eq!(media.interval_nanos(), 250_000);
+        assert!(wireless.is_class_b());
         // A format chosen for eight channels carries over to two.
         assert!(same_packing(am824(48_000, 2), am824(48_000, 8)));
         assert!(same_packing(milan(48_000, 2, 24), milan(48_000, 8, 24)));
@@ -4453,7 +4454,7 @@ mod tests {
         assert!(is_device_model(model.entity_model_id));
         assert_eq!((model.outputs.len(), model.inputs.len()), (1, 0));
         assert_eq!(model.outputs[0].name, "Studio");
-        assert!(model.outputs[0].class_b);
+        assert!(model.outputs[0].class_b());
         assert_eq!(talker.stream_name(false, 0), "Studio");
         assert_eq!(
             talker.out_config(0).source(),

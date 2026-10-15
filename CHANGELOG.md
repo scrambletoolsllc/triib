@@ -135,6 +135,16 @@ it receives and sends.
   plays the stream's channels from the first, with silence where the
   stream has fewer. A format chosen so is kept. The entities' model IDs
   change, so controllers read them again once.
+- An output's SR class follows its format: class B's own formats, a frame
+  each 250 µs, send it in class B, and the others in class A, so a
+  controller picks the class by picking the format, and a class B stream
+  is never Milan's frames sent two to an interval. Its max transit time
+  moves from one class's default to the other's, where a controller set
+  none. `class = "B"` in `entities.toml` starts an output in class B's
+  formats. Every stream's descriptor says which classes its formats go
+  in, and an entity with audio streams advertises class B support.
+- A change of sampling rate keeps a stream in its SR class: class B's own
+  format moves to class B's own at the new rate, not to Milan's.
 - Talkers and listeners are folded into entities of any number of
   streams, as one of one stream does what they did. The Entities view's
   one button, Add entity, adds an entity with a stream each way, and its

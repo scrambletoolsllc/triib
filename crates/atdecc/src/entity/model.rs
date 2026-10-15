@@ -41,9 +41,15 @@ pub struct StreamModel {
     pub current_format: StreamFormat,
     /// Its channels, each an audio cluster; none for a media clock.
     pub channels: u16,
-    /// Sent in SR class B rather than A, as a stream crossing a Wi-Fi hop
-    /// must be (AVB Wireless profile, 4).
-    pub class_b: bool,
+}
+
+impl StreamModel {
+    /// Sent in SR class B rather than A, as its format decides: a frame
+    /// each class B interval, as a stream crossing a Wi-Fi hop sends
+    /// (AVB Wireless profile, 4).
+    pub fn class_b(&self) -> bool {
+        self.current_format.is_class_b()
+    }
 }
 
 /// What a talker or listener entity is.
@@ -286,11 +292,14 @@ impl EndpointModel {
                 let input = descriptor_type == DescriptorType::STREAM_INPUT;
                 let streams = if input { &self.inputs } else { &self.outputs };
                 let stream = streams.get(usize::from(index))?;
-                let mut flags = if stream.class_b {
-                    StreamFlags::CLASS_B
-                } else {
-                    StreamFlags::CLASS_A
-                };
+                // The classes its formats go in.
+                let mut flags = StreamFlags::empty();
+                if stream.formats.iter().any(|format| !format.is_class_b()) {
+                    flags |= StreamFlags::CLASS_A;
+                }
+                if stream.formats.iter().any(|format| format.is_class_b()) {
+                    flags |= StreamFlags::CLASS_B;
+                }
                 if input && self.clock_source_inputs.contains(&index) {
                     flags |= StreamFlags::CLOCK_SYNC_SOURCE;
                 }

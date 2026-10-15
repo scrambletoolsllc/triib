@@ -29,7 +29,6 @@ fn stream(name: &str) -> StreamModel {
         formats: vec![AAF_48K_8CH],
         current_format: AAF_48K_8CH,
         channels: 8,
-        class_b: false,
     }
 }
 
@@ -578,7 +577,6 @@ fn a_media_clock_stream_has_no_port_and_keeps_its_rate() {
             formats: vec![CRF_48K],
             current_format: CRF_48K,
             channels: 0,
-            class_b: false,
         },
     );
     let clock_stream = StreamId(0x9c6b_0030_9a2b_0001);
@@ -639,7 +637,6 @@ fn a_media_clock_input_is_a_clock_source() {
         formats: vec![CRF_48K],
         current_format: CRF_48K,
         channels: 0,
-        class_b: false,
     });
     model.clock_source_inputs = vec![1];
     let mut listener = Entity::new(model, &[]);
@@ -903,4 +900,77 @@ fn a_kept_input_carries_its_binding_and_stream() {
         Some(TALKER)
     );
     assert_eq!(listener.input_binding(1), None);
+}
+
+/// A stream output's SR class follows its format: class B's own, a frame
+/// each 250 µs, sends it in class B, as its stream info says, and its
+/// max transit time follows from one class's default to the other's,
+/// telling the controller; one a controller set stays.
+#[test]
+fn an_outputs_class_follows_its_format() {
+    use atdecc::aem::StreamInfoFlags;
+    use atdecc::descriptor::StreamFlags;
+
+    // AAF, 8 channels of 32-bit at 48 kHz: 12 samples a frame, class B's.
+    const CLASS_B_48K_8CH: StreamFormat = StreamFormat(0x0205_0220_0200_c000);
+    let mut network = Network::new();
+    let mut model = model(TALKER, "Talker", true);
+    model.outputs[0].formats = vec![CLASS_B_48K_8CH, AAF_48K_8CH];
+    model.outputs[0].current_format = CLASS_B_48K_8CH;
+    let mut talker = Entity::new(model, &[(STREAM, DESTINATION)]);
+    talker.start(network.now);
+    network.talker = talker;
+    network.controller.discover(None);
+    network.run(3000);
+    let read = network.controller.model(TALKER).unwrap();
+    let output = read.streams(false).next().unwrap();
+    assert_eq!(
+        output.stream_flags,
+        StreamFlags::CLASS_A | StreamFlags::CLASS_B
+    );
+    let info = read.stream_info(DescriptorType::STREAM_OUTPUT, 0).unwrap();
+    assert!(info.flags.contains(StreamInfoFlags::CLASS_B));
+    assert_eq!(network.talker.max_transit_time(0), Some(12_000_000));
+
+    // Class A's format takes it to class A, and class A's default.
+    let now = network.now;
+    network.controller.set_stream_format(
+        now,
+        TALKER,
+        DescriptorType::STREAM_OUTPUT,
+        0,
+        AAF_48K_8CH,
+    );
+    network.run(1000);
+    assert!(!network.talker.model().outputs[0].class_b());
+    assert_eq!(network.talker.max_transit_time(0), Some(2_000_000));
+    assert!(network.talker.max_transit_time_is_default(0));
+    assert!(
+        network
+            .entity_events
+            .contains(&EntityEvent::MaxTransitTimeChanged {
+                index: 0,
+                nanoseconds: 2_000_000,
+            })
+    );
+    let read = network.controller.model(TALKER).unwrap();
+    assert_eq!(read.max_transit_time(0), Some(2_000_000));
+
+    // A max transit time a controller set stays through the next change.
+    let now = network.now;
+    network
+        .controller
+        .set_max_transit_time(now, TALKER, 0, 5_000_000);
+    network.run(1000);
+    let now = network.now;
+    network.controller.set_stream_format(
+        now,
+        TALKER,
+        DescriptorType::STREAM_OUTPUT,
+        0,
+        CLASS_B_48K_8CH,
+    );
+    network.run(1000);
+    assert!(network.talker.model().outputs[0].class_b());
+    assert_eq!(network.talker.max_transit_time(0), Some(5_000_000));
 }

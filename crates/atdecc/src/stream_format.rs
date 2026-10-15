@@ -171,6 +171,18 @@ impl StreamFormat {
         }
     }
 
+    /// Whether a stream in it is SR class B's: AAF whose frames each hold
+    /// a class B interval's samples, 4000 frames a second. Others go one
+    /// frame each class A interval, as Milan's do, or slower, as a media
+    /// clock's.
+    pub fn is_class_b(self) -> bool {
+        match self.kind() {
+            FormatKind::Aaf(aaf) => nsr_hertz(aaf.nsr)
+                .is_some_and(|rate| u32::from(aaf.samples_per_frame) * 4000 == rate),
+            _ => false,
+        }
+    }
+
     /// Whether the stream carries a media clock rather than audio.
     pub fn is_clock(self) -> bool {
         matches!(self.kind(), FormatKind::Crf(_))
@@ -224,15 +236,19 @@ impl StreamFormat {
     }
 
     /// Whether two audio formats pack samples alike but for their rate:
-    /// the same AAF sample format, depth and channels, or the same IEC
-    /// 61883-6 packing, quadlets and labels. An entity changing its
-    /// sampling rate moves its streams to the format that matches this
-    /// way.
+    /// the same AAF sample format, depth and channels sent as many frames
+    /// a second, so in the same SR class, or the same IEC 61883-6
+    /// packing, quadlets and labels. An entity changing its sampling rate
+    /// moves its streams to the format that matches this way.
     pub fn same_but_rate(self, other: StreamFormat) -> bool {
         match (self.kind(), other.kind()) {
             (FormatKind::Aaf(one), FormatKind::Aaf(two)) => {
+                let frames = |aaf: &Aaf, rate: Option<u32>| {
+                    rate.map(|rate| u64::from(aaf.samples_per_frame) * u64::from(rate))
+                };
                 (one.up_to, one.sample_format, one.bit_depth, one.channels)
                     == (two.up_to, two.sample_format, two.bit_depth, two.channels)
+                    && frames(&one, nsr_hertz(two.nsr)) == frames(&two, nsr_hertz(one.nsr))
             }
             (FormatKind::Iec61883_6(one), FormatKind::Iec61883_6(two)) => {
                 one.packing == two.packing
@@ -479,6 +495,14 @@ mod tests {
         let aaf_24_in_32 = StreamFormat(0x0205_0218_0200_6000);
         assert!(aaf_48.same_but_rate(aaf_96));
         assert!(!aaf_48.same_but_rate(aaf_24_in_32));
+        // Nor do half the frames, SR class B's 12 samples at 48 kHz, pass
+        // for class A's 12 at 96 kHz, but class B's 24 there do.
+        let class_b_48 = StreamFormat(0x0205_0220_0200_c000);
+        let class_b_96 = StreamFormat(0x0207_0220_0201_8000);
+        assert!(!class_b_48.same_but_rate(aaf_96));
+        assert!(class_b_48.same_but_rate(class_b_96));
+        assert!(class_b_48.is_class_b() && class_b_96.is_class_b());
+        assert!(!aaf_48.is_class_b() && !aaf_96.is_class_b());
         // AM824, 8 channels, at 48 and 96 kHz.
         let am824_48 = StreamFormat(0x00a0_0208_4000_0800);
         let am824_96 = StreamFormat(0x00a0_0408_4000_0800);

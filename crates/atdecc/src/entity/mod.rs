@@ -188,18 +188,15 @@ struct Output {
     destination: MacAddress,
     reservation: OutputReservation,
     max_transit_time: u32,
-    class_b: bool,
     counters: [u32; 32],
 }
 
-impl Output {
-    /// The max transit time when none is set, by the stream's class.
-    fn default_transit(&self) -> u32 {
-        if self.class_b {
-            MAX_TRANSIT_TIME_CLASS_B
-        } else {
-            MAX_TRANSIT_TIME
-        }
+/// A stream output's max transit time when none is set, by its class.
+fn default_transit(class_b: bool) -> u32 {
+    if class_b {
+        MAX_TRANSIT_TIME_CLASS_B
+    } else {
+        MAX_TRANSIT_TIME
     }
 }
 
@@ -268,12 +265,7 @@ impl Entity {
                 stream_id,
                 destination,
                 reservation: OutputReservation::default(),
-                max_transit_time: if stream.class_b {
-                    MAX_TRANSIT_TIME_CLASS_B
-                } else {
-                    MAX_TRANSIT_TIME
-                },
-                class_b: stream.class_b,
+                max_transit_time: default_transit(stream.class_b()),
                 counters: [0; 32],
             })
             .collect();
@@ -340,17 +332,23 @@ impl Entity {
 
     /// Whether a stream output's max transit time is its class's default.
     pub fn max_transit_time_is_default(&self, index: u16) -> bool {
+        let at = usize::from(index);
         self.outputs
-            .get(usize::from(index))
-            .is_none_or(|output| output.max_transit_time == output.default_transit())
+            .get(at)
+            .zip(self.model.outputs.get(at))
+            .is_none_or(|(output, stream)| {
+                output.max_transit_time == default_transit(stream.class_b())
+            })
     }
 
     /// Gives a stream output back the max transit time a controller set
     /// before, as the entity starts; zero is the default.
     pub fn restore_max_transit_time(&mut self, index: u16, nanoseconds: u32) {
-        if let Some(output) = self.outputs.get_mut(usize::from(index)) {
+        let at = usize::from(index);
+        let class_b = self.model.outputs.get(at).is_some_and(StreamModel::class_b);
+        if let Some(output) = self.outputs.get_mut(at) {
             output.max_transit_time = match nanoseconds {
-                0 => output.default_transit(),
+                0 => default_transit(class_b),
                 nanoseconds => nanoseconds,
             };
         }
@@ -705,7 +703,13 @@ impl Entity {
             | EntityCapabilities::GPTP_SUPPORTED
             | EntityCapabilities::AEM_IDENTIFY_CONTROL_INDEX_VALID
             | EntityCapabilities::AEM_INTERFACE_INDEX_VALID;
-        if self.outputs.iter().any(|output| output.class_b) {
+        let model = &self.model;
+        if model
+            .outputs
+            .iter()
+            .chain(&model.inputs)
+            .any(|stream| stream.formats.iter().any(|format| format.is_class_b()))
+        {
             capabilities | EntityCapabilities::CLASS_B_SUPPORTED
         } else {
             capabilities
@@ -1443,6 +1447,11 @@ impl Entity {
                     return (AemStatus::NO_SUCH_DESCRIPTOR, echo(), false);
                 }
                 let index = read_u16(payload, 2);
+                let class_b = self
+                    .model
+                    .outputs
+                    .get(usize::from(index))
+                    .is_some_and(StreamModel::class_b);
                 let Some(output) = self.outputs.get_mut(usize::from(index)) else {
                     return (AemStatus::NO_SUCH_DESCRIPTOR, echo(), false);
                 };
@@ -1453,7 +1462,7 @@ impl Entity {
                     }
                     // Zero asks for the default.
                     let wanted = match read_u64(payload, 4) {
-                        0 => output.default_transit(),
+                        0 => default_transit(class_b),
                         nanoseconds => u32::try_from(nanoseconds).unwrap_or(u32::MAX),
                     };
                     if wanted != output.max_transit_time {
@@ -1606,12 +1615,16 @@ impl Entity {
                 return (AemStatus::BAD_ARGUMENTS, answer, false);
             }
             if format != stream.current_format {
+                let before = stream.current_format;
                 stream.current_format = format;
                 self.events.push_back(EntityEvent::StreamFormatChanged {
                     descriptor_type,
                     index,
                     format,
                 });
+                if descriptor_type == DescriptorType::STREAM_OUTPUT {
+                    self.transit_follows_class(index, before);
+                }
                 // A format at another rate takes the entity to that rate,
                 // and its other streams with it; a media clock's base
                 // frequency is no audio rate.
@@ -1637,6 +1650,31 @@ impl Entity {
         };
         answer.extend_from_slice(&stream[usize::from(index)].current_format.0.to_be_bytes());
         (AemStatus::SUCCESS, answer, true)
+    }
+
+    /// Keeps a stream output's max transit time its class's default where
+    /// its format moved it from the class of `before`, whose default it
+    /// was, telling registered controllers.
+    fn transit_follows_class(&mut self, index: u16, before: StreamFormat) {
+        let at = usize::from(index);
+        let Some(now) = self.model.outputs.get(at).map(StreamModel::class_b) else {
+            return;
+        };
+        let was = before.is_class_b();
+        let Some(output) = self.outputs.get_mut(at) else {
+            return;
+        };
+        if now == was || output.max_transit_time != default_transit(was) {
+            return;
+        }
+        let nanoseconds = default_transit(now);
+        output.max_transit_time = nanoseconds;
+        self.events
+            .push_back(EntityEvent::MaxTransitTimeChanged { index, nanoseconds });
+        let mut payload = Vec::from(DescriptorType::STREAM_OUTPUT.0.to_be_bytes());
+        payload.extend_from_slice(&index.to_be_bytes());
+        payload.extend_from_slice(&u64::from(nanoseconds).to_be_bytes());
+        self.notify(AemCommandType::SET_MAX_TRANSIT_TIME, &payload, None);
     }
 
     /// Moves every stream but `except` to the format that packs samples as
@@ -1755,7 +1793,7 @@ impl Entity {
                 if destination != UNADDRESSED {
                     flags |= StreamInfoFlags::STREAM_DEST_MAC_VALID;
                 }
-                if output.class_b {
+                if self.model.outputs[usize::from(index)].class_b() {
                     flags |= StreamInfoFlags::CLASS_B;
                 }
                 if output.reservation.registering {

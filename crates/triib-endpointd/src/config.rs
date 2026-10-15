@@ -53,7 +53,8 @@ pub enum LiteChoice {
     On,
 }
 
-/// The SR class a talker sends its stream in.
+/// The SR class a talker starts its stream in, its formats then leading
+/// with that class's own; the format a controller picks decides it after.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum SrClass {
     /// 8000 frames a second's reservation on priority 3, 2 ms.
@@ -121,7 +122,8 @@ pub struct StreamConfig {
     /// when left out.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mappings: Option<String>,
-    /// An output's SR class, `"A"` when left out.
+    /// The SR class an output starts in, `"A"` when left out; the format
+    /// a controller picks decides it after.
     #[serde(default, skip_serializing_if = "SrClass::is_a")]
     pub class: SrClass,
 }
