@@ -115,6 +115,13 @@ const PTP4L_WAIT: Duration = Duration::from_secs(8);
 /// The least time between tries at starting triib's ptp4l unit where none
 /// answers.
 const PTP4L_AGAIN: Duration = Duration::from_secs(120);
+/// How far ptp4l's clock may be off the grandmaster's, in nanoseconds,
+/// before the daemon holds it out of sync: far past a servo settling, well
+/// short of what a stream's presentation times bear.
+const OFF_SYNC: u64 = 1_000_000;
+/// How long ptp4l may stay out of sync before the daemon restarts triib's
+/// unit running it, as ptp4l steps the clock when it starts.
+const OFF_RESTART: Duration = Duration::from_secs(10);
 
 /// What the sockets and ptp4l hand the runtime.
 enum Input {
@@ -792,6 +799,11 @@ pub struct Runtime {
     /// When the daemon last started triib's ptp4l unit, or found it could
     /// not, where no ptp4l answered for the interface.
     ptp4l_tried_at: Option<Duration>,
+    /// Since when ptp4l's clock has been out of sync, more than `OFF_SYNC`
+    /// off the grandmaster's, and when the daemon last restarted triib's
+    /// unit for it.
+    off_since: Option<Duration>,
+    off_restarted_at: Option<Duration>,
     /// Until when the link coming up is the link unit's doing, where AVB
     /// Lite held as the daemon ran it.
     link_own_until: Option<Duration>,
@@ -1078,6 +1090,8 @@ impl Runtime {
             link_reset_at: None,
             link_fixed_at: None,
             ptp4l_tried_at: None,
+            off_since: None,
+            off_restarted_at: None,
             link_own_until: None,
             clock,
             talkers: HashMap::new(),
@@ -1674,16 +1688,23 @@ impl Runtime {
                 self.ptp_status.clone_from(&status);
                 self.update_ptp4l();
                 self.update_correction();
+                // A clock that far off keeps no gPTP time for the streams,
+                // whatever the link: the entities say so, as not asCapable,
+                // so controllers show them out of sync.
+                let off = status
+                    .as_ref()
+                    .and_then(|status| status.offset)
+                    .filter(|offset| offset.unsigned_abs() > OFF_SYNC);
+                self.off_since = off.map(|_| self.off_since.unwrap_or(since));
+                let state = |status: &gptp::Status| match off {
+                    Some(offset) => format!("{offset} ns off it, not in sync"),
+                    None if status.gptp.as_capable => "asCapable".into(),
+                    None => "not asCapable".into(),
+                };
                 self.gptp_text = match &status {
-                    Some(status) => format!(
-                        "grandmaster {}, {}",
-                        status.gptp.grandmaster,
-                        if status.gptp.as_capable {
-                            "asCapable"
-                        } else {
-                            "not asCapable"
-                        }
-                    ),
+                    Some(status) => {
+                        format!("grandmaster {}, {}", status.gptp.grandmaster, state(status))
+                    }
                     None => "ptp4l does not answer for this interface".into(),
                 };
                 match &status {
@@ -1691,15 +1712,14 @@ impl Runtime {
                         "gPTP: grandmaster {}, peer delay {} ns, {}",
                         status.gptp.grandmaster,
                         status.gptp.propagation_delay,
-                        if status.gptp.as_capable {
-                            "asCapable"
-                        } else {
-                            "not asCapable"
-                        }
+                        state(status)
                     )),
                     None => log("gPTP: ptp4l does not answer for this interface"),
                 }
-                let gptp = status.map(|status| status.gptp).unwrap_or_default();
+                let mut gptp = status.map(|status| status.gptp).unwrap_or_default();
+                if off.is_some() {
+                    gptp.as_capable = false;
+                }
                 for endpoint in &mut self.endpoints {
                     endpoint.entity.set_gptp(now, gptp.clone());
                 }
@@ -1755,6 +1775,7 @@ impl Runtime {
             self.steer_profile();
         }
         self.start_ptp4l();
+        self.restart_ptp4l();
         if self.lite.is_none()
             && self.config.avb_lite != LiteChoice::Off
             && let Some(reason) = self.fallback.reason()
@@ -3081,6 +3102,42 @@ impl Runtime {
             .spawn(move || {
                 if let Err(error) = profile::start(&interface, profile) {
                     log(format!("ptp4l: cannot start {unit}: {error}"));
+                }
+            });
+    }
+
+    /// Restarts triib's unit running ptp4l once its clock has stayed out of
+    /// sync for `OFF_RESTART`, as when a driver reset the hardware clock and
+    /// ptp4l does not step it: starting, ptp4l does. A ptp4l run another
+    /// way stays as it is.
+    fn restart_ptp4l(&mut self) {
+        let since = self.elapsed();
+        let Some(off) = self.off_since else {
+            return;
+        };
+        let Some(profile) = self.link.and_then(|link| link.unit) else {
+            return;
+        };
+        if since < off + OFF_RESTART
+            || self
+                .off_restarted_at
+                .is_some_and(|at| since < at + PTP4L_AGAIN)
+        {
+            return;
+        }
+        self.off_restarted_at = Some(since);
+        self.off_since = None;
+        let interface = self.interface.clone();
+        let unit = profile.unit(&interface);
+        log(format!(
+            "ptp4l: out of sync for {} s; restarting {unit}",
+            OFF_RESTART.as_secs()
+        ));
+        let _ = std::thread::Builder::new()
+            .name("ptp4l unit".into())
+            .spawn(move || {
+                if let Err(error) = profile::restart_ptp4l(&interface, profile) {
+                    log(format!("ptp4l: cannot restart {unit}: {error}"));
                 }
             });
     }

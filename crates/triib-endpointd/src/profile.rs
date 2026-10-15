@@ -145,6 +145,12 @@ pub fn start(interface: &str, profile: Profile) -> io::Result<()> {
     }
 }
 
+/// Starts the unit running `profile` on `interface` again, ptp4l stepping
+/// its clock as it starts.
+pub fn restart_ptp4l(interface: &str, profile: Profile) -> io::Result<()> {
+    restart(interface, &profile.unit(interface))
+}
+
 /// Runs the link unit for `interface` again, putting EEE and PAUSE off
 /// once more; the link renegotiates.
 pub fn apply_link(interface: &str) -> io::Result<()> {
