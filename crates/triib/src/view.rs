@@ -88,7 +88,7 @@ pub fn window(triib: &Triib) -> Element<'_, Message> {
 fn panels(triib: &Triib, size: iced::Size) -> Element<'_, Message> {
     let beside = triib.settings.inspector && size.width >= INSPECTOR_BESIDE;
     let main: Element<'_, Message> = if triib.settings.inspector && !beside {
-        inspector(triib, Length::Fill)
+        inspector(triib, Length::Fill, size.width)
     } else {
         container(content(triib)).width(Fill).height(Fill).into()
     };
@@ -112,9 +112,12 @@ fn panels(triib: &Triib, size: iced::Size) -> Element<'_, Message> {
         return main;
     }
     // The panels keep their sides in every language.
-    iced::widget::row![main, inspector(triib, component::SIDE_SHEET_WIDTH.into())]
-        .height(Fill)
-        .into()
+    let inspector = inspector(
+        triib,
+        component::SIDE_SHEET_WIDTH.into(),
+        component::SIDE_SHEET_WIDTH,
+    );
+    iced::widget::row![main, inspector].height(Fill).into()
 }
 
 /// An interface as the picker lists it.
@@ -513,7 +516,12 @@ fn content(triib: &Triib) -> Element<'_, Message> {
     }
 }
 
-fn inspector(triib: &Triib, width: Length) -> Element<'_, Message> {
+/// What the inspector's header has beside its title: its padding, the
+/// close button and a gap.
+const INSPECTOR_TITLE_ROOM: f32 = 24.0 + 12.0 + 40.0 + 8.0;
+
+/// The inspector, `across` pixels wide.
+fn inspector(triib: &Triib, width: Length, across: f32) -> Element<'_, Message> {
     let open = triib.inspector_tab;
     let body: Element<'_, Message> = match triib.selected {
         None => note(fl!("inspector-select")),
@@ -555,29 +563,117 @@ fn inspector(triib: &Triib, width: Length) -> Element<'_, Message> {
         ),
     ]);
     drop(fixed);
-    component::side_sheet_tabbed(
-        fl!("inspector-title"),
-        Message::InspectorToggled,
-        tabs,
-        body,
-        width,
-    )
+    // The entity's name, cut short to leave the close button its room.
+    let title = match triib.selected {
+        Some(entity_id) => {
+            let (size, _) = Type::TitleLarge.metrics();
+            crate::text::fit(
+                &triib.entity_name_of(entity_id),
+                Type::TitleLarge.font(false),
+                size,
+                across - INSPECTOR_TITLE_ROOM,
+            )
+            .name
+        }
+        None => fl!("inspector-title"),
+    };
+    component::side_sheet_tabbed(title, Message::InspectorToggled, tabs, body, width)
 }
 
 /// A label and its value, in the inspector.
 /// The ID of the field a name is edited in, for focusing it.
 pub const NAME_FIELD: &str = "inspector-name";
 
+/// How wide a label beside its value is, in the inspector.
+const LABEL_WIDTH: f32 = 132.0;
+/// The room beside a label where the inspector is narrowest, beside the
+/// view: the sheet less its content's padding, the label and the gap.
+const BESIDE: f32 = component::SIDE_SHEET_WIDTH - 2.0 * 24.0 - LABEL_WIDTH - 8.0;
+/// What a picker's button adds to its choice: an extra small drop-down's
+/// padding, the gap and the arrow.
+const PICKER_ROOM: f32 = 2.0 * PICKER_INSET + 4.0 + 18.0;
+/// How far a picker's text is from its edge: an extra small drop-down's
+/// padding.
+const PICKER_INSET: f32 = 12.0;
+
+/// What a field of the inspector shows, and whether it is short enough
+/// to sit beside its label.
+pub(crate) struct Value<'a> {
+    view: Element<'a, Message>,
+    short: bool,
+    /// How far its text is from its edge.
+    inset: f32,
+}
+
+impl<'a> Value<'a> {
+    /// `view`, at most `width` pixels wide.
+    pub(crate) fn new(view: impl Into<Element<'a, Message>>, width: f32) -> Self {
+        Self {
+            view: view.into(),
+            short: width <= BESIDE,
+            inset: 0.0,
+        }
+    }
+
+    /// Body text.
+    pub(crate) fn text(content: String) -> Self {
+        let width = scramble_ui::font::measure(&content, Type::BodyMedium);
+        Self::new(styled(content, Type::BodyMedium), width)
+    }
+
+    /// An extra small picker of choices labelled `labels`, as wide as the
+    /// widest of them, its text where other values' is.
+    pub(crate) fn picker<S: AsRef<str>>(
+        view: impl Into<Element<'a, Message>>,
+        labels: impl IntoIterator<Item = S>,
+    ) -> Self {
+        let widest = labels
+            .into_iter()
+            .map(|label| scramble_ui::font::measure(label.as_ref(), Type::BodyMedium))
+            .fold(0.0, f32::max);
+        Self {
+            inset: PICKER_INSET,
+            ..Self::new(view, widest + PICKER_ROOM - PICKER_INSET)
+        }
+    }
+}
+
+impl<'a> From<Value<'a>> for Element<'a, Message> {
+    fn from(value: Value<'a>) -> Self {
+        value.view
+    }
+}
+
+/// A label and its value: beside it where the value fits there, as a
+/// rate or a channel count does, its text where other values' is, else
+/// under it.
+pub(crate) fn field<'a>(label: impl Into<String>, value: Value<'a>) -> Element<'a, Message> {
+    if value.short {
+        beside(label, value.view, LABEL_WIDTH - value.inset)
+    } else {
+        stacked(label, value.view)
+    }
+}
+
 /// A label and an element beside it, in the inspector.
 fn labeled<'a>(
     label: impl Into<String>,
     value: impl Into<Element<'a, Message>>,
 ) -> Element<'a, Message> {
+    beside(label, value, LABEL_WIDTH)
+}
+
+/// A label `width` pixels wide and an element beside it.
+fn beside<'a>(
+    label: impl Into<String>,
+    value: impl Into<Element<'a, Message>>,
+    width: f32,
+) -> Element<'a, Message> {
     let label: String = label.into();
     scramble_ui::row![
         styled(label, Type::BodyMedium)
             .style(style::on_surface_variant)
-            .width(Length::Fixed(132.0))
+            .width(Length::Fixed(width))
             .align_x(dir::text_start()),
         container(value)
             .width(Fill)
@@ -687,11 +783,12 @@ fn picker<'a, T>(
     shown: T,
     busy: bool,
     pick: impl Fn(T) -> Action + 'a,
-) -> Element<'a, Message>
+) -> Value<'a>
 where
     T: ToString + PartialEq + 'a,
 {
-    dropdown::pick(choices, Some(shown), move |choice| {
+    let labels: Vec<String> = choices.iter().map(ToString::to_string).collect();
+    let view = dropdown::pick(choices, Some(shown), move |choice| {
         if busy {
             Message::Nothing
         } else {
@@ -699,8 +796,8 @@ where
         }
     })
     .size(button::Size::ExtraSmall)
-    .width(Fill)
-    .into()
+    .width(Fill);
+    Value::picker(view, labels)
 }
 
 /// Max transit times a picker offers, in nanoseconds: from a short class
@@ -722,12 +819,7 @@ impl fmt::Display for Transit {
 /// A stream output's max transit time, `current` nanoseconds, with a
 /// picker of others; set by SET_MAX_TRANSIT_TIME, through triib-endpointd
 /// for this computer's, which keeps it.
-fn transit_picker<'a>(
-    triib: &'a Triib,
-    entity: EntityId,
-    output: u16,
-    current: u64,
-) -> Element<'a, Message> {
+fn transit_picker<'a>(triib: &'a Triib, entity: EntityId, output: u16, current: u64) -> Value<'a> {
     let changing = triib
         .changing(|action| {
             matches!(action, Action::SetMaxTransitTime { entity: pending, output: place, .. }
@@ -758,7 +850,7 @@ fn format_picker<'a>(
     triib: &'a Triib,
     entity: EntityId,
     stream: &StreamDescriptor<'_>,
-) -> Element<'a, Message> {
+) -> Value<'a> {
     let (descriptor_type, index) = (stream.descriptor_type, stream.index);
     let changing = triib
         .changing(|action| {
@@ -775,9 +867,12 @@ fn format_picker<'a>(
         formats.insert(0, stream.current_format);
     }
     if formats.len() < 2 {
-        return styled(shown.to_string(), Type::BodySmall)
-            .style(style::on_surface_variant)
-            .into();
+        let shown = shown.to_string();
+        let width = scramble_ui::font::measure(&shown, Type::BodySmall);
+        return Value::new(
+            styled(shown, Type::BodySmall).style(style::on_surface_variant),
+            width,
+        );
     }
     picker(formats, shown, changing.is_some(), move |format| {
         Action::SetStreamFormat {
@@ -821,7 +916,7 @@ fn rate_picker<'a>(
     triib: &'a Triib,
     entity: EntityId,
     unit: &AudioUnitDescriptor<'_>,
-) -> Element<'a, Message> {
+) -> Value<'a> {
     let index = unit.index;
     let changing = triib
         .changing(|action| {
@@ -839,7 +934,7 @@ fn rate_picker<'a>(
         rates.insert(0, current);
     }
     if rates.len() < 2 {
-        return styled(shown.to_string(), Type::BodyMedium).into();
+        return Value::text(shown.to_string());
     }
     picker(rates, shown, changing.is_some(), move |rate| {
         Action::SetSamplingRate {
@@ -870,7 +965,7 @@ fn configuration_picker<'a>(
     entity: EntityId,
     model: &EntityModel,
     current: u16,
-) -> Option<Element<'a, Message>> {
+) -> Option<Value<'a>> {
     let choices: Vec<Configuration> = describe::configurations(model)
         .into_iter()
         .map(|(index, label)| Configuration { index, label })
@@ -919,7 +1014,7 @@ pub(crate) fn source_picker<'a>(
     entity: EntityId,
     model: &EntityModel,
     domain: &ClockDomainDescriptor<'_>,
-) -> Result<Element<'a, Message>, String> {
+) -> Result<Value<'a>, String> {
     let domain_index = domain.index;
     let source = |index: u16| Source {
         index,
@@ -964,7 +1059,7 @@ pub(crate) fn property<'a>(label: impl Into<String>, value: String) -> Element<'
     scramble_ui::row![
         styled(label, Type::BodyMedium)
             .style(style::on_surface_variant)
-            .width(Length::Fixed(132.0))
+            .width(Length::Fixed(LABEL_WIDTH))
             .align_x(dir::text_start()),
         styled(value, Type::BodyMedium)
             .width(Fill)
@@ -1135,7 +1230,7 @@ fn entity_sections<'a>(
             or_unset(descriptor.serial_number),
         ));
         match configuration_picker(triib, entity_id, model, descriptor.current_configuration) {
-            Some(picker) => items.push(stacked(fl!("entity-configuration"), picker)),
+            Some(picker) => items.push(field(fl!("entity-configuration"), picker)),
             None => {
                 let configuration = model
                     .name_of(
@@ -1163,14 +1258,13 @@ fn entity_sections<'a>(
             let name = model
                 .name_of(DescriptorType::CLOCK_DOMAIN, domain.index)
                 .map_or_else(|| fl!("entity-clock-domain"), str::to_owned);
-            items.push(stacked(
+            items.push(field(
                 name,
-                source_picker(triib, entity_id, model, &domain)
-                    .unwrap_or_else(|name| styled(name, Type::BodyMedium).into()),
+                source_picker(triib, entity_id, model, &domain).unwrap_or_else(Value::text),
             ));
         }
         for unit in model.audio_units() {
-            items.push(stacked(
+            items.push(field(
                 fl!("entity-sampling-rate"),
                 rate_picker(triib, entity_id, &unit),
             ));
@@ -1352,10 +1446,8 @@ fn stream_list<'a>(
             right: if scrolls { 12.0 } else { 0.0 },
             ..iced::Padding::ZERO
         });
-        iced::widget::scrollable(column)
-            .height(Fill)
-            .style(style::scrollbar)
-            .into()
+        // The thin scrollbar the matrix's and the other lists' have.
+        component::scroll(column).height(Fill).into()
     });
     container(list).height(height).width(Fill).into()
 }
@@ -1393,7 +1485,7 @@ fn stream_details<'a>(
         input,
         stream.index,
     ));
-    items.push(stacked(
+    items.push(field(
         fl!("stream-format"),
         format_picker(triib, entity_id, stream),
     ));
@@ -1405,7 +1497,7 @@ fn stream_details<'a>(
         .then(|| model.max_transit_time(stream.index))
         .flatten()
     {
-        items.push(stacked(
+        items.push(field(
             fl!("stream-max-transit"),
             transit_picker(triib, entity_id, stream.index, nanoseconds),
         ));

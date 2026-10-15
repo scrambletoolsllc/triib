@@ -19,7 +19,7 @@ use triib_endpointd::config::{Direction, VIRTUAL};
 use crate::app::{Message, Triib};
 use crate::fl;
 use crate::host::StreamChange;
-use crate::view::{property, stacked};
+use crate::view::{Value, field, property};
 
 /// The bar above the Entities view's table: why this computer cannot add
 /// entities of its own, or the button that adds one.
@@ -208,7 +208,7 @@ pub fn listen_sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Me
         Side::Sent => (Side::Sent, listen.stream),
     };
     let pick_side = with.clone();
-    items.push(stacked(
+    items.push(field(
         fl!("listen-source"),
         choose(sides, current_side, move |(side, stream)| {
             pick_side(&|listen| {
@@ -257,7 +257,7 @@ pub fn listen_sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Me
         ),
     }));
     let pick_channels = with.clone();
-    items.push(stacked(
+    items.push(field(
         fl!("listen-channels"),
         choose(
             channels,
@@ -286,7 +286,7 @@ pub fn listen_sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Me
             }),
     );
     let pick_output = with.clone();
-    items.push(stacked(
+    items.push(field(
         fl!("listen-output"),
         choose(outputs, listen.output.clone(), move |output| {
             pick_output(&|listen| listen.output = output.clone())
@@ -304,7 +304,7 @@ pub fn listen_sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Me
             label: fl!("listen-gain-db", db = decibels(gain)),
         })
         .collect();
-    items.push(stacked(
+    items.push(field(
         fl!("listen-gain"),
         choose(gains, listen.gain_db, move |gain| {
             with(&|listen| listen.gain_db = gain)
@@ -380,15 +380,16 @@ fn choose<'a, T: Clone + PartialEq + fmt::Debug + 'a>(
     choices: Vec<Choice<T>>,
     current: T,
     pick: impl Fn(T) -> Message + 'a,
-) -> Element<'a, Message> {
+) -> Value<'a> {
     let shown = choices
         .iter()
         .find(|choice| choice.value == current)
         .cloned();
-    dropdown::pick(choices, shown, move |choice: Choice<T>| pick(choice.value))
+    let labels: Vec<String> = choices.iter().map(|choice| choice.label.clone()).collect();
+    let view = dropdown::pick(choices, shown, move |choice: Choice<T>| pick(choice.value))
         .size(button::Size::ExtraSmall)
-        .width(Fill)
-        .into()
+        .width(Fill);
+    Value::picker(view, labels)
 }
 
 /// The channel counts the inspector offers; six samples of each fit in a
@@ -499,13 +500,13 @@ pub fn stream_rows(
         return Vec::new();
     }
     vec![
-        stacked(
+        field(
             audio_label,
             audio_picker(triib, input, &stream.audio, move |spec| {
                 Message::HostStream(entity_id, StreamChange::Audio(at, spec))
             }),
         ),
-        stacked(
+        field(
             fl!("host-channels"),
             channel_picker(stream.channels, move |count| {
                 Message::HostStream(entity_id, StreamChange::Channels(at, count))
@@ -561,7 +562,7 @@ fn audio_picker<'a>(
     inputs: bool,
     current: &str,
     pick: impl Fn(String) -> Message + 'a,
-) -> Element<'a, Message> {
+) -> Value<'a> {
     let audio = |spec: &str, label: String| Audio {
         spec: spec.to_owned(),
         label,
@@ -587,25 +588,27 @@ fn audio_picker<'a>(
         .find(|choice| choice.spec == current)
         .cloned()
         .unwrap_or_else(|| audio(current, current.to_owned()));
+    let labels: Vec<String> = choices.iter().map(|choice| choice.label.clone()).collect();
     let _reading = dir::reading();
-    dropdown::pick(choices, Some(current), move |choice: Audio| {
+    let view = dropdown::pick(choices, Some(current), move |choice: Audio| {
         pick(choice.spec)
     })
     .size(button::Size::ExtraSmall)
-    .width(Fill)
-    .into()
+    .width(Fill);
+    Value::picker(view, labels)
 }
 
 /// A picker of channel counts, with `current` picked.
-fn channel_picker<'a>(current: u16, pick: impl Fn(u16) -> Message + 'a) -> Element<'a, Message> {
+fn channel_picker<'a>(current: u16, pick: impl Fn(u16) -> Message + 'a) -> Value<'a> {
     let mut counts = CHANNEL_COUNTS.to_vec();
     if !counts.contains(&current) {
         counts.push(current);
         counts.sort_unstable();
     }
+    let labels: Vec<String> = counts.iter().map(ToString::to_string).collect();
     let _reading = dir::reading();
-    dropdown::pick(counts, Some(current), pick)
+    let view = dropdown::pick(counts, Some(current), pick)
         .size(button::Size::ExtraSmall)
-        .width(Fill)
-        .into()
+        .width(Fill);
+    Value::picker(view, labels)
 }
