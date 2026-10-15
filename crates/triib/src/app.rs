@@ -101,6 +101,14 @@ pub struct Triib {
     pub mac_audio_device: Option<String>,
     /// Its output streams' channels, which the monitor can tap.
     pub mac_output_streams: Vec<u16>,
+    /// The height of the system title bar over the window's content, which
+    /// triib leaves room for in its toolbar's color: on macOS, where the
+    /// bar is transparent; zero elsewhere and in full screen.
+    pub title_bar: f32,
+    /// The window's content view on macOS, which the title bar's height
+    /// and double-clicks go through.
+    #[cfg(target_os = "macos")]
+    window_view: Option<usize>,
     mac_audio_checked: Option<std::time::Instant>,
     /// Entities that took another configuration and are being read again
     /// in it, with the one they took.
@@ -178,6 +186,15 @@ pub enum Message {
     InterfacePicked(String),
     ViewPicked(View),
     InspectorToggled,
+    /// The window's content view on macOS, once it is open.
+    #[cfg(target_os = "macos")]
+    WindowView(Option<usize>),
+    /// The window took another size, as it does entering or leaving full
+    /// screen, where the title bar leaves or comes back.
+    #[cfg(target_os = "macos")]
+    WindowResized,
+    /// A double-click on the strip under the transparent title bar.
+    TitleBarDoubleClicked,
     /// Show the log panel under the view, or hide it.
     LogToggled,
     /// A drag of the log panel's top edge, with its height and the most
@@ -366,6 +383,9 @@ impl Triib {
             mac_audio_device: None,
             mac_audio_checked: None,
             mac_output_streams: Vec::new(),
+            title_bar: 0.0,
+            #[cfg(target_os = "macos")]
+            window_view: None,
             reconfiguring: BTreeMap::new(),
             monitor: None,
             monitor_status: crate::monitor::Status::off(),
@@ -435,6 +455,9 @@ impl Triib {
             mac_audio_device: None,
             mac_audio_checked: None,
             mac_output_streams: Vec::new(),
+            title_bar: 0.0,
+            #[cfg(target_os = "macos")]
+            window_view: None,
             reconfiguring: BTreeMap::new(),
             monitor: None,
             monitor_status: crate::monitor::Status::off(),
@@ -484,6 +507,14 @@ impl Triib {
             system,
             Task::perform(desktop::animations_enabled(), Message::AnimationsEnabled),
             Task::perform(desktop::accent_color(), Message::SystemAccent),
+        ]);
+        // The window is open by the time this runs.
+        #[cfg(target_os = "macos")]
+        let tasks = Task::batch([
+            tasks,
+            iced::window::oldest()
+                .and_then(|id| iced::window::run(id, crate::title_bar_macos::content_view))
+                .map(Message::WindowView),
         ]);
         (triib, tasks)
     }
@@ -740,6 +771,22 @@ impl Triib {
             Message::InspectorToggled => {
                 self.settings.inspector = !self.settings.inspector;
                 self.save_settings();
+            }
+            #[cfg(target_os = "macos")]
+            Message::WindowView(view) => {
+                self.window_view = view;
+                self.title_bar = crate::title_bar_macos::height(view.unwrap_or(0));
+            }
+            #[cfg(target_os = "macos")]
+            Message::WindowResized => {
+                self.title_bar = crate::title_bar_macos::height(self.window_view.unwrap_or(0));
+            }
+            Message::TitleBarDoubleClicked =>
+            {
+                #[cfg(target_os = "macos")]
+                if let Some(view) = self.window_view {
+                    crate::title_bar_macos::double_clicked(view);
+                }
             }
             Message::LogToggled => {
                 self.settings.log = !self.settings.log;
@@ -1197,6 +1244,10 @@ impl Triib {
                 }
                 iced::Event::Window(iced::window::Event::Unfocused) => {
                     Some(Message::ShiftHeld(false))
+                }
+                #[cfg(target_os = "macos")]
+                iced::Event::Window(iced::window::Event::Resized(_)) => {
+                    Some(Message::WindowResized)
                 }
                 _ => None,
             }),

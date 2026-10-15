@@ -30,6 +30,8 @@ mod settings;
 mod settings_view;
 mod storage;
 mod text;
+#[cfg(target_os = "macos")]
+mod title_bar_macos;
 mod tools;
 mod topology;
 mod vendor;
@@ -140,6 +142,14 @@ fn main() -> iced::Result {
         #[cfg(target_os = "linux")]
         platform_specific: iced::window::settings::PlatformSpecific {
             application_id: app::APP_ID.to_owned(),
+            ..Default::default()
+        },
+        // On macOS, the title bar is transparent over triib's own chrome,
+        // which runs up behind it; see `Triib::title_bar`.
+        #[cfg(target_os = "macos")]
+        platform_specific: iced::window::settings::PlatformSpecific {
+            titlebar_transparent: true,
+            fullsize_content_view: true,
             ..Default::default()
         },
         ..iced::window::Settings::default()

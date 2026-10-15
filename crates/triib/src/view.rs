@@ -54,6 +54,23 @@ pub fn window(triib: &Triib) -> Element<'_, Message> {
         status_bar(triib),
     ]
     .into();
+    // Room for a transparent system title bar, in the toolbar's color, so
+    // the bar shows it behind its buttons and title with no seam.
+    let window = if triib.title_bar > 0.0 {
+        iced::widget::column![
+            iced::widget::mouse_area(
+                container(space())
+                    .width(Fill)
+                    .height(triib.title_bar)
+                    .style(style::chrome)
+            )
+            .on_double_click(Message::TitleBarDoubleClicked),
+            window
+        ]
+        .into()
+    } else {
+        window
+    };
     let window = if triib.settings_open {
         crate::settings_view::dialog(triib, window)
     } else if triib.presets_open {
