@@ -112,6 +112,16 @@ it receives and sends.
 - triib opens with the host entities listed for its interface back on
   the network, starting the daemon, as after a restart; it started only
   as one was added or a preset recalled.
+- A host entity whose ptp4l clock is more than a millisecond off the
+  grandmaster's reports itself not asCapable, so controllers show it out
+  of sync, and the daemon says how far off it is; it reported asCapable
+  however far off. Out of sync for 10 s, as when a driver reset the
+  hardware clock, triib's own ptp4l unit starts again, ptp4l stepping
+  the clock as it starts.
+- A stream's report says how many frames its socket dropped, its thread
+  behind, telling frames lost here from frames lost on the way, and the
+  socket holds about a tenth of a second of a stream rather than a few
+  hundredths, where the system allows.
 - Talkers and listeners are folded into entities of any number of
   streams, as one of one stream does what they did. The Entities view's
   one button, Add entity, adds an entity with a stream each way, and its

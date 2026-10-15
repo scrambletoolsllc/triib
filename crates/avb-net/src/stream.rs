@@ -75,6 +75,12 @@ impl FrameReceiver {
             receivers.iter().map(|receiver| &receiver.inner).collect();
         platform::FrameReceiver::ready(&inner, timeout)
     }
+
+    /// The frames the socket had no room for since last asked: its reader
+    /// fell behind.
+    pub fn dropped(&self) -> u64 {
+        self.inner.dropped()
+    }
 }
 
 /// Where an AVTP frame's payload starts: after the header, and the VLAN
@@ -98,6 +104,10 @@ mod platform {
 
     use super::{ETHERTYPE_AVTP, ETHERTYPE_VLAN};
     use crate::MacAddress;
+
+    /// The receive buffer a stream's socket asks for: a quarter of a second
+    /// of a class A stream of 1500-octet frames, as the kernel counts them.
+    const RECEIVE_ROOM: libc::c_int = 1 << 20;
 
     fn open_raw(interface: &str) -> io::Result<(OwnedFd, i32)> {
         let index = crate::interfaces::index_of(interface).ok_or_else(|| {
@@ -266,7 +276,45 @@ mod platform {
             if crate::interfaces::filters_vlans(interface).unwrap_or(false) {
                 join(libc::PACKET_MR_PROMISC, None)?;
             }
+            // Room for a reader held up a while: as much as the system lets
+            // a socket ask for, up to RECEIVE_ROOM, rather than the default
+            // of a few tens of milliseconds of a stream.
+            let room = RECEIVE_ROOM;
+            // SAFETY: `room` is a c_int that lives through the call, and the
+            // length passed is its size.
+            unsafe {
+                libc::setsockopt(
+                    fd.as_raw_fd(),
+                    libc::SOL_SOCKET,
+                    libc::SO_RCVBUF,
+                    (&raw const room).cast(),
+                    size_of::<libc::c_int>() as libc::socklen_t,
+                );
+            }
             Ok(Self { fd })
+        }
+
+        pub fn dropped(&self) -> u64 {
+            // SAFETY: tpacket_stats is plain data, valid when zeroed.
+            let mut stats: libc::tpacket_stats = unsafe { zeroed() };
+            let mut length = size_of::<libc::tpacket_stats>() as libc::socklen_t;
+            // SAFETY: `stats` and `length` live through the call, and the
+            // length says how much of `stats` the kernel may write; reading
+            // the counts resets them.
+            let read = unsafe {
+                libc::getsockopt(
+                    self.fd.as_raw_fd(),
+                    libc::SOL_PACKET,
+                    libc::PACKET_STATISTICS,
+                    (&raw mut stats).cast(),
+                    &raw mut length,
+                )
+            };
+            if read < 0 {
+                0
+            } else {
+                u64::from(stats.tp_drops)
+            }
         }
 
         pub fn receive(
@@ -401,6 +449,10 @@ mod platform {
 
         pub fn ready(_receivers: &[&Self], _timeout: Option<Duration>) -> io::Result<Vec<usize>> {
             Err(unsupported())
+        }
+
+        pub fn dropped(&self) -> u64 {
+            0
         }
     }
 }

@@ -27,6 +27,8 @@ const EARLY: i64 = 50_000_000;
 /// The longest the thread waits for a frame at once, so that it notices
 /// streams that stopped and streams that came.
 const LONGEST_WAIT: Duration = Duration::from_millis(20);
+/// How often the sockets are asked what they dropped.
+const DROPS_EVERY: Duration = Duration::from_millis(250);
 
 /// What a listener receives, and where it goes.
 #[derive(Debug, Clone, PartialEq)]
@@ -59,6 +61,9 @@ pub struct ListenerStats {
     pub unsupported_formats: u64,
     pub late: u64,
     pub early: u64,
+    /// Frames the socket had no room for, its thread behind: not Milan's,
+    /// but what tells a stream's frames lost here from lost on the way.
+    pub socket_drops: u64,
     /// Frames are arriving.
     pub locked: bool,
     /// The thread taking the frames runs real time.
@@ -83,6 +88,7 @@ struct Counters {
     unsupported_formats: AtomicU64,
     late: AtomicU64,
     early: AtomicU64,
+    socket_drops: AtomicU64,
     locked: AtomicBool,
     peak: AtomicU32,
     drift_ppm: AtomicI32,
@@ -103,6 +109,7 @@ impl Default for Counters {
             unsupported_formats: AtomicU64::new(0),
             late: AtomicU64::new(0),
             early: AtomicU64::new(0),
+            socket_drops: AtomicU64::new(0),
             locked: AtomicBool::new(false),
             peak: AtomicU32::new(0),
             drift_ppm: AtomicI32::new(0),
@@ -243,6 +250,7 @@ impl ListenerGroup {
             unsupported_formats: read(&counters.unsupported_formats),
             late: read(&counters.late),
             early: read(&counters.early),
+            socket_drops: read(&counters.socket_drops),
             locked: counters.locked.load(Ordering::Relaxed),
             realtime: self.shared.realtime.load(Ordering::Relaxed),
             drift_ppm: counters.drift_ppm.load(Ordering::Relaxed),
@@ -363,6 +371,7 @@ fn run(shared: &Shared, clock: &MediaClock, stop: &AtomicBool) {
     let mut seen = u64::MAX;
     let mut frame = vec![0u8; 1522];
     let mut samples = Vec::new();
+    let mut drops_read = Instant::now();
     while !stop.load(Ordering::Relaxed) {
         let changes = shared.changes.load(Ordering::Relaxed);
         if changes != seen {
@@ -411,6 +420,18 @@ fn run(shared: &Shared, clock: &MediaClock, stop: &AtomicBool) {
                 stream.expected = None;
                 if let Some(recovered) = &stream.opened.config.recovered {
                     recovered.lose();
+                }
+            }
+        }
+        if drops_read.elapsed() >= DROPS_EVERY {
+            drops_read = Instant::now();
+            for stream in running.iter().flatten() {
+                let dropped = stream.opened.receiver.dropped();
+                if dropped > 0 {
+                    stream
+                        .counters
+                        .socket_drops
+                        .fetch_add(dropped, Ordering::Relaxed);
                 }
             }
         }

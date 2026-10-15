@@ -2744,10 +2744,11 @@ impl Runtime {
                     (None, false) => String::new(),
                 };
                 log(format!(
-                    "{}: received {} frames, {} out of sequence, {} late, {} early, peak {:.3}, device {:+} ppm, {} short{}{}{clock}",
+                    "{}: received {} frames, {} out of sequence, {} dropped here, {} late, {} early, peak {:.3}, device {:+} ppm, {} short{}{}{clock}",
                     endpoint.stream_name(true, at as u16),
                     stats.frames_received,
                     stats.sequence_mismatches,
+                    stats.socket_drops,
                     stats.late,
                     stats.early,
                     listener.take_peak(),
