@@ -5,11 +5,11 @@ All notable changes to triib. Versions follow
 
 ## [Unreleased]
 
-The Streams tab, max transit times, media clock streams on this
-computer's entities with one chosen as their clock source, and this
-computer's talkers and listeners folded into its entities. On a Mac, the
-Mac's own AVB entity as this computer's, with its configurations, and
-Listen controls for what it receives and sends.
+The Streams tab, max transit times, media clock streams on host
+entities with one chosen as their clock source, and host talkers and
+listeners folded into host entities. On a Mac, the Mac's own AVB entity
+as a host entity, with its configurations, and Listen controls for what
+it receives and sends.
 
 ### Controller
 
@@ -45,7 +45,7 @@ Listen controls for what it receives and sends.
   to hear what the Mac receives, and for audio recording, to hear what
   it sends. Before macOS 14.2, which has no taps, the controls offer
   what the Mac receives alone and say why.
-- On a Mac, the Mac's own AVB entity shows as this computer's, with its
+- On a Mac, the Mac's own AVB entity shows as a host entity, with its
   Core Audio device, which macOS makes only while one of its streams is
   connected, and a button that opens Audio MIDI Setup; where AVB is
   off, the Entities view says where to turn it on.
@@ -56,10 +56,10 @@ Listen controls for what it receives and sends.
   "Controller on Mac mini", and stays listed for 5 minutes after its
   last command.
 - The network view leaves out controllers, which take no part in the
-  clock or the streams, and shows this computer as its own entities
-  where one is there, rather than as This computer beside them.
+  clock or the streams, and shows the local host as its host entities
+  where there is one, rather than as This computer beside them.
 - Controllers have an icon of their own, a traffic light, rather than
-  this computer's. triib's controller, which has no model to read, is
+  the host's. triib's controller, which has no model to read, is
   named for the computer it runs on: "triib on Mac mini" after an entity
   from the same address, "triib on this computer", else "triib
   controller".
@@ -99,7 +99,7 @@ Listen controls for what it receives and sends.
   it; a double-click there zooms or minimizes as the system's setting
   says.
 
-### This computer's entities (Linux)
+### Host entities (Linux)
 
 - Talkers and listeners are folded into entities of any number of
   streams, as one of one stream does what they did. The Entities view's
@@ -126,7 +126,7 @@ Listen controls for what it receives and sends.
   mappings, as Milan has them, kept in `entities.toml` and played as
   mapped.
 - An entity's input binds to its own output, which the matrix offers on
-  this computer's entities.
+  host entities.
 - The max transit times controllers set on an entity's outputs are kept
   in `entities.toml`.
 - Adding, removing or changing an entity's stream keeps the entity on
@@ -158,17 +158,16 @@ Listen controls for what it receives and sends.
   not where it is only capable of it, as an AVB Wireless station is.
 - An entity running AVB that could run AVB Lite shows "AVB (AVB Lite
   capable)".
-- Adding or removing one of this computer's entities leaves the others
+- Adding or removing a host entity leaves the others
   running, their stream addresses as they were.
-- This computer's entities show as its own from the moment they
-  advertise.
+- Host entities show as the host's from the moment they advertise.
 - A refused SET_MAX_TRANSIT_TIME no longer shows the time asked for.
 - A stream's own SR class sets its priority and its reservation, so an
   entity's class B stream is reserved as class B.
 - A preset moved to another computer renames the talkers its entities'
   inputs are bound to.
 - An entity lists each sampling rate once.
-- This computer's entities tell a talker when an input lets go of its
+- Host entities tell a talker when an input lets go of its
   stream: unbound, bound elsewhere, removed or leaving with its entity.
   A talker outside Milan, such as the Mac, kept the connection a probe
   made and streamed on to a listener long gone.

@@ -7,23 +7,23 @@ streams, manages media clocks and diagnoses problems. On a Linux computer
 with a hardware timestamping Ethernet interface it also runs entities of
 its own, routed to the computer's audio, which appear in the connection
 matrix like any other entity; on a Mac it shows the Mac's own AVB entity
-as this computer's. Written in Rust with iced, sharing
+as a host entity. Written in Rust with iced, sharing
 prev's look, widgets and window layout through scramble-ui.
 
 ## Status
 
 - Done: the controller on Linux, macOS and Windows (P0, P1, P2), in 38
-  languages (P1.1), and this computer's own talkers and listeners on
+  languages (P1.1), and host talkers and listeners on
   Linux, on AVB and AVB Lite networks (P3). Released as 0.9.0 on
   2026-10-10, with packages for Linux on x86_64, ARM64 and RISC-V,
   Windows on x64 and ARM64, the programs and installer signed, and macOS
   on Apple Silicon; the website is triib.run.
-- Done for 1.0.0: AVB Wireless (P3.1); this computer's entities with
+- Done for 1.0.0: AVB Wireless (P3.1); host entities with
   several streams, each with its own virtual audio device (P4); AI
   agents through `triib --mcp`; and on a Mac, the Mac's own entity
   through the AudioVideoBridging framework.
 - Done since 1.0.0, for the next release: on a Mac, the Mac's own AVB
-  entity as this computer's, its configurations picked, and Listen,
+  entity as a host entity, its configurations picked, and Listen,
   which plays what it receives or what apps send through it, routed by
   hand or through `triib --mcp`; the inspector titled by its entity,
   short values beside their labels, one margin for every view, and on
@@ -62,13 +62,13 @@ dependency.
 | Design | Material 3 Expressive, with Omarchy's or the system's accent, from `scramble-ui`, the crate prev and triib share |
 | License | MIT OR Apache-2.0 (see Licensing) |
 | Devices | Milan entities first class; plain 1722.1 entities get what they offer |
-| Virtual endpoints | ATDECC entities of this computer's own, each with any number of stream inputs and outputs, audio or CRF; 1.0's talkers and listeners, entities of one stream, folded into them |
+| Virtual endpoints | ATDECC entities running on the local host, each with any number of stream inputs and outputs, audio or CRF; 1.0's talkers and listeners, entities of one stream, folded into them |
 | Controller entity | triib advertises itself as a controller (valid time 62 s, entity model ID `0x8c1f6436c0000001` under the Scramble Tools MA-S `8C-1F-64-36-C`), answers CONTROLLER_AVAILABLE, and registers for unsolicited notifications from each entity it reads |
 | ATDECC | Our own Rust stack, controller and entity roles, in the reusable `atdecc` crate, see below |
 | PTP | linuxptp's ptp4l on Linux, in gPTP or the AVB Lite PTP profile, run by triib's systemd units; the daemon reads it through its read-only socket. Our own engine (`avb-ptp`) only where P4 shows a platform needs one |
 | SRP | Our own MRP, MSRP and MVRP in the reusable `avb-mrp` crate; MAAP and AVB Lite's CVU SRP framing in `atdecc`, its attribute lists in `avb-mrp` |
 | Concurrency | No tokio. Network thread per interface with a poll loop and timers; real time threads for streaming and audio; `std::sync::mpsc` into an iced subscription (prev's `External` + `post()` pattern) |
-| Processes | GUI process (controller) and `triib-endpointd` for this computer's entities, so audio survives GUI restarts; on a Mac, `triib --monitor` for Listen, so a Core Audio call that hangs leaves the app alone |
+| Processes | GUI process (controller) and `triib-endpointd` for the host entities, so audio survives GUI restarts; on a Mac, `triib --monitor` for Listen, so a Core Audio call that hangs leaves the app alone |
 | Platform layer | `avb-net`: raw Ethernet frames, interfaces and hardware timestamps per operating system, the only platform code the protocol crates use. Audio (cpal) and the media clock live in `triib-stream` |
 | Settings, cache, presets | TOML settings through `triib-store`; the entity model cache keeps raw descriptor bytes, decoded by `atdecc` on load, so the protocol crates need no serde; TOML presets in the data folder |
 | Interface text | Fluent files under `i18n/`, 38 languages, as prev |
@@ -77,7 +77,7 @@ dependency.
 ## Our own ATDECC stack
 
 L-Acoustics avdecc, which Hive uses, would bring years of field quirks, but
-it would gate triib's core: this computer's entities, AVB Lite's CVU SRP
+it would gate triib's core: host entities, AVB Lite's CVU SRP
 and status query, and vendor extensions would mean patching or forking a
 C++17 library behind FFI, under the LGPL. Its focus is the controller, so a
 Milan talker or listener (AEM responder, listener binding, MVU) would be
@@ -141,7 +141,7 @@ crates/
   triib-store     settings and cache files
   triib-stream    AAF and AM824 talkers and listeners, the media clock,
                   audio through cpal, drift and resampling
-  triib-endpointd daemon running this computer's entities
+  triib-endpointd daemon running the host entities
   triib-cli       headless controller
   triib           the iced app, including the entity store the GUI draws
 ```
@@ -158,7 +158,7 @@ crates/
 
 `avb_net::check_access` says whether raw Ethernet is ready and, when not,
 why: no `CAP_NET_RAW`, no access to `/dev/bpf*`, or Npcap missing or for
-administrators only. The app shows the fix. This computer's entities are
+administrators only. The app shows the fix. Host entities are
 offered per interface where it reports a PTP hardware clock and a wired
 link.
 
@@ -205,7 +205,7 @@ tenth of a second, so the media clock takes the median of a burst of
 readings and follows a jump only once three measurements in a row show it.
 Intel's i210, i225 and i226 are the known choices with launch time.
 
-## Virtual endpoints: this computer's entities
+## Virtual endpoints: host entities
 
 - Added and removed in the Entities view, on interfaces with a PTP
   hardware clock and a wired link; the inspector adds each one's streams
@@ -294,7 +294,7 @@ triib is MIT OR Apache-2.0. Things to keep that true:
   network's cards); there is no entity sidebar.
 - **Right inspector**: the selected entity, titled by its name, in tabs
   (Entity, Streams, Controls, Diagnostics, Descriptors), a short value
-  beside its label and a longer one under it; for this computer's
+  beside its label and a longer one under it; for host
   entities also their audio and stream state, and for the Mac's own its
   audio device and Listen.
 - **Log**: a panel under the view, resized from its top edge.
@@ -423,7 +423,7 @@ in the access point's beacons, and streamed unicast on the air.
   relation to the card, or get hardware time stamps at all; if not, the
   system's own AVB audio device, controlled by triib like any entity.
 - **macOS, as built:** the Mac's own entity, which macOS runs with its
-  gPTP, reservations and timing, is this computer's: the computer icon,
+  gPTP, reservations and timing, is a host entity: the computer icon,
   its Core Audio device (whose UID carries the entity ID, as
   `AAA:0xd111e597f5448000:0x0000:0x0000`), and Audio MIDI Setup, which
   alone turns AVB on, as the AudioVideoBridging framework only reports
@@ -431,7 +431,7 @@ in the access point's beacons, and streamed unicast on the air.
   clock outputs beside 1 to 8 audio streams of 8, 16 or 32 channels, are
   picked with SET_CONFIGURATION, which it refuses while its streams run.
   A talker outside Milan, it keeps a connection until its listener sends
-  DISCONNECT_TX; GET_TX_CONNECTION lists them, and this computer's
+  DISCONNECT_TX; GET_TX_CONNECTION lists them, and the host entities'
   listeners let go of theirs.
 - **macOS, Listen:** the Mac's entity's audio played on this computer,
   in a helper (`triib --monitor`) that the app starts again when it ends
@@ -449,7 +449,7 @@ in the access point's beacons, and streamed unicast on the air.
 - Our own entities on macOS, with their own shapes, stay a later
   investigation.
 
-#### This computer's entities with several streams
+#### Host entities with several streams
 
 Beside today's endpoints, one stream each, this computer runs entities
 with several stream inputs and outputs on one audio unit and clock
@@ -533,7 +533,7 @@ budgets: 240 instances, 75% of the link, and the real-time threads.
   mappings are dynamic, as Milan has them, kept in `entities.toml`;
   outputs keep static maps. An input binds to its own entity's output,
   the daemon handing its entities their own frames, and the matrix
-  offers it on this computer's entities. A change to an entity's streams
+  offers it on host entities. A change to an entity's streams
   leaves those that run as before going, their threads, devices,
   reservations and probes carried into the entity taking over.
 - **Open.** Streams at other sampling rates, which stay entities of
@@ -555,7 +555,7 @@ budgets: 240 instances, 75% of the link, and the real-time threads.
   a grid editor for channel mappings with many channels.
 - Firmware update over MVU, several interfaces at once.
 - More for agents over MCP: channel mappings and controls, presets, and
-  this computer's own endpoints.
+  host entities.
 
 ### Not in scope
 

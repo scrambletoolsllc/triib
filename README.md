@@ -29,12 +29,12 @@ Website: **[triib.run](https://triib.run)**, with
 > profile calls for, and what Wi-Fi stations and access points report
 > under [AVB Wireless](https://github.com/avbcommunity/profiles/blob/main/avb_wireless.md),
 > each station under its access point in the network view. AI agents can
-> use it through `triib --mcp`. On Linux it runs entities of its own,
-> Milan entities with any number of streams each way: AAF or AM824 audio
+> use it through `triib --mcp`. On Linux it runs entities on the local
+> host, Milan entities with any number of streams each way: AAF or AM824 audio
 > at 48, 96 or 192 kHz to and from the computer's audio devices, each
 > stream with its own virtual audio device by default, and CRF media
 > clock streams, any input the entity's clock source. On a Mac it shows
-> the Mac's own AVB entity as this computer's, and plays what that entity
+> the Mac's own AVB entity as a host entity, and plays what that entity
 > receives or sends through an output picked. It speaks 38 languages,
 > following the system's or the one picked in Settings. See the
 > [plan](docs/PLAN.md).
@@ -62,10 +62,10 @@ AudioVideoBridging framework, as the system never hands that entity the
 commands a program writes to BPF; see [the Mac's own entity](#the-macs-own-entity).
 [docs/RELEASING.md](docs/RELEASING.md) has the details.
 
-## This computer's entities
+## Host entities
 
-On Linux, the Entities view adds entities of the computer's own, which
-`triib-endpointd` runs, on a wired interface with a PTP hardware clock
+On Linux, the Entities view adds entities running on the local host,
+which `triib-endpointd` runs, on a wired interface with a PTP hardware clock
 (`ethtool -T <interface>` shows one). They need
 [linuxptp](https://linuxptp.nwtime.org)'s `ptp4l` running gPTP on that
 interface, as with its `configs/gPTP.cfg`, so the clock keeps the
@@ -83,7 +83,7 @@ following the clock recovered from that stream. Talkers take their
 stream addresses with MAAP, and the stream threads ask RealtimeKit for
 real-time scheduling, as PipeWire does.
 
-<img src="docs/screenshots/device.png" width="320" alt="The inspector's Streams tab for Host entity 1, one of this computer's entities: its streams Out 1 and In 1 and an Add stream button, and Out 1's name, audio from a virtual device, 8 channels, format AAF 48 kHz, 8 ch, 32-bit, and a Remove stream button">
+<img src="docs/screenshots/device.png" width="320" alt="The inspector's Streams tab for Host entity 1, a host entity: its streams Out 1 and In 1 and an Add stream button, and Out 1's name, audio from a virtual device, 8 channels, format AAF 48 kHz, 8 ch, 32-bit, and a Remove stream button">
 
 The entities are listed in `entities.toml` in triib's data folder
 (`~/.local/share/triib` on Linux), or in another file Settings, Storage
@@ -167,7 +167,7 @@ when another program on this computer declares MSRP or MVRP on the port.
 ## The Mac's own entity
 
 On a Mac with AVB turned on in Audio MIDI Setup's Network Device Browser,
-triib shows the Mac's own AVB entity as this computer's, in the entity
+triib shows the Mac's own AVB entity as a host entity, in the entity
 list and the network view. Its inspector names the Core Audio device
 apps play into and record from, which macOS makes only while one of the
 entity's streams is connected, and opens Audio MIDI Setup. The entity's
@@ -289,7 +289,7 @@ whether raw Ethernet is ready.
 |---|---|
 | `triib` | The app |
 | `triib-cli` | Headless controller |
-| `triib-endpointd` | Runs this computer's entities |
+| `triib-endpointd` | Runs the host entities |
 | `triib-stream` | AAF streams, the media clock and audio devices |
 | `triib-pipewire` | Virtual audio devices as PipeWire nodes |
 | `triib-store` | Settings and cache files |
