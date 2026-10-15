@@ -66,11 +66,15 @@ commands a program writes to BPF; see [the Mac's own entity](#the-macs-own-entit
 
 On Linux, the Entities view adds entities running on the local host,
 which `triib-endpointd` runs, on a wired interface with a PTP hardware clock
-(`ethtool -T <interface>` shows one). They need
-[linuxptp](https://linuxptp.nwtime.org)'s `ptp4l` running gPTP on that
-interface, as with its `configs/gPTP.cfg`, so the clock keeps the
-network's time; triib reads ptp4l's state through its read-only socket,
-`/var/run/ptp4lro`, and says when ptp4l isn't there. Each is a Milan
+(`ethtool -T <interface>` shows one). Installing the package is all
+they take. They need [linuxptp](https://linuxptp.nwtime.org)'s `ptp4l`
+running gPTP on that interface, so the clock keeps the network's time,
+and where none runs there the daemon starts triib's own unit for it,
+`triib-ptp4l-gptp@<interface>`; a ptp4l run another way stays as it is.
+triib reads ptp4l's state through its read-only socket,
+`/var/run/ptp4lro`, and says when ptp4l isn't there. triib opens with
+the host entities listed for its interface back on the network, starting
+the daemon. Each is a Milan
 entity with any number of streams each way, which controllers,
 triib among them, bind like any other. Add entity adds one with an
 audio stream each way, and the inspector's Streams tab adds and removes
@@ -139,15 +143,22 @@ At the top of the file:
 
 ptp4l cannot switch to AVB Lite's PTP profile by itself. The Linux
 packages install `triib-ptp4l-gptp@<interface>` and
-`triib-ptp4l-lite@<interface>` units and a polkit rule; with ptp4l run
-by `systemctl enable --now triib-ptp4l-gptp@enp2s0`, the daemon moves it
-to the AVB Lite profile when its entities fall back, and back when the
-link comes up again.
+`triib-ptp4l-lite@<interface>` units and a polkit rule that lets the
+person at the computer start them; the daemon starts the gPTP one where
+no ptp4l runs, moves ptp4l to the AVB Lite profile when its entities
+fall back, and back when the link comes up again. Both configurations
+step the clock when it is a second or more off, as after a driver resets
+the card's clock: igb does on an I210 when its link goes down and up.
+To have ptp4l run from boot rather than from the daemon's start,
+`systemctl enable --now triib-ptp4l-gptp@enp2s0`.
 
 AVB Lite also asks for Energy-Efficient Ethernet and PAUSE off the
 interface's link. The `triib-link@<interface>` unit turns them off with
 `ethtool`; the ptp4l units pull it in, or
-`systemctl enable --now triib-link@enp2s0` runs it at every boot. Where
+`systemctl enable --now triib-link@enp2s0` runs it at every boot.
+Where a card filters VLANs in hardware, as the I210 does, a stream's
+socket takes the interface promiscuous, as the card would otherwise drop
+every stream frame, tagged with its VLAN. Where
 it changes them on an interface that is up, it takes the interface down
 and up again, as some drivers keep PTP from working after the change
 otherwise. Should they come back on, as after the driver starts again,

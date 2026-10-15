@@ -103,6 +103,15 @@ it receives and sends.
 
 ### Host entities (Linux)
 
+- Installing triib is all a host entity takes on an interface with a
+  PTP hardware clock: where no ptp4l answers for the interface, the
+  daemon starts triib's `triib-ptp4l-gptp@<interface>` unit itself,
+  which the polkit rule lets it, rather than waiting for one to be
+  enabled by hand. A ptp4l run another way on the interface stays as it
+  is, and where linuxptp is missing the daemon says to install it.
+- triib opens with the host entities listed for its interface back on
+  the network, starting the daemon, as after a restart; it started only
+  as one was added or a preset recalled.
 - Talkers and listeners are folded into entities of any number of
   streams, as one of one stream does what they did. The Entities view's
   one button, Add entity, adds an entity with a stream each way, and its
@@ -144,6 +153,9 @@ it receives and sends.
 
 ### Packages
 
+- The Arch package depends on linuxptp and ethtool, as the Debian and
+  Fedora packages recommend them, which those systems install by
+  default; installing has systemd read triib's units again.
 - The macOS app says why it asks for the microphone and for audio
   recording, which Listen needs. `packaging/macos/bundle.sh` signs with
   the identity named in `TRIIB_SIGN_IDENTITY`, from the keychain in
@@ -153,6 +165,15 @@ it receives and sends.
 
 ### Fixed
 
+- Host entities hear their streams on network cards that filter VLANs in
+  hardware, as Intel's I210 does: the card dropped every stream frame,
+  tagged with its VLAN, unless that VLAN was registered with it, which
+  takes an administrator. A stream's socket takes the interface
+  promiscuous there, which the packet socket's own privilege allows.
+- The packaged ptp4l configurations step the clock when it is a second
+  or more off. igb resets an I210's hardware clock when its link goes
+  down and up, as triib-link does to turn EEE and PAUSE off, and ptp4l
+  then slewed for good, decades off, still reporting itself in sync.
 - An entity advertising a new gPTP grandmaster or domain has its gPTP
   state and path read again, so one read while it was its own
   grandmaster joins the network view's tree.
