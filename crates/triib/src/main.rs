@@ -19,9 +19,12 @@ mod lite_view;
 mod log_view;
 #[cfg(target_os = "macos")]
 mod mac;
+#[cfg(target_os = "macos")]
+mod mac_meters;
 mod mapping_view;
 mod matrix;
 mod mcp;
+mod meters;
 mod monitor;
 mod netmap;
 mod network;
@@ -91,6 +94,11 @@ fn main() -> iced::Result {
             monitor::FLAG => {
                 let arguments: Vec<String> = std::env::args().skip(2).collect();
                 std::process::exit(monitor::serve(&arguments));
+            }
+            #[cfg(target_os = "macos")]
+            mac_meters::FLAG => {
+                let arguments: Vec<String> = std::env::args().skip(2).collect();
+                std::process::exit(mac_meters::serve(&arguments));
             }
             #[cfg(target_os = "linux")]
             dialog::CHOOSE_FOLDER | dialog::OPEN_URI => {

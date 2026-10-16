@@ -40,6 +40,7 @@ use crate::config::{
 };
 use crate::gptp;
 use crate::lite::{self, Declared, Fallback, Ptp4l};
+use crate::meters::{self, Meters, StreamMeter};
 use crate::port::{Port, VLAN};
 use crate::profile::{self, Profile};
 use crate::status::{DaemonStatus, EndpointStatus, StreamStatus, status_path};
@@ -120,6 +121,8 @@ const OFF_SYNC: u64 = 1_000_000;
 /// How long ptp4l may stay out of sync before the daemon restarts triib's
 /// unit running it, as ptp4l steps the clock when it starts.
 const OFF_RESTART: Duration = Duration::from_secs(10);
+/// How often the daemon looks whether an app asks for the meters.
+const METERS_LOOK: Duration = Duration::from_millis(500);
 
 /// What the sockets and ptp4l hand the runtime.
 enum Input {
@@ -844,6 +847,14 @@ pub struct Runtime {
     path: Option<PathBuf>,
     modified: Option<SystemTime>,
     last_look: Clock,
+    /// Whether an app asked for the meters when the daemon last looked,
+    /// when that was, when it last wrote them and how many times, and each
+    /// running stream's peaks in that write.
+    meters_wanted: bool,
+    meters_looked: Clock,
+    meters_written: Clock,
+    meters_sequence: u64,
+    meter_peaks: HashMap<(EntityId, bool, u16), [f32; 2]>,
     gptp_text: String,
     /// When it started on this configuration, in milliseconds since the
     /// Unix epoch.
@@ -1127,6 +1138,11 @@ impl Runtime {
             path,
             config,
             last_look: Clock::now(),
+            meters_wanted: false,
+            meters_looked: Clock::now(),
+            meters_written: Clock::now(),
+            meters_sequence: 0,
+            meter_peaks: HashMap::new(),
             gptp_text: "ptp4l not asked yet".into(),
             started: SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
@@ -1165,6 +1181,7 @@ impl Runtime {
                 Err(RecvTimeoutError::Disconnected) => break,
             }
             self.turn();
+            self.write_meters();
             if self.last_look.elapsed() >= Duration::from_secs(2) {
                 self.last_look = Clock::now();
                 self.write_status();
@@ -1613,6 +1630,64 @@ impl Runtime {
         let _ = triib_store::save(&path, &status);
     }
 
+    /// Writes how loud each running audio stream is each
+    /// [`meters::EVERY`] while an app asks, and removes the meters once
+    /// none does.
+    fn write_meters(&mut self) {
+        if self.meters_looked.elapsed() >= METERS_LOOK {
+            self.meters_looked = Clock::now();
+            let wanted = meters::wanted();
+            if self.meters_wanted && !wanted {
+                meters::remove();
+                self.meter_peaks.clear();
+            }
+            self.meters_wanted = wanted;
+        }
+        if !self.meters_wanted || self.meters_written.elapsed() < meters::EVERY {
+            return;
+        }
+        self.meters_written = Clock::now();
+        let mut peaks = HashMap::new();
+        let mut streams = Vec::new();
+        for endpoint in &self.endpoints {
+            let entity_id = endpoint.entity.entity_id();
+            let audio = |place: Option<&usize>| {
+                place
+                    .and_then(|&place| endpoint.streams.get(place))
+                    .is_some_and(|stream| !stream.clock)
+            };
+            let outputs = endpoint
+                .outputs
+                .iter()
+                .enumerate()
+                .filter(|(at, _)| audio(endpoint.out_streams.get(*at)))
+                .filter_map(|(at, output)| Some((false, at, output.talker.as_ref()?.take_peaks())));
+            let inputs = endpoint
+                .inputs
+                .iter()
+                .enumerate()
+                .filter(|(at, _)| audio(endpoint.in_streams.get(*at)))
+                .filter_map(|(at, input)| Some((true, at, input.listener.as_ref()?.take_peaks())));
+            for (input, at, now) in outputs.chain(inputs) {
+                let key = (entity_id, input, at as u16);
+                let before = self.meter_peaks.get(&key).copied().unwrap_or_default();
+                peaks.insert(key, now);
+                streams.push(StreamMeter {
+                    entity_id: entity_id.to_string(),
+                    input,
+                    index: at as u16,
+                    peaks: [now[0].max(before[0]), now[1].max(before[1])],
+                });
+            }
+        }
+        self.meter_peaks = peaks;
+        self.meters_sequence += 1;
+        let _ = meters::write(&Meters {
+            sequence: self.meters_sequence,
+            streams,
+        });
+    }
+
     fn next_wait(&self) -> Duration {
         let now = self.now();
         let since = self.elapsed();
@@ -1655,11 +1730,21 @@ impl Runtime {
         .flatten()
         .min()
         .map(|at| at.saturating_sub(since));
-        [entity, mrp, maap, lite, Some(Duration::from_millis(250))]
-            .into_iter()
-            .flatten()
-            .min()
-            .unwrap_or(Duration::from_millis(250))
+        let meters = self
+            .meters_wanted
+            .then(|| meters::EVERY.saturating_sub(self.meters_written.elapsed()));
+        [
+            entity,
+            mrp,
+            maap,
+            lite,
+            meters,
+            Some(Duration::from_millis(250)),
+        ]
+        .into_iter()
+        .flatten()
+        .min()
+        .unwrap_or(Duration::from_millis(250))
     }
 
     fn handle(&mut self, input: Input) {
@@ -2828,6 +2913,7 @@ impl Runtime {
 
     fn shut_down(&mut self) {
         let since = self.elapsed();
+        meters::remove();
         if self.lite.is_some() {
             // AVB Lite's declarations go too, as no bridge withdraws them.
             for out in self.outs() {

@@ -87,7 +87,10 @@ silence or one of the computer's devices; and media clock streams of
 CRF. Any input can be the entity's clock source, its talkers then
 following the clock recovered from that stream. Talkers take their
 stream addresses with MAAP, and the stream threads ask RealtimeKit for
-real-time scheduling, as PipeWire does.
+real-time scheduling, as PipeWire does. The Streams tab's list shows a
+peak meter of each audio stream's first two channels, which the daemon
+measures while the app shows them, on other entities' streams too where
+they connect to a host entity's.
 
 <img src="docs/screenshots/device.png" width="320" alt="The inspector's Streams tab for Host entity 1, a host entity: its streams Out 1 and In 1 and an Add stream button, and Out 1's name, audio from a virtual device, 8 channels, format AAF 48 kHz, 8 ch, 32-bit, and a Remove stream button">
 
@@ -198,7 +201,9 @@ receives, and for audio recording, to hear what it sends. The audio
 plays in a helper, `triib --monitor`, which triib starts again should it
 end or hang, and which waits for a device that is not there yet; the
 choice is kept across restarts. AI agents set it through the
-`set_audio_monitor` tool.
+`set_audio_monitor` tool. The Streams tab's meters of the entity's audio
+streams come from the same device, measured in another helper,
+`triib --meters`, while the tab shows, with the same grants.
 
 ## Using triib with AI agents
 

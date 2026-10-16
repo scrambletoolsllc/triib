@@ -18,6 +18,7 @@ use avb_net::stream::{FrameReceiver, avtp_payload};
 
 use crate::audio::{Output, Presented, Sink};
 use crate::media::{self, Media};
+use crate::meter::Peaks;
 use crate::{MediaClock, RecoveredClock, crf};
 
 /// How long without a frame before the stream counts as interrupted.
@@ -92,6 +93,7 @@ struct Counters {
     socket_drops: AtomicU64,
     locked: AtomicBool,
     peak: AtomicU32,
+    peaks: Peaks,
     drift_ppm: AtomicI32,
     device_underruns: AtomicU64,
     /// `i64::MIN` until chosen.
@@ -113,6 +115,7 @@ impl Default for Counters {
             socket_drops: AtomicU64::new(0),
             locked: AtomicBool::new(false),
             peak: AtomicU32::new(0),
+            peaks: Peaks::default(),
             drift_ppm: AtomicI32::new(0),
             device_underruns: AtomicU64::new(0),
             delay: AtomicI64::new(i64::MIN),
@@ -269,6 +272,13 @@ impl ListenerGroup {
     pub fn take_peak(&self, place: usize) -> f32 {
         f32::from_bits(self.counters(place).peak.swap(0, Ordering::Relaxed))
     }
+
+    /// The loudest sample in each of the first two channels of `place`'s
+    /// stream since the last time this was asked, from 0 to 1, for a
+    /// meter.
+    pub fn take_peaks(&self, place: usize) -> [f32; 2] {
+        self.counters(place).peaks.take()
+    }
 }
 
 impl Drop for ListenerGroup {
@@ -308,6 +318,12 @@ impl GroupListener {
     /// The loudest sample since the last time this was asked, from 0 to 1.
     pub fn take_peak(&self) -> f32 {
         self.group.take_peak(self.place)
+    }
+
+    /// The loudest sample in each of the first two channels since the
+    /// last time this was asked, from 0 to 1.
+    pub fn take_peaks(&self) -> [f32; 2] {
+        self.group.take_peaks(self.place)
     }
 }
 
@@ -550,6 +566,9 @@ fn take_frame(stream: &mut Running, frame: &[u8], samples: &mut Vec<f32>, clock:
     counters
         .peak
         .fetch_max(loudest.to_bits(), Ordering::Relaxed);
+    counters
+        .peaks
+        .raise(samples, usize::from(opened.media.channels()));
     // Without gPTP time from a hardware clock the presentation times mean
     // nothing here, and the device plays as frames come.
     let presented = header

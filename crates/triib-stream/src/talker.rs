@@ -22,6 +22,7 @@ use avb_net::stream::FrameSender;
 use crate::MediaClock;
 use crate::audio::{Input, Source};
 use crate::media::{Media, Packetizer};
+use crate::meter::Peaks;
 use crate::recovered::{Fit, RecoveredClock, div_ceil};
 
 /// The VLAN tag's ethertype, and AVTP's.
@@ -109,11 +110,12 @@ pub struct TalkerStats {
     pub drift_ppm: i32,
 }
 
-/// A stream's own counters.
+/// A stream's own counters, and its audio's peaks.
 #[derive(Default)]
 struct StreamCounters {
     frames_sent: AtomicU64,
     send_errors: AtomicU64,
+    peaks: Peaks,
 }
 
 /// The group's counters, which its streams share.
@@ -287,6 +289,16 @@ impl TalkerGroup {
             drift_ppm: group.drift_ppm.load(Ordering::Relaxed),
         }
     }
+
+    /// The loudest sample in each of the first two channels `place`'s
+    /// stream sent since the last time this was asked, from 0 to 1, for a
+    /// meter.
+    pub fn take_peaks(&self, place: usize) -> [f32; 2] {
+        self.shared
+            .counters
+            .get(place)
+            .map_or([0.0; 2], |counters| counters.peaks.take())
+    }
 }
 
 impl Drop for TalkerGroup {
@@ -323,6 +335,12 @@ impl GroupTalker {
 
     pub fn stats(&self) -> TalkerStats {
         self.group.stats(self.place)
+    }
+
+    /// The loudest sample in each of the first two channels sent since the
+    /// last time this was asked, from 0 to 1.
+    pub fn take_peaks(&self) -> [f32; 2] {
+        self.group.take_peaks(self.place)
     }
 }
 
@@ -703,13 +721,14 @@ fn run(
         if let Some(input) = &mut stream.input {
             input.read_as(&mut stream.samples, stream.channels);
         }
+        let counters = &shared.counters[place];
+        counters.peaks.raise(&stream.samples, stream.channels);
         stream.packetizer.write(
             due + transit,
             media_reset,
             &stream.samples,
             &mut stream.frame[ETHERNET_LEN..],
         );
-        let counters = &shared.counters[place];
         for destination in &stream.stream.destinations {
             stream.frame[..6].copy_from_slice(&destination.0);
             match sender.send(&stream.frame) {

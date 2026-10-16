@@ -194,6 +194,12 @@ pub fn output_streams(name: &str) -> Vec<u16> {
     device_named(name).map_or_else(Vec::new, |device| stream_channels_of(device, false))
 }
 
+/// The channels of each of the input streams of the device with `name`,
+/// one after another in its input.
+pub fn input_streams(name: &str) -> Vec<u16> {
+    device_named(name).map_or_else(Vec::new, |device| stream_channels_of(device, true))
+}
+
 /// Core Audio's process taps, which came with macOS 14.2. Their functions
 /// are looked up when first used rather than linked, so that triib starts
 /// on older systems, which lack them, and only taps are unavailable there.
@@ -244,16 +250,17 @@ pub fn taps_supported() -> bool {
     taps().is_some()
 }
 
-/// What every app sends to one output stream of a device, heard through a
-/// Core Audio process tap, and delivered as the input of a private
-/// aggregate device holding the tap alone, as Apple's own example has it:
-/// its inputs are the tap's channels. The aggregate is read by an I/O
-/// callback of its own, as audio libraries do not list a private device.
-/// All of it goes when it is dropped.
+/// What every app sends to output streams of a device, heard through a
+/// Core Audio process tap on each, and delivered as the input of a
+/// private aggregate device holding the taps alone, as Apple's own
+/// example has it: its inputs are the taps' channels, one tap after
+/// another. The aggregate is read by an I/O callback of its own, as audio
+/// libraries do not list a private device. All of it goes when it is
+/// dropped.
 pub struct SentTap {
-    tap: AudioObjectID,
+    taps: Vec<AudioObjectID>,
     aggregate: AudioObjectID,
-    /// The tap's channels: the stream's.
+    /// The taps' channels: their streams'.
     pub channels: u16,
     /// The callback reading the aggregate, once started, and what it
     /// fills.
@@ -333,6 +340,12 @@ unsafe extern "C-unwind" fn deliver(
 impl SentTap {
     /// Taps output stream `stream` of the device named `device`.
     pub fn open(device: &str, stream: u16) -> Result<Self, String> {
+        Self::open_streams(device, &[stream])
+    }
+
+    /// Taps output streams `streams` of the device named `device`, their
+    /// channels in that order.
+    pub fn open_streams(device: &str, streams: &[u16]) -> Result<Self, String> {
         use objc2::AnyThread;
         use objc2::rc::Retained;
         use objc2_core_audio::{
@@ -344,32 +357,42 @@ impl SentTap {
         use objc2_core_foundation::CFDictionary;
         use objc2_foundation::{NSArray, NSDictionary, NSNumber, NSObject, NSString};
 
-        let taps = taps().ok_or("hearing what a device sends takes macOS 14.2 or later")?;
+        let taps_api = taps().ok_or("hearing what a device sends takes macOS 14.2 or later")?;
         let tapped =
             device_named(device).ok_or_else(|| format!("no audio device named {device}"))?;
         let uid = text(tapped, kAudioDevicePropertyDeviceUID).ok_or("the device has no UID")?;
-        // SAFETY: CATapDescription's initializer and setters, with the
-        // types its header declares.
-        let description = unsafe {
-            let description = CATapDescription::initExcludingProcesses_andDeviceUID_withStream(
-                CATapDescription::alloc(),
-                &NSArray::new(),
-                &NSString::from_str(&uid),
-                stream as isize,
-            );
-            description.setName(&NSString::from_str("triib listening"));
-            description.setPrivate(true);
-            description.setMuteBehavior(CATapMuteBehavior::Unmuted);
-            description
-        };
-        let mut tap: AudioObjectID = 0;
-        // SAFETY: a description and a tap ID to write to.
-        let status = unsafe { (taps.create)(Retained::as_ptr(&description).cast(), &mut tap) };
-        if status != 0 {
-            return Err(format!("Core Audio refused the tap ({status})"));
+        let mut taps = Vec::new();
+        let mut tap_uids = Vec::new();
+        for &stream in streams {
+            // SAFETY: CATapDescription's initializer and setters, with the
+            // types its header declares.
+            let description = unsafe {
+                let description = CATapDescription::initExcludingProcesses_andDeviceUID_withStream(
+                    CATapDescription::alloc(),
+                    &NSArray::new(),
+                    &NSString::from_str(&uid),
+                    stream as isize,
+                );
+                description.setName(&NSString::from_str("triib listening"));
+                description.setPrivate(true);
+                description.setMuteBehavior(CATapMuteBehavior::Unmuted);
+                description
+            };
+            let mut tap: AudioObjectID = 0;
+            // SAFETY: a description and a tap ID to write to.
+            let status =
+                unsafe { (taps_api.create)(Retained::as_ptr(&description).cast(), &mut tap) };
+            if status != 0 {
+                for made in taps {
+                    // SAFETY: the taps made above.
+                    unsafe { (taps_api.destroy)(made) };
+                }
+                return Err(format!("Core Audio refused the tap ({status})"));
+            }
+            taps.push(tap);
+            // SAFETY: the description's UUID, a plain getter.
+            tap_uids.push(unsafe { description.UUID() }.UUIDString().to_string());
         }
-        // SAFETY: the description's UUID, a plain getter.
-        let tap_uid = unsafe { description.UUID() }.UUIDString().to_string();
 
         let key = |key: &std::ffi::CStr| NSString::from_str(&key.to_string_lossy());
         let string = |text: &str| Retained::into_super(NSString::from_str(text));
@@ -396,10 +419,17 @@ impl SentTap {
             (key(kAudioAggregateDeviceTapAutoStartKey), number(1)),
             (
                 key(kAudioAggregateDeviceTapListKey),
-                array(vec![dictionary(vec![
-                    (key(kAudioSubTapUIDKey), string(&tap_uid)),
-                    (key(kAudioSubTapDriftCompensationKey), number(1)),
-                ])]),
+                array(
+                    tap_uids
+                        .iter()
+                        .map(|tap_uid| {
+                            dictionary(vec![
+                                (key(kAudioSubTapUIDKey), string(tap_uid)),
+                                (key(kAudioSubTapDriftCompensationKey), number(1)),
+                            ])
+                        })
+                        .collect(),
+                ),
             ),
         ]);
         let mut aggregate: AudioObjectID = 0;
@@ -409,8 +439,10 @@ impl SentTap {
             AudioHardwareCreateAggregateDevice(description, NonNull::from(&mut aggregate))
         };
         if status != 0 {
-            // SAFETY: the tap made above.
-            unsafe { (taps.destroy)(tap) };
+            for made in taps {
+                // SAFETY: the taps made above.
+                unsafe { (taps_api.destroy)(made) };
+            }
             return Err(format!(
                 "Core Audio refused the aggregate device ({status})"
             ));
@@ -419,7 +451,7 @@ impl SentTap {
         // The tap's channels come to the aggregate a moment after it is
         // made, and until then it is no input to open.
         let mut made = Self {
-            tap,
+            taps,
             aggregate,
             channels: 0,
             reading: None,
@@ -506,9 +538,11 @@ impl Drop for SentTap {
                 drop(Box::from_raw(reader.as_ptr()));
             }
             AudioHardwareDestroyAggregateDevice(self.aggregate);
-            // A tap was only made where taps are.
+            // Taps were only made where taps are.
             if let Some(taps) = taps() {
-                (taps.destroy)(self.tap);
+                for &tap in &self.taps {
+                    (taps.destroy)(tap);
+                }
             }
         }
     }

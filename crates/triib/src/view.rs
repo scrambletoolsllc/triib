@@ -1283,6 +1283,9 @@ fn entity_sections<'a>(
 /// before it scrolls.
 const STREAM_ROW: f32 = 36.0;
 const STREAMS_SHOWN: usize = 5;
+/// How far a row's content sits in from its edges: an extra small
+/// button's padding.
+const ROW_INSET: f32 = 12.0;
 
 /// The Streams tab: a list of the entity's streams, outputs then inputs,
 /// with the picked one's details under it, or for an entity of one
@@ -1380,8 +1383,9 @@ fn stream_addressing<'a>(
 }
 
 /// The streams as a compact list, each with its way, name and format in
-/// short, showing [`STREAMS_SHOWN`] before it scrolls; a name too long
-/// for the row ends in an ellipsis.
+/// short, and before the format a meter of its first two channels where
+/// this computer carries its audio, showing [`STREAMS_SHOWN`] before it
+/// scrolls; a name too long for the row ends in an ellipsis.
 fn stream_list<'a>(
     triib: &'a Triib,
     entity_id: EntityId,
@@ -1389,8 +1393,10 @@ fn stream_list<'a>(
     streams: &[StreamDescriptor<'a>],
     picked: Option<usize>,
 ) -> Element<'a, Message> {
-    // What each row shows: its way, index, name and format in short.
-    let rows: Vec<(bool, u16, String, String)> = streams
+    // What each row shows: its way, index, name, format in short, and
+    // its meter's levels and channels.
+    type Meter = (Option<[f32; 2]>, u16);
+    let rows: Vec<(bool, u16, String, String, Option<Meter>)> = streams
         .iter()
         .map(|stream| {
             let name = triib.current_name(NameTarget {
@@ -1406,24 +1412,51 @@ fn stream_list<'a>(
             } else {
                 name
             };
+            let meter = (!stream.is_media_clock())
+                .then(|| crate::meters::source(triib, entity_id, stream.is_input(), stream.index))
+                .flatten()
+                .map(|source| {
+                    (
+                        triib.meter_levels.get(source),
+                        stream.current_format.channels().unwrap_or(2),
+                    )
+                });
             (
                 stream.is_input(),
                 stream.index,
                 name,
                 crate::matrix::short(stream.current_format),
+                meter,
             )
         })
         .collect();
     let scrolls = rows.len() > STREAMS_SHOWN;
     let height = STREAM_ROW * rows.len().min(STREAMS_SHOWN) as f32;
+    // The formats take the widest one's room, each at the row's end, so
+    // they line up, and the meters before them too.
+    let format_width = rows
+        .iter()
+        .map(|(.., format, _)| crate::text::measure(format, scramble_ui::font::TEXT, 12.0))
+        .fold(0.0, f32::max)
+        .ceil();
+    let format_end = if scramble_ui::dir::rtl() {
+        iced::widget::text::Alignment::Left
+    } else {
+        iced::widget::text::Alignment::Right
+    };
     let list = iced::widget::responsive(move |size| {
         // The row's padding, icon and gaps, and room for the scrollbar.
-        let around = 2.0 * 12.0 + 18.0 + 2.0 * 8.0 + if scrolls { 12.0 } else { 0.0 };
+        let around = 2.0 * ROW_INSET + 18.0 + 2.0 * 8.0 + if scrolls { 12.0 } else { 0.0 };
         let column = iced::widget::column(rows.iter().enumerate().map(
-            |(at, (input, index, name, format))| {
+            |(at, (input, index, name, format, meter))| {
                 let room = size.width
                     - around
-                    - crate::text::measure(format, scramble_ui::font::TEXT, 12.0);
+                    - format_width
+                    - if meter.is_some() {
+                        crate::meters::WIDTH + 8.0
+                    } else {
+                        0.0
+                    };
                 let name =
                     crate::text::fit(name, scramble_ui::font::TEXT, 14.0, room.max(24.0)).name;
                 button::custom(
@@ -1440,7 +1473,11 @@ fn stream_list<'a>(
                         styled(name, Type::BodyMedium)
                             .width(Fill)
                             .wrapping(iced::widget::text::Wrapping::None),
-                        styled(format.clone(), Type::BodySmall).style(style::on_surface_variant),
+                        meter.map(|(levels, channels)| crate::meters::meter(levels, channels)),
+                        styled(format.clone(), Type::BodySmall)
+                            .style(style::on_surface_variant)
+                            .width(format_width)
+                            .align_x(format_end),
                     ]
                     .spacing(8)
                     .align_y(Center),
@@ -1460,7 +1497,17 @@ fn stream_list<'a>(
         // The thin scrollbar the matrix's and the other lists' have.
         component::scroll(column).height(Fill).into()
     });
-    container(list).height(height).width(Fill).into()
+    // The rows reach into the sheet's margins by their padding, so their
+    // icons and formats line up with the headings and fields.
+    container(list)
+        .height(height)
+        .width(Fill)
+        .padding(iced::Padding {
+            left: -ROW_INSET,
+            right: -ROW_INSET,
+            ..iced::Padding::ZERO
+        })
+        .into()
 }
 
 /// A stream's details: its name and format to change, what this computer
@@ -2426,7 +2473,7 @@ pub(crate) mod tests {
     /// stream input port answering GET_AUDIO_MAP with `mappings` (stream
     /// channel, cluster channel) and its stream inputs bound as `bound`
     /// says (input, talker, output) and flowing.
-    fn reread(
+    pub(crate) fn reread(
         entities: &BTreeMap<EntityId, DiscoveredEntity>,
         models: &BTreeMap<EntityId, EntityModel>,
         entity_id: EntityId,
@@ -3011,6 +3058,21 @@ pub(crate) mod tests {
                         ],
                     }],
                 });
+                // Its output sending, one channel at full scale, the other
+                // at -10.5 dBFS; its input not running.
+                triib.meter_levels.take(
+                    crate::meters::Origin::Daemon,
+                    Some(triib_endpointd::meters::Meters {
+                        sequence: 1,
+                        streams: vec![triib_endpointd::meters::StreamMeter {
+                            entity_id: host.map(|id| id.to_string()).unwrap_or_default(),
+                            input: false,
+                            index: 0,
+                            peaks: [1.0, 0.3],
+                        }],
+                    }),
+                    std::time::Instant::now(),
+                );
             }
             if suffix.contains("formats") {
                 // The menu a cell whose input must change opens.

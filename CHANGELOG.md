@@ -18,6 +18,16 @@ it receives and sends.
   its name, format, state, stream ID, destination and VLAN, and for this
   computer's entities its audio and channels. The Entity tab no longer
   shows streams.
+- Each stream in the Streams tab's list has a peak meter of its first two
+  channels before its format, green, yellow from -12 dBFS and red from
+  -6 dBFS, wherever this computer carries its audio: its own entities'
+  streams, and other entities' streams connected to them.
+  triib-endpointd measures its entities' streams and writes them 20
+  times a second while the app shows them. On a Mac, a helper,
+  `triib --meters`, measures the Mac's own entity's from its Core Audio
+  device: what it receives from the device's input, what apps send it
+  through a Core Audio tap. The list's rows line up with the inspector's
+  headings and fields, and their formats with each other.
 - An output's max transit time is picked in its details, from 0.25 ms to
   50 ms, on any entity that answers GET_MAX_TRANSIT_TIME, Milan or not,
   the Mac's AVB entity among them. A running stream's refusal says to

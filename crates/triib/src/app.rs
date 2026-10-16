@@ -123,6 +123,9 @@ pub struct Triib {
     endpoints_brought_back: bool,
     /// The audio devices' names: inputs, then outputs.
     pub audio_devices: (Vec<String>, Vec<String>),
+    /// How loud this computer's running streams are, for the Streams tab's
+    /// meters.
+    pub meter_levels: crate::meters::Levels,
     /// What the network view brings forward.
     pub network_focus: Option<Focus>,
     /// The toolbar's "More" menu is open.
@@ -317,6 +320,11 @@ pub enum Message {
     SystemAccent(Option<(u8, u8, u8)>),
     AnimationsEnabled(Option<bool>),
     External(External),
+    /// A new reading of the meters, or none, and who measured it.
+    Meters(
+        crate::meters::Origin,
+        Option<triib_endpointd::meters::Meters>,
+    ),
     /// The user answered whether the agent asking may control triib.
     AgentAnswered(bool),
     /// The agent's prompt takes answers now.
@@ -395,6 +403,7 @@ impl Triib {
             endpoints_elsewhere: None,
             endpoints_brought_back: false,
             audio_devices: (Vec::new(), Vec::new()),
+            meter_levels: crate::meters::Levels::default(),
             network_focus: None,
             overflow_open: false,
             interface_filters_open: false,
@@ -468,6 +477,7 @@ impl Triib {
             endpoints_elsewhere: None,
             endpoints_brought_back: false,
             audio_devices: (Vec::new(), Vec::new()),
+            meter_levels: crate::meters::Levels::default(),
             network_focus: None,
             overflow_open: false,
             interface_filters_open: false,
@@ -556,6 +566,15 @@ impl Triib {
                     && (crate::describe::is_talker(&entity.adp)
                         || crate::describe::is_listener(&entity.adp))
             })
+    }
+
+    /// The Mac's own AVB entity, while it is online.
+    #[cfg(target_os = "macos")]
+    pub fn this_mac(&self) -> Option<EntityId> {
+        self.entities
+            .keys()
+            .copied()
+            .find(|&entity_id| self.is_this_mac(entity_id))
     }
 
     /// Listens as `listen` says, or stops, keeping it in the settings.
@@ -1178,6 +1197,17 @@ impl Triib {
             Message::External(External::AudioDevices(inputs, outputs)) => {
                 self.audio_devices = (inputs, outputs);
             }
+            Message::Meters(origin, reading) => {
+                #[cfg(target_os = "macos")]
+                let reading = match origin {
+                    crate::meters::Origin::Mac => {
+                        reading.map(|meters| crate::meters::by_stream_index(self, meters))
+                    }
+                    crate::meters::Origin::Daemon => reading,
+                };
+                self.meter_levels
+                    .take(origin, reading, std::time::Instant::now());
+            }
             Message::HostAdded => self.add_host(),
             Message::HostRemoved(entity_id) => {
                 let done = self
@@ -1258,7 +1288,31 @@ impl Triib {
     }
 
     pub fn subscription(&self) -> Subscription<Message> {
+        // The meters, read while the Streams tab shows, where this
+        // computer runs entities whose streams they measure, and on a Mac
+        // where its own entity has its audio device.
+        let streams_shown = self.settings.inspector
+            && self.inspector_tab == InspectorTab::Streams
+            && self.selected.is_some();
+        let meters = if streams_shown && self.endpoints.is_some() {
+            Subscription::run(crate::meters::readings)
+                .map(|reading| Message::Meters(crate::meters::Origin::Daemon, reading))
+        } else {
+            Subscription::none()
+        };
+        #[cfg(target_os = "macos")]
+        let mac_meters = match (streams_shown, self.this_mac(), &self.mac_audio_device) {
+            (true, Some(entity_id), Some(device)) => {
+                Subscription::run_with((device.clone(), entity_id), crate::mac_meters::readings)
+                    .map(|reading| Message::Meters(crate::meters::Origin::Mac, reading))
+            }
+            _ => Subscription::none(),
+        };
+        #[cfg(not(target_os = "macos"))]
+        let mac_meters = Subscription::none();
         Subscription::batch([
+            meters,
+            mac_meters,
             iced::system::theme_changes().map(Message::SystemTheme),
             Subscription::run(desktop::accent_changes).map(Message::SystemAccent),
             Subscription::run(crate::external_events).map(Message::External),
