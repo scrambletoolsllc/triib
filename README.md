@@ -67,8 +67,9 @@ commands a program writes to BPF; see [the Mac's own entity](#the-macs-own-entit
 
 On Linux, the Entities view adds entities running on the local host,
 which `triib-endpointd` runs, on a wired interface with a PTP hardware clock
-(`ethtool -T <interface>` shows one). Installing the package is all
-they take. They need [linuxptp](https://linuxptp.nwtime.org)'s `ptp4l`
+(`ethtool -T <interface>` shows one), as Intel's I210, I225 and I226 and
+Marvell's AQtion AQC107 have; the packages say as they install when no
+interface has one. Installing the package is all they take. They need [linuxptp](https://linuxptp.nwtime.org)'s `ptp4l`
 running gPTP on that interface, so the clock keeps the network's time,
 and where none runs there the daemon starts triib's own unit for it,
 `triib-ptp4l-gptp@<interface>`; a ptp4l run another way stays as it is.

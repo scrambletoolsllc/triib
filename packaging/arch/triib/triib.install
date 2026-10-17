@@ -1,6 +1,7 @@
 # Lets triib, triib-cli and triib-endpointd send and receive raw Ethernet
 # without root, and has systemd read triib's units, which triib-endpointd
-# starts as host entities need them.
+# starts as host entities need them, then says when no interface can
+# carry host entities.
 grant() {
     setcap cap_net_raw+ep usr/bin/triib
     setcap cap_net_raw+ep usr/bin/triib-cli
@@ -8,6 +9,7 @@ grant() {
     if [ -d /run/systemd/system ]; then
         systemctl daemon-reload || true
     fi
+    usr/lib/triib/endpoint-check || true
 }
 
 post_install() {

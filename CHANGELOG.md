@@ -205,6 +205,13 @@ it receives and sends.
   `TRIIB_SIGN_KEYCHAIN`, rather than ad hoc where it is set: an ad hoc
   signature changes with every build, and macOS then asks for those
   permissions again.
+- The installers say when this computer cannot be an AVB endpoint. The
+  Linux packages check for a wired interface with a PTP hardware clock
+  as they install and, finding none, say so with the Ethernet cards that
+  have one: Intel's I210, I225 and I226 and Marvell's AQtion AQC107, and
+  no Wi-Fi card yet. The macOS installer warns as it opens when the Mac
+  has no AVB Ethernet port, and the Windows installer's last page says
+  that this computer cannot be an AVB endpoint on Windows yet.
 - The packages, the installer and the AppStream metadata link to the
   repository where it lives now, github.com/scrambletoolsllc/triib, and
   the metadata to the website, triib.run, with its screenshots and the

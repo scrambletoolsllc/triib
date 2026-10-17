@@ -3,7 +3,8 @@
 # files into a system layout, for packages: the binaries, desktop entry,
 # icons when there are any, AppStream metadata and licenses, and the
 # ptp4l configurations, systemd units and polkit rule triib-endpointd
-# switches PTP profiles with.
+# switches PTP profiles with, and the check the packages run as they
+# install for an interface that can carry host entities.
 #
 #   scripts/dist-install.sh BINARY_DIR [DESTDIR] [PREFIX]
 #
@@ -23,6 +24,7 @@ share="$destdir$prefix/share"
 install -Dm755 "$binaries/triib" "$destdir$prefix/bin/triib"
 install -Dm755 "$binaries/triib-cli" "$destdir$prefix/bin/triib-cli"
 install -Dm755 "$binaries/triib-endpointd" "$destdir$prefix/bin/triib-endpointd"
+install -Dm755 "$root/packaging/linux/endpoint-check" "$destdir$prefix/lib/triib/endpoint-check"
 install -Dm644 "$root/data/$id.desktop" "$share/applications/$id.desktop"
 install -Dm644 "$root/data/$id.metainfo.xml" "$share/metainfo/$id.metainfo.xml"
 if [ -d "$root/data/icons" ]; then

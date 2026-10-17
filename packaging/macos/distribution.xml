@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The installer around triib's package, which bundle.sh makes with its
+  pkg option, filling in the fields between at signs. As it opens, it
+  warns when the Mac has no AVB Ethernet port, which using this Mac as
+  an AVB endpoint requires.
+-->
+<installer-gui-script minSpecVersion="2">
+    <title>@NAME@</title>
+    <options customize="never" require-scripts="false" hostArchitectures="@ARCH@" />
+    <domains enable_localSystem="true" enable_currentUserHome="false" enable_anywhere="false" />
+    <installation-check script="avbPort()" />
+    <script><![CDATA[
+// An Ethernet controller supports AVB when it has a realtime transmit or
+// receive queue, as IOEthernetController::getAVBSupport decides. Each
+// enN interface's controller is asked, as matchingClass leaves out
+// subclasses, which every driver's controller is.
+function avbPort() {
+    for (var unit = 0; unit < 64; unit++) {
+        var interfaces = system.ioregistry.matchingName('en' + unit) || [];
+        for (var index = 0; index < interfaces.length; index++) {
+            var controllers = system.ioregistry.parentsOf(interfaces[index]) || [];
+            for (var each = 0; each < controllers.length; each++) {
+                var controller = controllers[each];
+                if (controller['NumberOfRealtimeTransmitQueues'] > 0
+                    || controller['NumberOfRealtimeReceiveQueues'] > 0) {
+                    return true;
+                }
+            }
+        }
+    }
+    my.result.type = 'Warn';
+    my.result.title = 'No AVB Ethernet port found';
+    my.result.message = 'Using this Mac as an AVB endpoint requires an AVB Ethernet port, and none was found. '
+        + 'triib still discovers, connects and sets up the AVB and Milan devices on the network.';
+    return false;
+}
+    ]]></script>
+    <choices-outline>
+        <line choice="default">
+            <line choice="@ID@" />
+        </line>
+    </choices-outline>
+    <choice id="default" />
+    <choice id="@ID@" visible="false">
+        <pkg-ref id="@ID@" />
+    </choice>
+    <pkg-ref id="@ID@" version="@VERSION@" onConclusion="none">@PACKAGE@</pkg-ref>
+</installer-gui-script>

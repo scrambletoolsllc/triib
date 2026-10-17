@@ -10,10 +10,10 @@ Everything a release ships is built from this repository:
 | `packaging/licenses/` | The licenses of the fonts triib carries, from scramble-ui |
 | `scripts/cross-setup.sh` | Sets up an x86_64 Ubuntu to cross-compile for RISC-V |
 | `scripts/dist-install.sh` | Installs a build of triib, triib-cli and triib-endpointd and the files above into a system layout; the Linux packages use it |
-| `packaging/nfpm.yaml`, `packaging/linux/postinstall.sh` | Debian and RPM packages, made with nfpm, which grant the programs `CAP_NET_RAW` as they install |
-| `packaging/arch/triib/` | AUR package, whose install script grants the same |
+| `packaging/nfpm.yaml`, `packaging/linux/postinstall.sh` | Debian and RPM packages, made with nfpm, which grant the programs `CAP_NET_RAW` as they install and run `packaging/linux/endpoint-check` |
+| `packaging/arch/triib/` | AUR package, whose install script does the same |
 | `packaging/windows/` | Windows MSI (WiX 5) and zip, made by `build.ps1` |
-| `packaging/macos/` | triib.app and its installer package, made by `bundle.sh --pkg`, with the capture access helper |
+| `packaging/macos/` | triib.app and its installer package, made by `bundle.sh --pkg` around `distribution.xml`, with the capture access helper |
 | `.github/workflows/release.yml` | Builds all of them for a tag and drafts the GitHub release |
 | `site/`, `scripts/build-site.sh`, `.github/workflows/site.yml` | The website, published to GitHub Pages whenever it changes on main |
 | `site/i18n/`, `scripts/site-i18n.py` | The website's text in every language, built into the pages; `docs/GLOSSARY.md` says how |
@@ -43,7 +43,10 @@ triib sends and receives raw Ethernet, which each system guards:
   libraries for audio, PipeWire's for the virtual audio devices of this
   computer's streams, and recommend linuxptp, whose ptp4l the host
   entities need; triib-endpointd reads the PTP hardware clock, which
-  systemd's rules let everyone read.
+  systemd's rules let everyone read. As they install, the packages say
+  when no wired interface has a PTP hardware clock, which using this
+  computer as an AVB endpoint requires, with the Ethernet cards that have
+  one and that no Wi-Fi card can serve yet.
 - **macOS:** read and write access to the BPF devices, `/dev/bpf*`,
   which are root's alone at every start. The installer package puts
   `triib.app` in /Applications, links `triib-cli` into /usr/local/bin,
@@ -54,7 +57,10 @@ triib sends and receives raw Ethernet, which each system guards:
   the next login. `sudo "/Library/Application Support/triib/uninstall"`
   removes it all. macOS never hands its own AVB entity the commands
   written to BPF, so triib reaches that entity through Apple's
-  AudioVideoBridging framework, which needs nothing more.
+  AudioVideoBridging framework, which needs nothing more. As it opens,
+  the installer warns when the Mac has no AVB Ethernet port, one whose
+  controller has a realtime queue, which using this Mac as an AVB
+  endpoint requires; the install goes on either way.
 - **Windows:** Npcap, from https://npcap.com. Its license does not let
   other installers carry it, so the MSI looks for it and, when it is
   missing, offers Npcap's download page on its last page instead of
@@ -63,7 +69,8 @@ triib sends and receives raw Ethernet, which each system guards:
   Administrators only" makes triib need to run as administrator, which
   triib explains. The MSI installs for the current user, with no
   administrator prompt, and puts triib's folder on the user's PATH for
-  triib-cli.
+  triib-cli. Its last page says that this computer cannot be an AVB
+  endpoint on Windows yet.
 
 ## Steps
 

@@ -10,6 +10,8 @@
 # alone at every start. The package installs a launch daemon that opens
 # them to the access_bpf group at each start, as Wireshark's ChmodBPF
 # does with the same group, and adds the user installing it to the group.
+# As it opens, the installer warns when the Mac has no AVB Ethernet port
+# (distribution.xml).
 #
 # TRIIB_PRODUCTION=1 makes a release build, as in CI; without it the app
 # is the development build, with its own settings and cache.
@@ -117,9 +119,15 @@ if $pkg; then
     components=$(mktemp -d)/components.plist
     pkgbuild --analyze --root "$payload" "$components" >/dev/null
     plutil -replace 0.BundleIsRelocatable -bool false "$components"
+    component=$(mktemp -d)
+    pkgbuild --root "$payload" --component-plist "$components" --scripts "$scripts" \
+        --identifier "$id" --version "$version" --install-location / "$component/$id.pkg" >/dev/null
+    distribution=$(mktemp -d)/distribution.xml
+    sed -e "s/@NAME@/$name/g" -e "s/@ID@/$id/g" -e "s/@VERSION@/$version/g" \
+        -e "s/@ARCH@/$(uname -m)/g" -e "s/@PACKAGE@/$id.pkg/g" \
+        "$here/distribution.xml" >"$distribution"
     package="$out/$name-$version-$(uname -m).pkg"
     rm -f "$package"
-    pkgbuild --root "$payload" --component-plist "$components" --scripts "$scripts" \
-        --identifier "$id" --version "$version" --install-location / "$package" >/dev/null
+    productbuild --distribution "$distribution" --package-path "$component" "$package" >/dev/null
     echo "$package"
 fi

@@ -9,7 +9,8 @@
   folder to the user's PATH for triib-cli. triib reaches the network
   through Npcap, which its license keeps out of other installers: when it
   is missing, the last page offers its download page instead of opening
-  triib.
+  triib. The last page also says that this computer cannot be an AVB
+  endpoint on Windows yet.
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
@@ -78,6 +79,8 @@
          program's path is known only once costing is done. -->
     <ui:WixUI Id="WixUI_Minimal" />
     <WixVariable Id="WixUILicenseRtf" Value="$(sys.SOURCEFILEDIR)license.rtf" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT"
+              Value="Using this computer as an AVB endpoint is not supported on Windows yet. triib discovers, connects and sets up the AVB and Milan devices on the network." />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
     <SetProperty Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Action="OfferNpcapText" Sequence="ui" Before="CostFinalize"
                  Value="Open the Npcap download page; triib needs Npcap to reach the network" Condition="NOT NPCAP" />
