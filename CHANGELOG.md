@@ -15,6 +15,13 @@ All notable changes to triib. Versions follow
   some compositors, such as one without a GPU on Debian 13 or Ubuntu
   26.04. `WGPU_BACKEND=gl` still asks for OpenGL.
 
+### Packages
+
+- Every package is installed, upgraded from the last release, run and
+  removed in clean systems before each release: fresh Debian, Ubuntu,
+  Fedora and Arch containers, a Windows container and GitHub's Windows
+  and macOS runners.
+
 ## [1.1.0] - 2026-10-16
 
 The Streams tab with peak meters, max transit times, media clock streams

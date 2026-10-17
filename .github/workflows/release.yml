@@ -319,6 +319,166 @@ jobs:
           name: macos-arm64
           path: dist/*.pkg
 
+  # The packages, installed as users would install them, in clean systems
+  # where nothing but what each package brings or depends on can supply
+  # what triib needs: each is installed, upgraded from the last release,
+  # run and removed by the scripts in packaging/tests. A release is only
+  # drafted once they pass.
+  linux-install:
+    # Fresh containers of the distributions each package is for. RISC-V
+    # runs under QEMU, so its test leaves out raw Ethernet and the window.
+    name: linux-install (${{ matrix.image }}, ${{ matrix.arch }})
+    needs: linux
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64, aarch64]
+        image: ['debian:13', 'ubuntu:24.04', 'ubuntu:26.04', 'fedora:44']
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+          - arch: riscv64
+            image: 'ubuntu:24.04'
+            runner: ubuntu-24.04
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: packages
+      - if: matrix.arch == 'riscv64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: riscv64
+      - name: Install, upgrade, run and remove
+        run: |
+          case $IMAGE in
+          fedora:*) package=$(ls packages/*.rpm) ;;
+          *) package=$(ls packages/*.deb) ;;
+          esac
+          previous=$(packaging/tests/previous-release.sh "$package" previous)
+          packaging/tests/linux/run.sh "$IMAGE" "$package" $previous
+        env:
+          IMAGE: ${{ matrix.image }}
+          GH_TOKEN: ${{ github.token }}
+          TRIIB_TEST_SHOTS: shots
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shots-linux-${{ matrix.arch }}-${{ strategy.job-index }}
+          path: shots/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  arch-install:
+    # The PKGBUILD, built from this tree in a fresh Arch container as
+    # someone building it would, and its package tested like the others.
+    if: ${{ !inputs.only || inputs.only == 'all' || inputs.only == 'linux' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the package
+        run: |
+          pkgver=$(sed -n 's/^pkgver=//p' packaging/arch/triib/PKGBUILD)
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          if [ "$pkgver" != "$version" ]; then
+            echo "The PKGBUILD's pkgver $pkgver is not version $version in Cargo.toml" >&2
+            exit 1
+          fi
+          git archive --prefix="triib-$pkgver/" -o "triib-$pkgver.tar.gz" HEAD
+          docker run --rm -v "$PWD:/work" -w /work archlinux:latest \
+            packaging/tests/linux/build-arch.sh "triib-$pkgver.tar.gz" dist-arch
+      - name: Install, run and remove
+        run: packaging/tests/linux/run.sh archlinux:latest dist-arch/triib-[0-9]*.pkg.tar.zst
+        env:
+          TRIIB_TEST_SHOTS: shots
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shots-arch
+          path: shots/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  windows-install:
+    # On GitHub's runners, which have far more installed than a clean
+    # Windows, so the test also checks each program's DLLs against those
+    # Windows itself provides.
+    needs: windows
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: windows-2025
+          - arch: arm64
+            runner: windows-11-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}
+          path: packages
+      - name: The last release's installer
+        id: previous
+        shell: bash
+        run: echo "msi=$(packaging/tests/previous-release.sh packages/*.msi previous)" >>"$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Install, upgrade, run and remove
+        shell: pwsh
+        run: packaging\tests\windows\test-msi.ps1 -Msi (Get-Item packages\*.msi).FullName -Previous "$env:PREVIOUS"
+        env:
+          PREVIOUS: ${{ steps.previous.outputs.msi }}
+
+  windows-clean:
+    # A Windows Server container, which has neither the Visual C++ runtime
+    # nor anything else a runner brings, nor a desktop for the window.
+    # Process isolation needs the container's Windows to be the host's.
+    needs: windows
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-x64
+          path: packages
+      - name: Install, run and remove in a clean Windows
+        shell: pwsh
+        run: |
+          $msi = (Get-Item packages\*.msi).Name
+          docker run --rm -v "${{ github.workspace }}:C:\work" mcr.microsoft.com/windows/server:ltsc2022 `
+            powershell -NoProfile -ExecutionPolicy Bypass -File C:\work\packaging\tests\windows\test-msi.ps1 `
+            -Msi "C:\work\packages\$msi" -NoWindow
+          if ($LASTEXITCODE -ne 0) { throw "the test failed in the container" }
+
+  macos-install:
+    # Each macOS that GitHub runs, each a fresh machine.
+    needs: macos
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-14, macos-15, macos-26]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-arm64
+          path: packages
+      - name: Install, upgrade, run and remove
+        run: |
+          package=$(ls packages/*.pkg)
+          previous=$(packaging/tests/previous-release.sh "$package" previous)
+          packaging/tests/macos/test-pkg.sh "$package" $previous
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TRIIB_EXPECT_SIGNED: ${{ vars.MACOS_APP_IDENTITY != '' }}
+
   aur:
     # The AUR package builds from GitHub's source archive of the tag; its
     # checksum is only known once the tag exists.
@@ -341,7 +501,7 @@ jobs:
 
   release:
     if: github.ref_type == 'tag'
-    needs: [linux, aur, windows, macos]
+    needs: [linux, aur, windows, macos, linux-install, arch-install, windows-install, windows-clean, macos-install]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
