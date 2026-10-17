@@ -7,7 +7,7 @@
  "7b4379a60050": "স্পেসিফিকেশন",
  "c60f2f817f12": "GitHub-এ সোর্স কোড",
  "a4f50d1a4290": "triib",
- "1c16e0b179dd": "<span1>আপনার AVB নেটওয়ার্ক দেখুন, সংযোগ করুন ও দেখভাল করুন।</span1> <span2>প্রতিটি Milan ও AVB ডিভাইস খুঁজে নিন, একটি ম্যাট্রিক্সে তাদের streams সংযোগ করুন, নেটওয়ার্ক জুড়ে প্রতিটি stream ও clock অনুসরণ করুন, আর formats, clocks, channel maps ও controls বদলান। Linux-এ হোস্ট entities যোগ করুন, যেগুলো কম্পিউটারের&nbsp;অডিওতে রাউট করা থাকে।</span2>",
+ "a834a71c5ff0": "<span1>একটি সহজ, তবু পূর্ণাঙ্গ নেটওয়ার্ক অডিও controller।</span1> <span2>প্রতিটি Milan ও AVB ডিভাইস খুঁজে নিন, একটি ম্যাট্রিক্সে তাদের streams সংযোগ করুন, নেটওয়ার্ক জুড়ে প্রতিটি stream ও clock অনুসরণ করুন, আর formats, clocks, channel maps ও controls বদলান। Linux-এ হোস্ট entities যোগ করুন, যেগুলো কম্পিউটারের&nbsp;অডিওতে রাউট করা থাকে।</span2>",
  "6b4032b23584": "<a1>{v} ডাউনলোড করুন</a1> <a2>GitHub-এ সোর্স কোড</a2>",
  "a2fafaf64ad2": "MIT বা Apache 2.0-এর অধীনে বিনামূল্যে ও ওপেন সোর্স, Linux, Windows ও macOS-এ। 38টি ভাষায়, ডান থেকে বাঁয়ে লেখা ভাষাসহ।",
  "af748efff6cb": "triib কী করে",

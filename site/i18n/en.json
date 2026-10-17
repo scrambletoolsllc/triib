@@ -31,9 +31,9 @@
   "page": "index.html",
   "text": "triib"
  },
- "1c16e0b179dd": {
+ "a834a71c5ff0": {
   "page": "index.html",
-  "text": "<span1>See, connect and look after your AVB network.</span1> <span2>Find every Milan and AVB device, connect their streams in a matrix, follow each stream and clock across the network, and change formats, clocks, channel maps and controls. On Linux, add host entities, routed to the computer's&nbsp;audio.</span2>"
+  "text": "<span1>A simple yet full-featured network audio controller.</span1> <span2>Find every Milan and AVB device, connect their streams in a matrix, follow each stream and clock across the network, and change formats, clocks, channel maps and controls. On Linux, add host entities, routed to the computer's&nbsp;audio.</span2>"
  },
  "6b4032b23584": {
   "page": "index.html",
