@@ -1,4 +1,4 @@
-/* triib's website, in Material 3 colors from a baby blue seed, #89cff0. */
+/* triib's website, in the blues of the icon's cables. */
 
 @font-face {
   font-family: "Roboto Flex";
@@ -8,20 +8,23 @@
 }
 
 :root {
-  /* Baby blue itself fills; text takes a deeper blue of the same hue, as
-     baby blue on a light page is too faint to read. */
-  --accent: #89cff0;
-  --on-accent: #00344b;
-  --primary: #00658b;
+  /* The cables' own blue fills the tonal button, and their lighter blue
+     the other accents; text on the light page takes the cables' shadow
+     blue, as the lighter ones are too faint there to read. */
+  --wire: #2970cf;
+  --on-wire: #ffffff;
+  --accent: #7db3f5;
+  --on-accent: #0a2b57;
+  --primary: #1f5ebc;
   --on-primary: #ffffff;
-  --primary-container: #cde8fb;
-  --on-primary-container: #001e2e;
-  --surface: #f6fafe;
-  --surface-container: #eaeef3;
-  --surface-container-high: #e4e9ed;
-  --on-surface: #171c1f;
-  --on-surface-variant: #40484d;
-  --outline-variant: #c0c7cd;
+  --primary-container: #d8e6fb;
+  --on-primary-container: #0a2b57;
+  --surface: #f7f9fd;
+  --surface-container: #ebeef4;
+  --surface-container-high: #e5e8ef;
+  --on-surface: #171c22;
+  --on-surface-variant: #41474f;
+  --outline-variant: #c1c7d0;
   --shadow: 0 1px 3px rgb(0 0 0 / 0.12), 0 8px 24px rgb(0 0 0 / 0.10);
   --hero-shadow: var(--shadow);
   color-scheme: light;
@@ -29,23 +32,23 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --primary: #89cff0;
-    --on-primary: #00344b;
-    --primary-container: #004d6b;
-    --on-primary-container: #c8e6ff;
-    --surface: #0f1417;
-    --surface-container: #1b2024;
-    --surface-container-high: #262b2f;
-    --on-surface: #dee3e8;
-    --on-surface-variant: #c0c7cd;
-    --outline-variant: #40484d;
+    --primary: #7db3f5;
+    --on-primary: #0a2b57;
+    --primary-container: #1f4f93;
+    --on-primary-container: #d8e6fb;
+    --surface: #101318;
+    --surface-container: #1c2026;
+    --surface-container-high: #262b32;
+    --on-surface: #dfe3ea;
+    --on-surface-variant: #c1c7d0;
+    --outline-variant: #41474f;
     --shadow: 0 1px 3px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.35);
     /* A hairline and a soft glow in the accent color, so the dark hero
        screenshot stands off the dark page. */
     --hero-shadow:
-      0 0 0 1px rgb(137 207 240 / 0.20),
-      0 0 48px 0 rgb(137 207 240 / 0.18),
-      0 0 140px 16px rgb(0 101 139 / 0.22),
+      0 0 0 1px rgb(125 179 245 / 0.20),
+      0 0 48px 0 rgb(125 179 245 / 0.18),
+      0 0 140px 16px rgb(41 112 207 / 0.25),
       0 24px 64px rgb(0 0 0 / 0.5);
     color-scheme: dark;
   }
@@ -194,7 +197,7 @@ html:not([lang="en"]) .lede-rest { width: auto; min-width: 0; margin-inline-star
   text-decoration: none;
 }
 .button.filled { background: var(--accent); color: var(--on-accent); }
-.button.tonal { background: var(--primary-container); color: var(--on-primary-container); }
+.button.tonal { background: var(--wire); color: var(--on-wire); }
 .button:hover { filter: brightness(1.08); }
 
 .shot { display: block; width: 100%; height: auto; border-radius: 16px; box-shadow: var(--shadow); }
