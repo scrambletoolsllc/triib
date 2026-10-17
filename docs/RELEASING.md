@@ -13,7 +13,7 @@ Everything a release ships is built from this repository:
 | `packaging/nfpm.yaml`, `packaging/linux/postinstall.sh` | Debian and RPM packages, made with nfpm, which grant the programs `CAP_NET_RAW` as they install and run `packaging/linux/endpoint-check` |
 | `packaging/arch/triib/` | AUR package, whose install script does the same |
 | `packaging/windows/` | Windows MSI (WiX 5) and zip, made by `build.ps1` |
-| `packaging/macos/` | triib.app and its installer package, made by `bundle.sh --pkg` around `distribution.xml`, with the capture access helper |
+| `packaging/macos/` | triib.app and its installer package, made by `bundle.sh --pkg` around `distribution.xml`, signed and notarized as [macOS signing](#macos-signing) says, with the capture access helper |
 | `.github/workflows/release.yml` | Builds all of them for a tag and drafts the GitHub release |
 | `site/`, `scripts/build-site.sh`, `.github/workflows/site.yml` | The website, published to GitHub Pages whenever it changes on main |
 | `site/i18n/`, `scripts/site-i18n.py` | The website's text in every language, built into the pages; `docs/GLOSSARY.md` says how |
@@ -125,20 +125,58 @@ match; the azure/login step prints the subject a run presents.
 
 ## macOS signing
 
-The app and package are signed ad hoc, so Gatekeeper blocks a downloaded
-copy until the user chooses Open Anyway in System Settings, Privacy &
-Security. A Developer ID Application certificate, with a Developer ID
-Installer certificate for the package (`productsign`), and notarization
-with `xcrun notarytool submit --wait` and `xcrun stapler staple`, remove
-the warning.
+Releases carry Scramble Tools' Developer ID signatures and are
+notarized, so Gatekeeper opens a downloaded copy without asking, and
+macOS keeps the microphone and audio recording permissions Listen needs
+across updates, as every release is signed by the same team. They are
+always the organization's certificates, never a personal one: the
+workflow checks each signature against the identity its variables name.
 
-An ad hoc signature also changes with every build, and macOS asks again
-for the microphone and audio recording permissions Listen needs after
-each update. `bundle.sh` signs with the identity named in
-`TRIIB_SIGN_IDENTITY` where it is set, from the keychain in
-`TRIIB_SIGN_KEYCHAIN`, unlocked with `TRIIB_SIGN_KEYCHAIN_PASSWORD`: the
-Developer ID Application identity for a release. For development builds
-a self-signed code signing certificate does, as macOS keeps the
-permissions for every build signed by the same certificate; quit the app
-before rebuilding it, as one that asks while its bundle is rewritten
-loses them.
+`bundle.sh` signs both programs with the hardened runtime, which
+notarization asks for, and gives the app the
+`com.apple.security.device.audio-input` entitlement
+(`packaging/macos/triib.entitlements`), without which the hardened
+runtime keeps the microphone from it. It signs with the identity named
+in `TRIIB_SIGN_IDENTITY` where it is set, else ad hoc, from the keychain
+in `TRIIB_SIGN_KEYCHAIN`, unlocked with `TRIIB_SIGN_KEYCHAIN_PASSWORD`,
+and the package with `TRIIB_INSTALLER_IDENTITY`. Given an App Store
+Connect API key, `TRIIB_NOTARY_KEY` (its .p8 file), `TRIIB_NOTARY_KEY_ID`
+and `TRIIB_NOTARY_ISSUER`, it has Apple's notary service check the
+package, waits for it, and staples the ticket to the package.
+
+The release workflow's macOS job runs in the environment `release` and
+reads:
+
+| Name | Kind | Holds |
+|---|---|---|
+| `MACOS_APP_IDENTITY` | variable | `Developer ID Application: <team name> (<team ID>)`, exactly as the certificate names it |
+| `MACOS_INSTALLER_IDENTITY` | variable | `Developer ID Installer: <team name> (<team ID>)` |
+| `APPLE_API_KEY_ID` | variable | The App Store Connect API key's ID |
+| `APPLE_API_ISSUER` | variable | Its issuer ID |
+| `MACOS_APP_P12` | secret | The Developer ID Application certificate with its private key, a .p12 file in base64 |
+| `MACOS_INSTALLER_P12` | secret | The Developer ID Installer certificate with its private key, likewise |
+| `MACOS_P12_PASSWORD` | secret | The password of both .p12 files |
+| `APPLE_API_KEY` | secret | The API key's .p8 file in base64 |
+
+Until `MACOS_APP_IDENTITY` is set the job signs ad hoc. Once it is, the
+job imports both identities into a keychain of its own for the run,
+signs and notarizes, then checks that both programs are signed by
+`MACOS_APP_IDENTITY`, the package by `MACOS_INSTALLER_IDENTITY`, that the
+package is notarized with its ticket stapled, and that Gatekeeper
+accepts the package and the app; any of them failing fails the run.
+
+Only the team's Account Holder can create Developer ID certificates, at
+developer.apple.com under Certificates: Developer ID Application and
+Developer ID Installer, each with the G2 Sub-CA, from a certificate
+signing request whose private key stays with whoever made it. The notary
+key is an App Store Connect team key with the Developer role, and its
+.p8 file can be downloaded only once. The current certificates expire
+on November 15, 2027; a renewed one needs its secret replaced, and its
+variable too if the team's name has changed. No App ID or provisioning
+profile is needed: the microphone entitlement is not one Apple
+restricts.
+
+For development builds a self-signed code signing certificate does, as
+macOS keeps the permissions for every build signed by the same
+certificate; quit the app before rebuilding it, as one that asks while
+its bundle is rewritten loses them.

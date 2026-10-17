@@ -205,6 +205,13 @@ it receives and sends.
   `TRIIB_SIGN_KEYCHAIN`, rather than ad hoc where it is set: an ad hoc
   signature changes with every build, and macOS then asks for those
   permissions again.
+- The macOS app and package are signed with Scramble Tools' Developer ID
+  certificates and the package is notarized, so Gatekeeper opens them
+  without Open Anyway and macOS keeps Listen's permissions across
+  updates. Both programs run under the hardened runtime, the app with
+  the microphone entitlement. The release workflow signs, notarizes and
+  staples, then fails unless the app and package are signed by the
+  identities its variables name.
 - The installers say when this computer cannot be an AVB endpoint. The
   Linux packages check for a wired interface with a PTP hardware clock
   as they install and, finding none, say so with the Ethernet cards that

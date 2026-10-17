@@ -1,8 +1,9 @@
 #!/bin/bash
 # Builds triib.app on macOS, with triib-cli beside the app's own binary,
 # and with --pkg an installer package that also sets up capture access.
-# The app is signed ad hoc, which Apple Silicon needs to run it at all; a
-# Developer ID signature and notarization come later (docs/RELEASING.md).
+# The app is signed ad hoc, which Apple Silicon needs to run it at all,
+# unless an identity is given, as below. A release carries Scramble
+# Tools' Developer ID signatures and is notarized (docs/RELEASING.md).
 #
 #   packaging/macos/bundle.sh [--pkg] [--out DIR]
 #
@@ -21,6 +22,10 @@
 # TRIIB_SIGN_KEYCHAIN_PASSWORD. An ad hoc signature changes with every
 # build, so macOS asks again for the microphone and audio recording; one
 # that stays, such as a local certificate's, keeps what was allowed.
+# TRIIB_INSTALLER_IDENTITY signs the package, from the same keychain.
+# TRIIB_NOTARY_KEY, an App Store Connect API key's .p8 file, with
+# TRIIB_NOTARY_KEY_ID and TRIIB_NOTARY_ISSUER, has the package notarized
+# and the ticket stapled to it.
 set -euo pipefail
 
 root=$(cd "$(dirname "$0")/../.." && pwd)
@@ -98,12 +103,21 @@ plutil -lint "$app/Contents/Info.plist" >/dev/null
 
 # Extended attributes would go into the package as AppleDouble files.
 xattr -cr "$app"
-sign=(--sign "${TRIIB_SIGN_IDENTITY:--}")
+# The hardened runtime, which notarization asks for, every build alike;
+# under it the microphone takes the entitlement, which only the app needs.
+sign=(--force --options runtime --sign "${TRIIB_SIGN_IDENTITY:--}")
 if [ -n "${TRIIB_SIGN_KEYCHAIN:-}" ]; then
     security unlock-keychain -p "${TRIIB_SIGN_KEYCHAIN_PASSWORD:-}" "$TRIIB_SIGN_KEYCHAIN"
     sign+=(--keychain "$TRIIB_SIGN_KEYCHAIN")
 fi
-codesign --force --deep "${sign[@]}" "$app"
+# Notarization also asks for a secure timestamp, which any identity gets,
+# named or given by its SHA-1 hash.
+if [ -n "${TRIIB_SIGN_IDENTITY:-}" ] && [ "$TRIIB_SIGN_IDENTITY" != - ]; then
+    sign+=(--timestamp)
+fi
+codesign "${sign[@]}" --identifier "$id.cli" "$app/Contents/MacOS/triib-cli"
+codesign "${sign[@]}" --entitlements "$here/triib.entitlements" "$app"
+codesign --verify --strict "$app"
 echo "$app"
 
 if $pkg; then
@@ -128,6 +142,29 @@ if $pkg; then
         "$here/distribution.xml" >"$distribution"
     package="$out/$name-$version-$(uname -m).pkg"
     rm -f "$package"
-    productbuild --distribution "$distribution" --package-path "$component" "$package" >/dev/null
+    product=(--distribution "$distribution" --package-path "$component")
+    if [ -n "${TRIIB_INSTALLER_IDENTITY:-}" ]; then
+        product+=(--sign "$TRIIB_INSTALLER_IDENTITY" --timestamp)
+        if [ -n "${TRIIB_SIGN_KEYCHAIN:-}" ]; then
+            product+=(--keychain "$TRIIB_SIGN_KEYCHAIN")
+        fi
+    fi
+    productbuild "${product[@]}" "$package" >/dev/null
+    if [ -n "${TRIIB_NOTARY_KEY:-}" ]; then
+        notary=(--key "$TRIIB_NOTARY_KEY" --key-id "${TRIIB_NOTARY_KEY_ID:?}"
+            --issuer "${TRIIB_NOTARY_ISSUER:?}")
+        result=$(xcrun notarytool submit "$package" "${notary[@]}" --wait --output-format json) || true
+        status=$(plutil -extract status raw -o - - <<<"$result" 2>/dev/null || echo none)
+        if [ "$status" != Accepted ]; then
+            echo "notarization: $status" >&2
+            echo "$result" >&2
+            submission=$(plutil -extract id raw -o - - <<<"$result" 2>/dev/null || true)
+            if [ -n "$submission" ]; then
+                xcrun notarytool log "$submission" "${notary[@]}" >&2 || true
+            fi
+            exit 1
+        fi
+        xcrun stapler staple "$package" >/dev/null
+    fi
     echo "$package"
 fi
