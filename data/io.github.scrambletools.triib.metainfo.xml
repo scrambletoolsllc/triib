@@ -61,6 +61,11 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="1.1.1" date="2026-10-17">
+      <description>
+        <p>A close button in the toolbar under compositors that draw no title bar, such as Hyprland and niri. triib starts on a Windows without the Visual C++ runtime, draws in software on Linux without a Vulkan driver rather than quitting, and on a Mac leaves Thunderbolt Bridge and USB-C network interfaces out of the interface picker.</p>
+      </description>
+    </release>
     <release version="1.1.0" date="2026-10-16">
       <description>
         <p>The Streams tab, with a peak meter on each stream this computer carries, max transit times, media clock streams on host entities with any input as their clock source, the Basic Audio profile's channel counts and each output in its format's SR class. On a Mac, the Mac's own AVB entity as a host entity, with Listen for what it receives and sends. The macOS app and installer are signed with a Developer ID and notarized, and the installers say when this computer cannot be an AVB endpoint.</p>

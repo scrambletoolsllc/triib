@@ -3,7 +3,7 @@ resolver = "3"
 members = ["crates/*"]
 
 [workspace.package]
-version = "1.1.0"
+version = "1.1.1"
 edition = "2024"
 rust-version = "1.95"
 license = "MIT OR Apache-2.0"
@@ -15,10 +15,10 @@ repository = "https://github.com/scrambletoolsllc/triib"
 atdecc = { path = "crates/atdecc", version = "0.1.0", default-features = false }
 avb-mrp = { path = "crates/avb-mrp", version = "0.1.0", default-features = false }
 avb-net = { path = "crates/avb-net", version = "0.1.0", default-features = false }
-triib-store = { path = "crates/triib-store", version = "1.1.0" }
-triib-stream = { path = "crates/triib-stream", version = "1.1.0" }
-triib-pipewire = { path = "crates/triib-pipewire", version = "1.1.0" }
-triib-endpointd = { path = "crates/triib-endpointd", version = "1.1.0" }
+triib-store = { path = "crates/triib-store", version = "1.1.1" }
+triib-stream = { path = "crates/triib-stream", version = "1.1.1" }
+triib-pipewire = { path = "crates/triib-pipewire", version = "1.1.1" }
+triib-endpointd = { path = "crates/triib-endpointd", version = "1.1.1" }
 # Pinned by revision, as prev pins it. A git-ignored .cargo/config.toml can
 # point it at a local checkout while changing both (see the README).
 scramble-ui = { git = "https://github.com/scrambletools/scramble-ui", rev = "1b57adae70aab7efc4e57d1a777d295acc45b46b", version = "0.1.0" }

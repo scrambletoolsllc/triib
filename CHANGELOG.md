@@ -3,7 +3,13 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.1.1] - 2026-10-17
+
+A close button in the toolbar under compositors that draw no title bar,
+and fixes for computers that 1.1.0 did not start on or listed too many
+interfaces on: a Windows without the Visual C++ runtime, Linux without a
+Vulkan driver, and a Mac's Thunderbolt Bridge and USB-C interfaces. Every
+package is now tested in clean systems before each release.
 
 ### Controller
 
