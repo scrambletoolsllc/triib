@@ -397,9 +397,8 @@ mod platform {
             );
         }
         // SAFETY: the name is a NUL-terminated string in the entry.
-        let name = unsafe { CStr::from_ptr(address.ifa_name) }
-            .to_string_lossy()
-            .into_owned();
+        let bsd_name = unsafe { CStr::from_ptr(address.ifa_name) };
+        let name = bsd_name.to_string_lossy().into_owned();
         let speed = (!address.ifa_data.is_null())
             .then(|| {
                 // SAFETY: an AF_LINK entry's data is its if_data.
@@ -418,8 +417,8 @@ mod platform {
             };
         Some(Interface {
             // macOS names its Ethernet and Wi-Fi ports enN; anpi, ap, awdl,
-            // llw and the like are its own.
-            physical: name.starts_with("en"),
+            // llw and the like are its own, and so are some enN.
+            physical: name.starts_with("en") && !without_port(bsd_name),
             wireless: media.is_some_and(|media| media.current & MEDIA_NETWORK == MEDIA_WIFI),
             name,
             mac: MacAddress(mac),
@@ -427,6 +426,62 @@ mod platform {
             speed: speed.filter(|_| up),
             hardware_clock: None,
         })
+    }
+
+    /// Whether the interface named `name` has no Ethernet port of its
+    /// own, as its controller shows: Thunderbolt Bridge's IP over
+    /// Thunderbolt, or a USB-C port being a USB network device for another
+    /// computer.
+    fn without_port(name: &CStr) -> bool {
+        const CONTROLLERS: [&CStr; 2] = [c"AppleThunderboltIPPort", c"AppleUSBDeviceNCMData"];
+        // SAFETY: IOServiceGetMatchingService takes the matching dictionary
+        // IOBSDNameMatching made, and each object found is released once.
+        unsafe {
+            let matching = iokit::IOBSDNameMatching(iokit::MAIN_PORT, 0, name.as_ptr());
+            if matching.is_null() {
+                return false;
+            }
+            let interface = iokit::IOServiceGetMatchingService(iokit::MAIN_PORT, matching);
+            if interface == 0 {
+                return false;
+            }
+            let mut controller = 0;
+            let found = iokit::IORegistryEntryGetParentEntry(
+                interface,
+                c"IOService".as_ptr(),
+                &raw mut controller,
+            ) == 0;
+            iokit::IOObjectRelease(interface);
+            if !found {
+                return false;
+            }
+            let without = CONTROLLERS
+                .iter()
+                .any(|class| iokit::IOObjectConformsTo(controller, class.as_ptr()) != 0);
+            iokit::IOObjectRelease(controller);
+            without
+        }
+    }
+
+    /// The few IOKit calls that look up an interface's controller.
+    mod iokit {
+        use std::ffi::{c_char, c_void};
+
+        /// `kIOMainPortDefault`.
+        pub const MAIN_PORT: u32 = 0;
+
+        #[link(name = "IOKit", kind = "framework")]
+        unsafe extern "C" {
+            pub fn IOBSDNameMatching(port: u32, options: u32, name: *const c_char) -> *mut c_void;
+            pub fn IOServiceGetMatchingService(port: u32, matching: *mut c_void) -> u32;
+            pub fn IORegistryEntryGetParentEntry(
+                entry: u32,
+                plane: *const c_char,
+                parent: *mut u32,
+            ) -> i32;
+            pub fn IOObjectConformsTo(object: u32, class: *const c_char) -> u32;
+            pub fn IOObjectRelease(object: u32) -> i32;
+        }
     }
 
     /// What `SIOCGIFMEDIA` says of the interface named `name`.

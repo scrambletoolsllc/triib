@@ -14,6 +14,10 @@ All notable changes to triib. Versions follow
   renderer rather than OpenGL, which made it quit as it opened under
   some compositors, such as one without a GPU on Debian 13 or Ubuntu
   26.04. `WGPU_BACKEND=gl` still asks for OpenGL.
+- On a Mac, the interfaces without an Ethernet port of their own,
+  Thunderbolt Bridge's and those of USB-C ports being USB network
+  devices, count as virtual, so the interface picker leaves them out
+  with the others; an M4 Mac mini listed six of them.
 
 ### Packages
 
