@@ -31,9 +31,13 @@ for sources in /etc/apt/sources.list.d/*.sources; do
   grep -q '^Architectures:' "$sources" ||
     sudo sed -i -E "/^Types:/a Architectures: $host" "$sources"
 done
+# The same pockets as the host's, security too: a library both
+# architectures install, such as libsystemd0, must be the same version in
+# each.
 sudo tee /etc/apt/sources.list.d/ports-$debarch.list >/dev/null <<SOURCES
 deb [arch=$debarch] http://ports.ubuntu.com/ubuntu-ports $codename main universe
 deb [arch=$debarch] http://ports.ubuntu.com/ubuntu-ports $codename-updates main universe
+deb [arch=$debarch] http://ports.ubuntu.com/ubuntu-ports $codename-security main universe
 SOURCES
 sudo dpkg --add-architecture "$debarch"
 sudo apt-get update
