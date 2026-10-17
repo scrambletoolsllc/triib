@@ -7,7 +7,7 @@
  "7b4379a60050": "Specificații",
  "c60f2f817f12": "Cod sursă pe GitHub",
  "a4f50d1a4290": "triib",
- "a834a71c5ff0": "<span1>Un controler audio de rețea simplu, dar complet.</span1> <span2>Găsește fiecare dispozitiv Milan și AVB, conectează-le fluxurile într-o matrice, urmărește fiecare flux și fiecare ceas prin rețea și schimbă formate, ceasuri, mapări de canale și controale. Pe Linux, adaugă entități gazdă, direcționate către sistemul audio al&nbsp;computerului.</span2>",
+ "8dbeadfe29ad": "<span1>Un controler audio de rețea simplu, dar complet.</span1> <span2>Gestionează fiecare dispozitiv Milan și AVB, conectează fluxuri, cartografiază fluxurile și ceasurile prin rețea și schimbă formate, ceasuri, mapări de canale și controale. Pe Linux, creează endpointuri pentru sistemul audio al&nbsp;gazdei.</span2>",
  "6b4032b23584": "<a1>Descarcă {v}</a1> <a2>Cod sursă pe GitHub</a2>",
  "a2fafaf64ad2": "Gratuit și cu sursă deschisă, sub MIT sau Apache 2.0, pe Linux, Windows și macOS. În 38 de limbi, inclusiv limbi scrise de la dreapta la stânga.",
  "af748efff6cb": "Ce face triib",

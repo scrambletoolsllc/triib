@@ -7,7 +7,7 @@
  "7b4379a60050": "Specificaties",
  "c60f2f817f12": "Broncode op GitHub",
  "a4f50d1a4290": "triib",
- "a834a71c5ff0": "<span1>Een eenvoudige maar complete controller voor netwerkaudio.</span1> <span2>Vind elk Milan- en AVB-apparaat, verbind hun streams in een matrix, volg elke stream en klok door het netwerk, en wijzig formaten, klokken, kanaaltoewijzingen en regelaars. Voeg op Linux host-entiteiten toe, verbonden met de audio van de&nbsp;computer.</span2>",
+ "8dbeadfe29ad": "<span1>Een eenvoudige maar complete controller voor netwerkaudio.</span1> <span2>Beheer elk Milan- en AVB-apparaat, verbind streams, breng streams en klokken in kaart door het netwerk, en wijzig formaten, klokken, kanaaltoewijzingen en regelaars. Maak op Linux endpoints voor het audiosysteem van de&nbsp;host.</span2>",
  "6b4032b23584": "<a1>Download {v}</a1> <a2>Broncode op GitHub</a2>",
  "a2fafaf64ad2": "Gratis en open source onder MIT of Apache 2.0, op Linux, Windows en macOS. In 38 talen, ook van rechts naar links.",
  "af748efff6cb": "Wat triib doet",

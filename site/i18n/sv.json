@@ -7,7 +7,7 @@
  "7b4379a60050": "Specifikationer",
  "c60f2f817f12": "Källkod på GitHub",
  "a4f50d1a4290": "triib",
- "a834a71c5ff0": "<span1>En enkel men komplett controller för nätverksljud.</span1> <span2>Hitta alla Milan- och AVB-enheter, anslut deras streamar i en matris, följ varje stream och klocka genom nätverket, och ändra format, klockor, kanaltilldelningar och reglage. På Linux kan du lägga till värdentiteter, kopplade till datorns&nbsp;ljud.</span2>",
+ "8dbeadfe29ad": "<span1>En enkel men komplett controller för nätverksljud.</span1> <span2>Hantera alla Milan- och AVB-enheter, anslut streamar, kartlägg streamar och klockor genom nätverket, och ändra format, klockor, kanaltilldelningar och reglage. På Linux kan du skapa slutpunkter för värdens&nbsp;ljudsystem.</span2>",
  "6b4032b23584": "<a1>Ladda ner {v}</a1> <a2>Källkod på GitHub</a2>",
  "a2fafaf64ad2": "Gratis och med öppen källkod under MIT eller Apache 2.0, på Linux, Windows och macOS. På 38 språk, även språk som skrivs från höger till vänster.",
  "af748efff6cb": "Vad triib gör",

@@ -7,7 +7,7 @@
  "7b4379a60050": "Especificações",
  "c60f2f817f12": "Código-fonte no GitHub",
  "a4f50d1a4290": "triib",
- "a834a71c5ff0": "<span1>Um controlador de áudio em rede simples, mas completo.</span1> <span2>Encontre todos os dispositivos Milan e AVB, ligue os seus fluxos numa matriz, acompanhe cada fluxo e cada relógio pela rede e altere formatos, relógios, mapeamentos de canais e controlos. No Linux, adicione entidades do anfitrião, encaminhadas para o áudio do&nbsp;computador.</span2>",
+ "8dbeadfe29ad": "<span1>Um controlador de áudio em rede simples, mas completo.</span1> <span2>Faça a gestão de todos os dispositivos Milan e AVB, ligue fluxos, mapeie fluxos e relógios pela rede e altere formatos, relógios, mapeamentos de canais e controlos. No Linux, crie endpoints para o sistema de áudio do&nbsp;anfitrião.</span2>",
  "6b4032b23584": "<a1>Transferir {v}</a1> <a2>Código-fonte no GitHub</a2>",
  "a2fafaf64ad2": "Gratuito e de código aberto, sob MIT ou Apache 2.0, para Linux, Windows e macOS. Em 38 idiomas, incluindo idiomas escritos da direita para a esquerda.",
  "af748efff6cb": "O que o triib faz",

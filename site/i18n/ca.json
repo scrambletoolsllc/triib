@@ -7,7 +7,7 @@
  "7b4379a60050": "Especificacions",
  "c60f2f817f12": "Codi font a GitHub",
  "a4f50d1a4290": "triib",
- "a834a71c5ff0": "<span1>Un controlador d'àudio en xarxa senzill però complet.</span1> <span2>Trobeu tots els dispositius Milan i AVB, connecteu-ne els fluxos en una matriu, seguiu cada flux i cada rellotge per tota la xarxa, i canvieu formats, rellotges, mapatges de canals i controls. A Linux, afegiu entitats de l’amfitrió, encaminades a l’àudio de&nbsp;l’ordinador.</span2>",
+ "8dbeadfe29ad": "<span1>Un controlador d'àudio en xarxa senzill però complet.</span1> <span2>Gestioneu tots els dispositius Milan i AVB, connecteu fluxos, traceu el mapa de fluxos i rellotges per tota la xarxa, i canvieu formats, rellotges, mapatges de canals i controls. A Linux, creeu punts finals per al sistema d’àudio de&nbsp;l’amfitrió.</span2>",
  "6b4032b23584": "<a1>Baixa {v}</a1> <a2>Codi font a GitHub</a2>",
  "a2fafaf64ad2": "Lliure i de codi obert amb llicència MIT o Apache 2.0, per a Linux, Windows i macOS. En 38 llengües, incloses les que s’escriuen de dreta a esquerra.",
  "af748efff6cb": "Què fa triib",

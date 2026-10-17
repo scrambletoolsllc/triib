@@ -7,7 +7,7 @@
  "7b4379a60050": "Spesifikasi",
  "c60f2f817f12": "Kode sumber di GitHub",
  "a4f50d1a4290": "triib",
- "a834a71c5ff0": "<span1>Controller audio jaringan yang sederhana namun lengkap.</span1> <span2>Temukan setiap perangkat Milan dan AVB, hubungkan stream-nya dalam sebuah matriks, telusuri setiap stream dan clock di seluruh jaringan, dan ubah format, clock, pemetaan kanal, serta kontrol. Di Linux, tambahkan entitas host, yang dirutekan ke audio&nbsp;komputer.</span2>",
+ "8dbeadfe29ad": "<span1>Controller audio jaringan yang sederhana namun lengkap.</span1> <span2>Kelola setiap perangkat Milan dan AVB, hubungkan stream, petakan stream dan clock di seluruh jaringan, dan ubah format, clock, pemetaan kanal, serta kontrol. Di Linux, buat endpoint untuk sistem audio&nbsp;host.</span2>",
  "6b4032b23584": "<a1>Unduh {v}</a1> <a2>Kode sumber di GitHub</a2>",
  "a2fafaf64ad2": "Gratis dan open source dengan lisensi MIT atau Apache 2.0, di Linux, Windows, dan macOS. Dalam 38 bahasa, termasuk yang ditulis dari kanan ke kiri.",
  "af748efff6cb": "Yang dilakukan triib",

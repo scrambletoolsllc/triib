@@ -7,7 +7,7 @@
  "7b4379a60050": "Technische Daten",
  "c60f2f817f12": "Quellcode auf GitHub",
  "a4f50d1a4290": "triib",
- "a834a71c5ff0": "<span1>Ein einfacher und doch vollwertiger Controller für Netzwerk-Audio.</span1> <span2>Jedes Milan- und AVB-Gerät finden, die Streams in einer Matrix verbinden, jeden Stream und jede Clock durch das Netzwerk verfolgen und Formate, Clocks, Kanalzuordnungen und Bedienelemente ändern. Unter Linux Host-Entitäten hinzufügen, angebunden an das Audiosystem des&nbsp;Computers.</span2>",
+ "8dbeadfe29ad": "<span1>Ein einfacher und doch vollwertiger Controller für Netzwerk-Audio.</span1> <span2>Jedes Milan- und AVB-Gerät verwalten, Streams verbinden, Streams und Clocks im ganzen Netzwerk abbilden und Formate, Clocks, Kanalzuordnungen und Bedienelemente ändern. Unter Linux Endpunkte für das Audiosystem des&nbsp;Hosts erstellen.</span2>",
  "6b4032b23584": "<a1>Download {v}</a1> <a2>Quellcode auf GitHub</a2>",
  "a2fafaf64ad2": "Kostenlos und quelloffen unter MIT oder Apache 2.0, für Linux, Windows und macOS. In 38 Sprachen, auch von rechts nach links.",
  "af748efff6cb": "Was triib kann",
