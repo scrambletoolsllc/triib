@@ -164,7 +164,18 @@ if $pkg; then
             fi
             exit 1
         fi
-        xcrun stapler staple "$package" >/dev/null
+        # The ticket can take a moment to reach Apple's servers after the
+        # package is accepted, so stapling is tried again before failing.
+        for attempt in 1 2 3 4 5; do
+            if staple=$(xcrun stapler staple "$package" 2>&1); then
+                break
+            fi
+            if [ "$attempt" = 5 ]; then
+                echo "$staple" >&2
+                exit 1
+            fi
+            sleep 30
+        done
     fi
     echo "$package"
 fi
