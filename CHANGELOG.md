@@ -3,6 +3,14 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Fixed
+
+- On Windows, triib and triib-cli carry the C runtime they were built
+  with, so they start on a Windows without the Visual C++ runtime, such
+  as a fresh install, where 1.1.0 could not.
+
 ## [1.1.0] - 2026-10-16
 
 The Streams tab with peak meters, max transit times, media clock streams

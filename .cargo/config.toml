@@ -2,3 +2,8 @@
 # Tests draw windows with the software renderer, as on CI: several tests
 # opening the GPU driver at once can crash it.
 ICED_TEST_BACKEND = "tiny-skia"
+
+# The C runtime goes into the Windows programs, as a clean Windows lacks
+# the Visual C++ runtime DLLs they would otherwise need.
+[target.'cfg(all(windows, target_env = "msvc"))']
+rustflags = ["-C", "target-feature=+crt-static"]
