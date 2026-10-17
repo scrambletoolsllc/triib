@@ -15,7 +15,7 @@ section: sound
 priority: optional
 maintainer: Scramble Tools <https://github.com/scrambletools>
 vendor: Scramble Tools
-homepage: https://github.com/scrambletools/triib
+homepage: https://github.com/scrambletoolsllc/triib
 license: MIT OR Apache-2.0
 description: |-
   Discover, connect and set up AVB and Milan devices

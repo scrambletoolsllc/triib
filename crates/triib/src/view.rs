@@ -2673,6 +2673,22 @@ pub(crate) mod tests {
         model
     }
 
+    /// The bench in use: the Wi-Fi endpoint taking the wired one's audio,
+    /// in the format it is set to, and both taking the Mac mini's media
+    /// clock.
+    fn connected_bench(
+        entities: &BTreeMap<EntityId, DiscoveredEntity>,
+        models: &mut BTreeMap<EntityId, EntityModel>,
+    ) {
+        for (listener, bound) in [
+            (WIFI_ESP, &[(0, WIRED_ESP, 0), (1, MAC_MINI, 1)][..]),
+            (WIRED_ESP, &[(1, MAC_MINI, 1)][..]),
+        ] {
+            let model = reread(entities, models, listener, |_| {}, &[], bound, false);
+            models.insert(listener, model);
+        }
+    }
+
     /// The bench with a media clock chain: the wired endpoint clocked from
     /// the Mac mini's CRF output through its CRF input, and the Wi-Fi
     /// endpoint clocked from a CRF input bound to nothing.
@@ -2918,6 +2934,9 @@ pub(crate) mod tests {
             }
             if suffix.contains("media-clock") {
                 clocked_bench(&entities, &mut models);
+            }
+            if suffix == "matrix-desktop" || suffix.starts_with("presets") {
+                connected_bench(&entities, &mut models);
             }
             if suffix.contains("diagnostics") {
                 let model = reread(

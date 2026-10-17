@@ -115,17 +115,17 @@
   "page": "index.html",
   "text": "Host entities"
  },
- "dd2686ed3486": {
+ "5baeb7902a22": {
   "page": "index.html",
-  "text": "On Linux, on an interface with a PTP hardware clock, with nothing to set up, triib runs Milan entities with any number of streams each way: AAF or AM824 audio at 48, 96 or 192 kHz, each stream with its own virtual audio device or one of the computer's, and CRF media clock streams, any input the entity's clock source."
+  "text": "On Linux, on an interface with a PTP hardware clock, with nothing to set up, triib runs Milan entities with any number of streams each way: AAF or AM824 audio at 48, 96 or 192 kHz, each stream with its own virtual audio device or one of the computer's and a peak meter in the inspector, and CRF media clock streams, any input the entity's clock source."
  },
  "924e1dc5ea71": {
   "page": "index.html",
   "text": "The Mac's own entity"
  },
- "0ac1d14e777b": {
+ "69a716d0ca10": {
   "page": "index.html",
-  "text": "On a Mac, the Mac's own AVB entity shows as a host entity, with its audio device and its configurations, and Listen plays what it receives, or what apps send through it, on an output you pick."
+  "text": "On a Mac, the Mac's own AVB entity shows as a host entity, with its audio device, its configurations and its streams' peak meters, and Listen plays what it receives, or what apps send through it, on an output you pick."
  },
  "50603fd9e222": {
   "page": "index.html",
@@ -295,9 +295,9 @@
   "page": "index.html",
   "text": "This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. triib never goes online: it sends and receives AVB frames only on the local network interface you pick, as an AVB controller does, and the only web page it opens is Npcap's, on Windows, when you click its link. triib has no accounts and sends no telemetry. This website sets no cookies and loads nothing from other sites."
  },
- "10ad6a2a5a92": {
+ "4694aa253436": {
   "page": "index.html",
-  "text": "triib is free software under the <a1>MIT</a1> or <a2>Apache 2.0</a2> license. Made by <a3>Scramble Tools</a3>. Milan and AVB are trademarks of Avnu Alliance; triib is not certified by Avnu Alliance. <a4>Code signing policy</a4> · <a5>Privacy</a5>"
+  "text": "triib is free software under the <a1>MIT</a1> or <a2>Apache 2.0</a2> license. Made by <a3>Scramble Tools</a3>. Milan is a trademark of Avnu Alliance; triib is not certified by Avnu Alliance. <a4>Code signing policy</a4> · <a5>Privacy</a5>"
  },
  "845e9d59374a": {
   "page": "index.html",
@@ -309,9 +309,9 @@
   "text": "The triib icon",
   "attribute": true
  },
- "a0cc51db2168": {
+ "3c4b8c510eca": {
   "page": "index.html",
-  "text": "triib in dark mode with the connection matrix of three entities, talker outputs across the top and listener inputs down the side, and the inspector on the right showing the selected Mac mini's name, product, firmware, media clock and sampling rate",
+  "text": "triib in dark mode with the connection matrix of three entities, talker outputs across the top and listener inputs down the side, an audio stream and two media clock streams connected, and the inspector on the right showing the selected Mac mini's name, product, firmware, configuration, media clock and sampling rate",
   "attribute": true
  },
  "744b44c965b9": {
@@ -515,9 +515,9 @@
   "page": "guide.html",
   "text": "<strong>Entity:</strong> its name and group, which you can rename, its product and firmware, its configuration, picked by name where it has several, its media clock with the clock source and sampling rate to change, its AVB Lite and AVB Wireless state, its identity and roles. <em>Identify</em> makes the device show itself, as by a blinking light."
  },
- "00196c866748": {
+ "d578970588ae": {
   "page": "guide.html",
-  "text": "<strong>Streams:</strong> its streams, outputs then inputs, and the picked one's details: its name, its format, which you can change, its state, stream ID, destination and VLAN, an output's maximum transit time, which you can pick, and its listeners where its talker keeps them, each with a button that disconnects it; then how the streams' channels map to the entity's audio."
+  "text": "<strong>Streams:</strong> its streams, outputs then inputs, each this computer carries with a peak meter, and the picked one's details: its name, its format, which you can change, its state, stream ID, destination and VLAN, an output's maximum transit time, which you can pick, and its listeners where its talker keeps them, each with a button that disconnects it; then how the streams' channels map to the entity's audio."
  },
  "3198f45d9c98": {
   "page": "guide.html",
@@ -607,13 +607,17 @@
   "page": "guide.html",
   "text": "A wired interface with a PTP hardware clock; <code>ethtool -T &lt;interface&gt;</code> shows whether it has one."
  },
- "99fe24ff157b": {
+ "4ec22c87d03b": {
   "page": "guide.html",
-  "text": "<a1>linuxptp</a1>'s <code>ptp4l</code> running gPTP on that interface, so the clock keeps the network's time. Where none runs there, triib starts it through its own systemd unit, reads its state, and says when linuxptp is missing."
+  "text": "<a1>linuxptp</a1>'s <code>ptp4l</code> running gPTP on that interface, so the clock keeps the network's time. Where none runs there, triib starts it through its own systemd unit, reads its state, and says when linuxptp is missing. A host entity more than a millisecond off the grandmaster reports itself out of sync, and triib starts its ptp4l again."
  },
- "8cf3c5c94ed4": {
+ "6bcfb3a8fb23": {
   "page": "guide.html",
-  "text": "Add one with <em>Add entity</em> in the entity list: a Milan entity with an audio stream each way. Its Streams tab adds more with <em>Add stream</em>, an audio or a media clock input or output, and removes them. An audio stream is AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless the inspector picks another count, in SR class A or B; a media clock stream is CRF, 48 kHz with a timestamp every 96 samples."
+  "text": "Add one with <em>Add entity</em> in the entity list: a Milan entity with an audio stream each way. Its Streams tab adds more with <em>Add stream</em>, an audio or a media clock input or output, and removes them. An audio stream is AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless the inspector picks another count, and takes 2 and 8 channels too, as the <a1>Basic Audio</a1> profile asks; an output sends in SR class B in class B's own formats and in class A in the others. A media clock stream is CRF, 48 kHz with a timestamp every 96 samples."
+ },
+ "01180c5b18ad": {
+  "page": "guide.html",
+  "text": "The Streams tab's list shows a peak meter of each audio stream's first two channels: green, yellow from -12&nbsp;dBFS and red from -6&nbsp;dBFS. The meters cover other entities' streams too, where they connect to a host entity's."
  },
  "8449130f047f": {
   "page": "guide.html",
@@ -627,9 +631,9 @@
   "page": "guide.html",
   "text": "On a Mac with AVB turned on in Audio MIDI Setup's Network Device Browser, triib shows the Mac's own AVB entity as a host entity. Its inspector names the audio device apps play into and record from, which macOS makes only while one of the entity's streams is connected, and opens Audio MIDI Setup. Where AVB is off, the Entities view says where to turn it on."
  },
- "207e66624926": {
+ "4e6cd2ebd61e": {
   "page": "guide.html",
-  "text": "<em>Listen</em> plays a channel or a pair of what the entity receives, or of what apps send to one of its output streams, on an output you pick, with a gain. macOS asks once for the microphone, to hear what the Mac receives, and for audio recording, to hear what it sends, which takes macOS 14.2 or later."
+  "text": "<em>Listen</em> plays a channel or a pair of what the entity receives, or of what apps send to one of its output streams, on an output you pick, with a gain. macOS asks once for the microphone, to hear what the Mac receives, and for audio recording, to hear what it sends, which takes macOS 14.2 or later. The Streams tab's peak meters of the entity's audio streams are measured from the same audio device."
  },
  "c7f73bb54d92": {
   "page": "guide.html",
@@ -677,9 +681,9 @@
   "text": "Contents",
   "attribute": true
  },
- "73af9c6aeb81": {
+ "409a24f4a9bc": {
   "page": "guide.html",
-  "text": "The connection matrix: talker outputs of three entities written diagonally across the top, listener inputs down the right, and circles in the cells where a connection can be made",
+  "text": "The connection matrix: talker outputs of three entities written diagonally across the top, listener inputs down the right, a link in each cell whose streams are connected, and circles in the cells where a connection can be made",
   "attribute": true
  },
  "141be4a57b66": {
@@ -732,9 +736,9 @@
   "text": "The log below the entity list, with frames sent and heard: a Connect RX command, a Get counters response with a warning, and a response marked Not implemented",
   "attribute": true
  },
- "4757108a8371": {
+ "c674e1ab855e": {
   "page": "guide.html",
-  "text": "The inspector's Streams tab for Host entity 1, a host entity: its streams Out 1 and In 1 and an Add stream button, and Out 1's name, audio from a virtual device, 8 channels, format AAF 48 kHz, 8 ch, 32-bit, and a Remove stream button",
+  "text": "The inspector's Streams tab for Host entity 1, a host entity: its streams Out 1, whose peak meter shows one channel at full scale and the other lower, and In 1, and an Add stream button, and Out 1's name, audio from a virtual device, 8 channels, format AAF 48 kHz, 8 ch, 32-bit, and a Remove stream button",
   "attribute": true
  },
  "8b5b5c48c04c": {
@@ -871,9 +875,9 @@
   "page": "specs.html",
   "text": "Material Design 3, light or dark and the accent color from the system"
  },
- "e8776a86ec74": {
+ "23c687921e9b": {
   "page": "specs.html",
-  "text": "Read and controlled through Apple's AudioVideoBridging framework, as macOS never hands it what a program writes to BPF; shown as a host entity, with its audio device, and Listen, which plays what it receives, or from macOS 14.2 what apps send through it"
+  "text": "Read and controlled through Apple's AudioVideoBridging framework, as macOS never hands it what a program writes to BPF; shown as a host entity, with its audio device, its streams' peak meters, and Listen, which plays what it receives, or from macOS 14.2 what apps send through it"
  },
  "2210d472bf0c": {
   "page": "specs.html",
@@ -935,9 +939,17 @@
   "page": "specs.html",
   "text": "The <a1>AVB Wireless</a1> community profile: each AVB interface's wireless status (GET_WIRELESS_STATUS), whether an access point admits Class A (SET_WIRELESS_CONFIG), and its unsolicited responses"
  },
- "d36835363d59": {
+ "8734cf772982": {
   "page": "specs.html",
-  "text": "Milan and AVB are trademarks of Avnu Alliance. triib is not certified by Avnu Alliance."
+  "text": "Basic Audio"
+ },
+ "2bd688942271": {
+  "page": "specs.html",
+  "text": "The <a1>Basic Audio</a1> community profile: host entities' audio streams take 2 and 8 channels beside their own count, and an output's SR class follows its format"
+ },
+ "6fc9e8db972d": {
+  "page": "specs.html",
+  "text": "Milan is a trademark of Avnu Alliance. triib is not certified by Avnu Alliance."
  },
  "a36a5ffa6e0d": {
   "page": "specs.html",
@@ -966,6 +978,14 @@
  "576f92478b6a": {
   "page": "specs.html",
   "text": "Names and groups, configurations, stream formats, sampling rates, clock sources, outputs' maximum transit times, channel maps, controls such as gain and mute, and identifying"
+ },
+ "6ad427ced43e": {
+  "page": "specs.html",
+  "text": "Meters"
+ },
+ "da3a10f938c9": {
+  "page": "specs.html",
+  "text": "A peak meter of each audio stream's first two channels wherever this computer carries its audio: host entities' streams, the Mac's own entity's, and other entities' streams connected to them"
  },
  "3af2279f9e30": {
   "page": "specs.html",
@@ -1007,9 +1027,9 @@
   "page": "specs.html",
   "text": "Linux, on a wired interface with a PTP hardware clock (<code>ethtool -T</code> shows one)"
  },
- "199df59266c8": {
+ "648779402aca": {
   "page": "specs.html",
-  "text": "ptp4l running gPTP on that interface, started through triib's own systemd unit where none runs, and read through its read-only socket"
+  "text": "ptp4l running gPTP on that interface, started through triib's own systemd unit where none runs, and read through its read-only socket; an entity more than a millisecond off the grandmaster reports itself out of sync, and triib's ptp4l starts again after 10 s"
  },
  "ffce85390a20": {
   "page": "specs.html",
@@ -1019,17 +1039,17 @@
   "page": "specs.html",
   "text": "Formats"
  },
- "8bcaf352dbf2": {
+ "f46233570bdf": {
   "page": "specs.html",
-  "text": "Audio: AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless another count is picked, in SR class A or B. Media clock: CRF, 48 kHz with a timestamp every 96 samples"
+  "text": "Audio: AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless another count is picked, and 2 and 8 channels too; in SR class B in class B's own formats, else class A. Media clock: CRF, 48 kHz with a timestamp every 96 samples"
  },
  "acdac205f5e2": {
   "page": "specs.html",
   "text": "Audio"
  },
- "e2859e932c0a": {
+ "3850b941a065": {
   "page": "specs.html",
-  "text": "To and from the computer's audio devices; each audio stream with a virtual audio device of its own in PipeWire unless it uses a sound card; an output can send a tone or silence instead, and an input can discard what it receives"
+  "text": "To and from the computer's audio devices; each audio stream with a virtual audio device of its own in PipeWire unless it uses a sound card; an output can send a tone or silence instead, and an input can discard what it receives; each stream measured for the app's peak meters while it shows them"
  },
  "04f6b3ea183e": {
   "page": "specs.html",
@@ -1147,9 +1167,9 @@
   "page": "specs.html",
   "text": "A station whose time is not locked, and listeners an access point cannot serve"
  },
- "c5516c5412ad": {
+ "46e333d36e7f": {
   "page": "specs.html",
-  "text": "An output can send in SR class B, 4000 frames a second on priority 2, as a stream to a Wi-Fi station must; this computer as a Wi-Fi station is not here yet"
+  "text": "An output sends in SR class B, 4000 frames a second on priority 2, in class B's own formats, as a stream to a Wi-Fi station must; this computer as a Wi-Fi station is not here yet"
  },
  "db07be184479": {
   "page": "specs.html",

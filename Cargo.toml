@@ -7,7 +7,7 @@ version = "1.0.0"
 edition = "2024"
 rust-version = "1.95"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/scrambletools/triib"
+repository = "https://github.com/scrambletoolsllc/triib"
 
 [workspace.dependencies]
 # Protocol crates, usable outside triib: no dependencies beyond avb-net, and

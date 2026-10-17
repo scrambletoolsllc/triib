@@ -22,7 +22,10 @@
       <li>See the network as the devices' gPTP paths show it, with each stream's way through it</li>
       <li>Change names, stream formats, sampling rates, clock sources, channel mappings and controls</li>
       <li>Follow AVB Lite devices, their streams and the alarms the profile calls for</li>
+      <li>See what Wi-Fi stations and access points report under AVB Wireless</li>
       <li>Log every ATDECC frame sent and heard, marking those that break the rules</li>
+      <li>Run Milan entities on this computer, routed to its audio, with a peak meter on each stream</li>
+      <li>Let AI agents read and change the network through MCP, once you let them in</li>
     </ul>
     <p>
       Sending and receiving raw Ethernet needs the CAP_NET_RAW capability,
@@ -32,9 +35,28 @@
 
   <launchable type="desktop-id">io.github.scrambletools.triib.desktop</launchable>
 
-  <url type="homepage">https://github.com/scrambletools/triib</url>
-  <url type="bugtracker">https://github.com/scrambletools/triib/issues</url>
-  <url type="vcs-browser">https://github.com/scrambletools/triib</url>
+  <url type="homepage">https://triib.run</url>
+  <url type="bugtracker">https://github.com/scrambletoolsllc/triib/issues</url>
+  <url type="vcs-browser">https://github.com/scrambletoolsllc/triib</url>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Connecting streams in the matrix</caption>
+      <image>https://triib.run/screenshots/matrix.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>A show's network, each audio stream as its own wire</caption>
+      <image>https://triib.run/screenshots/network.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>The entity list</caption>
+      <image>https://triib.run/screenshots/entities.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>The gPTP clock tree, device by device</caption>
+      <image>https://triib.run/screenshots/network-clock.png</image>
+    </screenshot>
+  </screenshots>
 
   <content_rating type="oars-1.1" />
 

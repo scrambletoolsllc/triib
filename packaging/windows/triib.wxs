@@ -25,8 +25,8 @@
     <Icon Id="triib.ico" SourceFile="$(var.Icon)" />
     <Property Id="ARPPRODUCTICON" Value="triib.ico" />
     <?endif ?>
-    <Property Id="ARPURLINFOABOUT" Value="https://github.com/scrambletools/triib" />
-    <Property Id="ARPHELPLINK" Value="https://github.com/scrambletools/triib" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/scrambletoolsllc/triib" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/scrambletoolsllc/triib" />
 
     <!-- Npcap's installer, a 32-bit program, records its folder here. -->
     <Property Id="NPCAP">

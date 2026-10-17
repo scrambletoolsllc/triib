@@ -205,6 +205,10 @@ it receives and sends.
   `TRIIB_SIGN_KEYCHAIN`, rather than ad hoc where it is set: an ad hoc
   signature changes with every build, and macOS then asks for those
   permissions again.
+- The packages, the installer and the AppStream metadata link to the
+  repository where it lives now, github.com/scrambletoolsllc/triib, and
+  the metadata to the website, triib.run, with its screenshots and the
+  host entities, AVB Wireless and AI agents among the features.
 
 ### Fixed
 

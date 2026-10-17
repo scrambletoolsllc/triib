@@ -52,7 +52,7 @@
 <tr><th>Network</th><td>A wired Ethernet interface, through raw sockets on Linux (<code>CAP_NET_RAW</code>), BPF on macOS and Npcap on Windows</td></tr>
 <tr><th>Graphics</th><td>The GPU through Vulkan on Linux, DirectX 12 or Vulkan on Windows, and Metal on macOS; the CPU when no GPU backend starts</td></tr>
 <tr><th>Look</th><td>Material Design 3, light or dark and the accent color from the system</td></tr>
-<tr><th>The Mac's own entity</th><td>Read and controlled through Apple's AudioVideoBridging framework, as macOS never hands it what a program writes to BPF; shown as a host entity, with its audio device, and Listen, which plays what it receives, or from macOS 14.2 what apps send through it</td></tr>
+<tr><th>The Mac's own entity</th><td>Read and controlled through Apple's AudioVideoBridging framework, as macOS never hands it what a program writes to BPF; shown as a host entity, with its audio device, its streams' peak meters, and Listen, which plays what it receives, or from macOS 14.2 what apps send through it</td></tr>
 <tr><th>Not here yet</th><td>Entities running on the local host on Windows, and on macOS beside the Mac's own</td></tr>
 </tbody></table>
 
@@ -65,8 +65,9 @@
 <tr><th>Time</th><td>IEEE 802.1AS gPTP, through <a href="https://linuxptp.nwtime.org">linuxptp</a>'s ptp4l, and each entity's gPTP path and grandmaster</td></tr>
 <tr><th>AVB Lite</th><td>The <a href="https://github.com/avbcommunity/profiles/blob/main/avb_lite.md">AVB Lite</a> community profile: falling back over switches that are not AVB bridges, CVU SRP declarations, its PTP profile, status and alarms</td></tr>
 <tr><th>AVB Wireless</th><td>The <a href="https://github.com/avbcommunity/profiles">AVB Wireless</a> community profile: each AVB interface's wireless status (GET_WIRELESS_STATUS), whether an access point admits Class A (SET_WIRELESS_CONFIG), and its unsolicited responses</td></tr>
+<tr><th>Basic Audio</th><td>The <a href="https://github.com/avbcommunity/profiles/blob/main/audio_basic.md">Basic Audio</a> community profile: host entities' audio streams take 2 and 8 channels beside their own count, and an output's SR class follows its format</td></tr>
 </tbody></table>
-<p class="small">Milan and AVB are trademarks of Avnu Alliance. triib is not certified by Avnu Alliance.</p>
+<p class="small">Milan is a trademark of Avnu Alliance. triib is not certified by Avnu Alliance.</p>
 
 <h2 id="controller">Controller</h2>
 <table class="spec"><tbody>
@@ -74,6 +75,7 @@
 <tr><th>Connections</th><td>A matrix of talker outputs and listener inputs for audio and media clock streams, with each connection's state and whether the formats meet; connections by group or one by one, and a menu of the formats both ends take where the input must change first</td></tr>
 <tr><th>Network</th><td>A map of bridges and devices from each entity's gPTP path, with audio streams, CRF streams or the clock tree drawn on it</td></tr>
 <tr><th>Changes</th><td>Names and groups, configurations, stream formats, sampling rates, clock sources, outputs' maximum transit times, channel maps, controls such as gain and mute, and identifying</td></tr>
+<tr><th>Meters</th><td>A peak meter of each audio stream's first two channels wherever this computer carries its audio: host entities' streams, the Mac's own entity's, and other entities' streams connected to them</td></tr>
 <tr><th>Diagnostics</th><td>How each clock domain and stream has fared, from the entity's counters, with what went wrong marked; each bound input's reservation; a talker's listeners, where it keeps them; and the descriptors themselves</td></tr>
 <tr><th>Presets</th><td>Clock sources, sampling rates, stream formats, controls and connections, and host entities; recalling one changes only what differs</td></tr>
 <tr><th>Log</th><td>Every ATDECC frame sent and heard, decoded, with the frames that break the rules marked</td></tr>
@@ -85,10 +87,10 @@
 <h2 id="endpoints">Entities running on the local host</h2>
 <table class="spec"><tbody>
 <tr><th>Systems</th><td>Linux, on a wired interface with a PTP hardware clock (<code>ethtool -T</code> shows one)</td></tr>
-<tr><th>Time</th><td>ptp4l running gPTP on that interface, started through triib's own systemd unit where none runs, and read through its read-only socket</td></tr>
+<tr><th>Time</th><td>ptp4l running gPTP on that interface, started through triib's own systemd unit where none runs, and read through its read-only socket; an entity more than a millisecond off the grandmaster reports itself out of sync, and triib's ptp4l starts again after 10 s</td></tr>
 <tr><th>Entities</th><td>Milan entities with any number of streams each way; any controller binds them</td></tr>
-<tr><th>Formats</th><td>Audio: AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless another count is picked, in SR class A or B. Media clock: CRF, 48 kHz with a timestamp every 96 samples</td></tr>
-<tr><th>Audio</th><td>To and from the computer's audio devices; each audio stream with a virtual audio device of its own in PipeWire unless it uses a sound card; an output can send a tone or silence instead, and an input can discard what it receives</td></tr>
+<tr><th>Formats</th><td>Audio: AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless another count is picked, and 2 and 8 channels too; in SR class B in class B's own formats, else class A. Media clock: CRF, 48 kHz with a timestamp every 96 samples</td></tr>
+<tr><th>Audio</th><td>To and from the computer's audio devices; each audio stream with a virtual audio device of its own in PipeWire unless it uses a sound card; an output can send a tone or silence instead, and an input can discard what it receives; each stream measured for the app's peak meters while it shows them</td></tr>
 <tr><th>Clock</th><td>The internal clock, or any input: the clock recovered from a media clock's timestamps or an audio stream's presentation times</td></tr>
 <tr><th>Mappings</th><td>Dynamic on inputs, as Milan has them; fixed on outputs</td></tr>
 <tr><th>Scheduling</th><td>Real-time threads through RealtimeKit, as PipeWire asks for</td></tr>
@@ -113,7 +115,7 @@
 <tr><th>Class A</th><td>Admitted only by an access point that delivers 12000 frames a second or more, and allowed or kept off through SET_WIRELESS_CONFIG, as <code>triib-cli wireless-config</code> does</td></tr>
 <tr><th>Network</th><td>Each station under its access point, its Wi-Fi hop dotted, in sync while its time is locked</td></tr>
 <tr><th>Alarms</th><td>A station whose time is not locked, and listeners an access point cannot serve</td></tr>
-<tr><th>Host entities</th><td>An output can send in SR class B, 4000 frames a second on priority 2, as a stream to a Wi-Fi station must; this computer as a Wi-Fi station is not here yet</td></tr>
+<tr><th>Host entities</th><td>An output sends in SR class B, 4000 frames a second on priority 2, in class B's own formats, as a stream to a Wi-Fi station must; this computer as a Wi-Fi station is not here yet</td></tr>
 </tbody></table>
 
 <h2 id="languages">Languages</h2>

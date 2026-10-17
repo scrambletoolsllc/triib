@@ -33,13 +33,14 @@ Website: **[triib.run](https://triib.run)**, with
 > host, Milan entities with any number of streams each way: AAF or AM824 audio
 > at 48, 96 or 192 kHz to and from the computer's audio devices, each
 > stream with its own virtual audio device by default, and CRF media
-> clock streams, any input the entity's clock source. On a Mac it shows
+> clock streams, any input the entity's clock source. Each stream it
+> carries has a peak meter in the inspector. On a Mac it shows
 > the Mac's own AVB entity as a host entity, and plays what that entity
 > receives or sends through an output picked. It speaks 38 languages,
 > following the system's or the one picked in Settings. See the
 > [plan](docs/PLAN.md).
 
-![triib in dark mode with the connection matrix of three entities, talker outputs across the top and listener inputs down the side, and the inspector on the right showing the selected Mac mini's name, product, firmware, media clock and sampling rate](docs/screenshots/matrix.png)
+![triib in dark mode with the connection matrix of three entities, talker outputs across the top and listener inputs down the side, an audio stream and two media clock streams connected, and the inspector on the right showing the selected Mac mini's name, product, firmware, configuration, media clock and sampling rate](docs/screenshots/matrix.png)
 
 ![The network map of a show: a core bridge, a stage bridge and a front of house bridge, twenty devices from stage boxes to amps, and each audio stream as its own colored wire, with two failed reservations marked](docs/screenshots/network.png)
 
@@ -72,7 +73,10 @@ running gPTP on that interface, so the clock keeps the network's time,
 and where none runs there the daemon starts triib's own unit for it,
 `triib-ptp4l-gptp@<interface>`; a ptp4l run another way stays as it is.
 triib reads ptp4l's state through its read-only socket,
-`/var/run/ptp4lro`, and says when ptp4l isn't there. triib opens with
+`/var/run/ptp4lro`, and says when ptp4l isn't there. A host entity
+whose clock is more than a millisecond off the grandmaster's reports
+itself out of sync, as controllers then show it, and after 10 s out of
+sync triib's own ptp4l unit starts again, stepping the clock. triib opens with
 the host entities listed for its interface back on the network, starting
 the daemon. Each is a Milan
 entity with any number of streams each way, which controllers,
@@ -84,7 +88,9 @@ unless it picks another count, each taking 2 and 8 channels too, as the
 profile has every stream do, and each by default with a virtual audio
 device of its own that apps play into or record from, or a test tone,
 silence or one of the computer's devices; and media clock streams of
-CRF. Any input can be the entity's clock source, its talkers then
+CRF. An output sends in SR class B in class B's own formats, a frame
+each 250 µs, and in class A in the others, so a controller picks its
+class by picking its format; `class = "B"` starts it in class B's. Any input can be the entity's clock source, its talkers then
 following the clock recovered from that stream. Talkers take their
 stream addresses with MAAP, and the stream threads ask RealtimeKit for
 real-time scheduling, as PipeWire does. The Streams tab's list shows a
@@ -92,7 +98,7 @@ peak meter of each audio stream's first two channels, which the daemon
 measures while the app shows them, on other entities' streams too where
 they connect to a host entity's.
 
-<img src="docs/screenshots/device.png" width="320" alt="The inspector's Streams tab for Host entity 1, a host entity: its streams Out 1 and In 1 and an Add stream button, and Out 1's name, audio from a virtual device, 8 channels, format AAF 48 kHz, 8 ch, 32-bit, and a Remove stream button">
+<img src="docs/screenshots/device.png" width="320" alt="The inspector's Streams tab for Host entity 1, a host entity: its streams Out 1, whose peak meter shows one channel at full scale and the other lower, and In 1, and an Add stream button, and Out 1's name, audio from a virtual device, 8 channels, format AAF 48 kHz, 8 ch, 32-bit, and a Remove stream button">
 
 The entities are listed in `entities.toml` in triib's data folder
 (`~/.local/share/triib` on Linux), or in another file Settings, Storage
@@ -329,5 +335,5 @@ otherwise, any contribution intentionally submitted for inclusion in triib
 by you, as defined in the Apache-2.0 license, shall be dual licensed as
 above, without any additional terms or conditions.
 
-Milan and AVB are trademarks of Avnu Alliance. triib is not certified by
-Avnu Alliance.
+Milan is a trademark of Avnu Alliance. triib is not certified by Avnu
+Alliance.
