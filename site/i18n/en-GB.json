@@ -1,5 +1,4 @@
 {
- "63da0d04543e": "Open it: it installs triib and gives you raw Ethernet (<code>/dev/bpf*</code>) from your next login, as Wireshark's ChmodBPF does. Until it is notarised, choose Open Anyway in System Settings, Privacy &amp; Security first",
  "840981ec0887": "<strong>Committers and reviewers:</strong> the members of the <a1>scrambletoolsllc</a1> GitHub organisation, who review every outside contribution before it is merged.",
  "6263ca064f9a": "<strong>Approvers:</strong> the owner of the <a1>scrambletoolsllc</a1> GitHub organisation, who alone can publish a release, and with it a signing.",
  "4694aa253436": "triib is free software under the <a1>MIT</a1> or <a2>Apache 2.0</a2> licence. Made by <a3>Scramble Tools</a3>. Milan is a trademark of Avnu Alliance; triib is not certified by Avnu Alliance. <a4>Code signing policy</a4> · <a5>Privacy</a5>",
@@ -9,7 +8,7 @@
  "04d41817751d": "triib is free software under the <a1>MIT</a1> or <a2>Apache 2.0</a2> licence. Made by <a3>Scramble Tools</a3>. <a4>Code signing policy</a4> · <a5>Privacy</a5>",
  "1383e82fbf3b": "The network map of a show: a core bridge, a stage bridge and a front of house bridge, twenty devices below them, and each audio stream as its own coloured wire",
  "ca9f059b4152": "<a1>Licence and privacy</a1>",
- "a42bce6cde19": "Installer package (.pkg), not yet notarised",
+ "28fd51d4bba2": "Installer package (.pkg), signed and notarised",
  "c9283a58313e": "Material Design 3, light or dark and the accent colour from the system",
  "bef020fa479b": "Licence and privacy",
  "3229609e1543": "Licence"

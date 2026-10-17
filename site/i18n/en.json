@@ -207,9 +207,9 @@
   "page": "index.html",
   "text": "Installer package (.pkg): <a1>Apple Silicon</a1>"
  },
- "63da0d04543e": {
+ "5b49564634e2": {
   "page": "index.html",
-  "text": "Open it: it installs triib and gives you raw Ethernet (<code>/dev/bpf*</code>) from your next login, as Wireshark's ChmodBPF does. Until it is notarized, choose Open Anyway in System Settings, Privacy &amp; Security first"
+  "text": "Open it: it installs triib and gives you raw Ethernet (<code>/dev/bpf*</code>) from your next login, as Wireshark's ChmodBPF does."
  },
  "2d9dceb94637": {
   "page": "index.html",
@@ -759,9 +759,9 @@
   "page": "specs.html",
   "text": "Specifications"
  },
- "b13fae8835e9": {
+ "3071d90230d0": {
   "page": "specs.html",
-  "text": "triib {v}, an ATDECC controller with Milan, AVB Lite and AVB Wireless support, released October 12, 2026. For what each feature does, see the <a1>tour</a1>."
+  "text": "triib {v}, an ATDECC controller with Milan, AVB Lite and AVB Wireless support, released October 16, 2026. For what each feature does, see the <a1>tour</a1>."
  },
  "77df58244ee6": {
   "page": "specs.html",
@@ -851,9 +851,9 @@
   "page": "specs.html",
   "text": "Apple Silicon"
  },
- "a42bce6cde19": {
+ "28fd51d4bba2": {
   "page": "specs.html",
-  "text": "Installer package (.pkg), not yet notarized"
+  "text": "Installer package (.pkg), signed and notarized"
  },
  "23eba0ef6037": {
   "page": "specs.html",
