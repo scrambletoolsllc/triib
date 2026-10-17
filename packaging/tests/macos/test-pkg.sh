@@ -134,6 +134,7 @@ fi
 section "The window"
 cat >"$work/windows.swift" <<'SWIFT'
 import CoreGraphics
+import Foundation
 let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
 for window in CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] ?? [] {
     if let owner = window[kCGWindowOwnerName as String] as? String { print(owner) }
