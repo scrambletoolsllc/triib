@@ -1,4 +1,4 @@
-/* triib's website, in the app's own Material 3 colors, from its teal seed. */
+/* triib's website, in Material 3 colors from a baby blue seed, #89cff0. */
 
 @font-face {
   font-family: "Roboto Flex";
@@ -8,16 +8,20 @@
 }
 
 :root {
-  --primary: #006b5f;
+  /* Baby blue itself fills; text takes a deeper blue of the same hue, as
+     baby blue on a light page is too faint to read. */
+  --accent: #89cff0;
+  --on-accent: #00344b;
+  --primary: #00658b;
   --on-primary: #ffffff;
-  --primary-container: #9ef2e3;
-  --on-primary-container: #00201c;
-  --surface: #f4fbf8;
-  --surface-container: #e9efec;
-  --surface-container-high: #e3eae7;
-  --on-surface: #161d1b;
-  --on-surface-variant: #3f4946;
-  --outline-variant: #bec9c5;
+  --primary-container: #cde8fb;
+  --on-primary-container: #001e2e;
+  --surface: #f6fafe;
+  --surface-container: #eaeef3;
+  --surface-container-high: #e4e9ed;
+  --on-surface: #171c1f;
+  --on-surface-variant: #40484d;
+  --outline-variant: #c0c7cd;
   --shadow: 0 1px 3px rgb(0 0 0 / 0.12), 0 8px 24px rgb(0 0 0 / 0.10);
   --hero-shadow: var(--shadow);
   color-scheme: light;
@@ -25,23 +29,23 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --primary: #82d5c7;
-    --on-primary: #003731;
-    --primary-container: #005048;
-    --on-primary-container: #9ef2e3;
-    --surface: #0e1513;
-    --surface-container: #1a211f;
-    --surface-container-high: #252b2a;
-    --on-surface: #dde4e1;
-    --on-surface-variant: #bec9c5;
-    --outline-variant: #3f4946;
+    --primary: #89cff0;
+    --on-primary: #00344b;
+    --primary-container: #004d6b;
+    --on-primary-container: #c8e6ff;
+    --surface: #0f1417;
+    --surface-container: #1b2024;
+    --surface-container-high: #262b2f;
+    --on-surface: #dee3e8;
+    --on-surface-variant: #c0c7cd;
+    --outline-variant: #40484d;
     --shadow: 0 1px 3px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.35);
     /* A hairline and a soft glow in the accent color, so the dark hero
        screenshot stands off the dark page. */
     --hero-shadow:
-      0 0 0 1px rgb(130 213 199 / 0.20),
-      0 0 48px 0 rgb(130 213 199 / 0.18),
-      0 0 140px 16px rgb(0 137 123 / 0.22),
+      0 0 0 1px rgb(137 207 240 / 0.20),
+      0 0 48px 0 rgb(137 207 240 / 0.18),
+      0 0 140px 16px rgb(0 101 139 / 0.22),
       0 24px 64px rgb(0 0 0 / 0.5);
     color-scheme: dark;
   }
@@ -189,7 +193,7 @@ html:not([lang="en"]) .lede-rest { width: auto; min-width: 0; margin-inline-star
   font-weight: 600;
   text-decoration: none;
 }
-.button.filled { background: var(--primary); color: var(--on-primary); }
+.button.filled { background: var(--accent); color: var(--on-accent); }
 .button.tonal { background: var(--primary-container); color: var(--on-primary-container); }
 .button:hover { filter: brightness(1.08); }
 
