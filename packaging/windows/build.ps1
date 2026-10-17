@@ -1,6 +1,6 @@
 # Packages a Windows build of triib: the MSI installer and a portable zip.
 #
-#   packaging\windows\build.ps1 -Version 1.0.0 -Source dist -Out out [-Arch arm64] [-Icon triib.ico]
+#   packaging\windows\build.ps1 -Version 1.1.0 -Source dist -Out out [-Arch arm64] [-Icon triib.ico]
 #
 # Source holds triib.exe and triib-cli.exe. Needs WiX 5 and its UI and
 # Util extensions:

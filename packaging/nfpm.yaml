@@ -2,8 +2,8 @@
 # from a tree staged by scripts/dist-install.sh:
 #
 #   scripts/dist-install.sh target/release stage /usr
-#   VERSION=1.0.0 ARCH=amd64 nfpm package -f packaging/nfpm.yaml -p deb
-#   VERSION=1.0.0 ARCH=amd64 nfpm package -f packaging/nfpm.yaml -p rpm
+#   VERSION=1.1.0 ARCH=amd64 nfpm package -f packaging/nfpm.yaml -p deb
+#   VERSION=1.1.0 ARCH=amd64 nfpm package -f packaging/nfpm.yaml -p rpm
 #
 # Installing grants the programs CAP_NET_RAW (packaging/linux).
 name: triib

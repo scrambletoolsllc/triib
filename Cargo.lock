@@ -4249,7 +4249,7 @@ dependencies = [
 
 [[package]]
 name = "triib"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "ashpd",
  "atdecc",
@@ -4284,7 +4284,7 @@ dependencies = [
 
 [[package]]
 name = "triib-cli"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "atdecc",
  "avb-net",
@@ -4292,7 +4292,7 @@ dependencies = [
 
 [[package]]
 name = "triib-endpointd"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "atdecc",
  "avb-mrp",
@@ -4307,7 +4307,7 @@ dependencies = [
 
 [[package]]
 name = "triib-pipewire"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "pipewire",
  "triib-stream",
@@ -4315,7 +4315,7 @@ dependencies = [
 
 [[package]]
 name = "triib-store"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "serde",
  "tempfile",
@@ -4324,7 +4324,7 @@ dependencies = [
 
 [[package]]
 name = "triib-stream"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "atdecc",
  "avb-net",

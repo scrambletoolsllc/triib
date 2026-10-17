@@ -22,7 +22,7 @@ prev's look, widgets and window layout through scramble-ui.
   several streams, each with its own virtual audio device (P4); AI
   agents through `triib --mcp`; and on a Mac, the Mac's own entity
   through the AudioVideoBridging framework.
-- Done since 1.0.0, for the next release: on a Mac, the Mac's own AVB
+- Done for 1.1.0: on a Mac, the Mac's own AVB
   entity as a host entity, its configurations picked, and Listen,
   which plays what it receives or what apps send through it, routed by
   hand or through `triib --mcp`; the inspector's Streams tab, with a
@@ -35,7 +35,9 @@ prev's look, widgets and window layout through scramble-ui.
   each output in the SR class its format calls for; the inspector
   titled by its entity, short values beside their labels, one margin
   for every view, and on macOS the toolbar's color behind the
-  transparent title bar.
+  transparent title bar; the macOS app and installer signed with
+  Scramble Tools' Developer ID and notarized, and the installers saying
+  when this computer cannot be an AVB endpoint.
 - Next: P4's rest, whether Windows and then macOS can run talkers and
   listeners of their own, starting with the I210 card for the Windows
   PC.

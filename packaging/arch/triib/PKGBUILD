@@ -1,6 +1,6 @@
 # Maintainer: Scramble Tools <https://github.com/scrambletools>
 pkgname=triib
-pkgver=1.0.0
+pkgver=1.1.0
 pkgrel=1
 pkgdesc='Discover, connect and set up AVB and Milan devices'
 arch=('x86_64' 'aarch64')

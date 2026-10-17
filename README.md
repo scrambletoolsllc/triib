@@ -14,7 +14,7 @@ Website: **[triib.run](https://triib.run)**, with
 [a tour](https://triib.run/guide.html) and
 [the specifications](https://triib.run/specs.html).
 
-> **Status:** 1.0.0. On Linux, macOS and Windows, triib discovers ATDECC entities, reads their
+> **Status:** 1.1.0. On Linux, macOS and Windows, triib discovers ATDECC entities, reads their
 > entity models (names, streams, clocks, Milan support) and keeps them for
 > next time, shows and changes stream connections in a matrix, maps the
 > network from each entity's gPTP path, identifies entities, renames

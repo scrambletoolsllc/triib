@@ -3,13 +3,14 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.1.0] - 2026-10-16
 
-The Streams tab, max transit times, media clock streams on host
-entities with one chosen as their clock source, and host talkers and
-listeners folded into host entities. On a Mac, the Mac's own AVB entity
-as a host entity, with its configurations, and Listen controls for what
-it receives and sends.
+The Streams tab with peak meters, max transit times, media clock streams
+on host entities with one chosen as their clock source, and host talkers
+and listeners folded into host entities. On a Mac, the Mac's own AVB
+entity as a host entity, with its configurations, and Listen controls
+for what it receives and sends. The macOS app and installer are signed
+with Scramble Tools' Developer ID and notarized.
 
 ### Controller
 
