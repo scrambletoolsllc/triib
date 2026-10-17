@@ -90,6 +90,7 @@ toolbar-presets = پری سیٹس
 toolbar-log = لاگ
 toolbar-inspector = انسپکٹر
 toolbar-settings = ترتیبات
+toolbar-close-window = ونڈو بند کریں
 
 ## The network's state, in place of a view
 

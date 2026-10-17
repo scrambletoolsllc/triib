@@ -93,6 +93,7 @@ toolbar-presets = Presets
 toolbar-log = Registre
 toolbar-inspector = Inspector
 toolbar-settings = Configuració
+toolbar-close-window = Tanca la finestra
 
 ## The network's state, in place of a view
 

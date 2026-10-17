@@ -90,6 +90,7 @@ toolbar-presets = الإعدادات المسبقة
 toolbar-log = السجل
 toolbar-inspector = الفاحص
 toolbar-settings = الإعدادات
+toolbar-close-window = إغلاق النافذة
 
 ## The network's state, in place of a view
 

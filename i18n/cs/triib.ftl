@@ -90,6 +90,7 @@ toolbar-presets = Presety
 toolbar-log = Protokol
 toolbar-inspector = Inspektor
 toolbar-settings = Nastavení
+toolbar-close-window = Zavřít okno
 
 ## The network's state, in place of a view
 

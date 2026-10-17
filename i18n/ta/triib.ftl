@@ -90,6 +90,7 @@ toolbar-presets = Presets
 toolbar-log = பதிவு
 toolbar-inspector = ஆய்வி
 toolbar-settings = அமைப்புகள்
+toolbar-close-window = சாளரத்தை மூடு
 
 ## The network's state, in place of a view
 

@@ -92,6 +92,7 @@ toolbar-presets = Presets
 toolbar-log = Log
 toolbar-inspector = Inspektør
 toolbar-settings = Indstillinger
+toolbar-close-window = Luk vindue
 
 ## The network's state, in place of a view
 

@@ -90,6 +90,7 @@ toolbar-presets = Preset
 toolbar-log = Log
 toolbar-inspector = Inspektor
 toolbar-settings = Pengaturan
+toolbar-close-window = Tutup jendela
 
 ## The network's state, in place of a view
 

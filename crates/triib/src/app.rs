@@ -130,6 +130,9 @@ pub struct Triib {
     pub network_focus: Option<Focus>,
     /// The toolbar's "More" menu is open.
     pub overflow_open: bool,
+    /// The toolbar ends with a close button, as the window manager draws
+    /// no title bar.
+    pub close_button: bool,
     /// The menu of the interface picker's filters is open.
     pub interface_filters_open: bool,
     /// Each storage place as typed in Settings, not yet applied, and why
@@ -289,6 +292,8 @@ pub enum Message {
     OverflowToggled,
     NetworkListToggled,
     OverflowClosed,
+    /// Close the window, which quits triib.
+    CloseWindow,
     NetworkFocused(Option<Focus>),
     /// Start editing a name in the inspector.
     EditName(NameTarget),
@@ -406,6 +411,7 @@ impl Triib {
             meter_levels: crate::meters::Levels::default(),
             network_focus: None,
             overflow_open: false,
+            close_button: false,
             interface_filters_open: false,
             storage_drafts: Default::default(),
             storage_errors: Default::default(),
@@ -480,6 +486,7 @@ impl Triib {
             meter_levels: crate::meters::Levels::default(),
             network_focus: None,
             overflow_open: false,
+            close_button: !scramble_ui::desktop::draws_title_bars(),
             interface_filters_open: false,
             storage_drafts: Default::default(),
             storage_errors: Default::default(),
@@ -1151,6 +1158,9 @@ impl Triib {
             Message::OverflowToggled => self.overflow_open = !self.overflow_open,
             Message::NetworkListToggled => self.network_list = !self.network_list,
             Message::OverflowClosed => self.overflow_open = false,
+            Message::CloseWindow => {
+                return iced::window::oldest().and_then(iced::window::close);
+            }
             Message::Copy(text) => return iced::clipboard::write(text),
             Message::OpenLink(link) => {
                 return Task::perform(crate::dialog::open_uri(link), |_| Message::Nothing);

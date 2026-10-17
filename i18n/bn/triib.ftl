@@ -90,6 +90,7 @@ toolbar-presets = Presets
 toolbar-log = লগ
 toolbar-inspector = পরিদর্শক
 toolbar-settings = সেটিংস
+toolbar-close-window = উইন্ডো বন্ধ করুন
 
 ## The network's state, in place of a view
 

@@ -93,6 +93,7 @@ toolbar-presets = 预设
 toolbar-log = 日志
 toolbar-inspector = 检查器
 toolbar-settings = 设置
+toolbar-close-window = 关闭窗口
 
 ## The network's state, in place of a view
 

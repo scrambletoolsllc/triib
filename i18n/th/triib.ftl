@@ -90,6 +90,7 @@ toolbar-presets = พรีเซ็ต
 toolbar-log = บันทึกเหตุการณ์
 toolbar-inspector = ตัวตรวจสอบ
 toolbar-settings = การตั้งค่า
+toolbar-close-window = ปิดหน้าต่าง
 
 ## The network's state, in place of a view
 

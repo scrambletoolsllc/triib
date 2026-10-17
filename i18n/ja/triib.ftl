@@ -93,6 +93,7 @@ toolbar-presets = プリセット
 toolbar-log = ログ
 toolbar-inspector = インスペクター
 toolbar-settings = 設定
+toolbar-close-window = ウインドウを閉じる
 
 ## The network's state, in place of a view
 

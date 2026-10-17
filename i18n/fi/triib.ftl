@@ -92,6 +92,7 @@ toolbar-presets = Esiasetukset
 toolbar-log = Loki
 toolbar-inspector = Tarkastelu
 toolbar-settings = Asetukset
+toolbar-close-window = Sulje ikkuna
 
 ## The network's state, in place of a view
 

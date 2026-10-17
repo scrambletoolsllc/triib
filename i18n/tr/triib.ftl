@@ -92,6 +92,7 @@ toolbar-presets = Ön ayarlar
 toolbar-log = Günlük
 toolbar-inspector = İnceleyici
 toolbar-settings = Ayarlar
+toolbar-close-window = Pencereyi kapat
 
 ## The network's state, in place of a view
 

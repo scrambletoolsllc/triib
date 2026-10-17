@@ -5,6 +5,13 @@ All notable changes to triib. Versions follow
 
 ## [Unreleased]
 
+### Controller
+
+- On Linux, under a compositor that draws no title bar, Hyprland, niri,
+  river or dwl, the toolbar ends with a button that closes the window.
+  `SCRAMBLE_UI_TITLE_BARS=0` shows it elsewhere, such as on sway set up
+  without title bars, and `SCRAMBLE_UI_TITLE_BARS=1` hides it.
+
 ### Fixed
 
 - On Windows, triib and triib-cli carry the C runtime they were built

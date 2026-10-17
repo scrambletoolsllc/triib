@@ -90,6 +90,7 @@ toolbar-presets = Пресеты
 toolbar-log = Журнал
 toolbar-inspector = Инспектор
 toolbar-settings = Настройки
+toolbar-close-window = Закрыть окно
 
 ## The network's state, in place of a view
 

@@ -66,6 +66,7 @@ toolbar-presets = Presets
 toolbar-log = Log
 toolbar-inspector = Inspector
 toolbar-settings = Settings
+toolbar-close-window = Close window
 
 ## The network's state, in place of a view
 

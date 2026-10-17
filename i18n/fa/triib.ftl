@@ -90,6 +90,7 @@ toolbar-presets = پیش‌تنظیم‌ها
 toolbar-log = لاگ
 toolbar-inspector = بازرس
 toolbar-settings = تنظیمات
+toolbar-close-window = بستن پنجره
 
 ## The network's state, in place of a view
 

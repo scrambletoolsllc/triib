@@ -93,6 +93,7 @@ toolbar-presets = Preseturi
 toolbar-log = Jurnal
 toolbar-inspector = Inspector
 toolbar-settings = Setări
+toolbar-close-window = Închide fereastra
 
 ## The network's state, in place of a view
 

@@ -90,6 +90,7 @@ toolbar-presets = פריסטים
 toolbar-log = יומן
 toolbar-inspector = מפקח
 toolbar-settings = הגדרות
+toolbar-close-window = סגירת החלון
 
 ## The network's state, in place of a view
 

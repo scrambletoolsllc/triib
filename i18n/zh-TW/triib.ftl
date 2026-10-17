@@ -93,6 +93,7 @@ toolbar-presets = 預設集
 toolbar-log = 記錄
 toolbar-inspector = 檢閱器
 toolbar-settings = 設定
+toolbar-close-window = 關閉視窗
 
 ## The network's state, in place of a view
 

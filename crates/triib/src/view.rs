@@ -37,6 +37,9 @@ const SEARCH_WIDTH: f32 = 280.0;
 const INTERFACE_PICKER_WIDTH: f32 = 320.0;
 /// Between the toolbar's ends and its first and last tools.
 const TOOLBAR_PADDING: f32 = 12.0;
+/// Between the close button, where there is one, and the tool before it,
+/// a little more than between the others.
+const CLOSE_GAP: f32 = 12.0;
 /// The narrowest window that has room for the inspector beside the view.
 const INSPECTOR_BESIDE: f32 = 720.0;
 /// The least height the view keeps above the log panel.
@@ -180,8 +183,14 @@ fn toolbar_at(triib: &Triib, width: f32) -> Element<'_, Message> {
     let _fixed = dir::fixed();
     use component::{DIVIDER_WIDTH, TOOL_WIDTH, TOOLBAR_GAP};
     let tools = |count: f32| count * TOOL_WIDTH + (count - 1.0) * 4.0;
-    // The space between the bar's two ends takes a gap of its own.
-    let room = width - 2.0 * TOOLBAR_PADDING - TOOLBAR_GAP;
+    // The space between the bar's two ends takes a gap of its own, and the
+    // close button, where there is one, the room it keeps.
+    let close_room = if triib.close_button {
+        CLOSE_GAP + TOOL_WIDTH
+    } else {
+        0.0
+    };
+    let room = width - 2.0 * TOOLBAR_PADDING - TOOLBAR_GAP - close_room;
     // On a narrow window the picker leaves room for the inspector and
     // "More" buttons.
     let picker_width = INTERFACE_PICKER_WIDTH
@@ -341,6 +350,19 @@ fn toolbar_at(triib: &Triib, width: f32) -> Element<'_, Message> {
             Message::OverflowToggled,
             Message::OverflowClosed,
         ));
+    }
+    // Where the window manager draws no title bar, the bar ends with a
+    // button that closes the window, after "More" and a little apart.
+    if triib.close_button {
+        let close = component::tool(
+            Icon::Close,
+            fl!("toolbar-close-window"),
+            Some(Message::CloseWindow),
+        );
+        bar = bar.push(container(close).padding(iced::Padding {
+            left: CLOSE_GAP - TOOLBAR_GAP,
+            ..iced::Padding::ZERO
+        }));
     }
     container(bar)
         .padding([0.0, TOOLBAR_PADDING])
@@ -3280,6 +3302,54 @@ pub(crate) mod tests {
             size,
             window(triib),
         )
+    }
+
+    /// Where the window manager draws no title bar, the toolbar ends with a
+    /// button that closes the window, where its last tool would otherwise
+    /// be, a little apart from the tool before it, and after "More" in a
+    /// window narrow enough for one.
+    #[test]
+    fn the_toolbar_closes_the_window_without_a_title_bar() {
+        use scramble_ui::component::TOOL_WIDTH;
+
+        /// The middle of the tool showing `glyph`, across the window.
+        fn middle(triib: &Triib, width: f32, glyph: Icon) -> f32 {
+            let mut simulator = simulate(triib, Size::new(width, 800.0));
+            let target = simulator
+                .find(glyph.codepoint().to_string().as_str())
+                .expect("the tool");
+            target.visible_bounds().expect("shown").center_x()
+        }
+
+        let mut triib = logging(View::Matrix, false);
+        triib.settings.log = false;
+        let close = Icon::Close.codepoint().to_string();
+        assert!(
+            simulate(&triib, Size::new(1280.0, 800.0))
+                .find(close.as_str())
+                .is_err()
+        );
+        for (width, last) in [(1280.0, Icon::Settings), (480.0, Icon::MoreVert)] {
+            triib.close_button = false;
+            let end = middle(&triib, width, last);
+            triib.close_button = true;
+            let close_middle = middle(&triib, width, Icon::Close);
+            assert_eq!(close_middle, end, "{width}: at the end");
+            assert_eq!(
+                close_middle - middle(&triib, width, last),
+                TOOL_WIDTH + CLOSE_GAP,
+                "{width}: apart from the tool before it"
+            );
+            let mut simulator = simulate(&triib, Size::new(width, 800.0));
+            simulator.click(close.as_str()).expect("the close button");
+            let messages: Vec<Message> = simulator.into_messages().collect();
+            assert!(
+                messages
+                    .iter()
+                    .any(|message| matches!(message, Message::CloseWindow)),
+                "{width}: {messages:?}"
+            );
+        }
     }
 
     #[test]

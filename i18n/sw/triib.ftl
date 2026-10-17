@@ -90,6 +90,7 @@ toolbar-presets = Preset
 toolbar-log = Kumbukumbu
 toolbar-inspector = Mkaguzi
 toolbar-settings = Mipangilio
+toolbar-close-window = Funga dirisha
 
 ## The network's state, in place of a view
 

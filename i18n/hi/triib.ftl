@@ -90,6 +90,7 @@ toolbar-presets = Presets
 toolbar-log = लॉग
 toolbar-inspector = निरीक्षक
 toolbar-settings = सेटिंग्स
+toolbar-close-window = विंडो बंद करें
 
 ## The network's state, in place of a view
 

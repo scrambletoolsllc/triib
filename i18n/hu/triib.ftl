@@ -92,6 +92,7 @@ toolbar-presets = Presetek
 toolbar-log = Napló
 toolbar-inspector = Vizsgáló
 toolbar-settings = Beállítások
+toolbar-close-window = Ablak bezárása
 
 ## The network's state, in place of a view
 

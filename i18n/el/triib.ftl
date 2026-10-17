@@ -92,6 +92,7 @@ toolbar-presets = Προρυθμίσεις
 toolbar-log = Αρχείο καταγραφής
 toolbar-inspector = Επιθεωρητής
 toolbar-settings = Ρυθμίσεις
+toolbar-close-window = Κλείσιμο παραθύρου
 
 ## The network's state, in place of a view
 

@@ -93,6 +93,7 @@ toolbar-presets = Presets
 toolbar-log = Log
 toolbar-inspector = Inspetor
 toolbar-settings = Configurações
+toolbar-close-window = Fechar janela
 
 ## The network's state, in place of a view
 

@@ -93,6 +93,7 @@ toolbar-presets = Preset
 toolbar-log = Nhật ký
 toolbar-inspector = Trình kiểm tra
 toolbar-settings = Cài đặt
+toolbar-close-window = Đóng cửa sổ
 
 ## The network's state, in place of a view
 
