@@ -110,6 +110,8 @@ fn main() -> iced::Result {
         return Ok(());
     }
 
+    #[cfg(target_os = "linux")]
+    prefer_vulkan();
     scramble_ui::input::remember_interface_thread();
     let (sender, receiver) = mpsc::unbounded();
     let _ = EXTERNAL_SENDER.set(sender);
@@ -166,6 +168,19 @@ fn main() -> iced::Result {
     .theme(app::Triib::theme)
     .subscription(app::Triib::subscription)
     .run()
+}
+
+/// Asks wgpu for Vulkan alone, unless WGPU_BACKEND names others. Without
+/// a Vulkan driver wgpu would turn to OpenGL, which panics configuring
+/// the window's surface under some compositors, such as one without a
+/// GPU; iced's software renderer draws instead.
+#[cfg(target_os = "linux")]
+#[allow(unsafe_code)]
+fn prefer_vulkan() {
+    if std::env::var_os("WGPU_BACKEND").is_none() {
+        // SAFETY: called before any other thread starts.
+        unsafe { std::env::set_var("WGPU_BACKEND", "vulkan") };
+    }
 }
 
 /// Opens the control channel, whose calls the app answers; triib runs

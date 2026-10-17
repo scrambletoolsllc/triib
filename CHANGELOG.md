@@ -10,6 +10,10 @@ All notable changes to triib. Versions follow
 - On Windows, triib and triib-cli carry the C runtime they were built
   with, so they start on a Windows without the Visual C++ runtime, such
   as a fresh install, where 1.1.0 could not.
+- On Linux without a Vulkan driver, triib draws with its software
+  renderer rather than OpenGL, which made it quit as it opened under
+  some compositors, such as one without a GPU on Debian 13 or Ubuntu
+  26.04. `WGPU_BACKEND=gl` still asks for OpenGL.
 
 ## [1.1.0] - 2026-10-16
 
