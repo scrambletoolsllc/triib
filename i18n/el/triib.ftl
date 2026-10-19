@@ -94,6 +94,33 @@ toolbar-inspector = Επιθεωρητής
 toolbar-settings = Ρυθμίσεις
 toolbar-close-window = Κλείσιμο παραθύρου
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = Πληροφορίες για το triib
+menu-settings = Ρυθμίσεις…
+menu-services = Υπηρεσίες
+menu-hide = Απόκρυψη triib
+menu-hide-others = Απόκρυψη άλλων
+menu-show-all = Εμφάνιση όλων
+menu-quit = Τερματισμός triib
+menu-file = Αρχείο
+menu-presets = Προρυθμίσεις…
+menu-close-window = Κλείσιμο παραθύρου
+menu-edit = Επεξεργασία
+menu-cut = Αποκοπή
+menu-copy = Αντιγραφή
+menu-paste = Επικόλληση
+menu-select-all = Επιλογή όλων
+menu-view = Προβολή
+menu-full-screen = Είσοδος σε πλήρη οθόνη
+menu-window = Παράθυρο
+menu-minimize = Ελαχιστοποίηση
+menu-zoom = Ζουμ
+menu-bring-all-to-front = Μεταφορά όλων μπροστά
+menu-help = Βοήθεια
+menu-website = Ιστότοπος του triib
+menu-release-notes = Σημειώσεις έκδοσης
+
 ## The network's state, in place of a view
 
 state-no-interface = Καμία διεπαφή

@@ -68,6 +68,10 @@ toolbar-inspector = Inspector
 toolbar-settings = Settings
 toolbar-close-window = Close window
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-minimize = Minimise
+
 ## The network's state, in place of a view
 
 state-no-interface = No interface

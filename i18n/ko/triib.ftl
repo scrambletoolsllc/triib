@@ -95,6 +95,33 @@ toolbar-inspector = 인스펙터
 toolbar-settings = 설정
 toolbar-close-window = 윈도우 닫기
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = triib에 관하여
+menu-settings = 설정…
+menu-services = 서비스
+menu-hide = triib 가리기
+menu-hide-others = 기타 가리기
+menu-show-all = 모두 보기
+menu-quit = triib 종료
+menu-file = 파일
+menu-presets = 프리셋…
+menu-close-window = 윈도우 닫기
+menu-edit = 편집
+menu-cut = 오려두기
+menu-copy = 복사하기
+menu-paste = 붙여넣기
+menu-select-all = 모두 선택
+menu-view = 보기
+menu-full-screen = 전체 화면 시작
+menu-window = 윈도우
+menu-minimize = 최소화
+menu-zoom = 확대/축소
+menu-bring-all-to-front = 모두 앞으로 가져오기
+menu-help = 도움말
+menu-website = triib 웹사이트
+menu-release-notes = 릴리스 노트
+
 ## The network's state, in place of a view
 
 state-no-interface = 선택된 인터페이스 없음

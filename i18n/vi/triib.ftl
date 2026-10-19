@@ -95,6 +95,33 @@ toolbar-inspector = Trình kiểm tra
 toolbar-settings = Cài đặt
 toolbar-close-window = Đóng cửa sổ
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = Giới thiệu về triib
+menu-settings = Cài đặt…
+menu-services = Dịch vụ
+menu-hide = Ẩn triib
+menu-hide-others = Ẩn các ứng dụng khác
+menu-show-all = Hiển thị tất cả
+menu-quit = Thoát triib
+menu-file = Tệp
+menu-presets = Preset…
+menu-close-window = Đóng cửa sổ
+menu-edit = Sửa
+menu-cut = Cắt
+menu-copy = Sao chép
+menu-paste = Dán
+menu-select-all = Chọn tất cả
+menu-view = Xem
+menu-full-screen = Vào chế độ toàn màn hình
+menu-window = Cửa sổ
+menu-minimize = Thu nhỏ cửa sổ
+menu-zoom = Thu phóng
+menu-bring-all-to-front = Đưa tất cả ra trước
+menu-help = Trợ giúp
+menu-website = Trang web triib
+menu-release-notes = Ghi chú phát hành
+
 ## The network's state, in place of a view
 
 state-no-interface = Chưa chọn giao diện

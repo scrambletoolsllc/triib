@@ -92,6 +92,33 @@ toolbar-inspector = ตัวตรวจสอบ
 toolbar-settings = การตั้งค่า
 toolbar-close-window = ปิดหน้าต่าง
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = เกี่ยวกับ triib
+menu-settings = การตั้งค่า…
+menu-services = บริการ
+menu-hide = ซ่อน triib
+menu-hide-others = ซ่อนแอปอื่น
+menu-show-all = แสดงทั้งหมด
+menu-quit = ออกจาก triib
+menu-file = ไฟล์
+menu-presets = พรีเซ็ต…
+menu-close-window = ปิดหน้าต่าง
+menu-edit = แก้ไข
+menu-cut = ตัด
+menu-copy = คัดลอก
+menu-paste = วาง
+menu-select-all = เลือกทั้งหมด
+menu-view = มุมมอง
+menu-full-screen = เข้าสู่โหมดเต็มหน้าจอ
+menu-window = หน้าต่าง
+menu-minimize = ย่อ
+menu-zoom = ซูม
+menu-bring-all-to-front = นำทั้งหมดมาไว้ด้านหน้า
+menu-help = วิธีใช้
+menu-website = เว็บไซต์ triib
+menu-release-notes = บันทึกประจำรุ่น
+
 ## The network's state, in place of a view
 
 state-no-interface = ไม่มีอินเทอร์เฟซ

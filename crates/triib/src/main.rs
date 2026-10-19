@@ -24,6 +24,8 @@ mod mac_meters;
 mod mapping_view;
 mod matrix;
 mod mcp;
+#[cfg(target_os = "macos")]
+mod menu_macos;
 mod meters;
 mod monitor;
 mod netmap;
@@ -65,6 +67,9 @@ pub enum External {
     /// A request on the control channel, for `triib --mcp` and other
     /// programs.
     Control(control::Call),
+    /// An item chosen in the menu bar.
+    #[cfg(target_os = "macos")]
+    Menu(menu_macos::Item),
 }
 
 static EXTERNAL_EVENTS: Mutex<Option<UnboundedReceiver<External>>> = Mutex::new(None);
@@ -125,6 +130,8 @@ fn main() -> iced::Result {
     }
     watch_interfaces();
     serve_control();
+    #[cfg(target_os = "macos")]
+    menu_macos::set_handler();
     if host::SUPPORTED {
         watch_endpoints();
     } else {
@@ -133,7 +140,7 @@ fn main() -> iced::Result {
 
     iced::application(
         move || app::Triib::boot(omarchy_dir.clone()),
-        app::Triib::update,
+        update,
         app::Triib::view,
     )
     .settings(iced::Settings {
@@ -168,6 +175,15 @@ fn main() -> iced::Result {
     .theme(app::Triib::theme)
     .subscription(app::Triib::subscription)
     .run()
+}
+
+/// Runs `message`; on macOS the menu bar's checks then follow what it
+/// changed, however it came.
+fn update(triib: &mut app::Triib, message: app::Message) -> iced::Task<app::Message> {
+    let task = triib.update(message);
+    #[cfg(target_os = "macos")]
+    menu_macos::check(&triib.settings);
+    task
 }
 
 /// Asks wgpu for Vulkan alone, unless WGPU_BACKEND names others. Without

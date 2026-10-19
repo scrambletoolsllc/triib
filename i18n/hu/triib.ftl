@@ -94,6 +94,33 @@ toolbar-inspector = Vizsgáló
 toolbar-settings = Beállítások
 toolbar-close-window = Ablak bezárása
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = A triib névjegye
+menu-settings = Beállítások…
+menu-services = Szolgáltatások
+menu-hide = triib elrejtése
+menu-hide-others = Többi elrejtése
+menu-show-all = Az összes megjelenítése
+menu-quit = Kilépés a triib alkalmazásból
+menu-file = Fájl
+menu-presets = Presetek…
+menu-close-window = Ablak bezárása
+menu-edit = Szerkesztés
+menu-cut = Kivágás
+menu-copy = Másolás
+menu-paste = Beillesztés
+menu-select-all = Az összes kijelölése
+menu-view = Nézet
+menu-full-screen = Teljes képernyő
+menu-window = Ablak
+menu-minimize = Kis méret
+menu-zoom = Nagyítás/kicsinyítés
+menu-bring-all-to-front = Az összes előtérbe hozása
+menu-help = Súgó
+menu-website = A triib webhelye
+menu-release-notes = Kiadási megjegyzések
+
 ## The network's state, in place of a view
 
 state-no-interface = Nincs interfész

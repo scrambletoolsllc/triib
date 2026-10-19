@@ -95,6 +95,33 @@ toolbar-inspector = 檢閱器
 toolbar-settings = 設定
 toolbar-close-window = 關閉視窗
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = 關於 triib
+menu-settings = 設定…
+menu-services = 服務
+menu-hide = 隱藏 triib
+menu-hide-others = 隱藏其他
+menu-show-all = 顯示全部
+menu-quit = 結束 triib
+menu-file = 檔案
+menu-presets = 預設集…
+menu-close-window = 關閉視窗
+menu-edit = 編輯
+menu-cut = 剪下
+menu-copy = 拷貝
+menu-paste = 貼上
+menu-select-all = 全選
+menu-view = 顯示方式
+menu-full-screen = 進入全螢幕
+menu-window = 視窗
+menu-minimize = 縮到最小
+menu-zoom = 縮放
+menu-bring-all-to-front = 將此程式所有視窗移至最前
+menu-help = 輔助說明
+menu-website = triib 網站
+menu-release-notes = 版本說明
+
 ## The network's state, in place of a view
 
 state-no-interface = 未選擇介面

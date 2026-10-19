@@ -92,6 +92,33 @@ toolbar-inspector = انسپکٹر
 toolbar-settings = ترتیبات
 toolbar-close-window = ونڈو بند کریں
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = triib کے بارے میں
+menu-settings = ترتیبات…
+menu-services = خدمات
+menu-hide = triib چھپائیں
+menu-hide-others = دیگر چھپائیں
+menu-show-all = سب دکھائیں
+menu-quit = triib بند کریں
+menu-file = فائل
+menu-presets = پری سیٹس…
+menu-close-window = ونڈو بند کریں
+menu-edit = ترمیم
+menu-cut = کاٹیں
+menu-copy = کاپی کریں
+menu-paste = چسپاں کریں
+menu-select-all = سب منتخب کریں
+menu-view = منظر
+menu-full-screen = پوری اسکرین پر جائیں
+menu-window = ونڈو
+menu-minimize = چھوٹا کریں
+menu-zoom = زوم
+menu-bring-all-to-front = سب کو سامنے لائیں
+menu-help = مدد
+menu-website = triib ویب سائٹ
+menu-release-notes = ریلیز نوٹس
+
 ## The network's state, in place of a view
 
 state-no-interface = کوئی انٹرفیس نہیں

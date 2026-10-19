@@ -92,6 +92,33 @@ toolbar-inspector = Inspektor
 toolbar-settings = Pengaturan
 toolbar-close-window = Tutup jendela
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = Tentang triib
+menu-settings = Pengaturan…
+menu-services = Layanan
+menu-hide = Sembunyikan triib
+menu-hide-others = Sembunyikan Lainnya
+menu-show-all = Tampilkan Semua
+menu-quit = Keluar dari triib
+menu-file = Berkas
+menu-presets = Preset…
+menu-close-window = Tutup Jendela
+menu-edit = Edit
+menu-cut = Potong
+menu-copy = Salin
+menu-paste = Tempel
+menu-select-all = Pilih Semua
+menu-view = Tampilan
+menu-full-screen = Masuk Layar Penuh
+menu-window = Jendela
+menu-minimize = Minimalkan
+menu-zoom = Maksimalkan
+menu-bring-all-to-front = Bawa Semua ke Depan
+menu-help = Bantuan
+menu-website = Situs Web triib
+menu-release-notes = Catatan Rilis
+
 ## The network's state, in place of a view
 
 state-no-interface = Tidak ada antarmuka

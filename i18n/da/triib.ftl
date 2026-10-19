@@ -94,6 +94,33 @@ toolbar-inspector = Inspektør
 toolbar-settings = Indstillinger
 toolbar-close-window = Luk vindue
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = Om triib
+menu-settings = Indstillinger…
+menu-services = Tjenester
+menu-hide = Skjul triib
+menu-hide-others = Skjul andre
+menu-show-all = Vis alle
+menu-quit = Slut triib
+menu-file = Arkiv
+menu-presets = Presets…
+menu-close-window = Luk vindue
+menu-edit = Rediger
+menu-cut = Klip
+menu-copy = Kopier
+menu-paste = Indsæt
+menu-select-all = Vælg alt
+menu-view = Oversigt
+menu-full-screen = Slå fuld skærm til
+menu-window = Vindue
+menu-minimize = Minimer
+menu-zoom = Zoom
+menu-bring-all-to-front = Anbring alle forrest
+menu-help = Hjælp
+menu-website = Webstedet for triib
+menu-release-notes = Udgivelsesnoter
+
 ## The network's state, in place of a view
 
 state-no-interface = Intet interface

@@ -94,6 +94,33 @@ toolbar-inspector = Inspector
 toolbar-settings = Instellingen
 toolbar-close-window = Sluit venster
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = Over triib
+menu-settings = Instellingen…
+menu-services = Voorzieningen
+menu-hide = Verberg triib
+menu-hide-others = Verberg andere
+menu-show-all = Toon alles
+menu-quit = Stop triib
+menu-file = Archief
+menu-presets = Presets…
+menu-close-window = Sluit venster
+menu-edit = Wijzig
+menu-cut = Knip
+menu-copy = Kopieer
+menu-paste = Plak
+menu-select-all = Selecteer alles
+menu-view = Weergave
+menu-full-screen = Activeer schermvullende weergave
+menu-window = Venster
+menu-minimize = Minimaliseer
+menu-zoom = Zoom
+menu-bring-all-to-front = Breng alles naar voren
+menu-help = Help
+menu-website = Website van triib
+menu-release-notes = Release-opmerkingen
+
 ## The network's state, in place of a view
 
 state-no-interface = Geen interface

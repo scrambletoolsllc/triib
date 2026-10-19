@@ -49,6 +49,8 @@ objc2-core-foundation = { version = "0.3", default-features = false, features = 
 # A tap on what the Mac sends, through an aggregate device around it.
 objc2 = "0.6"
 objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSArray", "NSDictionary", "NSGeometry", "NSString", "NSUserDefaults", "NSUUID", "NSValue"] }
+# The menu bar.
+muda = { version = "0.20", default-features = false }
 # The title bar, transparent over triib's toolbar.
 objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSResponder", "NSView", "NSWindow", "objc2-core-foundation"] }
 # The tap's functions, looked up when used, as macOS before 14.2 lacks them.

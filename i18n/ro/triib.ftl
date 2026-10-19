@@ -95,6 +95,33 @@ toolbar-inspector = Inspector
 toolbar-settings = Setări
 toolbar-close-window = Închide fereastra
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = Despre triib
+menu-settings = Configurări…
+menu-services = Servicii
+menu-hide = Ascunde triib
+menu-hide-others = Ascunde-le pe celelalte
+menu-show-all = Afișează-le pe toate
+menu-quit = Ieși din triib
+menu-file = Fișier
+menu-presets = Preseturi…
+menu-close-window = Închide fereastra
+menu-edit = Editare
+menu-cut = Taie
+menu-copy = Copiază
+menu-paste = Lipește
+menu-select-all = Selectează tot
+menu-view = Vizualizare
+menu-full-screen = Intră în modul ecran complet
+menu-window = Fereastră
+menu-minimize = Minimizează
+menu-zoom = Redimensionează
+menu-bring-all-to-front = Adu-le pe toate în față
+menu-help = Ajutor
+menu-website = Site-ul triib
+menu-release-notes = Note de lansare
+
 ## The network's state, in place of a view
 
 state-no-interface = Nicio interfață

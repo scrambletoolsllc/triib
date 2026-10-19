@@ -92,6 +92,33 @@ toolbar-inspector = পরিদর্শক
 toolbar-settings = সেটিংস
 toolbar-close-window = উইন্ডো বন্ধ করুন
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = triib সম্পর্কে
+menu-settings = সেটিংস…
+menu-services = পরিষেবা
+menu-hide = triib লুকান
+menu-hide-others = অন্যগুলো লুকান
+menu-show-all = সব দেখান
+menu-quit = triib থেকে প্রস্থান করুন
+menu-file = ফাইল
+menu-presets = Presets…
+menu-close-window = উইন্ডো বন্ধ করুন
+menu-edit = সম্পাদনা
+menu-cut = কাট করুন
+menu-copy = কপি করুন
+menu-paste = পেস্ট করুন
+menu-select-all = সব নির্বাচন করুন
+menu-view = দেখুন
+menu-full-screen = পূর্ণ স্ক্রিনে যান
+menu-window = উইন্ডো
+menu-minimize = ছোট করুন
+menu-zoom = জুম
+menu-bring-all-to-front = সব সামনে আনুন
+menu-help = সহায়তা
+menu-website = triib ওয়েবসাইট
+menu-release-notes = রিলিজ নোট
+
 ## The network's state, in place of a view
 
 state-no-interface = কোনো interface নেই

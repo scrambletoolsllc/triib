@@ -92,6 +92,33 @@ toolbar-inspector = Inspektor
 toolbar-settings = Nastavení
 toolbar-close-window = Zavřít okno
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = O aplikaci triib
+menu-settings = Nastavení…
+menu-services = Služby
+menu-hide = Skrýt triib
+menu-hide-others = Skrýt ostatní
+menu-show-all = Zobrazit vše
+menu-quit = Ukončit triib
+menu-file = Soubor
+menu-presets = Presety…
+menu-close-window = Zavřít okno
+menu-edit = Úpravy
+menu-cut = Vyjmout
+menu-copy = Kopírovat
+menu-paste = Vložit
+menu-select-all = Vybrat vše
+menu-view = Zobrazení
+menu-full-screen = Přejít do režimu celé obrazovky
+menu-window = Okno
+menu-minimize = Minimalizovat
+menu-zoom = Zvětšit/zmenšit
+menu-bring-all-to-front = Přenést vše do popředí
+menu-help = Nápověda
+menu-website = Webové stránky triib
+menu-release-notes = Poznámky k verzi
+
 ## The network's state, in place of a view
 
 state-no-interface = Není vybráno rozhraní

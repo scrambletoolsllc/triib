@@ -95,6 +95,33 @@ toolbar-inspector = 检查器
 toolbar-settings = 设置
 toolbar-close-window = 关闭窗口
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = 关于 triib
+menu-settings = 设置…
+menu-services = 服务
+menu-hide = 隐藏 triib
+menu-hide-others = 隐藏其他
+menu-show-all = 全部显示
+menu-quit = 退出 triib
+menu-file = 文件
+menu-presets = 预设…
+menu-close-window = 关闭窗口
+menu-edit = 编辑
+menu-cut = 剪切
+menu-copy = 拷贝
+menu-paste = 粘贴
+menu-select-all = 全选
+menu-view = 显示
+menu-full-screen = 进入全屏幕
+menu-window = 窗口
+menu-minimize = 最小化
+menu-zoom = 缩放
+menu-bring-all-to-front = 前置全部窗口
+menu-help = 帮助
+menu-website = triib 网站
+menu-release-notes = 发行说明
+
 ## The network's state, in place of a view
 
 state-no-interface = 未选择接口

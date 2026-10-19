@@ -3,6 +3,15 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Controller
+
+- On a Mac, the menu bar has triib's menus: Settings and Quit in the
+  triib menu, Presets and Close Window in File, Cut, Copy, Paste and
+  Select All in Edit, the three views, the log and the inspector in
+  View, and Window and Help menus, in the interface's language.
+
 ## [1.1.1] - 2026-10-17
 
 A close button in the toolbar under compositors that draw no title bar,

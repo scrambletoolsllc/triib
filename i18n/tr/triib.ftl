@@ -94,6 +94,33 @@ toolbar-inspector = İnceleyici
 toolbar-settings = Ayarlar
 toolbar-close-window = Pencereyi kapat
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = triib Hakkında
+menu-settings = Ayarlar…
+menu-services = Hizmetler
+menu-hide = triib'i Gizle
+menu-hide-others = Diğerlerini Gizle
+menu-show-all = Tümünü Göster
+menu-quit = triib'den Çık
+menu-file = Dosya
+menu-presets = Ön ayarlar…
+menu-close-window = Pencereyi Kapat
+menu-edit = Düzen
+menu-cut = Kes
+menu-copy = Kopyala
+menu-paste = Yapıştır
+menu-select-all = Tümünü Seç
+menu-view = Görüntü
+menu-full-screen = Tam Ekrana Geç
+menu-window = Pencere
+menu-minimize = Simge Durumuna Küçült
+menu-zoom = Büyüt/Küçült
+menu-bring-all-to-front = Tümünü Öne Getir
+menu-help = Yardım
+menu-website = triib Web Sitesi
+menu-release-notes = Sürüm Notları
+
 ## The network's state, in place of a view
 
 state-no-interface = Arayüz yok

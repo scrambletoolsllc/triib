@@ -95,6 +95,33 @@ toolbar-inspector = インスペクター
 toolbar-settings = 設定
 toolbar-close-window = ウインドウを閉じる
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = triib について
+menu-settings = 設定…
+menu-services = サービス
+menu-hide = triib を非表示
+menu-hide-others = ほかを非表示
+menu-show-all = すべてを表示
+menu-quit = triib を終了
+menu-file = ファイル
+menu-presets = プリセット…
+menu-close-window = ウインドウを閉じる
+menu-edit = 編集
+menu-cut = カット
+menu-copy = コピー
+menu-paste = ペースト
+menu-select-all = すべてを選択
+menu-view = 表示
+menu-full-screen = フルスクリーンにする
+menu-window = ウインドウ
+menu-minimize = しまう
+menu-zoom = 拡大／縮小
+menu-bring-all-to-front = すべてを手前に移動
+menu-help = ヘルプ
+menu-website = triib の Web サイト
+menu-release-notes = リリースノート
+
 ## The network's state, in place of a view
 
 state-no-interface = インターフェイス未選択

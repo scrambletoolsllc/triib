@@ -95,6 +95,33 @@ toolbar-inspector = Inspector
 toolbar-settings = Configuració
 toolbar-close-window = Tanca la finestra
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = Quant al triib
+menu-settings = Configuració…
+menu-services = Serveis
+menu-hide = Amaga el triib
+menu-hide-others = Amaga els altres
+menu-show-all = Mostra-ho tot
+menu-quit = Surt del triib
+menu-file = Fitxer
+menu-presets = Presets…
+menu-close-window = Tanca la finestra
+menu-edit = Edició
+menu-cut = Retalla
+menu-copy = Copia
+menu-paste = Enganxa
+menu-select-all = Selecciona-ho tot
+menu-view = Visualització
+menu-full-screen = Entra a pantalla completa
+menu-window = Finestra
+menu-minimize = Minimitza
+menu-zoom = Redimensiona
+menu-bring-all-to-front = Porta-ho tot al davant
+menu-help = Ajuda
+menu-website = Lloc web del triib
+menu-release-notes = Notes de la versió
+
 ## The network's state, in place of a view
 
 state-no-interface = Cap interfície

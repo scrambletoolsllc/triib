@@ -92,6 +92,33 @@ toolbar-inspector = Mkaguzi
 toolbar-settings = Mipangilio
 toolbar-close-window = Funga dirisha
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = Kuhusu triib
+menu-settings = Mipangilio…
+menu-services = Huduma
+menu-hide = Ficha triib
+menu-hide-others = Ficha Nyingine
+menu-show-all = Onyesha Zote
+menu-quit = Ondoka kwenye triib
+menu-file = Faili
+menu-presets = Preset…
+menu-close-window = Funga Dirisha
+menu-edit = Hariri
+menu-cut = Kata
+menu-copy = Nakili
+menu-paste = Bandika
+menu-select-all = Chagua Zote
+menu-view = Mwonekano
+menu-full-screen = Ingia Skrini Nzima
+menu-window = Dirisha
+menu-minimize = Punguza Dirisha
+menu-zoom = Kuza
+menu-bring-all-to-front = Leta Zote Mbele
+menu-help = Msaada
+menu-website = Tovuti ya triib
+menu-release-notes = Maelezo ya Toleo
+
 ## The network's state, in place of a view
 
 state-no-interface = Hakuna kiolesura

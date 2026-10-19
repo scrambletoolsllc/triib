@@ -94,6 +94,33 @@ toolbar-inspector = Tarkastelu
 toolbar-settings = Asetukset
 toolbar-close-window = Sulje ikkuna
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = Tietoja: triib
+menu-settings = Asetukset…
+menu-services = Palvelut
+menu-hide = Kätke triib
+menu-hide-others = Kätke muut
+menu-show-all = Näytä kaikki
+menu-quit = Lopeta triib
+menu-file = Arkisto
+menu-presets = Esiasetukset…
+menu-close-window = Sulje ikkuna
+menu-edit = Muokkaa
+menu-cut = Leikkaa
+menu-copy = Kopioi
+menu-paste = Sijoita
+menu-select-all = Valitse kaikki
+menu-view = Näytä
+menu-full-screen = Siirry koko näytön tilaan
+menu-window = Ikkuna
+menu-minimize = Pienennä
+menu-zoom = Zoomaa
+menu-bring-all-to-front = Tuo kaikki eteen
+menu-help = Ohje
+menu-website = triib-verkkosivusto
+menu-release-notes = Julkaisutiedot
+
 ## The network's state, in place of a view
 
 state-no-interface = Ei liitäntää

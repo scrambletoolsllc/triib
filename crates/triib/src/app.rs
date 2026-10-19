@@ -512,6 +512,8 @@ impl Triib {
         triib.reload_omarchy();
         triib.apply_motion();
         triib.apply_input_direction();
+        #[cfg(target_os = "macos")]
+        crate::menu_macos::install(&triib.settings);
         triib.start_network(false);
         triib.start_listening();
         let system = iced::system::theme().map(Message::SystemTheme);
@@ -1124,6 +1126,8 @@ impl Triib {
                 self.settings.language = tag;
                 crate::i18n::set_language(self.settings.chosen_language());
                 self.apply_input_direction();
+                #[cfg(target_os = "macos")]
+                crate::menu_macos::install(&self.settings);
                 self.save_settings();
             }
             Message::KeyboardDirection(right_to_left) => {
@@ -1255,6 +1259,8 @@ impl Triib {
                 return self.go_on_recalling();
             }
             Message::External(External::Control(call)) => return self.control(call),
+            #[cfg(target_os = "macos")]
+            Message::External(External::Menu(item)) => return self.menu_item(item),
             Message::AgentAnswered(allow) => return self.agent_answered(allow),
             Message::AgentPromptReady => {}
             Message::OutsideControlToggled(on) => {
@@ -1750,6 +1756,35 @@ impl Triib {
 
     pub(crate) fn save_settings(&mut self) {
         self.settings_error = self.settings.save().err();
+    }
+
+    /// Does what the menu bar's `item` asks, as its toolbar tool would. A
+    /// dialog opened from it takes the place of the other, as the window
+    /// shows one at a time.
+    #[cfg(target_os = "macos")]
+    fn menu_item(&mut self, item: crate::menu_macos::Item) -> Task<Message> {
+        use crate::menu_macos::Item;
+        let message = match item {
+            Item::Settings => {
+                self.presets_open = false;
+                Message::SettingsOpened
+            }
+            Item::Presets => {
+                self.settings_open = false;
+                Message::PresetsOpened
+            }
+            // Closing triib's one window quits it.
+            Item::Quit | Item::CloseWindow => Message::CloseWindow,
+            Item::View(view) => Message::ViewPicked(view),
+            Item::Log => Message::LogToggled,
+            Item::Inspector => Message::InspectorToggled,
+            Item::Website => Message::OpenLink("https://triib.run/".to_owned()),
+            Item::ReleaseNotes => Message::OpenLink(format!(
+                "https://github.com/scrambletoolsllc/triib/releases/tag/v{}",
+                env!("CARGO_PKG_VERSION")
+            )),
+        };
+        self.update(message)
     }
 
     fn reload_omarchy(&mut self) {

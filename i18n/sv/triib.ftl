@@ -94,6 +94,33 @@ toolbar-inspector = Inspektör
 toolbar-settings = Inställningar
 toolbar-close-window = Stäng fönster
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = Om triib
+menu-settings = Inställningar…
+menu-services = Tjänster
+menu-hide = Göm triib
+menu-hide-others = Göm övriga
+menu-show-all = Visa alla
+menu-quit = Avsluta triib
+menu-file = Arkiv
+menu-presets = Presets…
+menu-close-window = Stäng fönster
+menu-edit = Redigera
+menu-cut = Klipp ut
+menu-copy = Kopiera
+menu-paste = Klistra in
+menu-select-all = Markera allt
+menu-view = Innehåll
+menu-full-screen = Använd helskärm
+menu-window = Fönster
+menu-minimize = Minimera
+menu-zoom = Zooma
+menu-bring-all-to-front = Lägg alla överst
+menu-help = Hjälp
+menu-website = Webbplatsen för triib
+menu-release-notes = Versionsinformation
+
 ## The network's state, in place of a view
 
 state-no-interface = Inget gränssnitt

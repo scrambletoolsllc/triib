@@ -92,6 +92,33 @@ toolbar-inspector = ஆய்வி
 toolbar-settings = அமைப்புகள்
 toolbar-close-window = சாளரத்தை மூடு
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = triib பற்றி
+menu-settings = அமைப்புகள்…
+menu-services = சேவைகள்
+menu-hide = triib-ஐ மறை
+menu-hide-others = மற்றவற்றை மறை
+menu-show-all = அனைத்தையும் காட்டு
+menu-quit = triib-இலிருந்து வெளியேறு
+menu-file = கோப்பு
+menu-presets = Presets…
+menu-close-window = சாளரத்தை மூடு
+menu-edit = திருத்து
+menu-cut = வெட்டு
+menu-copy = நகலெடு
+menu-paste = ஒட்டு
+menu-select-all = அனைத்தையும் தேர்ந்தெடு
+menu-view = காட்சி
+menu-full-screen = முழுத்திரைக்குச் செல்
+menu-window = சாளரம்
+menu-minimize = குறுக்கு
+menu-zoom = சாளரத்தைப் பெரிதாக்கு
+menu-bring-all-to-front = அனைத்தையும் முன்னால் கொண்டுவா
+menu-help = உதவி
+menu-website = triib இணையதளம்
+menu-release-notes = வெளியீட்டுக் குறிப்புகள்
+
 ## The network's state, in place of a view
 
 state-no-interface = Interface இல்லை

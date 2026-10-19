@@ -92,6 +92,33 @@ toolbar-inspector = מפקח
 toolbar-settings = הגדרות
 toolbar-close-window = סגירת החלון
 
+## The macOS menu bar, named as in macOS's own apps
+
+menu-about = אודות triib
+menu-settings = הגדרות…
+menu-services = שירותים
+menu-hide = הסתרת triib
+menu-hide-others = הסתרת האחרים
+menu-show-all = הצגת הכול
+menu-quit = יציאה מ-triib
+menu-file = קובץ
+menu-presets = פריסטים…
+menu-close-window = סגירת החלון
+menu-edit = עריכה
+menu-cut = גזירה
+menu-copy = העתקה
+menu-paste = הדבקה
+menu-select-all = בחירת הכול
+menu-view = תצוגה
+menu-full-screen = כניסה למסך מלא
+menu-window = חלון
+menu-minimize = מזעור
+menu-zoom = הגדלת החלון
+menu-bring-all-to-front = הבאת הכול לחזית
+menu-help = עזרה
+menu-website = האתר של triib
+menu-release-notes = הערות גרסה
+
 ## The network's state, in place of a view
 
 state-no-interface = אין ממשק
