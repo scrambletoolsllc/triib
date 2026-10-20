@@ -389,6 +389,8 @@ netmap-failed-count = { $count } gagal
 netmap-advertised-only = Hanya diumumkan
 netmap-failed-state = Gagal
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = Mengirim, tanpa listener yang diketahui terikat padanya
+netmap-no-listener = Tanpa listener yang diketahui
 netmap-apart-own-grandmaster = Tidak ada di pohon gPTP: menjadi grandmaster sendiri
 netmap-apart-no-path = Jalurnya tidak dilaporkan; mengikuti grandmaster { $grandmaster }
 netmap-apart-unreported = Belum melaporkan status gPTP-nya
@@ -432,8 +434,8 @@ netmap-help-back = Klik latar belakang untuk kembali ke ikhtisar.
 netmap-help-stream = Klik stream untuk memeriksanya, atau latar belakang untuk kembali ke ikhtisar.
 netmap-help-ptp = Di AVB Lite, clock mengalir end-to-end dari grandmaster ke setiap perangkat, melalui switch yang tidak ikut berperan, jadi switch tersebut tidak ditampilkan. Perangkat sinkron selama mengikuti grandmaster dalam batas 50 µs. Klik perangkat atau kabelnya untuk memeriksa clock-nya; klik latar belakang untuk membatalkan pilihan.
 netmap-help-clock = Clock mengalir dari grandmaster melalui setiap switch ke setiap node di pohon. Garis abu-abu putus-putus adalah link yang tidak menjalankan gPTP. Klik perangkat atau kabelnya untuk memeriksa jalur clock-nya; klik latar belakang untuk membatalkan pilihan.
-netmap-help-media-clock = Hanya stream media clock (CRF), digambar seperti audio: satu kabel per stream, diwarnai menurut talker. Klik kabel untuk memeriksa stream-nya, atau perangkat untuk melihat stream-nya; klik latar belakang untuk membatalkan pilihan.
-netmap-help-audio = Setiap stream punya kabel sendiri, yang masuk dan keluar dari setiap switch yang dilintasinya. Warna menurut talker: setiap talker punya satu rona, dan stream-nya adalah gradasi rona itu. Titik bergerak berarti audio mengalir; garis merah diam adalah reservasi yang gagal dan garis abu-abu diam adalah stream yang diumumkan tanpa listener siap; keduanya berhenti di tempat reservasi berhenti. Perangkat di kolom tengah terhubung langsung ke switch grandmaster. Klik kabel untuk memeriksa stream-nya, atau perangkat untuk melihat stream-nya; klik latar belakang untuk membatalkan pilihan.
+netmap-help-media-clock = Hanya stream media clock (CRF), digambar seperti audio: satu kabel untuk frame setiap stream di setiap link, diwarnai menurut talker. Klik kabel untuk memeriksa stream-nya, atau perangkat untuk melihat stream-nya; klik latar belakang untuk membatalkan pilihan.
+netmap-help-audio = Setiap kabel adalah frame satu stream di satu link, yang masuk dan keluar dari setiap switch yang dilintasinya. Stream multicast punya satu kabel selama jalur menuju listener-nya masih berjalan bersama, lalu bercabang di tempat jalur itu berpisah; stream unicast, seperti yang bisa dikirim AVB Lite, punya kabel sendiri dari talker ke setiap listener. Warna menurut talker: setiap talker punya satu rona, dan setiap stream-nya adalah gradasi rona itu di setiap cabang. Titik bergerak berarti audio mengalir, bahkan dari talker yang mengirim tanpa listener yang diketahui; garis merah diam adalah reservasi yang gagal dan garis abu-abu diam adalah stream yang diumumkan tanpa listener siap; keduanya berhenti di tempat reservasi berhenti. Perangkat di kolom tengah terhubung langsung ke switch grandmaster. Klik kabel untuk memeriksa stream-nya, kabel bersama untuk melihat semua listener-nya, atau perangkat untuk melihat stream-nya; klik latar belakang untuk membatalkan pilihan.
 
 ## Connections
 

@@ -432,6 +432,8 @@ netmap-failed-count = { $count ->
 netmap-advertised-only = Doar anunțat
 netmap-failed-state = Eșuat
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = Se trimite, fără niciun listener cunoscut asociat
+netmap-no-listener = Niciun listener cunoscut
 netmap-apart-own-grandmaster = În afara arborelui gPTP: este propriul grandmaster
 netmap-apart-no-path = Calea nu i-a fost raportată; urmează grandmasterul { $grandmaster }
 netmap-apart-unreported = Nu și-a raportat starea gPTP
@@ -483,8 +485,8 @@ netmap-help-back = Dă clic pe fundal pentru a reveni la vederea de ansamblu.
 netmap-help-stream = Dă clic pe un flux pentru a-l inspecta sau pe fundal pentru a reveni la vederea de ansamblu.
 netmap-help-ptp = În AVB Lite, ceasul merge cap la cap, de la grandmaster la fiecare dispozitiv, prin switch-uri care nu participă, deci niciunul nu este afișat. Un dispozitiv este sincronizat cât timp urmează grandmasterul cu un decalaj de cel mult 50 µs. Dă clic pe un dispozitiv sau pe firul lui pentru a-i inspecta ceasul; dă clic pe fundal pentru a anula selecția.
 netmap-help-clock = Ceasul pornește de la grandmaster și trece prin fiecare switch până la fiecare nod din arbore. O linie gri întreruptă este o legătură pe care nu rulează gPTP. Dă clic pe un dispozitiv sau pe firul lui pentru a-i inspecta calea ceasului; dă clic pe fundal pentru a anula selecția.
-netmap-help-media-clock = Doar fluxuri de ceas media (CRF), desenate la fel ca audio: un fir pentru fiecare flux, colorat după talker. Dă clic pe un fir pentru a-i inspecta fluxul sau pe un dispozitiv pentru a-i vedea fluxurile; dă clic pe fundal pentru a anula selecția.
-netmap-help-audio = Fiecare flux are propriul fir, care intră și iese din fiecare switch pe care îl traversează. Culoarea depinde de talker: fiecare talker are o nuanță, iar fluxurile lui sunt tonuri ale ei. Punctele în mișcare arată că audio circulă; o linie roșie fixă este o rezervare eșuată, iar o linie gri fixă este un flux anunțat fără niciun listener pregătit; ambele se opresc acolo unde se oprește rezervarea. Dispozitivele din coloana din mijloc se conectează direct la switch-ul grandmasterului. Dă clic pe un fir pentru a-i inspecta fluxul sau pe un dispozitiv pentru a-i vedea fluxurile; dă clic pe fundal pentru a anula selecția.
+netmap-help-media-clock = Doar fluxuri de ceas media (CRF), desenate la fel ca audio: un fir pentru cadrele fiecărui flux pe fiecare legătură, colorat după talker. Dă clic pe un fir pentru a-i inspecta fluxul sau pe un dispozitiv pentru a-i vedea fluxurile; dă clic pe fundal pentru a anula selecția.
+netmap-help-audio = Fiecare fir reprezintă cadrele unui flux pe o legătură, intrând și ieșind din fiecare switch pe care îl traversează. Un flux multicast are un singur fir cât timp căile spre listenerele lui merg împreună și se ramifică acolo unde se despart; un flux unicast, de felul celor pe care le poate trimite AVB Lite, are un fir propriu de la talker la fiecare listener. Culoarea depinde de talker: fiecare talker are o nuanță, iar fiecare dintre fluxurile lui este un ton al ei pe fiecare ramură. Punctele în mișcare arată că audio circulă, chiar și de la un talker care trimite fără niciun listener cunoscut; o linie roșie fixă este o rezervare eșuată, iar o linie gri fixă este un flux anunțat fără niciun listener pregătit; ambele se opresc acolo unde se oprește rezervarea. Dispozitivele din coloana din mijloc se conectează direct la switch-ul grandmasterului. Dă clic pe un fir pentru a-i inspecta fluxul, pe un fir comun pentru a-i vedea toate listenerele sau pe un dispozitiv pentru a-i vedea fluxurile; dă clic pe fundal pentru a anula selecția.
 
 ## Connections
 

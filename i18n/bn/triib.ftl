@@ -410,6 +410,8 @@ netmap-failed-count = { $count }টি ব্যর্থ
 netmap-advertised-only = শুধু advertise করা হয়েছে
 netmap-failed-state = ব্যর্থ
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = পাঠাচ্ছে, তবে এর সঙ্গে আবদ্ধ কোনো জানা Listener নেই
+netmap-no-listener = কোনো জানা Listener নেই
 netmap-apart-own-grandmaster = gPTP tree-তে নেই: এটি নিজেই Grandmaster
 netmap-apart-no-path = এর path জানানো হয়নি; এটি Grandmaster { $grandmaster }-কে অনুসরণ করে
 netmap-apart-unreported = এটি নিজের gPTP অবস্থা জানায়নি
@@ -456,8 +458,8 @@ netmap-help-back = পুরো ম্যাপে ফিরতে ফাঁক�
 netmap-help-stream = কোনো stream পরীক্ষা করতে তাতে ক্লিক করুন, বা পুরো ম্যাপে ফিরতে ফাঁকা জায়গায়।
 netmap-help-ptp = AVB Lite-এ clock প্রান্ত থেকে প্রান্তে, Grandmaster থেকে প্রতিটি ডিভাইসে যায়, এমন switch-এর মধ্য দিয়ে যেগুলো এতে অংশ নেয় না, তাই কোনো switch দেখানো হয় না। কোনো ডিভাইস যতক্ষণ 50 µs-এর মধ্যে Grandmaster-কে অনুসরণ করে, ততক্ষণ সেটি সিঙ্কে থাকে। কোনো ডিভাইস বা তার তারে ক্লিক করে তার clock পরীক্ষা করুন; নির্বাচন মুছতে ফাঁকা জায়গায় ক্লিক করুন।
 netmap-help-clock = Clock, Grandmaster থেকে প্রতিটি bridge হয়ে tree-র প্রতিটি node-এ যায়। ভাঙা ধূসর রেখা এমন একটি link, যাতে gPTP চলে না। কোনো ডিভাইস বা তার তারে ক্লিক করে তার clock path পরীক্ষা করুন; নির্বাচন মুছতে ফাঁকা জায়গায় ক্লিক করুন।
-netmap-help-media-clock = শুধু media clock (CRF) streams, অডিওর মতোই আঁকা: প্রতিটি stream-এর একটি তার, Talker অনুযায়ী রঙিন। কোনো তারে ক্লিক করে তার stream পরীক্ষা করুন, বা কোনো ডিভাইসে ক্লিক করে তার streams দেখুন; নির্বাচন মুছতে ফাঁকা জায়গায় ক্লিক করুন।
-netmap-help-audio = প্রতিটি stream-এর নিজস্ব তার আছে, যা পথের প্রতিটি bridge-এ ঢোকে ও বেরোয়। রং Talker অনুযায়ী: প্রতিটি Talker-এর একটি রং, আর তার streams সেই রঙেরই নানা শেড। চলমান বিন্দু মানে অডিও চলছে; স্থির লাল রেখা মানে ব্যর্থ reservation, আর স্থির ধূসর রেখা মানে advertise করা এমন stream, যার জন্য কোনো Listener প্রস্তুত নেই; দুটোই সেখানে থামে যেখানে reservation থামে। মাঝের কলামের ডিভাইসগুলো সরাসরি Grandmaster-এর bridge-এ যুক্ত। কোনো তারে ক্লিক করে তার stream পরীক্ষা করুন, বা কোনো ডিভাইসে ক্লিক করে তার streams দেখুন; নির্বাচন মুছতে ফাঁকা জায়গায় ক্লিক করুন।
+netmap-help-media-clock = শুধু media clock (CRF) streams, অডিওর মতোই আঁকা: প্রতিটি link-এ প্রতিটি stream-এর frames-এর জন্য একটি তার, Talker অনুযায়ী রঙিন। কোনো তারে ক্লিক করে তার stream পরীক্ষা করুন, বা কোনো ডিভাইসে ক্লিক করে তার streams দেখুন; নির্বাচন মুছতে ফাঁকা জায়গায় ক্লিক করুন।
+netmap-help-audio = প্রতিটি তার হলো কোনো একটি link-এ একটি stream-এর frames, যা পথের প্রতিটি bridge-এ ঢোকে ও বেরোয়। একটি multicast stream-এর তার ততদূর একটিই থাকে, যতদূর তার Listeners-এর পথ একসঙ্গে চলে, আর যেখানে পথগুলো আলাদা হয়, সেখানে শাখায় ভাগ হয়; একটি unicast stream, যেমনটা AVB Lite পাঠাতে পারে, Talker থেকে প্রতিটি Listener পর্যন্ত নিজস্ব একটি তার পায়। রং Talker অনুযায়ী: প্রতিটি Talker-এর একটি রং, আর তার প্রতিটি stream প্রতিটি শাখায় সেই রঙেরই একটি শেড। চলমান বিন্দু মানে অডিও চলছে, এমনকি এমন Talker থেকেও, যে কোনো জানা Listener ছাড়াই পাঠাচ্ছে; স্থির লাল রেখা মানে ব্যর্থ reservation, আর স্থির ধূসর রেখা মানে advertise করা এমন stream, যার জন্য কোনো Listener প্রস্তুত নেই; দুটোই সেখানে থামে যেখানে reservation থামে। মাঝের কলামের ডিভাইসগুলো সরাসরি Grandmaster-এর bridge-এ যুক্ত। কোনো তারে ক্লিক করে তার stream পরীক্ষা করুন, কোনো শেয়ার করা তারে ক্লিক করে তার সব Listeners দেখুন, বা কোনো ডিভাইসে ক্লিক করে তার streams দেখুন; নির্বাচন মুছতে ফাঁকা জায়গায় ক্লিক করুন।
 
 ## Connections
 

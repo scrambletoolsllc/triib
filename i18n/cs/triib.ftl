@@ -424,6 +424,8 @@ netmap-failed-count = selhané: { $count }
 netmap-advertised-only = Pouze ohlášeno
 netmap-failed-state = Selhalo
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = Odesílá, žádný známý listener není přiřazen
+netmap-no-listener = Žádný známý listener
 netmap-apart-own-grandmaster = Mimo strom gPTP: je svým vlastním grandmasterem
 netmap-apart-no-path = Cesta nebyla hlášena; řídí se grandmasterem { $grandmaster }
 netmap-apart-unreported = Stav gPTP nebyl hlášen
@@ -472,8 +474,8 @@ netmap-help-back = Kliknutím na pozadí se vrátíte na přehled.
 netmap-help-stream = Kliknutím na stream ho otevřete v inspektoru, kliknutím na pozadí se vrátíte na přehled.
 netmap-help-ptp = V AVB Lite vycházejí hodiny z grandmasteru ke každému zařízení end-to-end, přes přepínače, které se na tom nepodílejí, a proto se žádné nezobrazují. Zařízení je synchronizováno, dokud se řídí grandmasterem s odchylkou do 50 µs. Kliknutím na zařízení nebo jeho vodič otevřete v inspektoru jeho hodiny; kliknutím na pozadí výběr zrušíte.
 netmap-help-clock = Hodiny vycházejí z grandmasteru přes každý přepínač ke všem uzlům stromu. Přerušovaná šedá čára je linka, na které neběží gPTP. Kliknutím na zařízení nebo jeho vodič otevřete v inspektoru jeho cestu hodin; kliknutím na pozadí výběr zrušíte.
-netmap-help-media-clock = Pouze streamy mediálních hodin (CRF), kreslené stejně jako audio: jeden vodič na stream, barva podle talkeru. Kliknutím na vodič otevřete jeho stream v inspektoru, kliknutím na zařízení zobrazíte jeho streamy; kliknutím na pozadí výběr zrušíte.
-netmap-help-audio = Každý stream má vlastní vodič, který vstupuje do každého přepínače na své cestě a zase z něj vystupuje. Barva je podle talkeru: každý talker má svůj odstín a jeho streamy jsou jeho variantami. Pohybující se tečky znamenají, že audio proudí; nehybná červená čára je selhaná rezervace a nehybná šedá je ohlášený stream bez připraveného listeneru; obě končí tam, kde končí rezervace. Zařízení v prostředním sloupci jsou připojena přímo k přepínači grandmasteru. Kliknutím na vodič otevřete jeho stream v inspektoru, kliknutím na zařízení zobrazíte jeho streamy; kliknutím na pozadí výběr zrušíte.
+netmap-help-media-clock = Pouze streamy mediálních hodin (CRF), kreslené stejně jako audio: jeden vodič pro rámce každého streamu na každé lince, barva podle talkeru. Kliknutím na vodič otevřete jeho stream v inspektoru, kliknutím na zařízení zobrazíte jeho streamy; kliknutím na pozadí výběr zrušíte.
+netmap-help-audio = Každý vodič představuje rámce jednoho streamu na jedné lince; vstupuje do každého přepínače na své cestě a zase z něj vystupuje. Multicastový stream má jeden vodič, dokud cesty k jeho listenerům vedou společně, a větví se tam, kde se rozcházejí; unicastový stream, jaký umí posílat AVB Lite, má od talkeru ke každému listeneru vlastní vodič. Barva je podle talkeru: každý talker má svůj odstín a každý z jeho streamů je na všech větvích jednou jeho variantou. Pohybující se tečky znamenají, že audio proudí, i od talkeru, který odesílá bez známého listeneru; nehybná červená čára je selhaná rezervace a nehybná šedá je ohlášený stream bez připraveného listeneru; obě končí tam, kde končí rezervace. Zařízení v prostředním sloupci jsou připojena přímo k přepínači grandmasteru. Kliknutím na vodič otevřete jeho stream v inspektoru, kliknutím na sdílený vodič zobrazíte všechny jeho listenery a kliknutím na zařízení jeho streamy; kliknutím na pozadí výběr zrušíte.
 
 ## Connections
 

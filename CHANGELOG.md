@@ -11,6 +11,15 @@ All notable changes to triib. Versions follow
   triib menu, Presets and Close Window in File, Cut, Copy, Paste and
   Select All in Edit, the three views, the log and the inspector in
   View, and Window and Help menus, in the interface's language.
+- The network map draws the traffic on each link: a multicast stream to
+  several listeners takes one wire as far as their paths run together
+  and branches where they part, all in its color, while a unicast stream,
+  as AVB Lite can send, has a wire to each listener from its talker. A
+  device counts each stream it sends once however many listeners it
+  has, and a bridge each stream passing through. Clicking a shared wire
+  brings the whole stream forward with all its listeners.
+- A stream its talker says it sends with no known listener bound to it
+  still shows, on a wire from the talker to its bridge.
 
 ### Linux
 

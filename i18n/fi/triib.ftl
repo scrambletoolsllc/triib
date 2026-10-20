@@ -430,6 +430,8 @@ netmap-failed-count = { $count ->
 netmap-advertised-only = Vain mainostettu
 netmap-failed-state = Epäonnistui
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = Lähettää, eikä siihen ole sidottu tunnettua listeneriä
+netmap-no-listener = Ei tunnettua listeneriä
 netmap-apart-own-grandmaster = Ei gPTP-puussa: se on itse grandmaster
 netmap-apart-no-path = Sen polkua ei raportoitu; se seuraa grandmasteria { $grandmaster }
 netmap-apart-unreported = Se ei ole raportoinut gPTP-tilaansa
@@ -479,8 +481,8 @@ netmap-help-back = Palaa yleiskuvaan napsauttamalla taustaa.
 netmap-help-stream = Napsauta striimiä tarkastellaksesi sitä tai taustaa palataksesi yleiskuvaan.
 netmap-help-ptp = AVB Lite -profiilissa kello kulkee päästä päähän grandmasterista jokaiseen laitteeseen sellaisten kytkinten kautta, jotka eivät osallistu siihen, joten niitä ei näytetä. Laite on synkronoitu niin kauan kuin se seuraa grandmasteria 50 µs:n tarkkuudella. Napsauta laitetta tai sen johdinta tarkastellaksesi sen kelloa; tyhjennä valinta napsauttamalla taustaa.
 netmap-help-clock = Kello kulkee grandmasterista kunkin sillan kautta puun jokaiseen solmuun. Katkoviivainen harmaa viiva on linkki, jolla gPTP ei ole käytössä. Napsauta laitetta tai sen johdinta tarkastellaksesi sen kellopolkua; tyhjennä valinta napsauttamalla taustaa.
-netmap-help-media-clock = Vain mediakellostriimit (CRF), piirrettynä samoin kuin ääni: yksi johdin striimiä kohden, väritettynä talkerin mukaan. Napsauta johdinta tarkastellaksesi sen striimiä tai laitetta nähdäksesi sen striimit; tyhjennä valinta napsauttamalla taustaa.
-netmap-help-audio = Jokaisella striimillä on oma johtimensa, joka tulee jokaiseen ylittämäänsä siltaan ja lähtee siitä. Väri määräytyy talkerin mukaan: jokaisella talkerilla on oma sävynsä, ja sen striimit ovat tämän sävyn vivahteita. Liikkuvat pisteet tarkoittavat, että ääni kulkee; paikallaan oleva punainen viiva on epäonnistunut varaus ja paikallaan oleva harmaa viiva mainostettu striimi ilman valmista listeneriä; molemmat päättyvät siihen, mihin varaus päättyy. Keskimmäisen sarakkeen laitteet ovat suoraan yhteydessä grandmasterin siltaan. Napsauta johdinta tarkastellaksesi sen striimiä tai laitetta nähdäksesi sen striimit; tyhjennä valinta napsauttamalla taustaa.
+netmap-help-media-clock = Vain mediakellostriimit (CRF), piirrettynä samoin kuin ääni: yksi johdin kunkin striimin kehyksille kullakin linkillä, väritettynä talkerin mukaan. Napsauta johdinta tarkastellaksesi sen striimiä tai laitetta nähdäksesi sen striimit; tyhjennä valinta napsauttamalla taustaa.
+netmap-help-audio = Jokainen johdin kuvaa yhden striimin kehyksiä yhdellä linkillä, ja se tulee jokaiseen ylittämäänsä siltaan ja lähtee siitä. Multicast-striimillä on yksi johdin niin pitkälle kuin sen listenereiden polut kulkevat yhdessä, ja se haarautuu siellä, missä ne erkanevat; unicast-striimillä, jollaisia AVB Lite voi lähettää, on oma johtimensa talkerilta jokaiselle listenerille. Väri määräytyy talkerin mukaan: jokaisella talkerilla on oma sävynsä, ja jokainen sen striimeistä on tämän sävyn vivahde kaikilla haaroilla. Liikkuvat pisteet tarkoittavat, että ääni kulkee, myös silloin kun talker lähettää ilman tunnettua listeneriä; paikallaan oleva punainen viiva on epäonnistunut varaus ja paikallaan oleva harmaa viiva mainostettu striimi ilman valmista listeneriä; molemmat päättyvät siihen, mihin varaus päättyy. Keskimmäisen sarakkeen laitteet ovat suoraan yhteydessä grandmasterin siltaan. Napsauta johdinta tarkastellaksesi sen striimiä, jaettua johdinta nähdäksesi kaikki sen listenerit tai laitetta nähdäksesi sen striimit; tyhjennä valinta napsauttamalla taustaa.
 
 ## Connections
 

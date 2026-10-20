@@ -340,6 +340,8 @@ netmap-failed-count = { $count } failed
 netmap-advertised-only = Advertised only
 netmap-failed-state = Failed
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = Sending, with no known listener bound to it
+netmap-no-listener = No known listener
 netmap-apart-own-grandmaster = Not on the gPTP tree: it is its own grandmaster
 netmap-apart-no-path = Its path was not reported; it follows grandmaster { $grandmaster }
 netmap-apart-unreported = It has not reported its gPTP state
@@ -386,8 +388,8 @@ netmap-help-back = Click the background to go back to the overview.
 netmap-help-stream = Click a stream to inspect it, or the background to go back to the overview.
 netmap-help-ptp = In AVB Lite the clock flows end to end from the grandmaster to every device, through switches that take no part, so none are shown. A device is in sync while it follows the grandmaster within 50 µs. Click a device or its wire to inspect its clock; click the background to clear.
 netmap-help-clock = The clock flows from the grandmaster through each bridge to every node on the tree. A broken grey line is a link gPTP does not run on. Click a device or its wire to inspect its clock path; click the background to clear.
-netmap-help-media-clock = Media clock (CRF) streams only, drawn the same way as audio: one wire per stream, coloured by talker. Click a wire to inspect its stream, or a device to see its streams; click the background to clear.
-netmap-help-audio = Each stream has its own wire, entering and leaving every bridge it crosses. Colour is by talker: each talker has a hue, and its streams are shades of it. Moving dots mean audio is flowing; a still red line is a failed reservation and a still grey line is advertised with no listener ready; both stop where the reservation stops. Devices in the middle column connect straight to the grandmaster's bridge. Click a wire to inspect its stream, or a device to see its streams; click the background to clear.
+netmap-help-media-clock = Media clock (CRF) streams only, drawn the same way as audio: a wire for each stream's frames on each link, coloured by talker. Click a wire to inspect its stream, or a device to see its streams; click the background to clear.
+netmap-help-audio = Each wire is a stream's frames on a link, entering and leaving every bridge it crosses. A multicast stream has one wire as far as its listeners' paths run together and branches where they part; a unicast stream, as AVB Lite can send, has a wire of its own from the talker to each listener. Colour is by talker: each talker has a hue, and each of its streams is a shade of it on every branch. Moving dots mean audio is flowing, even from a talker sending with no known listener; a still red line is a failed reservation and a still grey line is advertised with no listener ready; both stop where the reservation stops. Devices in the middle column connect straight to the grandmaster's bridge. Click a wire to inspect its stream, a shared wire to see all its listeners, or a device to see its streams; click the background to clear.
 
 ## Connections
 

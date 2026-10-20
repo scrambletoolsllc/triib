@@ -432,6 +432,8 @@ netmap-failed-count = { $count } en échec
 netmap-advertised-only = Annoncé uniquement
 netmap-failed-state = Échec
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = En cours d’envoi, aucun listener connu n’y est lié
+netmap-no-listener = Aucun listener connu
 netmap-apart-own-grandmaster = Hors de l’arbre gPTP : c’est son propre grandmaster
 netmap-apart-no-path = Son chemin n’a pas été signalé ; il suit le grandmaster { $grandmaster }
 netmap-apart-unreported = L’appareil n’a pas signalé son état gPTP
@@ -483,8 +485,8 @@ netmap-help-back = Cliquez sur l’arrière-plan pour revenir à la vue d’ense
 netmap-help-stream = Cliquez sur un flux pour l’inspecter, ou sur l’arrière-plan pour revenir à la vue d’ensemble.
 netmap-help-ptp = Dans AVB Lite, l’horloge va de bout en bout, du grandmaster à chaque appareil, à travers des commutateurs qui n’y prennent aucune part ; aucun n’est donc affiché. Un appareil est synchronisé tant qu’il suit le grandmaster à 50 µs près. Cliquez sur un appareil ou sur son fil pour inspecter son horloge ; cliquez sur l’arrière-plan pour désélectionner.
 netmap-help-clock = L’horloge part du grandmaster et passe par chaque commutateur jusqu’à chaque nœud de l’arbre. Une ligne grise discontinue est une liaison sur laquelle gPTP ne fonctionne pas. Cliquez sur un appareil ou sur son fil pour inspecter son chemin d’horloge ; cliquez sur l’arrière-plan pour désélectionner.
-netmap-help-media-clock = Flux d’horloge média (CRF) uniquement, dessinés comme l’audio : un fil par flux, coloré selon le talker. Cliquez sur un fil pour inspecter son flux, ou sur un appareil pour voir ses flux ; cliquez sur l’arrière-plan pour désélectionner.
-netmap-help-audio = Chaque flux a son propre fil, qui entre dans chaque commutateur traversé et en ressort. La couleur dépend du talker : chaque talker a une teinte, et ses flux en sont des nuances. Des points en mouvement indiquent que l’audio circule ; une ligne rouge fixe est une réservation en échec et une ligne grise fixe un flux annoncé sans listener prêt ; toutes deux s’arrêtent là où s’arrête la réservation. Les appareils de la colonne centrale sont connectés directement au commutateur du grandmaster. Cliquez sur un fil pour inspecter son flux, ou sur un appareil pour voir ses flux ; cliquez sur l’arrière-plan pour désélectionner.
+netmap-help-media-clock = Flux d’horloge média (CRF) uniquement, dessinés comme l’audio : un fil pour les trames de chaque flux sur chaque liaison, coloré selon le talker. Cliquez sur un fil pour inspecter son flux, ou sur un appareil pour voir ses flux ; cliquez sur l’arrière-plan pour désélectionner.
+netmap-help-audio = Chaque fil représente les trames d’un flux sur une liaison, et entre dans chaque commutateur traversé puis en ressort. Un flux multicast n’a qu’un fil tant que les chemins vers ses listeners restent communs, et se ramifie là où ils se séparent ; un flux unicast, comme AVB Lite peut en envoyer, a son propre fil du talker jusqu’à chaque listener. La couleur dépend du talker : chaque talker a une teinte, et chacun de ses flux en est une nuance sur chaque branche. Des points en mouvement indiquent que l’audio circule, même depuis un talker qui émet sans listener connu ; une ligne rouge fixe est une réservation en échec et une ligne grise fixe un flux annoncé sans listener prêt ; toutes deux s’arrêtent là où s’arrête la réservation. Les appareils de la colonne centrale sont connectés directement au commutateur du grandmaster. Cliquez sur un fil pour inspecter son flux, sur un fil partagé pour voir tous ses listeners, ou sur un appareil pour voir ses flux ; cliquez sur l’arrière-plan pour désélectionner.
 
 ## Connections
 

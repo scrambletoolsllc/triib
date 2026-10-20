@@ -1,12 +1,12 @@
 //! The network view: the gPTP tree with each bridge's devices in a column
 //! under it, showing the clock, the audio streams or the media clock
-//! streams, each stream on a wire of its own colored by its talker, and
-//! beside it the details of what is brought forward.
+//! streams, each stream on a wire colored by its talker that branches
+//! where its listeners' paths part, and beside it the details of what is
+//! brought forward.
 
 mod map;
 
-use std::collections::HashMap;
-
+use atdecc::aem::{StreamInfo, StreamInfoFlags};
 use atdecc::descriptor::DescriptorType;
 use atdecc::lite::{LiteFlags, LiteStatus};
 use atdecc::model::{EntityModel, EnumerationFailure, EnumerationState};
@@ -44,8 +44,11 @@ const TITLED: f32 = 1040.0;
 /// its clock path.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Focus {
-    /// A stream, by its listener's stream input.
+    /// A stream to one listener, by the listener's stream input.
     Stream(EntityId, u16),
+    /// A talker's stream to all its listeners, by the talker's stream
+    /// output.
+    Output(EntityId, u16),
     Node(NodeKey),
 }
 
@@ -109,6 +112,11 @@ pub struct Line {
     pub picked: bool,
     /// What clicking it brings forward.
     pub focus: Focus,
+    /// The talker's stream output it carries to a multicast address, whose
+    /// lines to other listeners share its wires as far as their paths do,
+    /// as the stream's frames do; none for a unicast stream, which the
+    /// talker sends each listener a copy of, on a wire of its own.
+    pub stream: Option<(EntityId, u16)>,
 }
 
 /// A node as its card shows it.
@@ -140,15 +148,22 @@ pub struct Map {
     pub focus: Option<Focus>,
 }
 
-/// A bound stream.
+/// A stream to a listener bound to it, or one its talker sends with no
+/// listener triib knows of bound to it.
 #[derive(Debug, Clone)]
 struct Stream {
-    input: (EntityId, u16),
+    /// None for a stream with no listener known.
+    input: Option<(EntityId, u16)>,
     talker: EntityId,
+    output: u16,
     name: String,
+    /// The talker's stream output's name.
+    output_name: String,
     talker_name: String,
     listener_name: String,
     media_clock: bool,
+    /// Sent to a multicast address, not to the listener's own.
+    multicast: bool,
     status: Status,
     reason: String,
     route: Route,
@@ -156,8 +171,41 @@ struct Stream {
 
 impl Stream {
     fn focus(&self) -> Focus {
-        Focus::Stream(self.input.0, self.input.1)
+        match self.input {
+            Some((listener, input)) => Focus::Stream(listener, input),
+            None => Focus::Output(self.talker, self.output),
+        }
     }
+
+    fn listener(&self) -> Option<EntityId> {
+        self.input.map(|(listener, _)| listener)
+    }
+
+    fn key(&self) -> (EntityId, u16) {
+        (self.talker, self.output)
+    }
+
+    /// What tells its frames apart: a multicast stream's are the same for
+    /// every listener, a unicast one's each listener's own.
+    fn frames(&self) -> (EntityId, u16, Option<(EntityId, u16)>) {
+        (
+            self.talker,
+            self.output,
+            if self.multicast { None } else { self.input },
+        )
+    }
+}
+
+/// How many streams of frames `streams` are: a multicast stream once
+/// however many listeners it has, a unicast one once for each.
+fn traffic<'a>(streams: impl Iterator<Item = &'a Stream>) -> usize {
+    let mut seen = Vec::new();
+    for stream in streams {
+        if !seen.contains(&stream.frames()) {
+            seen.push(stream.frames());
+        }
+    }
+    seen.len()
 }
 
 pub fn view(triib: &Triib) -> Element<'_, Message> {
@@ -187,12 +235,15 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
     let paints = paints(
         &streams
             .iter()
-            .map(|stream| (stream.talker, stream.status))
+            .map(|stream| (stream.key(), stream.status))
             .collect::<Vec<_>>(),
     );
     // What is brought forward, as long as it is still there.
     let focus = triib.network_focus.filter(|focus| match focus {
         Focus::Stream(..) => streams.iter().any(|stream| stream.focus() == *focus),
+        Focus::Output(talker, output) => streams
+            .iter()
+            .any(|stream| stream.key() == (*talker, *output)),
         Focus::Node(key) => find(&topology, *key).is_some(),
     });
     let (header, focused) = header(&topology, ptp, shows, &streams, focus, width, list_open);
@@ -321,6 +372,11 @@ fn header<'a>(
                 .iter()
                 .find(|stream| stream.focus() == focus)
                 .map(|stream| stream.name.clone())
+                .unwrap_or_default(),
+            Focus::Output(talker, output) => streams
+                .iter()
+                .find(|stream| stream.key() == (talker, output))
+                .map(|stream| stream.output_name.clone())
                 .unwrap_or_default(),
             Focus::Node(key) => {
                 let name = find(topology, key)
@@ -576,8 +632,87 @@ fn node_name(topology: &Topology, node: NodeId) -> String {
     }
 }
 
-/// Every bound stream input, by listener, with how far its stream gets.
+/// Whether a talker says it sends a stream output: it counts a connection
+/// to it, flags it connected, or has started it more often than stopped it.
+fn talker_sends(model: &EntityModel, output: u16) -> bool {
+    model
+        .tx_state(output)
+        .is_some_and(|state| state.connection_count > 0)
+        || model
+            .stream_info(DescriptorType::STREAM_OUTPUT, output)
+            .is_some_and(|info| info.flags.contains(StreamInfoFlags::CONNECTED))
+        || model
+            .stream_output_counters(output)
+            .is_some_and(
+                |counters| match (counters.stream_start, counters.stream_stop) {
+                    (Some(start), Some(stop)) => start > stop,
+                    _ => false,
+                },
+            )
+}
+
+/// Whether a stream goes to a multicast address, as its stream info says
+/// where it gives the address. Bridges copy such a stream out to each
+/// listener from where their paths part; a unicast one, as AVB Lite can
+/// send, the talker sends each listener a copy of its own.
+fn multicast(info: Option<&StreamInfo>) -> Option<bool> {
+    info.filter(|info| info.flags.contains(StreamInfoFlags::STREAM_DEST_MAC_VALID))
+        .map(|info| info.stream_dest_mac.0[0] & 1 == 1)
+}
+
+/// Every bound stream input, by listener, with how far its stream gets;
+/// then each stream output its talker sends that flows to none of them.
 fn streams(triib: &Triib, topology: &Topology) -> Vec<Stream> {
+    let mut streams = bound_streams(triib, topology);
+    for talker in triib.shown_entities() {
+        let talker_id = talker.entity_id();
+        let Some(model) = triib.models.get(&talker_id) else {
+            continue;
+        };
+        for output in model.streams(false) {
+            let flowing = streams.iter().any(|stream| {
+                stream.key() == (talker_id, output.index) && stream.status == Status::Flowing
+            });
+            if flowing || !talker_sends(model, output.index) {
+                continue;
+            }
+            let name = stream_name(Some(model), DescriptorType::STREAM_OUTPUT, output.index);
+            streams.push(Stream {
+                input: None,
+                talker: talker_id,
+                output: output.index,
+                name: name.clone(),
+                output_name: name,
+                talker_name: triib.entity_name(talker),
+                listener_name: fl!("netmap-no-listener"),
+                media_clock: output.is_media_clock(),
+                multicast: multicast(
+                    model.stream_info(DescriptorType::STREAM_OUTPUT, output.index),
+                )
+                .unwrap_or(true),
+                status: Status::Flowing,
+                reason: fl!("netmap-sending-unheard"),
+                route: talker_leg(topology, talker_id),
+            });
+        }
+    }
+    streams
+}
+
+/// The link up from a talker to its bridge, as far as a stream gets that
+/// reaches no listener.
+fn talker_leg(topology: &Topology, talker: EntityId) -> Route {
+    match topology.placed(talker) {
+        Some(node) if topology.nodes[node].parent.is_some() => Route {
+            hops: vec![(node, true)],
+            stops: topology.nodes[node].parent,
+        },
+        _ => Route::default(),
+    }
+}
+
+/// Every bound stream input, by listener, with how far its stream gets.
+fn bound_streams(triib: &Triib, topology: &Topology) -> Vec<Stream> {
     let mut streams = Vec::new();
     for listener in triib.shown_entities() {
         let listener_id = listener.entity_id();
@@ -600,13 +735,7 @@ fn streams(triib: &Triib, topology: &Topology) -> Vec<Stream> {
             let listener_name = triib.entity_name(listener);
             // A stream that is not flowing reaches its talker's bridge, or
             // a failed one the bridge that refused it.
-            let talker_leg = match topology.placed(talker_id) {
-                Some(talker) if topology.nodes[talker].parent.is_some() => Route {
-                    hops: vec![(talker, true)],
-                    stops: topology.nodes[talker].parent,
-                },
-                _ => Route::default(),
-            };
+            let talker_leg = talker_leg(topology, talker_id);
             let (route, reason) = match status {
                 Status::Flowing | Status::Unsynced => (
                     topology.route(talker_id, listener_id),
@@ -650,17 +779,27 @@ fn streams(triib: &Triib, topology: &Topology) -> Vec<Stream> {
                 }
             };
             let talker_model = triib.models.get(&talker_id);
+            let output_name = stream_name(talker_model, DescriptorType::STREAM_OUTPUT, output);
             streams.push(Stream {
-                input: (listener_id, input.index),
+                input: Some((listener_id, input.index)),
                 talker: talker_id,
+                output,
                 name: {
-                    let output = stream_name(talker_model, DescriptorType::STREAM_OUTPUT, output);
                     let input = stream_name(Some(model), DescriptorType::STREAM_INPUT, input.index);
-                    format!("{output} {} {input}", crate::i18n::arrow(&output))
+                    format!("{output_name} {} {input}", crate::i18n::arrow(&output_name))
                 },
+                output_name,
                 talker_name: triib.entity_name_of(talker_id),
                 listener_name,
                 media_clock: input.is_media_clock(),
+                // As the listener has it, else as the talker sends it.
+                multicast: multicast(info)
+                    .or_else(|| {
+                        multicast(talker_model.and_then(|model| {
+                            model.stream_info(DescriptorType::STREAM_OUTPUT, output)
+                        }))
+                    })
+                    .unwrap_or(true),
                 status,
                 reason,
                 route,
@@ -679,28 +818,33 @@ fn hue(place: usize) -> u16 {
         .unwrap_or_else(|| ((172.0 + place as f32 * 137.5) % 360.0) as u16)
 }
 
-/// Each stream's color, from its talker and status: every talker has a
-/// hue and its streams are shades of it; streams that are not flowing lose
-/// their hue.
-fn paints(streams: &[(EntityId, Status)]) -> Vec<Paint> {
+/// Each stream's color, from its talker's stream output and its status:
+/// every talker has a hue and its stream outputs are shades of it, the
+/// same for every listener of one; streams that are not flowing lose their
+/// hue.
+fn paints(streams: &[((EntityId, u16), Status)]) -> Vec<Paint> {
     let mut talkers: Vec<EntityId> = Vec::new();
-    for &(talker, _) in streams {
-        if !talkers.contains(&talker) {
-            talkers.push(talker);
+    let mut outputs: Vec<(EntityId, u16)> = Vec::new();
+    for &(output, _) in streams {
+        if !talkers.contains(&output.0) {
+            talkers.push(output.0);
+        }
+        if !outputs.contains(&output) {
+            outputs.push(output);
         }
     }
-    let mut seen: HashMap<EntityId, usize> = HashMap::new();
     streams
         .iter()
-        .map(|&(talker, status)| {
-            let count = streams.iter().filter(|other| other.0 == talker).count();
-            let index = seen.entry(talker).or_default();
-            let shade = if count == 1 {
+        .map(|&(output, status)| {
+            let talker = output.0;
+            let own: Vec<&(EntityId, u16)> =
+                outputs.iter().filter(|other| other.0 == talker).collect();
+            let place = own.iter().position(|&&other| other == output).unwrap_or(0);
+            let shade = if own.len() == 1 {
                 50
             } else {
-                (*index * 100 / (count - 1)) as u8
+                (place * 100 / (own.len() - 1)) as u8
             };
-            *index += 1;
             match status {
                 Status::Flowing | Status::Unsynced => Paint::Talker {
                     hue: hue(talkers
@@ -752,7 +896,7 @@ fn entity_of(topology: &Topology, node: NodeId) -> Option<EntityId> {
 /// Whether a stream sends from, goes to or passes through the node.
 fn touches(topology: &Topology, stream: &Stream, node: NodeId) -> bool {
     let entity = entity_of(topology, node);
-    entity.is_some() && (entity == Some(stream.talker) || entity == Some(stream.input.0))
+    entity.is_some() && (entity == Some(stream.talker) || entity == stream.listener())
         || via(topology, &stream.route).contains(&node)
 }
 
@@ -761,10 +905,17 @@ fn lit(topology: &Topology, stream: &Stream, focus: Option<Focus>) -> bool {
     match focus {
         None => true,
         Some(Focus::Stream(..)) => focus == Some(stream.focus()),
+        Some(Focus::Output(talker, output)) => stream.key() == (talker, output),
         Some(Focus::Node(key)) => {
             find(topology, key).is_some_and(|node| touches(topology, stream, node))
         }
     }
+}
+
+/// Whether a stream is the one brought forward, or one of its talker's
+/// stream's listeners when that is.
+fn picked(topology: &Topology, stream: &Stream, focus: Option<Focus>) -> bool {
+    matches!(focus, Some(Focus::Stream(..) | Focus::Output(..))) && lit(topology, stream, focus)
 }
 
 fn lines(
@@ -801,6 +952,7 @@ fn lines(
                     }),
                     picked: false,
                     focus: Focus::Node(key_of(topology, node)),
+                    stream: None,
                 }
             })
             .collect();
@@ -813,8 +965,9 @@ fn lines(
             status: stream.status,
             paint,
             related: lit(topology, stream, focus),
-            picked: focus == Some(stream.focus()),
+            picked: picked(topology, stream, focus),
             focus: stream.focus(),
+            stream: stream.multicast.then(|| stream.key()),
         })
         .collect()
 }
@@ -828,10 +981,12 @@ fn cards(
     lines: &[Line],
     focus: Option<Focus>,
 ) -> Vec<Card> {
-    let picked = streams
+    let chosen: Vec<(&Stream, Paint)> = streams
         .iter()
         .zip(paints)
-        .find(|(stream, _)| focus == Some(stream.focus()));
+        .filter(|(stream, _)| picked(topology, stream, focus))
+        .map(|(stream, &paint)| (stream, paint))
+        .collect();
     let interface = triib.settings.interface.as_deref().unwrap_or_default();
     // Whether a lit line enters or leaves the node.
     let on_lit_line = |node: NodeId, lit: &dyn Fn(&Line) -> bool| {
@@ -918,25 +1073,29 @@ fn cards(
                     (fl!("netmap-triib-on", interface = interface), Paint::Muted)
                 }
                 (_, None, _) if entity.is_none() || !entry.children.is_empty() => {
-                    let through = streams
-                        .iter()
-                        .filter(|stream| via(topology, &stream.route).contains(&node))
-                        .count();
+                    let through = traffic(
+                        streams
+                            .iter()
+                            .filter(|stream| via(topology, &stream.route).contains(&node)),
+                    );
                     (fl!("netmap-through-count", count = through), Paint::Muted)
                 }
                 (_, None, _) => {
-                    let sending = streams
-                        .iter()
-                        .filter(|stream| entity == Some(stream.talker))
-                        .count();
+                    let sending = traffic(
+                        streams
+                            .iter()
+                            .filter(|stream| entity == Some(stream.talker)),
+                    );
                     let receiving = streams
                         .iter()
-                        .filter(|stream| entity == Some(stream.input.0))
+                        .filter(|stream| entity.is_some() && entity == stream.listener())
                         .count();
                     let failed = streams
                         .iter()
                         .filter(|stream| {
-                            entity == Some(stream.input.0) && stream.status == Status::Failed
+                            entity.is_some()
+                                && entity == stream.listener()
+                                && stream.status == Status::Failed
                         })
                         .count();
                     let mut counts = Vec::new();
@@ -963,12 +1122,18 @@ fn cards(
                 }
             };
             let focused = focus == Some(Focus::Node(key));
-            let in_picked = picked.is_some_and(|(stream, _)| {
-                entity.is_some()
-                    && (entity == Some(stream.talker) || entity == Some(stream.input.0))
-            });
+            // The stream brought forward that the node listens to, else one
+            // it sends.
+            let in_picked = chosen
+                .iter()
+                .find(|(stream, _)| entity.is_some() && entity == stream.listener())
+                .or_else(|| {
+                    chosen
+                        .iter()
+                        .find(|(stream, _)| entity == Some(stream.talker))
+                });
             let mut strong = false;
-            if let Some((_, &paint)) = picked.filter(|_| in_picked) {
+            if let Some(&(_, paint)) = in_picked {
                 border = paint;
                 strong = true;
             }
@@ -979,8 +1144,10 @@ fn cards(
             // Under a focus, what takes no part in it fades.
             let faded = match focus {
                 None => false,
-                Some(_) if focused || in_picked => false,
-                Some(Focus::Stream(..)) => !on_lit_line(node, &|line| line.picked),
+                Some(_) if focused || in_picked.is_some() => false,
+                Some(Focus::Stream(..) | Focus::Output(..)) => {
+                    !on_lit_line(node, &|line| line.picked)
+                }
                 Some(Focus::Node(_)) if shows == NetworkShows::Clock => {
                     !on_lit_line(node, &|line| line.related)
                 }
@@ -1054,17 +1221,34 @@ fn details(
                 .unwrap_or_default();
             stream_details(topology, shows, &streams[index], paints[index])
         }
+        (_, Some(Focus::Output(talker, output)), _) => {
+            let group: Vec<(&Stream, Paint)> = streams
+                .iter()
+                .zip(paints)
+                .filter(|(stream, _)| stream.key() == (talker, output))
+                .map(|(stream, &paint)| (stream, paint))
+                .collect();
+            output_details(shows, &group)
+        }
         (_, _, Some(node)) => node_details(topology, streams, paints, node),
         _ => stream_overview(shows, streams, paints),
     }
 }
 
-fn stream_item(stream: &Stream, paint: Paint) -> Item {
-    let (state, detail_paint) = match stream.status {
+/// A stream's state in a word, and the paint it is written in.
+fn state_word(stream: &Stream) -> (String, Paint) {
+    match stream.status {
+        Status::Flowing | Status::Unsynced if stream.input.is_none() => {
+            (fl!("netmap-sending"), Paint::Muted)
+        }
         Status::Flowing | Status::Unsynced => (fl!("netmap-connected"), Paint::Muted),
         Status::Advertised => (fl!("netmap-advertised-only"), Paint::Soft),
         Status::Failed => (fl!("netmap-failed-state"), Paint::Failed),
-    };
+    }
+}
+
+fn stream_item(stream: &Stream, paint: Paint) -> Item {
+    let (state, detail_paint) = state_word(stream);
     Item {
         name: stream.name.clone(),
         detail: fl!(
@@ -1077,6 +1261,64 @@ fn stream_item(stream: &Stream, paint: Paint) -> Item {
         swatch: paint,
         focus: stream.focus(),
     }
+}
+
+/// The stream of a talker's stream's listeners that says most of it: one
+/// flowing, else the first.
+fn lead<'a>(group: &[(&'a Stream, Paint)]) -> (&'a Stream, Paint) {
+    *group
+        .iter()
+        .find(|(stream, _)| stream.status == Status::Flowing)
+        .unwrap_or(&group[0])
+}
+
+/// A multicast stream to several listeners, listed as its talker's stream,
+/// which it brings forward whole.
+fn output_item(group: &[(&Stream, Paint)]) -> Item {
+    let (stream, paint) = lead(group);
+    let (state, detail_paint) = state_word(stream);
+    let listeners: Vec<String> = group
+        .iter()
+        .map(|(stream, _)| stream.listener_name.clone())
+        .collect();
+    Item {
+        name: stream.output_name.clone(),
+        detail: fl!(
+            "netmap-stream-item",
+            talker = stream.talker_name.clone(),
+            listener = crate::i18n::list(listeners),
+            state = state
+        ),
+        detail_paint,
+        swatch: paint,
+        focus: Focus::Output(stream.talker, stream.output),
+    }
+}
+
+/// The items for the streams `test` lets through, one for each stream of
+/// frames: a multicast stream to several listeners as one.
+fn grouped(streams: &[Stream], paints: &[Paint], test: &dyn Fn(&Stream) -> bool) -> Vec<Item> {
+    let mut groups: Vec<Vec<(&Stream, Paint)>> = Vec::new();
+    for (stream, &paint) in streams
+        .iter()
+        .zip(paints)
+        .filter(|(stream, _)| test(stream))
+    {
+        match groups
+            .iter_mut()
+            .find(|group| group[0].0.frames() == stream.frames())
+        {
+            Some(group) => group.push((stream, paint)),
+            None => groups.push(vec![(stream, paint)]),
+        }
+    }
+    groups
+        .iter()
+        .map(|group| match group.as_slice() {
+            [(stream, paint)] => stream_item(stream, *paint),
+            _ => output_item(group),
+        })
+        .collect()
 }
 
 /// How a station's time holds over its Wi-Fi hop.
@@ -1435,16 +1677,18 @@ fn clock_details(triib: &Triib, topology: &Topology, node: NodeId) -> Page {
 }
 
 fn stream_overview(shows: NetworkShows, streams: &[Stream], paints: &[Paint]) -> Page {
-    let count = |status: Status| {
-        streams
-            .iter()
-            .filter(|stream| stream.status == status)
-            .count()
-    };
+    let bound = || streams.iter().filter(|stream| stream.input.is_some());
+    let count = |status: Status| bound().filter(|stream| stream.status == status).count();
     let attention: Vec<Item> = streams
         .iter()
         .zip(paints)
         .filter(|(stream, _)| stream.status != Status::Flowing)
+        .map(|(stream, &paint)| stream_item(stream, paint))
+        .collect();
+    let unheard: Vec<Item> = streams
+        .iter()
+        .zip(paints)
+        .filter(|(stream, _)| stream.input.is_none())
         .map(|(stream, &paint)| stream_item(stream, paint))
         .collect();
     let media_clock = shows == NetworkShows::MediaClock;
@@ -1460,7 +1704,7 @@ fn stream_overview(shows: NetworkShows, streams: &[Stream], paints: &[Paint]) ->
             fl!("netmap-audio-streams")
         },
         swatch: None,
-        state: fl!("netmap-bound", count = streams.len()),
+        state: fl!("netmap-bound", count = bound().count()),
         state_icon: if media_clock {
             Icon::Timer
         } else {
@@ -1479,11 +1723,13 @@ fn stream_overview(shows: NetworkShows, streams: &[Stream], paints: &[Paint]) ->
                 count(Status::Failed).to_string(),
             ),
         ],
-        sections: if attention.is_empty() {
-            Vec::new()
-        } else {
-            vec![(fl!("netmap-needs-attention"), attention)]
-        },
+        sections: [
+            (fl!("netmap-needs-attention"), attention),
+            (fl!("netmap-no-listener"), unheard),
+        ]
+        .into_iter()
+        .filter(|(_, items)| !items.is_empty())
+        .collect(),
         help: if media_clock {
             fl!("netmap-help-media-clock")
         } else {
@@ -1505,17 +1751,9 @@ fn stream_details(topology: &Topology, shows: NetworkShows, stream: &Stream, pai
             names.push(node_name(topology, next));
         }
     }
-    let (state_icon, state_filled, state_paint) = match stream.status {
-        Status::Flowing | Status::Unsynced => (Icon::Link, true, Paint::Soft),
-        Status::Advertised => (Icon::Pending, false, Paint::Soft),
-        Status::Failed => (Icon::Error, true, Paint::Failed),
-    };
+    let (state_icon, state_filled, state_paint) = state_look(stream.status);
     Page {
-        kicker: if shows == NetworkShows::MediaClock {
-            fl!("netmap-media-clock-stream")
-        } else {
-            fl!("netmap-audio-stream")
-        },
+        kicker: stream_kicker(shows),
         title: stream.name.clone(),
         swatch: Some(paint),
         state: stream.reason.clone(),
@@ -1539,17 +1777,58 @@ fn stream_details(topology: &Topology, shows: NetworkShows, stream: &Stream, pai
     }
 }
 
+/// The icon a stream's state shows with, whether filled, and its paint.
+fn state_look(status: Status) -> (Icon, bool, Paint) {
+    match status {
+        Status::Flowing | Status::Unsynced => (Icon::Link, true, Paint::Soft),
+        Status::Advertised => (Icon::Pending, false, Paint::Soft),
+        Status::Failed => (Icon::Error, true, Paint::Failed),
+    }
+}
+
+fn stream_kicker(shows: NetworkShows) -> String {
+    if shows == NetworkShows::MediaClock {
+        fl!("netmap-media-clock-stream")
+    } else {
+        fl!("netmap-audio-stream")
+    }
+}
+
+/// A talker's stream with its listeners, each brought forward on its own
+/// from the list; or one it sends with no listener known.
+fn output_details(shows: NetworkShows, group: &[(&Stream, Paint)]) -> Page {
+    let (stream, paint) = lead(group);
+    let listeners: Vec<Item> = group
+        .iter()
+        .filter(|(stream, _)| stream.input.is_some())
+        .map(|&(stream, paint)| stream_item(stream, paint))
+        .collect();
+    let (state_icon, state_filled, state_paint) = state_look(stream.status);
+    Page {
+        kicker: stream_kicker(shows),
+        title: stream.output_name.clone(),
+        swatch: Some(paint),
+        state: stream.reason.clone(),
+        state_icon,
+        state_filled,
+        state_paint,
+        facts: vec![
+            (fl!("advert-talker"), stream.talker_name.clone()),
+            (fl!("stream-listeners"), listeners.len().to_string()),
+        ],
+        sections: if listeners.is_empty() {
+            Vec::new()
+        } else {
+            vec![(fl!("stream-listeners"), listeners)]
+        },
+        help: fl!("netmap-help-back"),
+    }
+}
+
 fn node_details(topology: &Topology, streams: &[Stream], paints: &[Paint], node: NodeId) -> Page {
     let entry = &topology.nodes[node];
     let entity = entity_of(topology, node);
-    let items = |test: &dyn Fn(&Stream) -> bool| -> Vec<Item> {
-        streams
-            .iter()
-            .zip(paints)
-            .filter(|(stream, _)| test(stream))
-            .map(|(stream, &paint)| stream_item(stream, paint))
-            .collect()
-    };
+    let items = |test: &dyn Fn(&Stream) -> bool| grouped(streams, paints, test);
     let bridge = entity.is_none() || !entry.children.is_empty();
     let glyph = match entry.kind {
         NodeKind::Bridge => Icon::Hub,
@@ -1577,12 +1856,12 @@ fn node_details(topology: &Topology, streams: &[Stream], paints: &[Paint], node:
         };
     }
     let sending = items(&|stream| entity.is_some() && entity == Some(stream.talker));
-    let receiving = items(&|stream| entity.is_some() && entity == Some(stream.input.0));
+    let receiving = items(&|stream| entity.is_some() && entity == stream.listener());
     let problems = streams
         .iter()
         .filter(|stream| {
             entity.is_some()
-                && (entity == Some(stream.talker) || entity == Some(stream.input.0))
+                && (entity == Some(stream.talker) || entity == stream.listener())
                 && stream.status != Status::Flowing
         })
         .count();
@@ -1800,12 +2079,15 @@ mod tests {
                 }
             };
             Stream {
-                input: (EntityId(listener), input),
+                input: Some((EntityId(listener), input)),
                 talker: EntityId(talker),
+                output: input,
                 name: name.to_owned(),
+                output_name: name.split(" → ").next().unwrap_or(name).to_owned(),
                 talker_name: names[talker as usize - 1].to_owned(),
                 listener_name: names[listener as usize - 1].to_owned(),
                 media_clock: false,
+                multicast: true,
                 status,
                 reason: match status {
                     Status::Failed => "Reservation failed at Bridge: insufficient bandwidth",
@@ -1838,7 +2120,7 @@ mod tests {
         let paints = paints(
             &streams
                 .iter()
-                .map(|stream| (stream.talker, stream.status))
+                .map(|stream| (stream.key(), stream.status))
                 .collect::<Vec<_>>(),
         );
         let console = find(&topology, NodeKey::Entity(EntityId(2))).unwrap();
@@ -1953,6 +2235,48 @@ mod tests {
             }],
         });
         assert!(!kinds(&triib).contains(&NodeKind::Host));
+    }
+
+    /// A stream output its talker has started more often than stopped is
+    /// sent, and shows on the map as far as the talker's bridge while no
+    /// listener triib reads takes it.
+    #[test]
+    fn a_stream_sent_to_no_known_listener_shows() {
+        let (entities, mut models) = crate::view::tests::bench();
+        let esp = crate::view::tests::WIRED_ESP;
+        let read = |counting| {
+            crate::view::tests::reread(&entities, &models, esp, |_| {}, &[], &[], counting)
+        };
+        let (started, idle) = (read(true), read(false));
+        assert!(talker_sends(&started, 0));
+        assert!(!talker_sends(&idle, 0));
+        models.insert(esp, started);
+        let interface = avb_net::Interface {
+            name: "enp6s0".to_owned(),
+            mac: avb_net::MacAddress([0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b]),
+            up: true,
+            speed: None,
+            physical: true,
+            wireless: false,
+            hardware_clock: None,
+        };
+        let triib = Triib::sample(
+            crate::settings::Settings::default(),
+            interface,
+            entities,
+            models,
+        );
+        let topology = topology_of(&triib);
+        let unheard: Vec<Stream> = streams(&triib, &topology)
+            .into_iter()
+            .filter(|stream| stream.talker == esp && stream.input.is_none())
+            .collect();
+        assert!(!unheard.is_empty());
+        for stream in &unheard {
+            assert_eq!(stream.status, Status::Flowing);
+            assert_eq!(stream.focus(), Focus::Output(esp, stream.output));
+            assert_eq!(stream.route.hops, talker_leg(&topology, esp).hops);
+        }
     }
 
     /// The bench on a plain switch, the wired ESP following a grandmaster

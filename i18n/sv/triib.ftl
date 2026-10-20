@@ -415,6 +415,8 @@ netmap-failed-count = { $count ->
 netmap-advertised-only = Endast annonserad
 netmap-failed-state = Misslyckad
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = Skickar, utan någon känd listener bunden till den
+netmap-no-listener = Ingen känd listener
 netmap-apart-own-grandmaster = Inte i gPTP-trädet: den är sin egen grandmaster
 netmap-apart-no-path = Vägen har inte rapporterats; följer grandmaster { $grandmaster }
 netmap-apart-unreported = Har inte rapporterat sitt gPTP-tillstånd
@@ -464,8 +466,8 @@ netmap-help-back = Klicka på bakgrunden för att gå tillbaka till översikten.
 netmap-help-stream = Klicka på en stream för att inspektera den, eller på bakgrunden för att gå tillbaka till översikten.
 netmap-help-ptp = I AVB Lite går klockan ände till ände från grandmastern till varje enhet, via switchar som inte deltar, så ingen av dem visas. En enhet är synkroniserad så länge den följer grandmastern inom 50 µs. Klicka på en enhet eller dess ledning för att inspektera dess klocka; klicka på bakgrunden för att avmarkera.
 netmap-help-clock = Klockan går från grandmastern via varje switch till varje nod i trädet. En streckad grå linje är en länk där gPTP inte körs. Klicka på en enhet eller dess ledning för att inspektera dess klockväg; klicka på bakgrunden för att avmarkera.
-netmap-help-media-clock = Endast mediaklockstreamar (CRF), ritade på samma sätt som ljud: en ledning per stream, färgad efter talker. Klicka på en ledning för att inspektera dess stream, eller på en enhet för att se dess streamar; klicka på bakgrunden för att avmarkera.
-netmap-help-audio = Varje stream har sin egen ledning, som går in i och ut ur varje switch den passerar. Färgen följer talkern: varje talker har en egen färgton, och dess streamar är nyanser av den. Rörliga prickar betyder att ljud flödar; en stillastående röd linje är en misslyckad reservering och en stillastående grå linje är annonserad utan att någon listener är redo; båda slutar där reserveringen slutar. Enheter i mittenkolumnen ansluter direkt till grandmasterns switch. Klicka på en ledning för att inspektera dess stream, eller på en enhet för att se dess streamar; klicka på bakgrunden för att avmarkera.
+netmap-help-media-clock = Endast mediaklockstreamar (CRF), ritade på samma sätt som ljud: en ledning för varje streams ramar på varje länk, färgad efter talker. Klicka på en ledning för att inspektera dess stream, eller på en enhet för att se dess streamar; klicka på bakgrunden för att avmarkera.
+netmap-help-audio = Varje ledning är en streams ramar på en länk och går in i och ut ur varje switch den passerar. En multicast-stream har en enda ledning så långt vägarna till dess listeners löper tillsammans, och förgrenar sig där de skiljs åt; en unicast-stream, som AVB Lite kan skicka, har en egen ledning från talkern till varje listener. Färgen följer talkern: varje talker har en egen färgton, och var och en av dess streamar är en nyans av den på varje gren. Rörliga prickar betyder att ljud flödar, även från en talker som skickar utan någon känd listener; en stillastående röd linje är en misslyckad reservering och en stillastående grå linje är annonserad utan att någon listener är redo; båda slutar där reserveringen slutar. Enheter i mittenkolumnen ansluter direkt till grandmasterns switch. Klicka på en ledning för att inspektera dess stream, på en delad ledning för att se alla dess listeners, eller på en enhet för att se dess streamar; klicka på bakgrunden för att avmarkera.
 
 ## Connections
 

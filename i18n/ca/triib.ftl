@@ -432,6 +432,8 @@ netmap-failed-count = { $count } amb error
 netmap-advertised-only = Només anunciat
 netmap-failed-state = Error
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = Enviant, sense cap listener conegut vinculat
+netmap-no-listener = Sense listener conegut
 netmap-apart-own-grandmaster = Fora de l’arbre gPTP: és el seu propi grandmaster
 netmap-apart-no-path = No ha notificat el seu camí; segueix el grandmaster { $grandmaster }
 netmap-apart-unreported = No ha notificat el seu estat gPTP
@@ -483,8 +485,8 @@ netmap-help-back = Feu clic al fons per tornar a la vista general.
 netmap-help-stream = Feu clic en un flux per inspeccionar-lo, o al fons per tornar a la vista general.
 netmap-help-ptp = A AVB Lite el rellotge va d’extrem a extrem, del grandmaster a cada dispositiu, a través de commutadors que no hi participen, així que no se’n mostra cap. Un dispositiu està sincronitzat mentre segueix el grandmaster amb un marge de 50 µs. Feu clic en un dispositiu o en el seu fil per inspeccionar-ne el rellotge; feu clic al fons per esborrar la selecció.
 netmap-help-clock = El rellotge surt del grandmaster i passa per cada commutador fins a cada node de l’arbre. Una línia grisa discontínua és un enllaç on no funciona gPTP. Feu clic en un dispositiu o en el seu fil per inspeccionar-ne el camí del rellotge; feu clic al fons per esborrar la selecció.
-netmap-help-media-clock = Només fluxos de rellotge de mitjans (CRF), dibuixats igual que l’àudio: un fil per flux, acolorit segons el talker. Feu clic en un fil per inspeccionar-ne el flux, o en un dispositiu per veure’n els fluxos; feu clic al fons per esborrar la selecció.
-netmap-help-audio = Cada flux té el seu propi fil, que entra i surt de cada commutador que travessa. El color depèn del talker: cada talker té un to, i els seus fluxos en són matisos. Els punts en moviment indiquen que l’àudio circula; una línia vermella fixa és una reserva fallida i una línia grisa fixa és un flux anunciat sense cap listener a punt; totes dues s’aturen on s’atura la reserva. Els dispositius de la columna central es connecten directament al commutador del grandmaster. Feu clic en un fil per inspeccionar-ne el flux, o en un dispositiu per veure’n els fluxos; feu clic al fons per esborrar la selecció.
+netmap-help-media-clock = Només fluxos de rellotge de mitjans (CRF), dibuixats igual que l’àudio: un fil per a les trames de cada flux en cada enllaç, acolorit segons el talker. Feu clic en un fil per inspeccionar-ne el flux, o en un dispositiu per veure’n els fluxos; feu clic al fons per esborrar la selecció.
+netmap-help-audio = Cada fil representa les trames d’un flux en un enllaç, i entra i surt de cada commutador que travessa. Un flux multicast té un sol fil mentre els camins cap als seus listeners van junts, i es ramifica on se separen; un flux unicast, com els que pot enviar AVB Lite, té un fil propi del talker a cada listener. El color depèn del talker: cada talker té un to, i cadascun dels seus fluxos n’és un matís a totes les branques. Els punts en moviment indiquen que l’àudio circula, fins i tot des d’un talker que envia sense cap listener conegut; una línia vermella fixa és una reserva fallida i una línia grisa fixa és un flux anunciat sense cap listener a punt; totes dues s’aturen on s’atura la reserva. Els dispositius de la columna central es connecten directament al commutador del grandmaster. Feu clic en un fil per inspeccionar-ne el flux, en un fil compartit per veure’n tots els listeners, o en un dispositiu per veure’n els fluxos; feu clic al fons per esborrar la selecció.
 
 ## Connections
 

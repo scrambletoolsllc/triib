@@ -410,6 +410,8 @@ netmap-failed-count = { $count } imeshindwa
 netmap-advertised-only = Imetangazwa tu
 netmap-failed-state = Imeshindwa
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = Inatuma, hakuna listener inayojulikana iliyoambatishwa nayo
+netmap-no-listener = Hakuna listener inayojulikana
 netmap-apart-own-grandmaster = Haiko kwenye mti wa gPTP: ni grandmaster yake yenyewe
 netmap-apart-no-path = Njia yake haijaripotiwa; inafuata grandmaster { $grandmaster }
 netmap-apart-unreported = Haijaripoti hali yake ya gPTP
@@ -456,8 +458,8 @@ netmap-help-back = Bofya mandharinyuma ili kurudi kwenye muhtasari.
 netmap-help-stream = Bofya mtiririko ili kuukagua, au mandharinyuma ili kurudi kwenye muhtasari.
 netmap-help-ptp = Katika AVB Lite saa inatiririka kutoka mwisho hadi mwisho, kutoka kwa grandmaster hadi kila kifaa, kupitia swichi zisizoshiriki, kwa hivyo hakuna swichi inayoonyeshwa. Kifaa kimesawazishwa maadamu kinafuata grandmaster ndani ya 50 µs. Bofya kifaa au waya wake ili kukagua saa yake; bofya mandharinyuma ili kufuta uteuzi.
 netmap-help-clock = Saa inatiririka kutoka kwa grandmaster kupitia kila swichi hadi kila nodi kwenye mti. Mstari wa kijivu uliokatikakatika ni kiungo kisichoendesha gPTP. Bofya kifaa au waya wake ili kukagua njia yake ya saa; bofya mandharinyuma ili kufuta uteuzi.
-netmap-help-media-clock = Mitiririko ya saa ya media (CRF) pekee, imechorwa kama ya sauti: waya mmoja kwa kila mtiririko, rangi kulingana na talker. Bofya waya ili kukagua mtiririko wake, au kifaa ili kuona mitiririko yake; bofya mandharinyuma ili kufuta uteuzi.
-netmap-help-audio = Kila mtiririko una waya wake, unaoingia na kutoka katika kila swichi unayopita. Rangi ni kulingana na talker: kila talker ina rangi yake, na mitiririko yake ni vivuli vya rangi hiyo. Vitone vinavyosogea vinamaanisha sauti inatiririka; mstari mwekundu uliotulia ni uhifadhi ulioshindwa na mstari wa kijivu uliotulia ni mtiririko uliotangazwa bila listener iliyo tayari; yote mawili yanaishia pale uhifadhi unapoishia. Vifaa vilivyo kwenye safu ya katikati vimeunganishwa moja kwa moja na swichi ya grandmaster. Bofya waya ili kukagua mtiririko wake, au kifaa ili kuona mitiririko yake; bofya mandharinyuma ili kufuta uteuzi.
+netmap-help-media-clock = Mitiririko ya saa ya media (CRF) pekee, imechorwa kama ya sauti: waya mmoja kwa fremu za kila mtiririko kwenye kila kiungo, rangi kulingana na talker. Bofya waya ili kukagua mtiririko wake, au kifaa ili kuona mitiririko yake; bofya mandharinyuma ili kufuta uteuzi.
+netmap-help-audio = Kila waya unawakilisha fremu za mtiririko mmoja kwenye kiungo kimoja, na unaingia na kutoka katika kila swichi unayopita. Mtiririko wa multicast una waya mmoja maadamu njia za kuelekea kwa listener zake zinakwenda pamoja, na unagawanyika kuwa matawi pale zinapoachana; mtiririko wa unicast, kama ule ambao AVB Lite inaweza kutuma, una waya wake kutoka kwa talker hadi kila listener. Rangi ni kulingana na talker: kila talker ina rangi yake, na kila mtiririko wake ni kivuli cha rangi hiyo kwenye kila tawi. Vitone vinavyosogea vinamaanisha sauti inatiririka, hata kutoka kwa talker inayotuma bila listener inayojulikana; mstari mwekundu uliotulia ni uhifadhi ulioshindwa na mstari wa kijivu uliotulia ni mtiririko uliotangazwa bila listener iliyo tayari; yote mawili yanaishia pale uhifadhi unapoishia. Vifaa vilivyo kwenye safu ya katikati vimeunganishwa moja kwa moja na swichi ya grandmaster. Bofya waya ili kukagua mtiririko wake, waya wa pamoja ili kuona listener zake zote, au kifaa ili kuona mitiririko yake; bofya mandharinyuma ili kufuta uteuzi.
 
 ## Connections
 

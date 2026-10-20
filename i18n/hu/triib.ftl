@@ -412,6 +412,8 @@ netmap-failed-count = { $count } sikertelen
 netmap-advertised-only = Csak meghirdetve
 netmap-failed-state = Sikertelen
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = Küldés folyamatban, nincs hozzárendelt ismert listener
+netmap-no-listener = Nincs ismert listener
 netmap-apart-own-grandmaster = Nincs a gPTP-fán: saját maga a grandmaster
 netmap-apart-no-path = Az útvonalát nem jelentette; a követett grandmaster: { $grandmaster }
 netmap-apart-unreported = Nem jelentette a gPTP-állapotát
@@ -458,8 +460,8 @@ netmap-help-back = Kattintson a háttérre az áttekintéshez való visszatéré
 netmap-help-stream = Kattintson egy streamre a vizsgálatához, vagy a háttérre az áttekintéshez való visszatéréshez.
 netmap-help-ptp = AVB Lite esetén az órajel végponttól végpontig jut el a grandmastertől minden eszközig, olyan switcheken át, amelyek nem vesznek részt benne, ezért ezek nem jelennek meg. Egy eszköz addig van szinkronban, amíg 50 µs-on belül követi a grandmastert. Kattintson egy eszközre vagy a vezetékére az órajele vizsgálatához; a háttérre kattintva megszüntetheti a kijelölést.
 netmap-help-clock = Az órajel a grandmastertől minden hídon át eljut a fa minden csomópontjához. A szaggatott szürke vonal olyan link, amelyen nem fut gPTP. Kattintson egy eszközre vagy a vezetékére az órajelútja vizsgálatához; a háttérre kattintva megszüntetheti a kijelölést.
-netmap-help-media-clock = Csak a médiaórajel-streamek (CRF), az audióval azonos módon rajzolva: streamenként egy vezeték, talkerenként színezve. Kattintson egy vezetékre a streamje vizsgálatához, vagy egy eszközre a streamjei megtekintéséhez; a háttérre kattintva megszüntetheti a kijelölést.
-netmap-help-audio = Minden streamnek saját vezetéke van, amely belép minden hídba, amelyen áthalad, majd kilép belőle. A szín a talkert jelöli: minden talkernek saját színárnyalata van, és a streamjei ennek változatai. A mozgó pontok azt jelzik, hogy áramlik az audio; az álló piros vonal sikertelen foglalást, az álló szürke vonal pedig olyan meghirdetett streamet jelöl, amelyhez nincs kész listener; mindkettő ott ér véget, ahol a foglalás. A középső oszlop eszközei közvetlenül a grandmaster hídjához csatlakoznak. Kattintson egy vezetékre a streamje vizsgálatához, vagy egy eszközre a streamjei megtekintéséhez; a háttérre kattintva megszüntetheti a kijelölést.
+netmap-help-media-clock = Csak a médiaórajel-streamek (CRF), az audióval azonos módon rajzolva: minden stream kereteinek minden linken egy-egy vezeték, talkerenként színezve. Kattintson egy vezetékre a streamje vizsgálatához, vagy egy eszközre a streamjei megtekintéséhez; a háttérre kattintva megszüntetheti a kijelölést.
+netmap-help-audio = Minden vezeték egy stream kereteit jelöli egy linken, és belép minden hídba, amelyen áthalad, majd kilép belőle. Egy multicast streamnek egyetlen vezetéke van addig, amíg a listenereihez vezető utak együtt futnak, és ott ágazik el, ahol szétválnak; egy unicast streamnek, amilyet az AVB Lite küldhet, saját vezetéke van a talkertől minden listenerig. A szín a talkert jelöli: minden talkernek saját színárnyalata van, és minden streamje ennek egy változata minden ágon. A mozgó pontok azt jelzik, hogy áramlik az audio, akkor is, ha a talker ismert listener nélkül küld; az álló piros vonal sikertelen foglalást, az álló szürke vonal pedig olyan meghirdetett streamet jelöl, amelyhez nincs kész listener; mindkettő ott ér véget, ahol a foglalás. A középső oszlop eszközei közvetlenül a grandmaster hídjához csatlakoznak. Kattintson egy vezetékre a streamje vizsgálatához, egy közös vezetékre az összes listenere megtekintéséhez, vagy egy eszközre a streamjei megtekintéséhez; a háttérre kattintva megszüntetheti a kijelölést.
 
 ## Connections
 

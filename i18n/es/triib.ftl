@@ -424,6 +424,8 @@ netmap-failed-count = { $count } con fallo
 netmap-advertised-only = Solo anunciado
 netmap-failed-state = Fallido
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = Enviando, sin ningún listener conocido vinculado
+netmap-no-listener = Sin listener conocido
 netmap-apart-own-grandmaster = Fuera del árbol gPTP: es su propio grandmaster
 netmap-apart-no-path = No ha informado de su ruta; sigue al grandmaster { $grandmaster }
 netmap-apart-unreported = No ha informado de su estado gPTP
@@ -475,8 +477,8 @@ netmap-help-back = Haz clic en el fondo para volver a la vista general.
 netmap-help-stream = Haz clic en un flujo para inspeccionarlo, o en el fondo para volver a la vista general.
 netmap-help-ptp = En AVB Lite el reloj fluye de extremo a extremo, desde el grandmaster hasta cada dispositivo, a través de switches que no intervienen, así que no se muestra ninguno. Un dispositivo está sincronizado mientras sigue al grandmaster con un margen de 50 µs. Haz clic en un dispositivo o en su cable para inspeccionar su reloj; haz clic en el fondo para quitar la selección.
 netmap-help-clock = El reloj fluye desde el grandmaster, a través de cada switch, hasta todos los nodos del árbol. Una línea gris discontinua es un enlace en el que no funciona gPTP. Haz clic en un dispositivo o en su cable para inspeccionar su ruta del reloj; haz clic en el fondo para quitar la selección.
-netmap-help-media-clock = Solo flujos de reloj de medios (CRF), dibujados igual que los de audio: un cable por flujo, con el color de su talker. Haz clic en un cable para inspeccionar su flujo, o en un dispositivo para ver sus flujos; haz clic en el fondo para quitar la selección.
-netmap-help-audio = Cada flujo tiene su propio cable, que entra y sale de cada switch que atraviesa. El color depende del talker: cada talker tiene un tono y sus flujos son matices de ese tono. Los puntos en movimiento indican que el audio fluye; una línea roja fija es una reserva fallida y una línea gris fija es un flujo anunciado sin ningún listener listo; ambas terminan donde termina la reserva. Los dispositivos de la columna central se conectan directamente al switch del grandmaster. Haz clic en un cable para inspeccionar su flujo, o en un dispositivo para ver sus flujos; haz clic en el fondo para quitar la selección.
+netmap-help-media-clock = Solo flujos de reloj de medios (CRF), dibujados igual que los de audio: un cable para las tramas de cada flujo en cada enlace, con el color de su talker. Haz clic en un cable para inspeccionar su flujo, o en un dispositivo para ver sus flujos; haz clic en el fondo para quitar la selección.
+netmap-help-audio = Cada cable representa las tramas de un flujo en un enlace, y entra y sale de cada switch que atraviesa. Un flujo multicast tiene un solo cable mientras los caminos hacia sus listeners van juntos, y se ramifica donde se separan; un flujo unicast, como los que puede enviar AVB Lite, tiene un cable propio desde el talker hasta cada listener. El color depende del talker: cada talker tiene un tono y cada uno de sus flujos es un matiz de ese tono en todas las ramas. Los puntos en movimiento indican que el audio fluye, incluso desde un talker que envía sin ningún listener conocido; una línea roja fija es una reserva fallida y una línea gris fija es un flujo anunciado sin ningún listener listo; ambas terminan donde termina la reserva. Los dispositivos de la columna central se conectan directamente al switch del grandmaster. Haz clic en un cable para inspeccionar su flujo, en un cable compartido para ver todos sus listeners, o en un dispositivo para ver sus flujos; haz clic en el fondo para quitar la selección.
 
 ## Connections
 

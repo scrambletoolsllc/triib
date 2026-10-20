@@ -389,6 +389,8 @@ netmap-failed-count = { $count } gagal
 netmap-advertised-only = Diumumkan sahaja
 netmap-failed-state = Gagal
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = Menghantar, tiada listener yang diketahui terikat padanya
+netmap-no-listener = Tiada listener yang diketahui
 netmap-apart-own-grandmaster = Tiada dalam pepohon gPTP: ia grandmaster bagi dirinya sendiri
 netmap-apart-no-path = Laluannya tidak dilaporkan; ia mengikut grandmaster { $grandmaster }
 netmap-apart-unreported = Ia belum melaporkan keadaan gPTP-nya
@@ -432,8 +434,8 @@ netmap-help-back = Klik latar belakang untuk kembali ke gambaran keseluruhan.
 netmap-help-stream = Klik strim untuk memeriksanya, atau latar belakang untuk kembali ke gambaran keseluruhan.
 netmap-help-ptp = Dalam AVB Lite, jam mengalir hujung ke hujung dari grandmaster ke setiap peranti, melalui suis yang tidak mengambil bahagian, jadi suis itu tidak ditunjukkan. Peranti disegerakkan selagi ia mengikut grandmaster dalam lingkungan 50 µs. Klik peranti atau wayarnya untuk memeriksa jamnya; klik latar belakang untuk mengosongkan pilihan.
 netmap-help-clock = Jam mengalir dari grandmaster melalui setiap suis ke setiap nod dalam pepohon. Garis kelabu putus-putus ialah pautan yang tidak menjalankan gPTP. Klik peranti atau wayarnya untuk memeriksa laluan jamnya; klik latar belakang untuk mengosongkan pilihan.
-netmap-help-media-clock = Strim jam media (CRF) sahaja, dilukis sama seperti audio: satu wayar bagi setiap strim, diwarnakan mengikut talker. Klik wayar untuk memeriksa strimnya, atau peranti untuk melihat strimnya; klik latar belakang untuk mengosongkan pilihan.
-netmap-help-audio = Setiap strim mempunyai wayarnya sendiri, yang masuk dan keluar dari setiap suis yang dilaluinya. Warna mengikut talker: setiap talker mempunyai satu rona, dan strimnya ialah ton rona itu. Titik bergerak bermaksud audio sedang mengalir; garis merah pegun ialah tempahan yang gagal dan garis kelabu pegun ialah strim yang diumumkan tanpa listener sedia; kedua-duanya berhenti di tempat tempahan berhenti. Peranti di lajur tengah bersambung terus ke suis grandmaster. Klik wayar untuk memeriksa strimnya, atau peranti untuk melihat strimnya; klik latar belakang untuk mengosongkan pilihan.
+netmap-help-media-clock = Strim jam media (CRF) sahaja, dilukis sama seperti audio: satu wayar bagi bingkai setiap strim pada setiap pautan, diwarnakan mengikut talker. Klik wayar untuk memeriksa strimnya, atau peranti untuk melihat strimnya; klik latar belakang untuk mengosongkan pilihan.
+netmap-help-audio = Setiap wayar ialah bingkai satu strim pada satu pautan, yang masuk dan keluar dari setiap suis yang dilaluinya. Strim multicast mempunyai satu wayar selagi laluan ke listenernya bergerak bersama, dan bercabang di tempat laluan itu berpisah; strim unicast, seperti yang boleh dihantar oleh AVB Lite, mempunyai wayarnya sendiri dari talker ke setiap listener. Warna mengikut talker: setiap talker mempunyai satu rona, dan setiap strimnya ialah ton rona itu pada setiap cabang. Titik bergerak bermaksud audio sedang mengalir, walaupun daripada talker yang menghantar tanpa listener yang diketahui; garis merah pegun ialah tempahan yang gagal dan garis kelabu pegun ialah strim yang diumumkan tanpa listener sedia; kedua-duanya berhenti di tempat tempahan berhenti. Peranti di lajur tengah bersambung terus ke suis grandmaster. Klik wayar untuk memeriksa strimnya, wayar kongsi untuk melihat semua listenernya, atau peranti untuk melihat strimnya; klik latar belakang untuk mengosongkan pilihan.
 
 ## Connections
 

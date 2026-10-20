@@ -412,6 +412,8 @@ netmap-failed-count = { $count } mislukt
 netmap-advertised-only = Alleen aangekondigd
 netmap-failed-state = Mislukt
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = Verzendt, geen bekende listener eraan gekoppeld
+netmap-no-listener = Geen bekende listener
 netmap-apart-own-grandmaster = Niet in de gPTP-boom: zelf grandmaster
 netmap-apart-no-path = Pad niet gemeld; volgt grandmaster { $grandmaster }
 netmap-apart-unreported = gPTP-status niet gemeld
@@ -458,8 +460,8 @@ netmap-help-back = Klik op de achtergrond om terug te gaan naar het overzicht.
 netmap-help-stream = Klik op een stream om hem te inspecteren, of op de achtergrond om terug te gaan naar het overzicht.
 netmap-help-ptp = In AVB Lite loopt de klok end-to-end van de grandmaster naar elk apparaat, via switches die er niet aan deelnemen, dus die worden niet getoond. Een apparaat is gesynchroniseerd zolang het de grandmaster binnen 50 µs volgt. Klik op een apparaat of zijn draad om zijn klok te inspecteren; klik op de achtergrond om de selectie op te heffen.
 netmap-help-clock = De klok loopt van de grandmaster via elke switch naar elk knooppunt in de boom. Een gestreepte grijze lijn is een link waarop gPTP niet draait. Klik op een apparaat of zijn draad om zijn klokpad te inspecteren; klik op de achtergrond om de selectie op te heffen.
-netmap-help-media-clock = Alleen mediaklokstreams (CRF), getekend zoals audio: één draad per stream, gekleurd per talker. Klik op een draad om de stream te inspecteren, of op een apparaat om zijn streams te zien; klik op de achtergrond om de selectie op te heffen.
-netmap-help-audio = Elke stream heeft een eigen draad, die elke switch die hij passeert in- en uitgaat. De kleur volgt de talker: elke talker heeft een eigen tint, en zijn streams zijn schakeringen daarvan. Bewegende stippen betekenen dat er audio stroomt; een stilstaande rode lijn is een mislukte reservering en een stilstaande grijze lijn is aangekondigd terwijl er geen listener gereed is; beide stoppen waar de reservering stopt. Apparaten in de middelste kolom zijn direct verbonden met de switch van de grandmaster. Klik op een draad om de stream te inspecteren, of op een apparaat om zijn streams te zien; klik op de achtergrond om de selectie op te heffen.
+netmap-help-media-clock = Alleen mediaklokstreams (CRF), getekend zoals audio: één draad voor de frames van elke stream op elke link, gekleurd per talker. Klik op een draad om de stream te inspecteren, of op een apparaat om zijn streams te zien; klik op de achtergrond om de selectie op te heffen.
+netmap-help-audio = Elke draad staat voor de frames van een stream op een link, en gaat elke switch die hij passeert in en uit. Een multicaststream heeft één draad zolang de paden naar zijn listeners samen lopen, en vertakt waar ze uiteengaan; een unicaststream, zoals AVB Lite die kan sturen, heeft een eigen draad van de talker naar elke listener. De kleur volgt de talker: elke talker heeft een eigen tint, en elk van zijn streams is daar op elke tak een schakering van. Bewegende stippen betekenen dat er audio stroomt, ook van een talker die zonder bekende listener verzendt; een stilstaande rode lijn is een mislukte reservering en een stilstaande grijze lijn is aangekondigd terwijl er geen listener gereed is; beide stoppen waar de reservering stopt. Apparaten in de middelste kolom zijn direct verbonden met de switch van de grandmaster. Klik op een draad om de stream te inspecteren, op een gedeelde draad om al zijn listeners te zien, of op een apparaat om zijn streams te zien; klik op de achtergrond om de selectie op te heffen.
 
 ## Connections
 

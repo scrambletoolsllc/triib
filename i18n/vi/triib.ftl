@@ -392,6 +392,8 @@ netmap-failed-count = { $count } thất bại
 netmap-advertised-only = Chỉ quảng bá
 netmap-failed-state = Thất bại
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = Đang gửi, không có Listener đã biết nào được gán vào
+netmap-no-listener = Không có Listener đã biết
 netmap-apart-own-grandmaster = Không nằm trên cây gPTP: nó tự là Grandmaster
 netmap-apart-no-path = Chưa báo cáo đường đi; nó theo Grandmaster { $grandmaster }
 netmap-apart-unreported = Chưa báo cáo trạng thái gPTP
@@ -435,8 +437,8 @@ netmap-help-back = Nhấp vào nền để quay lại tổng quan.
 netmap-help-stream = Nhấp vào một luồng để kiểm tra, hoặc nhấp vào nền để quay lại tổng quan.
 netmap-help-ptp = Trong AVB Lite, đồng hồ đi từ đầu cuối đến đầu cuối: từ Grandmaster tới mọi thiết bị, qua các switch không tham gia, nên không switch nào được hiển thị. Một thiết bị được xem là đã đồng bộ khi còn theo Grandmaster trong phạm vi 50 µs. Nhấp vào một thiết bị hoặc dây của nó để kiểm tra đồng hồ; nhấp vào nền để bỏ chọn.
 netmap-help-clock = Đồng hồ đi từ Grandmaster qua từng switch tới mọi nút trên cây. Đường xám đứt nét là liên kết không chạy gPTP. Nhấp vào một thiết bị hoặc dây của nó để kiểm tra đường đi đồng hồ; nhấp vào nền để bỏ chọn.
-netmap-help-media-clock = Chỉ các luồng đồng hồ media (CRF), vẽ giống như âm thanh: mỗi luồng một dây, tô màu theo Talker. Nhấp vào một dây để kiểm tra luồng của nó, hoặc vào một thiết bị để xem các luồng của thiết bị đó; nhấp vào nền để bỏ chọn.
-netmap-help-audio = Mỗi luồng có dây riêng, đi vào và ra khỏi mọi switch mà nó đi qua. Màu theo Talker: mỗi Talker có một sắc màu, và các luồng của nó là các sắc độ của màu đó. Chấm chuyển động nghĩa là âm thanh đang truyền; đường đỏ đứng yên là đặt trước thất bại, còn đường xám đứng yên là đã quảng bá nhưng chưa có Listener sẵn sàng; cả hai dừng ở nơi đặt trước dừng lại. Thiết bị ở cột giữa nối thẳng vào switch của Grandmaster. Nhấp vào một dây để kiểm tra luồng của nó, hoặc vào một thiết bị để xem các luồng của thiết bị đó; nhấp vào nền để bỏ chọn.
+netmap-help-media-clock = Chỉ các luồng đồng hồ media (CRF), vẽ giống như âm thanh: một dây cho các khung của mỗi luồng trên mỗi liên kết, tô màu theo Talker. Nhấp vào một dây để kiểm tra luồng của nó, hoặc vào một thiết bị để xem các luồng của thiết bị đó; nhấp vào nền để bỏ chọn.
+netmap-help-audio = Mỗi dây là các khung của một luồng trên một liên kết, đi vào và ra khỏi mọi switch mà nó đi qua. Một luồng multicast chỉ có một dây chừng nào đường đi tới các Listener của nó còn chung nhau, và rẽ nhánh ở nơi chúng tách ra; một luồng unicast, loại mà AVB Lite có thể gửi, có dây riêng từ Talker tới từng Listener. Màu theo Talker: mỗi Talker có một sắc màu, và mỗi luồng của nó là một sắc độ của màu đó trên mọi nhánh. Chấm chuyển động nghĩa là âm thanh đang truyền, kể cả từ một Talker đang gửi mà không có Listener nào đã biết; đường đỏ đứng yên là đặt trước thất bại, còn đường xám đứng yên là đã quảng bá nhưng chưa có Listener sẵn sàng; cả hai dừng ở nơi đặt trước dừng lại. Thiết bị ở cột giữa nối thẳng vào switch của Grandmaster. Nhấp vào một dây để kiểm tra luồng của nó, vào một dây dùng chung để xem tất cả Listener của nó, hoặc vào một thiết bị để xem các luồng của thiết bị đó; nhấp vào nền để bỏ chọn.
 
 ## Connections
 

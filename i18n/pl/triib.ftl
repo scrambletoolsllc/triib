@@ -424,6 +424,8 @@ netmap-failed-count = nieudane: { $count }
 netmap-advertised-only = Tylko ogłoszono
 netmap-failed-state = Błąd
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = Wysyła, brak powiązanego znanego listenera
+netmap-no-listener = Brak znanego listenera
 netmap-apart-own-grandmaster = Poza drzewem gPTP: sam jest grandmasterem
 netmap-apart-no-path = Nie podano ścieżki; synchronizuje się z grandmasterem { $grandmaster }
 netmap-apart-unreported = Nie podano stanu gPTP
@@ -472,8 +474,8 @@ netmap-help-back = Kliknij tło, aby wrócić do przeglądu.
 netmap-help-stream = Kliknij strumień, aby otworzyć go w inspektorze, lub tło, aby wrócić do przeglądu.
 netmap-help-ptp = W AVB Lite zegar płynie end-to-end od grandmastera do każdego urządzenia przez przełączniki, które w tym nie uczestniczą, więc żaden nie jest pokazany. Urządzenie jest zsynchronizowane, dopóki synchronizuje się z grandmasterem z dokładnością do 50 µs. Kliknij urządzenie lub jego przewód, aby otworzyć jego zegar w inspektorze; kliknij tło, aby wyczyścić zaznaczenie.
 netmap-help-clock = Zegar płynie od grandmastera przez każdy przełącznik do każdego węzła drzewa. Przerywana szara linia to łącze, na którym nie działa gPTP. Kliknij urządzenie lub jego przewód, aby otworzyć jego ścieżkę zegara w inspektorze; kliknij tło, aby wyczyścić zaznaczenie.
-netmap-help-media-clock = Tylko strumienie zegara mediów (CRF), rysowane tak samo jak audio: jeden przewód na strumień, kolor według talkera. Kliknij przewód, aby otworzyć jego strumień w inspektorze, lub urządzenie, aby zobaczyć jego strumienie; kliknij tło, aby wyczyścić zaznaczenie.
-netmap-help-audio = Każdy strumień ma własny przewód, który wchodzi do każdego przełącznika na swojej drodze i z niego wychodzi. Kolor zależy od talkera: każdy talker ma swój odcień, a jego strumienie są wariantami tego odcienia. Poruszające się kropki oznaczają, że audio płynie; nieruchoma czerwona linia to nieudana rezerwacja, a nieruchoma szara to strumień ogłoszony bez gotowego listenera; obie kończą się tam, gdzie kończy się rezerwacja. Urządzenia w środkowej kolumnie łączą się bezpośrednio z przełącznikiem grandmastera. Kliknij przewód, aby otworzyć jego strumień w inspektorze, lub urządzenie, aby zobaczyć jego strumienie; kliknij tło, aby wyczyścić zaznaczenie.
+netmap-help-media-clock = Tylko strumienie zegara mediów (CRF), rysowane tak samo jak audio: jeden przewód dla ramek każdego strumienia na każdym łączu, kolor według talkera. Kliknij przewód, aby otworzyć jego strumień w inspektorze, lub urządzenie, aby zobaczyć jego strumienie; kliknij tło, aby wyczyścić zaznaczenie.
+netmap-help-audio = Każdy przewód to ramki jednego strumienia na jednym łączu; wchodzi on do każdego przełącznika na swojej drodze i z niego wychodzi. Strumień multicast ma jeden przewód, dopóki ścieżki do jego listenerów biegną razem, i rozgałęzia się tam, gdzie się rozchodzą; strumień unicast, jaki potrafi wysyłać AVB Lite, ma własny przewód od talkera do każdego listenera. Kolor zależy od talkera: każdy talker ma swój odcień, a każdy jego strumień jest wariantem tego odcienia na każdej gałęzi. Poruszające się kropki oznaczają, że audio płynie, nawet od talkera, który wysyła bez znanego listenera; nieruchoma czerwona linia to nieudana rezerwacja, a nieruchoma szara to strumień ogłoszony bez gotowego listenera; obie kończą się tam, gdzie kończy się rezerwacja. Urządzenia w środkowej kolumnie łączą się bezpośrednio z przełącznikiem grandmastera. Kliknij przewód, aby otworzyć jego strumień w inspektorze, przewód współdzielony, aby zobaczyć wszystkich jego listenerów, lub urządzenie, aby zobaczyć jego strumienie; kliknij tło, aby wyczyścić zaznaczenie.
 
 ## Connections
 

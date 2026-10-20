@@ -1,12 +1,15 @@
 //! The network map widget: each gPTP tree from its grandmaster down, the
 //! bridges under it on a row with their devices in columns beneath and the
-//! grandmaster's own devices in the middle. Every stream has a wire of its
-//! own that enters and leaves each bridge it crosses, glowing and carrying
-//! moving dots while something flows.
+//! grandmaster's own devices in the middle. Every stream has a wire that
+//! enters and leaves each bridge it crosses, glowing and carrying moving
+//! dots while something flows: a wire for the frames on each link, so a
+//! multicast stream's listeners share one as far as their paths do and it
+//! branches where they part, while a unicast stream's each have their own.
 
 use std::cell::Cell as Memo;
 use std::cmp::Reverse;
 use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::f32::consts::TAU;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
@@ -99,6 +102,9 @@ pub struct NetMap {
     size: Size,
     /// The lines in the order they are drawn, what is brought forward last.
     order: Vec<usize>,
+    /// By line, which of its wires it draws: a wire lines share is drawn
+    /// once, by the last of them drawn, lit when any of them is.
+    draws: Vec<Vec<bool>>,
     /// A hash of the map, telling when to draw it again.
     signature: u64,
 }
@@ -129,6 +135,18 @@ pub fn map(map: Map, area: Size) -> NetMap {
     let origin = Vector::new((size.width - drawn.width) / 2.0, 0.0);
     let mut order: Vec<usize> = (0..map.lines.len()).collect();
     order.sort_by_key(|&line| (map.lines[line].related, map.lines[line].picked));
+    let mut drawer: HashMap<(usize, usize), usize> = HashMap::new();
+    for &line in &order {
+        for wire in &placement.wires[line] {
+            drawer.insert(wire.key, line);
+        }
+    }
+    let draws = placement
+        .wires
+        .iter()
+        .enumerate()
+        .map(|(line, wires)| wires.iter().map(|wire| drawer[&wire.key] == line).collect())
+        .collect();
     let mut hasher = DefaultHasher::new();
     map.hash(&mut hasher);
     placement.compact.hash(&mut hasher);
@@ -143,6 +161,7 @@ pub fn map(map: Map, area: Size) -> NetMap {
         origin,
         size,
         order,
+        draws,
     }
 }
 
@@ -221,25 +240,52 @@ struct Leg {
     up: bool,
 }
 
-fn legs(map: &Map) -> Vec<Leg> {
+/// The links the lines cross, each drawn once for the frames on it: where
+/// the lines of a multicast stream cross a link alike, the first of them
+/// has the leg drawn and the others are paired with it, to take its wire.
+fn legs(map: &Map) -> (Vec<Leg>, Vec<(Leg, Leg)>) {
     let topology = &map.topology;
-    map.lines
-        .iter()
-        .enumerate()
-        .flat_map(|(line, entry)| {
-            entry
-                .hops
-                .iter()
-                .enumerate()
-                .filter(|(_, (node, _))| topology.nodes[*node].parent.is_some())
-                .map(move |(hop, &(node, up))| Leg {
-                    line,
-                    hop,
-                    node,
-                    up,
-                })
-        })
-        .collect()
+    let mut drawn = Vec::new();
+    let mut copies = Vec::new();
+    let mut first = HashMap::new();
+    for (line, entry) in map.lines.iter().enumerate() {
+        for (hop, &(node, up)) in entry.hops.iter().enumerate() {
+            if topology.nodes[node].parent.is_none() {
+                continue;
+            }
+            let leg = Leg {
+                line,
+                hop,
+                node,
+                up,
+            };
+            let Some(stream) = entry.stream else {
+                drawn.push(leg);
+                continue;
+            };
+            match first.entry((stream, entry.status, node, up)) {
+                Entry::Occupied(found) => copies.push((leg, *found.get())),
+                Entry::Vacant(slot) => {
+                    slot.insert(leg);
+                    drawn.push(leg);
+                }
+            }
+        }
+    }
+    (drawn, copies)
+}
+
+/// Gives each leg paired with a drawn one that leg's wire, marking both
+/// shared.
+fn share(wires: &mut [Vec<Option<Wire>>], copies: &[(Leg, Leg)]) {
+    for (copy, drawn) in copies {
+        let Some(wire) = wires[drawn.line][drawn.hop].as_mut() else {
+            continue;
+        };
+        wire.shared = true;
+        let wire = wire.clone();
+        wires[copy.line][copy.hop] = Some(wire);
+    }
 }
 
 /// Whether a node heads a column of its own: a bridge, or anything with
@@ -354,7 +400,7 @@ fn gutter(lanes: usize) -> f32 {
 fn fan(map: &Map, width: f32) -> Placement {
     let topology = &map.topology;
     let count = topology.nodes.len();
-    let legs = legs(map);
+    let (legs, copies) = legs(map);
     let mut role = vec![Role::Apart; count];
     let mut groves = Vec::new();
     for &root in &topology.roots {
@@ -759,6 +805,7 @@ fn fan(map: &Map, width: f32) -> Placement {
         }
     }
 
+    share(&mut wires, &copies);
     let right = cards
         .iter()
         .flatten()
@@ -790,7 +837,7 @@ fn fan(map: &Map, width: f32) -> Placement {
 fn compact(map: &Map) -> Placement {
     let topology = &map.topology;
     let count = topology.nodes.len();
-    let legs = legs(map);
+    let (legs, copies) = legs(map);
     let hubs: Vec<bool> = (0..count)
         .map(|node| {
             topology.nodes[node].apart.is_none()
@@ -931,6 +978,7 @@ fn compact(map: &Map) -> Placement {
             wires[leg.line][leg.hop] = Some(wire.for_leg(map, leg));
         }
     }
+    share(&mut wires, &copies);
     let right = cards
         .iter()
         .flatten()
@@ -965,6 +1013,11 @@ struct Wire {
     wireless: bool,
     /// Points along the drawn wire with the distance to each from its start.
     samples: Vec<(Point, f32)>,
+    /// The line and hop it was laid out for, the same for every line that
+    /// shares it.
+    key: (usize, usize),
+    /// Carrying a multicast stream to more than one listener.
+    shared: bool,
 }
 
 enum Piece {
@@ -1016,12 +1069,16 @@ impl Wire {
             corners,
             samples,
             wireless: false,
+            key: (0, 0),
+            shared: false,
         }
     }
 
     fn reversed(&self) -> Self {
         Self {
             wireless: self.wireless,
+            key: self.key,
+            shared: self.shared,
             ..Self::new(self.corners.iter().rev().copied().collect())
         }
     }
@@ -1032,6 +1089,7 @@ impl Wire {
         let mut wire = if leg.up { self.reversed() } else { self };
         let (node, _) = map.lines[leg.line].hops[leg.hop];
         wire.wireless = map.topology.nodes[node].link.wireless.is_some();
+        wire.key = (leg.line, leg.hop);
         wire
     }
 
@@ -1194,23 +1252,33 @@ impl NetMap {
             .position(|card| card.is_some_and(|card| card.contains(point)))
     }
 
-    /// The topmost line near the point.
-    fn line_at(&self, point: Point) -> Option<usize> {
+    /// The topmost wire near the point, with its line.
+    fn wire_at(&self, point: Point) -> Option<(usize, &Wire)> {
         let point = self.unscaled(point);
-        self.order.iter().rev().copied().find(|&line| {
+        self.order.iter().rev().find_map(|&line| {
             self.placement.wires[line]
                 .iter()
-                .any(|wire| wire.distance(point) <= REACH)
+                .find(|wire| wire.distance(point) <= REACH)
+                .map(|wire| (line, wire))
         })
     }
 
     /// What a click at the point brings forward: what it lands on, or
     /// nothing when that is brought forward already or it lands on neither.
+    /// A wire a multicast stream's listeners share brings the whole stream.
     fn clicked(&self, point: Point) -> Option<Focus> {
         let target = self
             .card_at(point)
             .map(|node| self.map.cards[node].focus)
-            .or_else(|| self.line_at(point).map(|line| self.map.lines[line].focus));
+            .or_else(|| {
+                self.wire_at(point).map(|(line, wire)| {
+                    let line = &self.map.lines[line];
+                    match line.stream {
+                        Some((talker, output)) if wire.shared => Focus::Output(talker, output),
+                        _ => line.focus,
+                    }
+                })
+            });
         target.filter(|&focus| self.map.focus != Some(focus))
     }
 
@@ -1257,7 +1325,14 @@ impl NetMap {
             if line.status == Status::Unsynced {
                 stroke = stroke.dashed(&[6.0, 5.0]);
             }
-            for wire in wires {
+            let drawn = || {
+                wires
+                    .iter()
+                    .zip(&self.draws[index])
+                    .filter(|(_, draws)| **draws)
+                    .map(|(wire, _)| wire)
+            };
+            for wire in drawn() {
                 let stroke = if wire.wireless {
                     Stroke {
                         line_cap: LineCap::Round,
@@ -1271,7 +1346,9 @@ impl NetMap {
             // Where a stream that is not flowing stops: a tick when it is
             // advertised, a cross when its reservation failed.
             let mark = match line.status {
-                Status::Advertised | Status::Failed => wires.last(),
+                Status::Advertised | Status::Failed if self.draws[index].last() == Some(&true) => {
+                    wires.last()
+                }
                 _ => None,
             };
             if let Some(wire) = mark {
@@ -1452,7 +1529,7 @@ impl Widget<Message, Theme, iced::Renderer> for NetMap {
     ) -> mouse::Interaction {
         let over = cursor
             .position_in(layout.bounds())
-            .is_some_and(|point| self.card_at(point).is_some() || self.line_at(point).is_some());
+            .is_some_and(|point| self.card_at(point).is_some() || self.wire_at(point).is_some());
         if over {
             mouse::Interaction::Pointer
         } else {
@@ -1515,7 +1592,11 @@ impl Widget<Message, Theme, iced::Renderer> for NetMap {
             } else {
                 0.03 + 0.09 * pulse
             };
-            for wire in &self.placement.wires[index] {
+            let wires = self.placement.wires[index]
+                .iter()
+                .zip(&self.draws[index])
+                .filter(|(_, draws)| **draws);
+            for (wire, _) in wires {
                 if line.related {
                     let path = wire.path();
                     let wide = if line.picked { 12.0 } else { 10.0 };
@@ -1650,12 +1731,25 @@ mod tests {
     /// A stream as the tests bind it: talker, listener, name and status.
     type Bound = (EntityId, EntityId, Status);
 
-    /// The map of a topology with these streams, as the view builds it.
+    /// The map of a topology with these streams, as the view builds it,
+    /// each talker sending one multicast stream.
     fn draw(topology: Topology, streams: &[Bound], clock: bool, focus: Option<Focus>) -> Map {
+        draw_as(topology, streams, clock, focus, true)
+    }
+
+    /// The map of a topology with these streams, each talker sending one
+    /// stream, to a multicast address or to each listener's own.
+    fn draw_as(
+        topology: Topology,
+        streams: &[Bound],
+        clock: bool,
+        focus: Option<Focus>,
+        multicast: bool,
+    ) -> Map {
         let paints = paints(
             &streams
                 .iter()
-                .map(|&(talker, _, status)| (talker, status))
+                .map(|&(talker, _, status)| ((talker, 0), status))
                 .collect::<Vec<_>>(),
         );
         let lines: Vec<Line> = if clock {
@@ -1678,6 +1772,7 @@ mod tests {
                         related: true,
                         picked: false,
                         focus: Focus::Node(NodeKey::Host),
+                        stream: None,
                     }
                 })
                 .collect()
@@ -1697,7 +1792,8 @@ mod tests {
                             })
                             .unwrap_or_default(),
                     };
-                    let picked = focus == Some(Focus::Stream(listener, index as u16));
+                    let picked = focus == Some(Focus::Stream(listener, index as u16))
+                        || focus == Some(Focus::Output(talker, 0));
                     Line {
                         hops: route.hops,
                         status,
@@ -1705,6 +1801,7 @@ mod tests {
                         related: focus.is_none() || picked,
                         picked,
                         focus: Focus::Stream(listener, index as u16),
+                        stream: multicast.then_some((talker, 0)),
                     }
                 })
                 .collect()
@@ -1726,10 +1823,13 @@ mod tests {
                     Kind::Entity { .. } => (Icon::GraphicEq, node.name.clone()),
                     Kind::Clock => (Icon::Schedule, node.name.clone()),
                 };
-                let sending = streams
+                let mut sending = streams
                     .iter()
                     .filter(|bound| Some(bound.0) == entity)
                     .count();
+                if multicast {
+                    sending = sending.min(1);
+                }
                 let receiving = streams
                     .iter()
                     .filter(|bound| Some(bound.1) == entity)
@@ -1948,6 +2048,12 @@ mod tests {
     /// a front of house bridge under it, devices under each, and some
     /// straight under the core.
     fn show(clock: bool, focus: Option<Focus>) -> Map {
+        show_as(clock, focus, true)
+    }
+
+    /// The show, each talker's stream sent to a multicast address or to
+    /// each listener's own.
+    fn show_as(clock: bool, focus: Option<Focus>, multicast: bool) -> Map {
         let bridge = |id: u64| ClockIdentity(0x00aa_bbff_fe00_0000 | id);
         let (core, stage, front) = (bridge(1), bridge(2), bridge(3));
         let devices: [(&str, ClockIdentity); 18] = [
@@ -2037,7 +2143,113 @@ mod tests {
         .iter()
         .map(|&(talker, listener, status)| (id(talker), id(listener), status))
         .collect();
-        draw(topology, &streams, clock, focus)
+        draw_as(topology, &streams, clock, focus, multicast)
+    }
+
+    /// A multicast stream takes one wire on each link however many of its
+    /// listeners lie beyond it, and branches where their paths part; a
+    /// unicast one takes a wire for each listener all the way.
+    #[test]
+    fn multicast_listeners_share_wires_and_unicast_ones_do_not() {
+        let named = |map: &Map, name: &str| {
+            map.topology
+                .nodes
+                .iter()
+                .position(|node| node.name == name)
+                .unwrap()
+        };
+        // The wires drawn for a talker's streams on the link up from a node.
+        let on_link = |map: &Map, talker: &str, link: NodeId| {
+            let talker = named(map, talker);
+            let placement = fan(map, f32::INFINITY);
+            let mut keys: Vec<(usize, usize)> = map
+                .lines
+                .iter()
+                .zip(&placement.wires)
+                .filter(|(line, _)| line.hops.first().is_some_and(|&(hop, _)| hop == talker))
+                .flat_map(|(line, wires)| {
+                    line.hops
+                        .iter()
+                        .zip(wires)
+                        .filter(|((hop, _), _)| *hop == link)
+                        .map(|(_, wire)| wire.key)
+                })
+                .collect();
+            keys.sort_unstable();
+            keys.dedup();
+            keys.len()
+        };
+        let up_from = |map: &Map, name: &str| map.topology.nodes[named(map, name)].parent.unwrap();
+        // Stage box A sends to the FOH console and the recorder, beyond the
+        // stage bridge; the FOH console to three amps and the broadcast
+        // feed flowing, and to a fourth amp whose reservation failed.
+        let multicast = show(false, None);
+        let unicast = show_as(false, None, false);
+        for (map, own, stage, console) in [(&multicast, 1, 1, 2), (&unicast, 2, 2, 5)] {
+            let stage_box = named(map, "Stage box A");
+            let foh = named(map, "FOH console");
+            assert_eq!(on_link(map, "Stage box A", stage_box), own);
+            assert_eq!(
+                on_link(map, "Stage box A", up_from(map, "Stage box A")),
+                stage
+            );
+            assert_eq!(on_link(map, "FOH console", foh), console);
+            assert_eq!(on_link(map, "FOH console", up_from(map, "FOH console")), 1);
+        }
+        // Every line still has a wire for each link it crosses.
+        let placement = fan(&multicast, f32::INFINITY);
+        for (line, wires) in multicast.lines.iter().zip(&placement.wires) {
+            assert_eq!(wires.len(), line.hops.len());
+        }
+    }
+
+    /// A click on a wire a multicast stream's listeners share brings the
+    /// whole stream forward; on a branch, the stream to that listener.
+    #[test]
+    fn a_shared_wire_brings_the_whole_stream_forward() {
+        let map = show(false, None);
+        let talker = map
+            .topology
+            .nodes
+            .iter()
+            .position(|node| node.name == "Stage box A")
+            .unwrap();
+        let drawn = super::map(map, Size::new(f32::INFINITY, f32::INFINITY));
+        let middle = |wire: &Wire| {
+            let point = wire.point_at(wire.length() / 2.0);
+            Point::new(
+                point.x * drawn.scale + drawn.origin.x,
+                point.y * drawn.scale + drawn.origin.y,
+            )
+        };
+        let mut shared = None;
+        let mut branch = None;
+        for (line, wires) in drawn.map.lines.iter().zip(&drawn.placement.wires) {
+            if line.stream.map(|(entity, _)| entity) != talker_entity(&drawn.map, talker) {
+                continue;
+            }
+            for (&(node, _), wire) in line.hops.iter().zip(wires) {
+                if node == talker {
+                    shared = Some(middle(wire));
+                } else if !wire.shared && branch.is_none() {
+                    branch = Some((middle(wire), line.focus));
+                }
+            }
+        }
+        let entity = talker_entity(&drawn.map, talker).unwrap();
+        assert_eq!(
+            drawn.clicked(shared.unwrap()),
+            Some(Focus::Output(entity, 0))
+        );
+        let (point, focus) = branch.unwrap();
+        assert_eq!(drawn.clicked(point), Some(focus));
+    }
+
+    fn talker_entity(map: &Map, node: NodeId) -> Option<EntityId> {
+        match map.topology.nodes[node].kind {
+            Kind::Entity { entity_id, .. } => Some(entity_id),
+            _ => None,
+        }
     }
 
     #[test]
@@ -2094,6 +2306,12 @@ mod tests {
             ("show", show(false, None), natural),
             ("show-clock", show(true, None), natural),
             ("show-picked", show(false, picked), natural),
+            (
+                "show-stream-picked",
+                show(false, Some(Focus::Output(EntityId(8), 0))),
+                natural,
+            ),
+            ("show-unicast", show_as(false, None, false), natural),
             ("show-medium", show(false, None), Size::new(700.0, 600.0)),
             ("show-phone", show(false, None), phone),
         ] {

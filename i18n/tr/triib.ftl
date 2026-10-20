@@ -412,6 +412,8 @@ netmap-failed-count = { $count } başarısız
 netmap-advertised-only = Yalnızca duyuruldu
 netmap-failed-state = Başarısız
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = Gönderiliyor, atanmış bilinen listener yok
+netmap-no-listener = Bilinen listener yok
 netmap-apart-own-grandmaster = gPTP ağacı dışında: kendisi grandmaster
 netmap-apart-no-path = Yolu bildirilmedi; { $grandmaster } grandmaster'ını izliyor
 netmap-apart-unreported = gPTP durumunu bildirmedi
@@ -458,8 +460,8 @@ netmap-help-back = Genel görünüme dönmek için arka plana tıklayın.
 netmap-help-stream = İncelemek için bir akışa, genel görünüme dönmek için arka plana tıklayın.
 netmap-help-ptp = AVB Lite'ta saat, uçtan uca grandmaster'dan her cihaza akar; aradaki switch'ler buna katılmaz, bu yüzden hiçbiri gösterilmez. Bir cihaz, grandmaster'ı 50 µs içinde izlediği sürece senkronizedir. Saatini incelemek için bir cihaza veya kablosuna tıklayın; seçimi temizlemek için arka plana tıklayın.
 netmap-help-clock = Saat, grandmaster'dan her köprü üzerinden ağaçtaki her düğüme akar. Kesik gri çizgi, gPTP çalışmayan bir linktir. Saat yolunu incelemek için bir cihaza veya kablosuna tıklayın; seçimi temizlemek için arka plana tıklayın.
-netmap-help-media-clock = Yalnızca medya saati (CRF) akışları, ses gibi çizilir: akış başına bir kablo, talker'a göre renklendirilmiş. Akışını incelemek için bir kabloya, akışlarını görmek için bir cihaza tıklayın; seçimi temizlemek için arka plana tıklayın.
-netmap-help-audio = Her akışın kendi kablosu vardır; geçtiği her köprüye girer ve oradan çıkar. Renk talker'a göredir: her talker'ın bir tonu vardır ve akışları bu tonun açık ve koyu halleridir. Hareket eden noktalar sesin aktığını gösterir; duran kırmızı çizgi başarısız bir rezervasyon, duran gri çizgi ise hazır listener'ı olmayan duyurulmuş bir akıştır; ikisi de rezervasyonun durduğu yerde biter. Ortadaki sütundaki cihazlar doğrudan grandmaster'ın köprüsüne bağlanır. Akışını incelemek için bir kabloya, akışlarını görmek için bir cihaza tıklayın; seçimi temizlemek için arka plana tıklayın.
+netmap-help-media-clock = Yalnızca medya saati (CRF) akışları, ses gibi çizilir: her linkte her akışın çerçeveleri için bir kablo, talker'a göre renklendirilmiş. Akışını incelemek için bir kabloya, akışlarını görmek için bir cihaza tıklayın; seçimi temizlemek için arka plana tıklayın.
+netmap-help-audio = Her kablo bir akışın bir linkteki çerçevelerini gösterir; geçtiği her köprüye girer ve oradan çıkar. Multicast bir akışın, listener'larına giden yollar birlikte ilerlediği sürece tek bir kablosu vardır ve yolların ayrıldığı yerde dallanır; AVB Lite'ın gönderebildiği türden unicast bir akışın ise talker'dan her listener'a kendi kablosu vardır. Renk talker'a göredir: her talker'ın bir tonu vardır ve akışlarının her biri her dalda bu tonun bir açık ya da koyu halidir. Hareket eden noktalar, bilinen bir listener'ı olmadan gönderen bir talker'dan bile olsa, sesin aktığını gösterir; duran kırmızı çizgi başarısız bir rezervasyon, duran gri çizgi ise hazır listener'ı olmayan duyurulmuş bir akıştır; ikisi de rezervasyonun durduğu yerde biter. Ortadaki sütundaki cihazlar doğrudan grandmaster'ın köprüsüne bağlanır. Akışını incelemek için bir kabloya, tüm listener'larını görmek için paylaşılan bir kabloya, akışlarını görmek için bir cihaza tıklayın; seçimi temizlemek için arka plana tıklayın.
 
 ## Connections
 

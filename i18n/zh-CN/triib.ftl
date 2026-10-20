@@ -392,6 +392,8 @@ netmap-failed-count = 失败 { $count }
 netmap-advertised-only = 仅通告
 netmap-failed-state = 失败
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = 正在发送，无已绑定的已知接收端
+netmap-no-listener = 无已知接收端
 netmap-apart-own-grandmaster = 不在 gPTP 树上：它自身即为 Grandmaster
 netmap-apart-no-path = 未报告其路径；它跟随 Grandmaster { $grandmaster }
 netmap-apart-unreported = 未报告其 gPTP 状态
@@ -435,8 +437,8 @@ netmap-help-back = 点击背景返回概览。
 netmap-help-stream = 点击某个流以检查它，或点击背景返回概览。
 netmap-help-ptp = 在 AVB Lite 中，时钟从 Grandmaster 端到端地传到每台设备，途经的交换机不参与其中，因此均不显示。设备只要跟随 Grandmaster 的偏移在 50 µs 以内，就处于同步状态。点击设备或其连线可检查其时钟；点击背景可清除。
 netmap-help-clock = 时钟从 Grandmaster 出发，经过每台交换机到达树上的每个节点。灰色虚线表示未运行 gPTP 的链路。点击设备或其连线可检查其时钟路径；点击背景可清除。
-netmap-help-media-clock = 仅显示媒体时钟（CRF）流，画法与音频相同：每个流一条连线，按发送端着色。点击连线可检查其流，点击设备可查看其流；点击背景可清除。
-netmap-help-audio = 每个流都有自己的连线，进出它经过的每台交换机。颜色按发送端区分：每个发送端有一种色相，其流为该色相的不同深浅。移动的圆点表示音频正在传输；静止的红线表示预留失败，静止的灰线表示已通告但无就绪的接收端；两者都止于预留停止之处。中间一列的设备直接接入 Grandmaster 所在的交换机。点击连线可检查其流，点击设备可查看其流；点击背景可清除。
+netmap-help-media-clock = 仅显示媒体时钟（CRF）流，画法与音频相同：每个流在每条链路上的帧画成一条连线，按发送端着色。点击连线可检查其流，点击设备可查看其流；点击背景可清除。
+netmap-help-audio = 每条连线表示一个流在一条链路上的帧，进出它经过的每台交换机。组播流在通往各接收端的路径重合时只有一条连线，路径分开处再分支；单播流（AVB Lite 可以发送）则从发送端到每个接收端各有一条自己的连线。颜色按发送端区分：每个发送端有一种色相，其每个流在每条分支上都是该色相的一种深浅。移动的圆点表示音频正在传输，即使发送端在没有已知接收端的情况下发送也是如此；静止的红线表示预留失败，静止的灰线表示已通告但无就绪的接收端；两者都止于预留停止之处。中间一列的设备直接接入 Grandmaster 所在的交换机。点击连线可检查其流，点击共用连线可查看其所有接收端，点击设备可查看其流；点击背景可清除。
 
 ## Connections
 

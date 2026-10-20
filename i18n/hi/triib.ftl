@@ -410,6 +410,8 @@ netmap-failed-count = { $count } विफल
 netmap-advertised-only = केवल advertise हुई
 netmap-failed-state = विफल
 netmap-stream-item = { $talker } → { $listener } · { $state }
+netmap-sending-unheard = भेज रहा है, इससे बँधा कोई ज्ञात Listener नहीं
+netmap-no-listener = कोई ज्ञात Listener नहीं
 netmap-apart-own-grandmaster = gPTP tree पर नहीं: यह खुद ही Grandmaster है
 netmap-apart-no-path = इसका path रिपोर्ट नहीं हुआ; यह Grandmaster { $grandmaster } का अनुसरण करता है
 netmap-apart-unreported = इसने अपनी gPTP स्थिति रिपोर्ट नहीं की है
@@ -456,8 +458,8 @@ netmap-help-back = पूरे नक्शे पर लौटने के �
 netmap-help-stream = किसी stream को जाँचने के लिए उस पर क्लिक करें, या पूरे नक्शे पर लौटने के लिए खाली जगह पर।
 netmap-help-ptp = AVB Lite में clock, Grandmaster से हर डिवाइस तक end to end जाती है, ऐसे switches से होकर जो इसमें हिस्सा नहीं लेते, इसलिए कोई switch नहीं दिखाया जाता। कोई डिवाइस तब तक सिंक है, जब तक वह 50 µs के भीतर Grandmaster का अनुसरण करता है। किसी डिवाइस या उसके तार पर क्लिक करके उसकी clock जाँचें; चुनाव हटाने के लिए खाली जगह पर क्लिक करें।
 netmap-help-clock = Clock, Grandmaster से हर bridge से होकर tree के हर node तक जाती है। टूटी हुई स्लेटी रेखा ऐसा link है जिस पर gPTP नहीं चलता। किसी डिवाइस या उसके तार पर क्लिक करके उसका clock path जाँचें; चुनाव हटाने के लिए खाली जगह पर क्लिक करें।
-netmap-help-media-clock = केवल media clock (CRF) streams, ऑडियो की तरह ही बनी हुई: हर stream का एक तार, Talker के हिसाब से रंगा हुआ। किसी तार पर क्लिक करके उसकी stream जाँचें, या किसी डिवाइस पर क्लिक करके उसकी streams देखें; चुनाव हटाने के लिए खाली जगह पर क्लिक करें।
-netmap-help-audio = हर stream का अपना तार है, जो रास्ते के हर bridge में आता है और उससे निकलता है। रंग Talker के हिसाब से है: हर Talker का एक रंग है, और उसकी streams उसी रंग की अलग-अलग छटाएँ हैं। चलते बिंदुओं का मतलब है कि ऑडियो चल रहा है; रुकी हुई लाल रेखा विफल reservation है, और रुकी हुई स्लेटी रेखा advertise हुई ऐसी stream है जिसके लिए कोई Listener तैयार नहीं; दोनों वहीं रुकती हैं जहाँ reservation रुकता है। बीच वाले कॉलम के डिवाइस सीधे Grandmaster के bridge से जुड़े हैं। किसी तार पर क्लिक करके उसकी stream जाँचें, या किसी डिवाइस पर क्लिक करके उसकी streams देखें; चुनाव हटाने के लिए खाली जगह पर क्लिक करें।
+netmap-help-media-clock = केवल media clock (CRF) streams, ऑडियो की तरह ही बनी हुई: हर link पर हर stream के frames का एक तार, Talker के हिसाब से रंगा हुआ। किसी तार पर क्लिक करके उसकी stream जाँचें, या किसी डिवाइस पर क्लिक करके उसकी streams देखें; चुनाव हटाने के लिए खाली जगह पर क्लिक करें।
+netmap-help-audio = हर तार किसी link पर एक stream के frames दिखाता है, जो रास्ते के हर bridge में आता है और उससे निकलता है। किसी multicast stream का तार तब तक एक ही रहता है जब तक उसके Listeners तक के रास्ते साथ चलते हैं, और जहाँ वे अलग होते हैं वहाँ शाखाओं में बँट जाता है; किसी unicast stream का, जैसी AVB Lite भेज सकता है, Talker से हर Listener तक अपना अलग तार होता है। रंग Talker के हिसाब से है: हर Talker का एक रंग है, और उसकी हर stream हर शाखा पर उसी रंग की एक छटा है। चलते बिंदुओं का मतलब है कि ऑडियो चल रहा है, तब भी जब Talker बिना किसी ज्ञात Listener के भेज रहा हो; रुकी हुई लाल रेखा विफल reservation है, और रुकी हुई स्लेटी रेखा advertise हुई ऐसी stream है जिसके लिए कोई Listener तैयार नहीं; दोनों वहीं रुकती हैं जहाँ reservation रुकता है। बीच वाले कॉलम के डिवाइस सीधे Grandmaster के bridge से जुड़े हैं। किसी तार पर क्लिक करके उसकी stream जाँचें, किसी साझा तार पर क्लिक करके उसके सभी Listeners देखें, या किसी डिवाइस पर क्लिक करके उसकी streams देखें; चुनाव हटाने के लिए खाली जगह पर क्लिक करें।
 
 ## Connections
 
