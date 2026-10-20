@@ -2175,7 +2175,7 @@ pub(crate) mod tests {
         BTreeMap<EntityId, DiscoveredEntity>,
         BTreeMap<EntityId, EntityModel>,
     ) {
-        const CAPTURE: &[u8] = include_bytes!("../../atdecc/tests/captures/bench-enumeration.pcap");
+        const CAPTURE: &[u8] = include_bytes!("../tests/captures/bench-enumeration.pcap");
         const HOST: [u8; 6] = [0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b];
         // Classic pcap, in microseconds or nanoseconds.
         let unit = match u32::from_le_bytes(CAPTURE[..4].try_into().unwrap()) {

@@ -315,18 +315,28 @@ whether raw Ethernet is ready.
 | `triib` | The app |
 | `triib-cli` | Headless controller |
 | `triib-endpointd` | Runs the host entities |
-| `triib-stream` | AAF streams, the media clock and audio devices |
 | `triib-pipewire` | Virtual audio devices as PipeWire nodes |
 | `triib-store` | Settings and cache files |
-| `atdecc` | IEEE 1722.1 ATDECC with Milan: frames and state machines, no I/O |
-| `avb-mrp` | IEEE 802.1Q MRP, MSRP and MVRP: frames and state machines, no I/O |
-| `avb-net` | Raw Ethernet, interfaces and hardware timestamps per operating system |
 
-`atdecc`, `avb-mrp` and `avb-net` are meant for other applications too:
-they depend on nothing but `avb-net` (and, for `atdecc`'s driver on
-macOS, the AudioVideoBridging framework), do no I/O of their own outside
-that optional platform support, and build without std for
-microcontrollers.
+The AVB crates live in [scrambletools/avb](https://github.com/scrambletools/avb),
+shared with other apps and pinned here by revision: `atdecc` (IEEE 1722.1
+ATDECC with Milan, frames and state machines, no I/O), `avb-mrp` (MRP,
+MSRP and MVRP, no I/O), `avb-net` (raw Ethernet, interfaces and the PTP
+hardware clock per operating system) and `avb-stream` (AAF and AM824
+streams, the media clock and audio devices). To change them together with
+triib, put a checkout beside this one and build with
+`cargo --config .cargo/avb-local.toml build`, a git-ignored file with:
+
+```toml
+[patch."https://github.com/scrambletools/avb"]
+atdecc = { path = "../avb/crates/atdecc" }
+avb-mrp = { path = "../avb/crates/avb-mrp" }
+avb-net = { path = "../avb/crates/avb-net" }
+avb-stream = { path = "../avb/crates/avb-stream" }
+```
+
+It writes local paths into Cargo.lock, so build once without it before
+committing.
 
 ## License
 

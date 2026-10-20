@@ -11,7 +11,7 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-triib-stream.workspace = true
+avb-stream.workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
 pipewire = "0.10"

@@ -10,11 +10,11 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError, mpsc};
 use std::time::{Duration, Instant};
 
+#[cfg(target_os = "macos")]
+use avb_stream::audio::SharedBuffer;
+use avb_stream::audio::{Input, Output, Sink, Source};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-#[cfg(target_os = "macos")]
-use triib_stream::audio::SharedBuffer;
-use triib_stream::audio::{Input, Output, Sink, Source};
 
 /// The flag that runs this binary as the helper.
 pub const FLAG: &str = "--monitor";
@@ -270,7 +270,7 @@ fn play(listen: &Listen, mut input: Input, output: &Output) {
             let now = input.counts().1;
             let stalled = now.saturating_sub(underruns) > STALLED;
             underruns = now;
-            let (inputs, outputs) = triib_stream::audio::device_names();
+            let (inputs, outputs) = avb_stream::audio::device_names();
             let gone = |name: &Option<String>, names: &[String]| {
                 name.as_ref().is_some_and(|name| !names.contains(name))
             };

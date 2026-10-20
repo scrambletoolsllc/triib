@@ -2,6 +2,7 @@
 *.swp
 .DS_Store
 /.cargo/scramble-ui-local.toml
+/.cargo/avb-local.toml
 /stage
 /dist
 /packages

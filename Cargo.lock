@@ -311,6 +311,7 @@ dependencies = [
 [[package]]
 name = "atdecc"
 version = "0.1.0"
+source = "git+https://github.com/scrambletools/avb?rev=5d3186c333d2cc13bb51ea1f84df7f77eb1a9311#5d3186c333d2cc13bb51ea1f84df7f77eb1a9311"
 dependencies = [
  "avb-mrp",
  "avb-net",
@@ -334,6 +335,7 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 [[package]]
 name = "avb-mrp"
 version = "0.1.0"
+source = "git+https://github.com/scrambletools/avb?rev=5d3186c333d2cc13bb51ea1f84df7f77eb1a9311#5d3186c333d2cc13bb51ea1f84df7f77eb1a9311"
 dependencies = [
  "avb-net",
 ]
@@ -341,9 +343,21 @@ dependencies = [
 [[package]]
 name = "avb-net"
 version = "0.1.0"
+source = "git+https://github.com/scrambletools/avb?rev=5d3186c333d2cc13bb51ea1f84df7f77eb1a9311#5d3186c333d2cc13bb51ea1f84df7f77eb1a9311"
 dependencies = [
  "libc",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "avb-stream"
+version = "0.1.0"
+source = "git+https://github.com/scrambletools/avb?rev=5d3186c333d2cc13bb51ea1f84df7f77eb1a9311#5d3186c333d2cc13bb51ea1f84df7f77eb1a9311"
+dependencies = [
+ "atdecc",
+ "avb-net",
+ "cpal",
+ "libc",
 ]
 
 [[package]]
@@ -4293,6 +4307,7 @@ dependencies = [
  "atdecc",
  "avb-mrp",
  "avb-net",
+ "avb-stream",
  "i18n-embed",
  "i18n-embed-fl",
  "iced",
@@ -4317,7 +4332,6 @@ dependencies = [
  "tokio",
  "triib-endpointd",
  "triib-store",
- "triib-stream",
  "windows-sys 0.61.2",
 ]
 
@@ -4336,20 +4350,20 @@ dependencies = [
  "atdecc",
  "avb-mrp",
  "avb-net",
+ "avb-stream",
  "ctrlc",
  "serde",
  "toml 1.1.6+spec-1.1.0",
  "triib-pipewire",
  "triib-store",
- "triib-stream",
 ]
 
 [[package]]
 name = "triib-pipewire"
 version = "1.1.1"
 dependencies = [
+ "avb-stream",
  "pipewire",
- "triib-stream",
 ]
 
 [[package]]
@@ -4359,16 +4373,6 @@ dependencies = [
  "serde",
  "tempfile",
  "toml 1.1.6+spec-1.1.0",
-]
-
-[[package]]
-name = "triib-stream"
-version = "1.1.1"
-dependencies = [
- "atdecc",
- "avb-net",
- "cpal",
- "libc",
 ]
 
 [[package]]

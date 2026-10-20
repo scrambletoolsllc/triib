@@ -9,6 +9,7 @@ use std::ptr::NonNull;
 use std::sync::{Arc, OnceLock};
 
 use atdecc::EntityId;
+use avb_stream::audio::{FrameBuffer, SharedBuffer};
 use objc2_core_audio::{
     AudioObjectGetPropertyData, AudioObjectGetPropertyDataSize, AudioObjectID,
     AudioObjectPropertyAddress, AudioObjectPropertySelector, kAudioDevicePropertyDeviceUID,
@@ -18,7 +19,6 @@ use objc2_core_audio::{
 };
 use objc2_core_audio_types::{AudioBuffer, AudioBufferList, AudioTimeStamp};
 use objc2_core_foundation::{CFRetained, CFString};
-use triib_stream::audio::{FrameBuffer, SharedBuffer};
 
 fn address(selector: AudioObjectPropertySelector) -> AudioObjectPropertyAddress {
     AudioObjectPropertyAddress {

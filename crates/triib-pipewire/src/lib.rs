@@ -10,7 +10,7 @@
 use std::io;
 use std::sync::Arc;
 
-use triib_stream::audio::{FrameBuffer, SharedBuffer};
+use avb_stream::audio::{FrameBuffer, SharedBuffer};
 
 /// A virtual device to add.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -81,10 +81,10 @@ mod imp {
     use std::sync::{Arc, mpsc};
     use std::thread::JoinHandle;
 
+    use avb_stream::audio::FrameBuffer;
     use pipewire as pw;
     use pw::properties::properties;
     use pw::spa;
-    use triib_stream::audio::FrameBuffer;
 
     use super::DeviceSpec;
 
@@ -372,7 +372,7 @@ mod imp {
     use std::io;
     use std::sync::Arc;
 
-    use triib_stream::audio::FrameBuffer;
+    use avb_stream::audio::FrameBuffer;
 
     use super::DeviceSpec;
 

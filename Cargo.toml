@@ -10,13 +10,14 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/scrambletoolsllc/triib"
 
 [workspace.dependencies]
-# Protocol crates, usable outside triib: no dependencies beyond avb-net, and
-# without std when its default feature is off.
-atdecc = { path = "crates/atdecc", version = "0.1.0", default-features = false }
-avb-mrp = { path = "crates/avb-mrp", version = "0.1.0", default-features = false }
-avb-net = { path = "crates/avb-net", version = "0.1.0", default-features = false }
+# The AVB crates, shared with other apps, pinned by revision. A git-ignored
+# .cargo/config.toml can point them at a local checkout while changing both
+# (see the README).
+atdecc = { git = "https://github.com/scrambletools/avb", rev = "5d3186c333d2cc13bb51ea1f84df7f77eb1a9311", default-features = false }
+avb-mrp = { git = "https://github.com/scrambletools/avb", rev = "5d3186c333d2cc13bb51ea1f84df7f77eb1a9311", default-features = false }
+avb-net = { git = "https://github.com/scrambletools/avb", rev = "5d3186c333d2cc13bb51ea1f84df7f77eb1a9311", default-features = false }
+avb-stream = { git = "https://github.com/scrambletools/avb", rev = "5d3186c333d2cc13bb51ea1f84df7f77eb1a9311" }
 triib-store = { path = "crates/triib-store", version = "1.1.1" }
-triib-stream = { path = "crates/triib-stream", version = "1.1.1" }
 triib-pipewire = { path = "crates/triib-pipewire", version = "1.1.1" }
 triib-endpointd = { path = "crates/triib-endpointd", version = "1.1.1" }
 # Pinned by revision, as prev pins it. A git-ignored .cargo/config.toml can

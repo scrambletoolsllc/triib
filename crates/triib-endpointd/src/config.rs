@@ -7,8 +7,8 @@ use std::path::PathBuf;
 
 use atdecc::EntityId;
 use atdecc::stream_format::StreamFormat;
+use avb_stream::audio::{Sink, Source};
 use serde::{Deserialize, Serialize};
-use triib_stream::audio::{Sink, Source};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(default)]

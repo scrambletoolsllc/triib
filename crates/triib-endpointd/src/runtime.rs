@@ -26,8 +26,8 @@ use avb_mrp::Registration;
 use avb_mrp::msrp::{self, ListenerState, TalkerDeclaration, TalkerFailure};
 use avb_net::Socket;
 use avb_net::stream::FrameSender;
-use triib_stream::audio::{Sink, Source};
-use triib_stream::{
+use avb_stream::audio::{Sink, Source};
+use avb_stream::{
     GroupConfig, GroupListener, GroupStream, GroupTalker, ListenerConfig, ListenerGroup,
     MediaClock, RecoveredClock, TalkerGroup,
 };
@@ -198,7 +198,7 @@ const PROFILE_SIZES: [u16; 4] = [32, 16, 8, 2];
 fn offered_formats(channels: u16, class_b: bool) -> Vec<StreamFormat> {
     let fits = |formats: &[StreamFormat]| {
         formats.iter().all(|format| {
-            triib_stream::media::Media::of(*format)
+            avb_stream::media::Media::of(*format)
                 .is_some_and(|media| media.pdu_length() <= MOST_PDU)
         })
     };
@@ -2053,7 +2053,7 @@ impl Runtime {
             .outputs
             .get(usize::from(out.1))?
             .current_format;
-        let media = triib_stream::media::Media::of(format)?;
+        let media = avb_stream::media::Media::of(format)?;
         Some(TalkerDeclaration {
             stream_id: stream_id.0,
             destination,
@@ -2336,7 +2336,7 @@ impl Runtime {
             None if endpoint.out_config(out.1).clock => Source::Silence,
             None => endpoint.out_config(out.1).source(),
         };
-        let Some(media) = triib_stream::media::Media::of(format) else {
+        let Some(media) = avb_stream::media::Media::of(format) else {
             log(format!(
                 "{name}: could not start the stream: not a format it sends"
             ));
@@ -4101,7 +4101,7 @@ mod tests {
         // A frame each class B interval: 12 samples at 48 kHz.
         let wireless = aaf(48_000, 8, 32, CLASS_B_FRAMES);
         assert_eq!(wireless, StreamFormat(0x0205_0220_0200_c000));
-        let media = triib_stream::media::Media::of(wireless).unwrap();
+        let media = avb_stream::media::Media::of(wireless).unwrap();
         assert_eq!(media.interval_nanos(), 250_000);
         assert!(wireless.is_class_b());
         // A format chosen for eight channels carries over to two.
@@ -4366,7 +4366,7 @@ mod tests {
         assert!(!device.out_config(0).is_virtual());
         assert!(device.out_config(1).is_virtual());
         // Its talker takes no more than its frames' share.
-        let media = triib_stream::media::Media::of(MEDIA_CLOCK).unwrap();
+        let media = avb_stream::media::Media::of(MEDIA_CLOCK).unwrap();
         assert_eq!(media.pdu_length(), 28);
         // Media clocks alone run at the rate they count.
         let clocks = endpoint(vec![StreamConfig::clock(Direction::Out)]);

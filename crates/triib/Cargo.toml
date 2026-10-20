@@ -20,7 +20,7 @@ avb-mrp.workspace = true
 avb-net = { workspace = true, features = ["std"] }
 triib-store.workspace = true
 triib-endpointd.workspace = true
-triib-stream.workspace = true
+avb-stream.workspace = true
 i18n-embed = { version = "0.16", features = ["desktop-requester", "fluent-system"] }
 i18n-embed-fl = "0.10"
 rust-embed = { version = "8", features = ["debug-embed"] }

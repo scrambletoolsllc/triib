@@ -254,7 +254,7 @@ fn watch_audio_devices() {
         .spawn(|| {
             let mut devices = None;
             loop {
-                let found = triib_stream::audio::device_names();
+                let found = avb_stream::audio::device_names();
                 if Some(&found) != devices.as_ref() {
                     post(External::AudioDevices(found.0.clone(), found.1.clone()));
                     devices = Some(found);
@@ -292,7 +292,7 @@ fn watch_endpoints() {
                     last_elsewhere = Some(elsewhere);
                 }
                 if turn % 15 == 1 {
-                    let found = triib_stream::audio::device_names();
+                    let found = avb_stream::audio::device_names();
                     if Some(&found) != devices.as_ref() {
                         post(External::AudioDevices(found.0.clone(), found.1.clone()));
                         devices = Some(found);

@@ -12,8 +12,8 @@ use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 use atdecc::EntityId;
+use avb_stream::audio::{Input, Source};
 use triib_endpointd::meters::{EVERY, Meters, StreamMeter};
-use triib_stream::audio::{Input, Source};
 
 /// The flag that runs this binary as the helper.
 pub const FLAG: &str = "--meters";

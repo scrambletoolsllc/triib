@@ -79,7 +79,7 @@ dependency.
 | SRP | Our own MRP, MSRP and MVRP in the reusable `avb-mrp` crate; MAAP and AVB Lite's CVU SRP framing in `atdecc`, its attribute lists in `avb-mrp` |
 | Concurrency | No tokio. Network thread per interface with a poll loop and timers; real time threads for streaming and audio; `std::sync::mpsc` into an iced subscription (prev's `External` + `post()` pattern) |
 | Processes | GUI process (controller) and `triib-endpointd` for the host entities, so audio survives GUI restarts; on a Mac, `triib --monitor` for Listen, so a Core Audio call that hangs leaves the app alone |
-| Platform layer | `avb-net`: raw Ethernet frames, interfaces and hardware timestamps per operating system, the only platform code the protocol crates use. Audio (cpal) and the media clock live in `triib-stream` |
+| Platform layer | `avb-net`: raw Ethernet frames, interfaces and hardware timestamps per operating system, the only platform code the protocol crates use. Audio (cpal) and the media clock live in `avb-stream` |
 | Settings, cache, presets | TOML settings through `triib-store`; the entity model cache keeps raw descriptor bytes, decoded by `atdecc` on load, so the protocol crates need no serde; TOML presets in the data folder |
 | Interface text | Fluent files under `i18n/`, 38 languages, as prev |
 | Packages | .deb, .rpm, AUR, tarball, macOS .pkg, Windows .msi and .zip. No Flatpak or AppImage: raw sockets cannot be granted to either |
@@ -138,19 +138,19 @@ Rules for these crates:
 6. **Enforced in CI**: each crate tested on its own, and built with
    `--no-default-features` for `riscv32imac-unknown-none-elf` (the ESP32-C6).
 7. **Published** to crates.io under these names once the API settles, with
-   their own semver; they stay in this workspace until outside users need
-   them elsewhere.
+   their own semver.
+
+On 2026-10-19, once plaa needed them for its own talker entity, they moved
+with their history to [scrambletools/avb](https://github.com/scrambletools/avb),
+with `triib-stream` as `avb-stream`, and triib pins that repository by
+revision.
 
 ## Workspace layout
 
 ```
 crates/
-  atdecc          reusable: ATDECC frames, controller and entity machines
-  avb-mrp         reusable: MRP, MSRP, MVRP
-  avb-net         reusable: raw Ethernet, interfaces, timestamps per OS
   triib-store     settings and cache files
-  triib-stream    AAF and AM824 talkers and listeners, the media clock,
-                  audio through cpal, drift and resampling
+  triib-pipewire  virtual audio devices as PipeWire nodes
   triib-endpointd daemon running the host entities
   triib-cli       headless controller
   triib           the iced app, including the entity store the GUI draws

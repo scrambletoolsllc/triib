@@ -12,6 +12,13 @@ All notable changes to triib. Versions follow
   Select All in Edit, the three views, the log and the inspector in
   View, and Window and Help menus, in the interface's language.
 
+### Development
+
+- The AVB crates moved, with their history, to
+  [scrambletools/avb](https://github.com/scrambletools/avb), to be shared
+  with other apps: `atdecc`, `avb-mrp`, `avb-net`, and `triib-stream` as
+  `avb-stream`. triib pins that repository by revision.
+
 ## [1.1.1] - 2026-10-17
 
 A close button in the toolbar under compositors that draw no title bar,

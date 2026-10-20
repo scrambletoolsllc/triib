@@ -23,7 +23,8 @@ captured may run older or newer builds.
 - **Standard:** Milan 1.3, 5.5.2.2: "A Milan device shall send and accept
   this truncated PDU, and may accept the longer PDU."
 - **Fix:** send 44 in commands and responses. Keep accepting 84.
-- **Evidence:** `crates/atdecc/tests/captures/bench-adp-acmp.pcap`, frames
+- **Evidence:** `crates/atdecc/tests/captures/bench-adp-acmp.pcap` in
+  [scrambletools/avb](https://github.com/scrambletools/avb), frames
   9 and 10, and the other GET_*_STATE pairs.
 
 ### 2. ENTITY_DISCOVER is ignored (2026-10-03 22:52 PDT)
