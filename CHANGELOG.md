@@ -19,6 +19,11 @@ All notable changes to triib. Versions follow
   opens their raw sockets and passes them over. The desktop's portals
   answer triib directly again, and debuggers and crash reports see it as
   any other program.
+- triib-endpointd shares its MSRP participant with other programs on
+  this computer, such as plaa sending what it plays, which ask it on a
+  socket in the user's runtime folder to declare their talkers, and hear
+  from it as their listeners come and go; it withdraws a program's
+  talkers when the program goes.
 
 ### Development
 

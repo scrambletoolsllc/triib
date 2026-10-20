@@ -9,4 +9,5 @@ pub mod meters;
 pub mod port;
 pub mod profile;
 pub mod runtime;
+pub mod sharing;
 pub mod status;

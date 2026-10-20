@@ -24,6 +24,7 @@ use atdecc::{
 };
 use avb_mrp::Registration;
 use avb_mrp::msrp::{self, ListenerState, TalkerDeclaration, TalkerFailure};
+use avb_mrp::sharing::{Notice, Request};
 use avb_net::Socket;
 use avb_net::stream::FrameSender;
 use avb_stream::audio::{Sink, Source};
@@ -43,6 +44,7 @@ use crate::lite::{self, Declared, Fallback, Ptp4l};
 use crate::meters::{self, Meters, StreamMeter};
 use crate::port::{Port, VLAN};
 use crate::profile::{self, Profile};
+use crate::sharing::{self, Server, Sharers};
 use crate::status::{DaemonStatus, EndpointStatus, StreamStatus, status_path};
 
 /// The entity models of devices, under Scramble Tools' MA-S
@@ -135,6 +137,11 @@ enum Input {
     Mvrp(MacAddress, Vec<u8>),
     Gptp(Option<gptp::Status>),
     Link(profile::Link),
+    /// Another program on this computer came to share the port's MRP
+    /// participant, by its connection; asked it something; or went.
+    SharerOpened(u64, sharing::Writer),
+    SharerAsked(u64, Request),
+    SharerClosed(u64),
 }
 
 /// The rates this computer's endpoints offer: those class A's 8000
@@ -838,6 +845,12 @@ pub struct Runtime {
     talkers: HashMap<u64, TalkerDeclaration>,
     /// Our talkers' streams a listener on the network is ready for.
     ready_remotely: HashMap<u64, bool>,
+    /// The listener declarations registered, by stream ID.
+    listener_states: HashMap<u64, ListenerState>,
+    /// Serves the port's MRP participant to other programs here, and the
+    /// programs sharing it.
+    sharing: Option<Server>,
+    sharers: Sharers,
     stop: Arc<AtomicBool>,
     inputs: Receiver<Input>,
     last_report: Clock,
@@ -1027,6 +1040,13 @@ impl Runtime {
             config.ptp4l_socket.clone()
         };
         gptp::watch(socket, stop.clone(), sender.clone(), Input::Gptp);
+        let sharing = Server::start(
+            &interface,
+            sender.clone(),
+            Input::SharerOpened,
+            Input::SharerAsked,
+            Input::SharerClosed,
+        );
         profile::watch(interface.clone(), stop.clone(), sender, Input::Link);
 
         let mac = avtp.mac();
@@ -1130,6 +1150,9 @@ impl Runtime {
             clock,
             talkers: HashMap::new(),
             ready_remotely: HashMap::new(),
+            listener_states: HashMap::new(),
+            sharing,
+            sharers: Sharers::default(),
             stop,
             inputs,
             last_report: Clock::now(),
@@ -1832,6 +1855,22 @@ impl Runtime {
                     endpoint.entity.set_gptp(now, gptp.clone());
                 }
             }
+            Input::SharerOpened(id, writer) => {
+                self.sharers.open(id, writer);
+                if self.lite.is_some() {
+                    self.sharers.tell(id, Notice::Unavailable);
+                }
+            }
+            Input::SharerAsked(id, request) => self.sharer_asked(id, request),
+            Input::SharerClosed(id) => {
+                for stream_id in self.sharers.close(id) {
+                    self.port.msrp.withdraw(
+                        since,
+                        msrp::attribute::TALKER_ADVERTISE,
+                        &stream_id.to_be_bytes(),
+                    );
+                }
+            }
             Input::Link(link) => {
                 let last = self.link.replace(link);
                 let unit = last.and_then(|last| last.unit);
@@ -2261,12 +2300,64 @@ impl Runtime {
         self.endpoints[input.0].entity.input_stream(input.1)
     }
 
-    /// A listener's declaration for one of our talkers' streams changed.
+    /// A listener's declaration for one of our talkers' streams, or of a
+    /// program sharing the port, changed.
     fn listener_heard(&mut self, stream_id: u64, state: Option<ListenerState>) {
+        match state {
+            Some(state) => self.listener_states.insert(stream_id, state),
+            None => self.listener_states.remove(&stream_id),
+        };
+        if let Some(owner) = self.sharers.owner(stream_id) {
+            self.sharers
+                .tell(owner, Notice::Listener { stream_id, state });
+            return;
+        }
         let ready = state.is_some_and(ListenerState::ready);
         self.ready_remotely.insert(stream_id, ready);
         if let Some(out) = self.own_talker(stream_id) {
             self.update_talker(out);
+        }
+    }
+
+    /// A program sharing the port's participant asks it to declare or
+    /// withdraw one of its talkers: not while the port runs AVB Lite, whose
+    /// declarations go otherwise.
+    fn sharer_asked(&mut self, id: u64, request: Request) {
+        let since = self.elapsed();
+        match request {
+            Request::Declare(declaration) => {
+                if self.lite.is_some() {
+                    self.sharers.tell(id, Notice::Unavailable);
+                    return;
+                }
+                let stream_id = declaration.stream_id;
+                self.port.msrp.declare(
+                    since,
+                    msrp::attribute::TALKER_ADVERTISE,
+                    msrp::talker_value(&declaration),
+                    None,
+                );
+                self.sharers.declared(id, stream_id);
+                // Listeners already there for it.
+                if let Some(state) = self.listener_states.get(&stream_id).copied() {
+                    self.sharers.tell(
+                        id,
+                        Notice::Listener {
+                            stream_id,
+                            state: Some(state),
+                        },
+                    );
+                }
+            }
+            Request::Withdraw(stream_id) => {
+                if self.sharers.withdrawn(id, stream_id) {
+                    self.port.msrp.withdraw(
+                        since,
+                        msrp::attribute::TALKER_ADVERTISE,
+                        &stream_id.to_be_bytes(),
+                    );
+                }
+            }
         }
     }
 
@@ -2938,12 +3029,16 @@ impl Runtime {
             }
             endpoint.entity.depart();
         }
-        let streams: Vec<StreamId> = self
+        let mut streams: Vec<StreamId> = self
             .outs()
             .into_iter()
             .filter_map(|out| self.endpoints[out.0].entity.output_stream(out.1))
             .map(|(stream_id, _)| stream_id)
             .collect();
+        // The programs sharing the port go too, their streams with them.
+        streams.extend(self.sharers.streams().into_iter().map(StreamId));
+        self.sharers.close_all();
+        self.sharing = None;
         self.port.withdraw_streams(since, streams);
         // Long enough for the withdrawals to go out.
         let until = since + Duration::from_millis(400);
@@ -2973,6 +3068,16 @@ impl Runtime {
             }
         ));
         let since = self.elapsed();
+        // Programs sharing the port declare by MSRP, which AVB Lite does
+        // without: their streams go until it leaves.
+        for stream_id in self.sharers.forget_streams() {
+            self.port.msrp.withdraw(
+                since,
+                msrp::attribute::TALKER_ADVERTISE,
+                &stream_id.to_be_bytes(),
+            );
+        }
+        self.sharers.tell_all(Notice::Unavailable);
         for out in self.outs() {
             self.output_mut(out).talker = None;
             if let Some((stream_id, _)) = self.endpoints[out.0].entity.output_stream(out.1) {
@@ -3065,6 +3170,8 @@ impl Runtime {
         self.fallback = Fallback::new(self.own_clock.0, false, since);
         self.port.join(since);
         self.declare_all();
+        // Programs sharing the port declare their streams again.
+        self.sharers.tell_all(Notice::Available);
         self.update_lite_status();
         self.steer_profile();
     }

@@ -186,6 +186,11 @@ hear each other's Leave, so one withdrawing VLAN 2 would take it from the
 bridge while the other still needs it. So one daemon runs on an interface
 whichever user starts it, and triib says when another user's holds it, or
 when another program on this computer declares MSRP or MVRP on the port.
+Other programs on this computer share the daemon's participant instead
+of running their own, such as plaa sending what it plays: on a socket in
+the user's runtime folder, `avb-mrp-<interface>.sock`, they ask it to
+declare and withdraw their talkers, and it tells them as their listeners
+come and go (`avb_mrp::sharing`).
 
 ## The Mac's own entity
 

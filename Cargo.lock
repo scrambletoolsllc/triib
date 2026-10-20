@@ -311,7 +311,7 @@ dependencies = [
 [[package]]
 name = "atdecc"
 version = "0.1.0"
-source = "git+https://github.com/scrambletools/avb?rev=130a43de6d83596601aa1b0e4e7156e675bf5b15#130a43de6d83596601aa1b0e4e7156e675bf5b15"
+source = "git+https://github.com/scrambletools/avb?rev=63b2f31af8fe5a041da58a66689562ed1ff2aac7#63b2f31af8fe5a041da58a66689562ed1ff2aac7"
 dependencies = [
  "avb-mrp",
  "avb-net",
@@ -335,7 +335,7 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 [[package]]
 name = "avb-mrp"
 version = "0.1.0"
-source = "git+https://github.com/scrambletools/avb?rev=130a43de6d83596601aa1b0e4e7156e675bf5b15#130a43de6d83596601aa1b0e4e7156e675bf5b15"
+source = "git+https://github.com/scrambletools/avb?rev=63b2f31af8fe5a041da58a66689562ed1ff2aac7#63b2f31af8fe5a041da58a66689562ed1ff2aac7"
 dependencies = [
  "avb-net",
 ]
@@ -343,7 +343,7 @@ dependencies = [
 [[package]]
 name = "avb-net"
 version = "0.1.0"
-source = "git+https://github.com/scrambletools/avb?rev=130a43de6d83596601aa1b0e4e7156e675bf5b15#130a43de6d83596601aa1b0e4e7156e675bf5b15"
+source = "git+https://github.com/scrambletools/avb?rev=63b2f31af8fe5a041da58a66689562ed1ff2aac7#63b2f31af8fe5a041da58a66689562ed1ff2aac7"
 dependencies = [
  "libc",
  "windows-sys 0.61.2",
@@ -352,7 +352,7 @@ dependencies = [
 [[package]]
 name = "avb-stream"
 version = "0.1.0"
-source = "git+https://github.com/scrambletools/avb?rev=130a43de6d83596601aa1b0e4e7156e675bf5b15#130a43de6d83596601aa1b0e4e7156e675bf5b15"
+source = "git+https://github.com/scrambletools/avb?rev=63b2f31af8fe5a041da58a66689562ed1ff2aac7#63b2f31af8fe5a041da58a66689562ed1ff2aac7"
 dependencies = [
  "atdecc",
  "avb-net",
