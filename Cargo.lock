@@ -311,7 +311,7 @@ dependencies = [
 [[package]]
 name = "atdecc"
 version = "0.1.0"
-source = "git+https://github.com/scrambletools/avb?rev=5d3186c333d2cc13bb51ea1f84df7f77eb1a9311#5d3186c333d2cc13bb51ea1f84df7f77eb1a9311"
+source = "git+https://github.com/scrambletools/avb?rev=130a43de6d83596601aa1b0e4e7156e675bf5b15#130a43de6d83596601aa1b0e4e7156e675bf5b15"
 dependencies = [
  "avb-mrp",
  "avb-net",
@@ -335,7 +335,7 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 [[package]]
 name = "avb-mrp"
 version = "0.1.0"
-source = "git+https://github.com/scrambletools/avb?rev=5d3186c333d2cc13bb51ea1f84df7f77eb1a9311#5d3186c333d2cc13bb51ea1f84df7f77eb1a9311"
+source = "git+https://github.com/scrambletools/avb?rev=130a43de6d83596601aa1b0e4e7156e675bf5b15#130a43de6d83596601aa1b0e4e7156e675bf5b15"
 dependencies = [
  "avb-net",
 ]
@@ -343,7 +343,7 @@ dependencies = [
 [[package]]
 name = "avb-net"
 version = "0.1.0"
-source = "git+https://github.com/scrambletools/avb?rev=5d3186c333d2cc13bb51ea1f84df7f77eb1a9311#5d3186c333d2cc13bb51ea1f84df7f77eb1a9311"
+source = "git+https://github.com/scrambletools/avb?rev=130a43de6d83596601aa1b0e4e7156e675bf5b15#130a43de6d83596601aa1b0e4e7156e675bf5b15"
 dependencies = [
  "libc",
  "windows-sys 0.61.2",
@@ -352,7 +352,7 @@ dependencies = [
 [[package]]
 name = "avb-stream"
 version = "0.1.0"
-source = "git+https://github.com/scrambletools/avb?rev=5d3186c333d2cc13bb51ea1f84df7f77eb1a9311#5d3186c333d2cc13bb51ea1f84df7f77eb1a9311"
+source = "git+https://github.com/scrambletools/avb?rev=130a43de6d83596601aa1b0e4e7156e675bf5b15#130a43de6d83596601aa1b0e4e7156e675bf5b15"
 dependencies = [
  "atdecc",
  "avb-net",
@@ -4356,6 +4356,13 @@ dependencies = [
  "toml 1.1.6+spec-1.1.0",
  "triib-pipewire",
  "triib-store",
+]
+
+[[package]]
+name = "triib-netraw"
+version = "1.1.1"
+dependencies = [
+ "avb-net",
 ]
 
 [[package]]

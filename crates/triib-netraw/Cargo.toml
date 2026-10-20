@@ -1,0 +1,14 @@
+[package]
+name = "triib-netraw"
+description = "triib's helper for raw Ethernet: the one program granted CAP_NET_RAW, which opens raw sockets for triib's programs"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+avb-net = { workspace = true, features = ["std"] }

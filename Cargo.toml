@@ -13,10 +13,10 @@ repository = "https://github.com/scrambletoolsllc/triib"
 # The AVB crates, shared with other apps, pinned by revision. A git-ignored
 # .cargo/config.toml can point them at a local checkout while changing both
 # (see the README).
-atdecc = { git = "https://github.com/scrambletools/avb", rev = "5d3186c333d2cc13bb51ea1f84df7f77eb1a9311", version = "0.1.0", default-features = false }
-avb-mrp = { git = "https://github.com/scrambletools/avb", rev = "5d3186c333d2cc13bb51ea1f84df7f77eb1a9311", version = "0.1.0", default-features = false }
-avb-net = { git = "https://github.com/scrambletools/avb", rev = "5d3186c333d2cc13bb51ea1f84df7f77eb1a9311", version = "0.1.0", default-features = false }
-avb-stream = { git = "https://github.com/scrambletools/avb", rev = "5d3186c333d2cc13bb51ea1f84df7f77eb1a9311", version = "0.1.0" }
+atdecc = { git = "https://github.com/scrambletools/avb", rev = "130a43de6d83596601aa1b0e4e7156e675bf5b15", version = "0.1.0", default-features = false }
+avb-mrp = { git = "https://github.com/scrambletools/avb", rev = "130a43de6d83596601aa1b0e4e7156e675bf5b15", version = "0.1.0", default-features = false }
+avb-net = { git = "https://github.com/scrambletools/avb", rev = "130a43de6d83596601aa1b0e4e7156e675bf5b15", version = "0.1.0", default-features = false }
+avb-stream = { git = "https://github.com/scrambletools/avb", rev = "130a43de6d83596601aa1b0e4e7156e675bf5b15", version = "0.1.0" }
 triib-store = { path = "crates/triib-store", version = "1.1.1" }
 triib-pipewire = { path = "crates/triib-pipewire", version = "1.1.1" }
 triib-endpointd = { path = "crates/triib-endpointd", version = "1.1.1" }

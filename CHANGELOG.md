@@ -12,6 +12,14 @@ All notable changes to triib. Versions follow
   Select All in Edit, the three views, the log and the inspector in
   View, and Window and Help menus, in the interface's language.
 
+### Linux
+
+- triib, triib-cli and triib-endpointd no longer hold `CAP_NET_RAW`:
+  `/usr/lib/triib/triib-netraw`, the one program the packages grant it,
+  opens their raw sockets and passes them over. The desktop's portals
+  answer triib directly again, and debuggers and crash reports see it as
+  any other program.
+
 ### Development
 
 - The AVB crates moved, with their history, to

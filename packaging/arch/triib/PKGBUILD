@@ -28,7 +28,7 @@ build() {
     export CARGO_TARGET_DIR=target
     # The installed copy, with its own settings and cache, not a dev build.
     export TRIIB_PRODUCTION=1
-    cargo build --frozen --release -p triib -p triib-cli -p triib-endpointd
+    cargo build --frozen --release -p triib -p triib-cli -p triib-endpointd -p triib-netraw
 }
 
 check() {

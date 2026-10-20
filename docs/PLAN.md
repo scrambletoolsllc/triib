@@ -172,8 +172,13 @@ administrators only. The app shows the fix. Host entities are
 offered per interface where it reports a PTP hardware clock and a wired
 link.
 
-On Linux the app, `triib-cli` and `triib-endpointd` need `CAP_NET_RAW`,
-which the packages set; the PHC is readable by everyone under systemd's
+On Linux the app, `triib-cli` and `triib-endpointd` hold no capability:
+`triib-netraw`, the one program the packages grant `CAP_NET_RAW`, opens
+their raw sockets and passes them over (`avb_net::broker`), as plaa's
+helper does for it. A program holding a capability is one other programs
+may not look into, so the desktop portal would refuse it dialogs, which
+triib once worked around by asking from a copy of itself without one. The
+PHC is readable by everyone under systemd's
 rules. ptp4l runs as root under triib's units, which a polkit rule lets the
 person at the computer start and stop, as the daemon does.
 

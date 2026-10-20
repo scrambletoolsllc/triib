@@ -122,11 +122,14 @@ for file in \
 done
 echo "all there"
 
+# Only the helper holds the capability; the programs get their raw
+# sockets from it.
 section Capabilities
+capabilities=$(getcap /usr/lib/triib/triib-netraw)
+echo "$capabilities"
+grep -Eq 'cap_net_raw[+=]ep' <<<"$capabilities" || fail "/usr/lib/triib/triib-netraw lacks CAP_NET_RAW"
 for program in "${programs[@]}"; do
-    capabilities=$(getcap "/usr/bin/$program")
-    echo "$capabilities"
-    grep -Eq 'cap_net_raw[+=]ep' <<<"$capabilities" || fail "/usr/bin/$program lacks CAP_NET_RAW"
+    [ -z "$(getcap "/usr/bin/$program")" ] || fail "/usr/bin/$program holds a capability"
 done
 
 # A container's interfaces have no PTP hardware clock, so installing must

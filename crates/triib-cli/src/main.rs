@@ -114,6 +114,9 @@ commands:
   help                               show this text";
 
 fn main() -> ExitCode {
+    // Raw sockets come from triib-netraw, the one file granted CAP_NET_RAW.
+    #[cfg(target_os = "linux")]
+    let _ = avb_net::broker::use_helper("triib-netraw", &[std::path::Path::new("/usr/lib/triib")]);
     let arguments: Vec<String> = std::env::args().skip(1).collect();
     let argument = |position: usize| arguments.get(position).map(String::as_str);
     let result = match argument(0) {

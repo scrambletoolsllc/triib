@@ -105,11 +105,6 @@ fn main() -> iced::Result {
                 let arguments: Vec<String> = std::env::args().skip(2).collect();
                 std::process::exit(mac_meters::serve(&arguments));
             }
-            #[cfg(target_os = "linux")]
-            dialog::CHOOSE_FOLDER | dialog::OPEN_URI => {
-                let arguments: Vec<_> = std::env::args_os().skip(1).collect();
-                std::process::exit(dialog::serve(&arguments));
-            }
             _ => println!("usage: triib [--version | --mcp]"),
         }
         return Ok(());
@@ -117,6 +112,9 @@ fn main() -> iced::Result {
 
     #[cfg(target_os = "linux")]
     prefer_vulkan();
+    // Raw sockets come from triib-netraw, the one file granted CAP_NET_RAW.
+    #[cfg(target_os = "linux")]
+    let _ = avb_net::broker::use_helper("triib-netraw", &[std::path::Path::new("/usr/lib/triib")]);
     scramble_ui::input::remember_interface_thread();
     let (sender, receiver) = mpsc::unbounded();
     let _ = EXTERNAL_SENDER.set(sender);

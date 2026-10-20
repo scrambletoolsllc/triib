@@ -23,9 +23,10 @@ jobs:
     # Built on an older system so the packages run on newer ones too:
     # Ubuntu 24.04, as PipeWire's Rust bindings need its headers, so the
     # packages need glibc 2.39. The
-    # Debian and RPM packages grant the programs CAP_NET_RAW as they
-    # install; a plain archive cannot, so it says how in the README. No
-    # AppImage or Flatpak, which cannot carry the capability. GitHub has
+    # Debian and RPM packages grant triib-netraw, which opens the others'
+    # raw sockets, CAP_NET_RAW as they install; a plain archive cannot, so
+    # it says how in the README. No AppImage or Flatpak, which cannot carry
+    # the capability. GitHub has
     # no RISC-V runners, so that build is cross-compiled.
     if: ${{ !inputs.only || inputs.only == 'all' || inputs.only == 'linux' }}
     strategy:
@@ -74,10 +75,10 @@ jobs:
         id: build
         run: |
           if [ -n "$TARGET" ]; then
-            cargo build --release --locked -p triib -p triib-cli -p triib-endpointd --target "$TARGET"
+            cargo build --release --locked -p triib -p triib-cli -p triib-endpointd -p triib-netraw --target "$TARGET"
             echo "binaries=target/$TARGET/release" >>"$GITHUB_OUTPUT"
           else
-            cargo build --release --locked -p triib -p triib-cli -p triib-endpointd
+            cargo build --release --locked -p triib -p triib-cli -p triib-endpointd -p triib-netraw
             echo "binaries=target/release" >>"$GITHUB_OUTPUT"
           fi
         env:

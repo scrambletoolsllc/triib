@@ -53,8 +53,8 @@ receive raw Ethernet:
 
 | System | Package | What it sets up |
 |---|---|---|
-| Linux | .deb, .rpm, PKGBUILD | `CAP_NET_RAW` for `triib`, `triib-cli` and `triib-endpointd` |
-| Linux | .tar.gz | nothing: run `sudo setcap cap_net_raw+ep` on the three programs |
+| Linux | .deb, .rpm, PKGBUILD | `CAP_NET_RAW` for `/usr/lib/triib/triib-netraw`, which opens raw sockets for `triib`, `triib-cli` and `triib-endpointd` |
+| Linux | .tar.gz | nothing: run `sudo setcap cap_net_raw+ep usr/lib/triib/triib-netraw` |
 | macOS (Apple Silicon) | .pkg | access to `/dev/bpf*` for the user installing it, at every start, as Wireshark's ChmodBPF does; `triib-cli` in /usr/local/bin |
 | Windows | .msi, .zip | nothing itself: install [Npcap](https://npcap.com) first, which the installer and triib point to when it is missing |
 
@@ -287,11 +287,16 @@ iced_widget = { path = "../scramble-ui/vendor/iced_widget" }
 Once the scramble-ui change is pushed, move the pin to its revision and
 build once without the file, so `Cargo.lock` names the revision again.
 
-On Linux, sending and receiving ATDECC frames needs `CAP_NET_RAW`:
+On Linux, sending and receiving ATDECC frames needs `CAP_NET_RAW`, which
+only `triib-netraw` holds: it opens the raw sockets for triib, triib-cli
+and triib-endpointd and passes them over, so they hold no capability and
+the desktop's portals still answer triib (a program holding one is one
+they may not look into). Build it with the rest and grant it once per
+build:
 
 ```
-sudo setcap cap_net_raw+ep target/debug/triib
-sudo setcap cap_net_raw+ep target/debug/triib-endpointd
+cargo build -p triib-netraw
+sudo setcap cap_net_raw+ep target/debug/triib-netraw
 ```
 
 Building on Linux needs ALSA's and PipeWire's headers for audio, and

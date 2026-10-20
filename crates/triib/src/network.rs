@@ -226,10 +226,15 @@ pub enum Remedy {
 
 impl Failure {
     fn from_io(error: &io::Error) -> Self {
+        // On Linux the helper holding the capability, triib-netraw.
         let program = || {
-            std::env::current_exe()
+            #[cfg(target_os = "linux")]
+            let program = avb_net::broker::needs_capability();
+            #[cfg(not(target_os = "linux"))]
+            let program = std::env::current_exe().ok();
+            program
                 .map(|path| path.display().to_string())
-                .unwrap_or_else(|_| "triib".to_owned())
+                .unwrap_or_else(|| "triib".to_owned())
         };
         let (message, remedy) = match avb_net::Blocked::of(error) {
             Some(avb_net::Blocked::RawCapability) => (

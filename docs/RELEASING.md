@@ -10,7 +10,7 @@ Everything a release ships is built from this repository:
 | `packaging/licenses/` | The licenses of the fonts triib carries, from scramble-ui |
 | `scripts/cross-setup.sh` | Sets up an x86_64 Ubuntu to cross-compile for RISC-V |
 | `scripts/dist-install.sh` | Installs a build of triib, triib-cli and triib-endpointd and the files above into a system layout; the Linux packages use it |
-| `packaging/nfpm.yaml`, `packaging/linux/postinstall.sh` | Debian and RPM packages, made with nfpm, which grant the programs `CAP_NET_RAW` as they install and run `packaging/linux/endpoint-check` |
+| `packaging/nfpm.yaml`, `packaging/linux/postinstall.sh` | Debian and RPM packages, made with nfpm, which grant `triib-netraw` `CAP_NET_RAW` as they install and run `packaging/linux/endpoint-check` |
 | `packaging/arch/triib/` | AUR package, whose install script does the same |
 | `packaging/windows/` | Windows MSI (WiX 5) and zip, made by `build.ps1` |
 | `packaging/macos/` | triib.app and its installer package, made by `bundle.sh --pkg` around `distribution.xml`, signed and notarized as [macOS signing](#macos-signing) says, with the capture access helper |
@@ -35,11 +35,12 @@ development builds, which keep their own.
 
 triib sends and receives raw Ethernet, which each system guards:
 
-- **Linux:** the `CAP_NET_RAW` capability. The .deb, .rpm and AUR
-  packages set it on `/usr/bin/triib`, `/usr/bin/triib-cli` and
-  `/usr/bin/triib-endpointd` when they install (`setcap`, from libcap).
-  The tarball cannot; after unpacking, run `sudo setcap cap_net_raw+ep`
-  on the three programs. There is no AppImage or Flatpak, as neither can
+- **Linux:** the `CAP_NET_RAW` capability, held only by
+  `/usr/lib/triib/triib-netraw`, which opens raw sockets for `triib`,
+  `triib-cli` and `triib-endpointd`. The .deb, .rpm and AUR packages set
+  it when they install (`setcap`, from libcap). The tarball cannot; after
+  unpacking, run `sudo setcap cap_net_raw+ep` on
+  `usr/lib/triib/triib-netraw`. There is no AppImage or Flatpak, as neither can
   carry the capability. The packages depend on ALSA's and PipeWire's
   libraries for audio, PipeWire's for the virtual audio devices of this
   computer's streams, and recommend linuxptp, whose ptp4l the host

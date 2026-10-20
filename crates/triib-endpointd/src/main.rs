@@ -2,8 +2,9 @@
 //! own ATDECC entity with streams that any controller can connect, with
 //! audio from and to the computer's audio.
 //!
-//! It takes gPTP from ptp4l, which must run on the interface, and needs
-//! `CAP_NET_RAW`. The entities are listed in `entities.toml` in triib's
+//! It takes gPTP from ptp4l, which must run on the interface, and its raw
+//! sockets from triib-netraw, which holds `CAP_NET_RAW` in its place. The
+//! entities are listed in `entities.toml` in triib's
 //! data folder, or the file `--config` names, written with one entity
 //! the first time.
 
@@ -36,6 +37,9 @@ fn first_config() -> Config {
 }
 
 fn main() -> ExitCode {
+    // Raw sockets come from triib-netraw, the one file granted CAP_NET_RAW.
+    #[cfg(target_os = "linux")]
+    let _ = avb_net::broker::use_helper("triib-netraw", &[std::path::Path::new("/usr/lib/triib")]);
     let mut arguments = std::env::args().skip(1);
     let mut path: Option<PathBuf> = None;
     let mut interface: Option<String> = None;

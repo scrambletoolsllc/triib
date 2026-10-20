@@ -5,7 +5,7 @@
 #   VERSION=1.1.1 ARCH=amd64 nfpm package -f packaging/nfpm.yaml -p deb
 #   VERSION=1.1.1 ARCH=amd64 nfpm package -f packaging/nfpm.yaml -p rpm
 #
-# Installing grants the programs CAP_NET_RAW (packaging/linux).
+# Installing grants triib-netraw CAP_NET_RAW (packaging/linux).
 name: triib
 arch: ${ARCH}
 platform: linux
