@@ -299,8 +299,7 @@ fn share(wires: &mut [Vec<Option<Wire>>], copies: &[(Leg, Leg)]) {
 /// Whether a node heads a column of its own: a bridge, or anything with
 /// nodes below it.
 fn is_head(topology: &Topology, node: NodeId) -> bool {
-    topology.nodes[node].kind == Kind::Bridge
-        || !topology.nodes[node].children.is_empty()
+    topology.nodes[node].kind == Kind::Bridge || !topology.nodes[node].children.is_empty()
 }
 
 /// What sits in a head's column, or the grandmaster's.
