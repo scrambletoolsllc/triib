@@ -24,7 +24,7 @@ use atdecc::{
 };
 use avb_mrp::Registration;
 use avb_mrp::msrp::{self, ListenerState, TalkerDeclaration, TalkerFailure};
-use avb_mrp::sharing::{Notice, Request};
+use avb_mrp::sharing::{self as sharing_protocol, Hello, Notice, Refusal, Request};
 use avb_net::Socket;
 use avb_net::stream::FrameSender;
 use avb_stream::audio::{Sink, Source};
@@ -1859,6 +1859,13 @@ impl Runtime {
             }
             Input::SharerOpened(id, writer) => {
                 self.sharers.open(id, writer);
+                self.sharers.tell(
+                    id,
+                    Notice::Hello(Hello {
+                        version: sharing_protocol::VERSION,
+                        features: sharing_protocol::feature::LOCAL_LISTENERS,
+                    }),
+                );
                 if self.lite.is_some() {
                     self.sharers.tell(id, Notice::Unavailable);
                 }
@@ -2323,16 +2330,31 @@ impl Runtime {
 
     /// A program sharing the port's participant asks it to declare or
     /// withdraw one of its talkers: not while the port runs AVB Lite, whose
-    /// declarations go otherwise.
+    /// declarations go otherwise, nor a stream another talker here
+    /// declares. It hears whether its stream was declared.
     fn sharer_asked(&mut self, id: u64, request: Request) {
         let since = self.elapsed();
+        let refuse = |sharers: &mut Sharers, stream_id, refusal| {
+            sharers.tell(id, Notice::Refused { stream_id, refusal });
+        };
         match request {
             Request::Declare(declaration) => {
+                let stream_id = declaration.stream_id;
                 if self.lite.is_some() {
+                    // A program of version 0 knows only this.
                     self.sharers.tell(id, Notice::Unavailable);
+                    refuse(&mut self.sharers, stream_id, Refusal::Unavailable);
                     return;
                 }
-                let stream_id = declaration.stream_id;
+                let taken = self.own_talker(stream_id).is_some()
+                    || self
+                        .sharers
+                        .owner(stream_id)
+                        .is_some_and(|owner| owner != id);
+                if taken {
+                    refuse(&mut self.sharers, stream_id, Refusal::Taken);
+                    return;
+                }
                 self.port.msrp.declare(
                     since,
                     msrp::attribute::TALKER_ADVERTISE,
@@ -2340,6 +2362,7 @@ impl Runtime {
                     None,
                 );
                 self.sharers.declared(id, declaration);
+                self.sharers.tell(id, Notice::Declared(stream_id));
                 // Our inputs settled on it listen, and it hears of them and
                 // of listeners already there for it.
                 self.talker_heard(stream_id);
@@ -2355,6 +2378,17 @@ impl Runtime {
                     self.talker_heard(stream_id);
                 }
             }
+            Request::Unreadable(stream_id) => {
+                refuse(
+                    &mut self.sharers,
+                    stream_id.unwrap_or(0),
+                    Refusal::Unreadable,
+                );
+            }
+            // Nothing here depends on the program's version yet.
+            Request::Hello(_) => {}
+            // Kinds a later version gives, which the reader skips.
+            _ => {}
         }
     }
 
