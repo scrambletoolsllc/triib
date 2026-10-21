@@ -351,6 +351,8 @@ msrp-failure-at = { $reason }, la switch-ul { $bridge }
 ## Entity list columns
 
 column-vendor = Producător
+column-entity-image = Imaginea entității
+column-vendor-image = Imaginea producătorului
 column-model = Model
 column-state = Stare
 column-entity-model-id = ID model de entitate

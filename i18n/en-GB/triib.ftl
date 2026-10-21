@@ -275,6 +275,8 @@ msrp-failure-at = { $reason }, at the bridge { $bridge }
 ## Entity list columns
 
 column-vendor = Vendor
+column-entity-image = Entity image
+column-vendor-image = Vendor image
 column-model = Model
 column-state = State
 column-entity-model-id = Entity model ID

@@ -331,6 +331,8 @@ msrp-failure-at = { $reason }, 브리지 { $bridge }에서
 ## Entity list columns
 
 column-vendor = 제조사
+column-entity-image = 엔티티 이미지
+column-vendor-image = 제조사 이미지
 column-model = 모델
 column-state = 상태
 column-entity-model-id = 엔티티 모델 ID

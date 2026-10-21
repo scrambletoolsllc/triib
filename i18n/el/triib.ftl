@@ -348,6 +348,8 @@ msrp-failure-at = { $reason }, στη γέφυρα { $bridge }
 ## Entity list columns
 
 column-vendor = Κατασκευαστής
+column-entity-image = Εικόνα οντότητας
+column-vendor-image = Εικόνα κατασκευαστή
 column-model = Μοντέλο
 column-state = Κατάσταση
 column-entity-model-id = ID μοντέλου οντότητας

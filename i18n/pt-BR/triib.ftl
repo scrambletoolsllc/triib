@@ -360,6 +360,8 @@ msrp-failure-at = { $reason }, no switch { $bridge }
 ## Entity list columns
 
 column-vendor = Fabricante
+column-entity-image = Imagem da entidade
+column-vendor-image = Imagem do fabricante
 column-model = Modelo
 column-state = Estado
 column-entity-model-id = ID do modelo de entidade

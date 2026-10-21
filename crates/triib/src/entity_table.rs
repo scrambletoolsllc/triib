@@ -19,6 +19,7 @@ use crate::column_resize::{MIN_WIDTH, resizable};
 use crate::describe;
 use crate::fl;
 use crate::header_band::header_band;
+use crate::logos::Logo;
 use crate::settings::EntityField;
 use crate::text::{fit, measure};
 use crate::view::{Rate, VIEW_MARGIN};
@@ -50,6 +51,8 @@ const DIVIDER: f32 = TABLE_PADDING + 0.5;
 const PICKER_INSET: f32 = 12.0;
 /// Every row's height: the name's row button's, an extra small button's.
 const ROW_HEIGHT: f32 = 32.0;
+/// A logo's side in its cell.
+const LOGO_SIZE: f32 = 24.0;
 /// Every heading's height: the heading menus'.
 const HEADING_HEIGHT: f32 = 32.0;
 const MEDIUM: iced::Font = iced::Font {
@@ -78,6 +81,8 @@ fn value(field: EntityField, entity: &DiscoveredEntity, model: Option<&EntityMod
         EntityField::Vendor => {
             descriptor.map_or_else(String::new, |found| localized(found.vendor_name))
         }
+        // Drawn, not written.
+        EntityField::EntityImage | EntityField::VendorImage => String::new(),
         EntityField::Model => {
             descriptor.map_or_else(String::new, |found| localized(found.model_name))
         }
@@ -132,6 +137,30 @@ fn cell<'a>(text: &str, width: f32) -> Element<'a, Message> {
         .width(Length::Fixed(width))
         .align_x(dir::horizontal_start())
         .clip(true)
+        .into()
+}
+
+/// One of an entity's logos, once read, at the start of its cell.
+fn logo_cell<'a>(
+    triib: &'a Triib,
+    entity: &DiscoveredEntity,
+    logo: Logo,
+    width: f32,
+) -> Element<'a, Message> {
+    let image = triib
+        .models
+        .get(&entity.entity_id())
+        .and_then(|model| triib.logos.of(model, logo));
+    let content: Element<'a, Message> = match image {
+        Some(image) => iced::widget::image(image)
+            .width(LOGO_SIZE)
+            .height(LOGO_SIZE)
+            .into(),
+        None => space().into(),
+    };
+    container(content)
+        .width(Length::Fixed(width))
+        .align_x(dir::horizontal_start())
         .into()
 }
 
@@ -407,10 +436,13 @@ fn view_at(triib: &Triib, width: f32, under_bar: bool) -> Element<'_, Message> {
         ));
         cells.push((
             Box::new(move |row: Row<'_>| {
-                let content = if field == EntityField::MediaClock {
-                    media_clock_cell(triib, row.entity, &row.values[index], width)
-                } else {
-                    cell(&row.values[index], width)
+                let content = match field {
+                    EntityField::MediaClock => {
+                        media_clock_cell(triib, row.entity, &row.values[index], width)
+                    }
+                    EntityField::EntityImage => logo_cell(triib, row.entity, Logo::Entity, width),
+                    EntityField::VendorImage => logo_cell(triib, row.entity, Logo::Vendor, width),
+                    _ => cell(&row.values[index], width),
                 };
                 body_cell(content, width)
             }),

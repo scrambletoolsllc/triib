@@ -447,6 +447,10 @@ msrp-failure-at = { $reason }, at the bridge { $bridge }
 # words.
 
 column-vendor = Vendor
+# The entity's own logo, and its vendor's, as images; also in the
+# inspector.
+column-entity-image = Entity image
+column-vendor-image = Vendor image
 column-model = Model
 column-state = State
 column-entity-model-id = Entity model ID

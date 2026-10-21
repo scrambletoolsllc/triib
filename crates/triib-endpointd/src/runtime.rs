@@ -52,11 +52,14 @@ use crate::status::{DaemonStatus, EndpointStatus, StreamStatus, status_path};
 /// talkers and listeners had `0x8c1f_6436_c000_0002` and `_0004`.
 const DEVICE_MODELS: u64 = 0x8c1f_6436_c001_0000;
 /// The revision of every device's model, in its hash.
-const MODEL_REVISION: u8 = 6;
+const MODEL_REVISION: u8 = 7;
 /// The logo controllers show this computer's entities with: triib's app
 /// icon, at 128 pixels.
 pub const LOGO: &[u8] =
     include_bytes!("../../../data/icons/hicolor/128x128/apps/io.github.scrambletools.triib.png");
+/// Their vendor's logo: Scramble Tools' square white logo on a black
+/// circle, at 128 pixels.
+pub const VENDOR_LOGO: &[u8] = include_bytes!("../../../data/icons/scramble-vendor.png");
 /// Class A's priority; its VLAN is the port's.
 const PRIORITY: u8 = 3;
 /// Class B's priority.
@@ -391,8 +394,9 @@ fn model_id(outputs: &[StreamModel], inputs: &[StreamModel]) -> EntityModelId {
     // the inputs stopped being clock sources, 2 since the model name is
     // "triib entity" and media clock inputs are clock sources, 3 since
     // every input is, 4 since inputs' mappings are dynamic, 5 since
-    // streams' classes follow their formats, 6 since it has a logo. A
-    // class B output's formats come in another order.
+    // streams' classes follow their formats, 6 since it has a logo, 7
+    // since its vendor has one too. A class B output's formats come in
+    // another order.
     take(&[MODEL_REVISION]);
     for (way, streams) in [(0u8, outputs), (1, inputs)] {
         for stream in streams {
@@ -596,6 +600,7 @@ impl Endpoint {
             clock_source,
             clock_source_inputs,
             logo: Some(LOGO.to_vec()),
+            vendor_logo: Some(VENDOR_LOGO.to_vec()),
         };
         // A talker's streams have no destination until MAAP gives them
         // one.

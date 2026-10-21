@@ -343,6 +343,8 @@ msrp-failure-at = { $reason }, bridge { $bridge } पर
 ## Entity list columns
 
 column-vendor = निर्माता
+column-entity-image = Entity की छवि
+column-vendor-image = निर्माता की छवि
 column-model = मॉडल
 column-state = स्थिति
 column-entity-model-id = Entity model ID

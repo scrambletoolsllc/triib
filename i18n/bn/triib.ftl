@@ -343,6 +343,8 @@ msrp-failure-at = { $reason }, bridge { $bridge }-এ
 ## Entity list columns
 
 column-vendor = নির্মাতা
+column-entity-image = Entity-এর ছবি
+column-vendor-image = নির্মাতার ছবি
 column-model = মডেল
 column-state = অবস্থা
 column-entity-model-id = Entity model ID

@@ -343,6 +343,8 @@ msrp-failure-at = { $reason }، برج { $bridge } پر
 ## Entity list columns
 
 column-vendor = وینڈر
+column-entity-image = اینٹیٹی کی تصویر
+column-vendor-image = وینڈر کی تصویر
 column-model = ماڈل
 column-state = حالت
 column-entity-model-id = اینٹیٹی ماڈل ID

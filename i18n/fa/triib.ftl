@@ -343,6 +343,8 @@ msrp-failure-at = { $reason }، در پل { $bridge }
 ## Entity list columns
 
 column-vendor = سازنده
+column-entity-image = تصویر موجودیت
+column-vendor-image = تصویر سازنده
 column-model = مدل
 column-state = وضعیت
 column-entity-model-id = ID مدل موجودیت

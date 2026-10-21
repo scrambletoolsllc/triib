@@ -25,6 +25,7 @@ use scramble_ui::{Scheme, dir, dropdown, style};
 use crate::app::{Message, NetworkState, Triib};
 use crate::describe;
 use crate::fl;
+use crate::logos::Logo;
 use crate::mapping_view;
 use crate::network::{Action, Failure, NameTarget, Remedy};
 use crate::settings::View;
@@ -1276,6 +1277,20 @@ fn entity_sections<'a>(
             }
         }
         items.push(property(fl!("entity-milan"), describe::milan(model)));
+        // Its logo and its vendor's, once read.
+        for (label, logo) in [
+            (fl!("column-entity-image"), Logo::Entity),
+            (fl!("column-vendor-image"), Logo::Vendor),
+        ] {
+            if let Some(image) = triib.logos.of(model, logo) {
+                items.push(labeled(
+                    label,
+                    iced::widget::image(image)
+                        .width(INSPECTOR_LOGO)
+                        .height(INSPECTOR_LOGO),
+                ));
+            }
+        }
     }
     let domains: Vec<_> = model.clock_domains().collect();
     if !domains.is_empty() {
@@ -1300,6 +1315,9 @@ fn entity_sections<'a>(
     items.extend(crate::wireless_view::entity_section(triib, model));
     items
 }
+
+/// A logo's side in the inspector.
+const INSPECTOR_LOGO: f32 = 48.0;
 
 /// How tall each row of the Streams tab's list is, and how many show
 /// before it scrolls.
@@ -2303,6 +2321,7 @@ pub(crate) mod tests {
             clock_source: 0,
             clock_source_inputs: (0..inputs.len() as u16).collect(),
             logo: Some(triib_endpointd::runtime::LOGO.to_vec()),
+            vendor_logo: Some(triib_endpointd::runtime::VENDOR_LOGO.to_vec()),
         };
         let mut entity = Entity::new(model, &[]);
         let mut controller = Controller::new(Config::new(EntityId(0x9c6b_00ff_fe30_9a2b)));
@@ -2915,6 +2934,20 @@ pub(crate) mod tests {
                 Size::new(804.0, 520.0),
             ),
             ("network-focus-desktop", View::Network, false, desktop),
+            // This computer's entity's logo and its vendor's, read through
+            // Address Access, in the list's columns and the inspector.
+            (
+                "entities-logos",
+                View::Entities,
+                false,
+                Size::new(1280.0, 420.0),
+            ),
+            (
+                "inspector-logos",
+                View::Entities,
+                true,
+                Size::new(1280.0, 1000.0),
+            ),
         ] {
             if only
                 .as_ref()
@@ -2974,12 +3007,15 @@ pub(crate) mod tests {
                 models.insert(WIRED_ESP, model);
             }
             let mut shown = entities.clone();
-            let host = (suffix.contains("host") || suffix.contains("device")).then(|| {
-                let (host, model) = host_entity("Host entity 1", &["Out 1"], &["In 1"]);
-                shown.insert(host.entity_id(), host);
-                models.insert(host.entity_id(), model);
-                host.entity_id()
-            });
+            let host = ["host", "device", "logos"]
+                .iter()
+                .any(|kind| suffix.contains(kind))
+                .then(|| {
+                    let (host, model) = host_entity("Host entity 1", &["Out 1"], &["In 1"]);
+                    shown.insert(host.entity_id(), host);
+                    models.insert(host.entity_id(), model);
+                    host.entity_id()
+                });
             let mut triib = Triib::sample(settings, interface, shown, models);
             triib.selected = if ["diagnostics", "controls", "lite"]
                 .iter()
@@ -2988,7 +3024,7 @@ pub(crate) mod tests {
                 Some(WIRED_ESP)
             } else if suffix.contains("wireless") {
                 Some(WIFI_ESP)
-            } else if suffix.contains("device") {
+            } else if suffix.contains("device") || suffix.contains("logos") {
                 host
             } else if suffix.contains("listen") {
                 Some(MAC_MINI)
@@ -3015,6 +3051,16 @@ pub(crate) mod tests {
                     .settings
                     .entity_columns
                     .retain(|field| ![EntityField::Group, EntityField::EntityId].contains(field));
+            }
+            if suffix.contains("logos") {
+                use crate::settings::EntityField;
+                triib.settings.entity_columns = vec![
+                    EntityField::Product,
+                    EntityField::EntityImage,
+                    EntityField::Vendor,
+                    EntityField::VendorImage,
+                    EntityField::Firmware,
+                ];
             }
             if suffix.contains("searching") {
                 triib.search = "Mac mini".to_owned();

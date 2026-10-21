@@ -331,6 +331,8 @@ msrp-failure-at = { $reason }，發生於交換器 { $bridge }
 ## Entity list columns
 
 column-vendor = 廠商
+column-entity-image = 實體圖像
+column-vendor-image = 廠商圖像
 column-model = 型號
 column-state = 狀態
 column-entity-model-id = 實體模型 ID

@@ -328,6 +328,8 @@ msrp-failure-at = { $reason }, pada suis { $bridge }
 ## Entity list columns
 
 column-vendor = Pengeluar
+column-entity-image = Imej entiti
+column-vendor-image = Imej pengeluar
 column-model = Model
 column-state = Keadaan
 column-entity-model-id = ID model entiti

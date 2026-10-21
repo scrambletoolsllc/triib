@@ -351,6 +351,8 @@ msrp-failure-at = { $reason } (silta { $bridge })
 ## Entity list columns
 
 column-vendor = Valmistaja
+column-entity-image = Entiteetin kuva
+column-vendor-image = Valmistajan kuva
 column-model = Malli
 column-state = Tila
 column-entity-model-id = Entiteettimallin ID

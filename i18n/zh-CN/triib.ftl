@@ -331,6 +331,8 @@ msrp-failure-at = { $reason }，发生在交换机 { $bridge }
 ## Entity list columns
 
 column-vendor = 厂商
+column-entity-image = 实体图像
+column-vendor-image = 厂商图像
 column-model = 型号
 column-state = 状态
 column-entity-model-id = 实体模型 ID

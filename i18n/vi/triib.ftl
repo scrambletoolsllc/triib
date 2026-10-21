@@ -331,6 +331,8 @@ msrp-failure-at = { $reason }, tại switch { $bridge }
 ## Entity list columns
 
 column-vendor = Nhà sản xuất
+column-entity-image = Hình ảnh thực thể
+column-vendor-image = Hình ảnh nhà sản xuất
 column-model = Model
 column-state = Trạng thái
 column-entity-model-id = ID mô hình thực thể

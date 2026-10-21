@@ -348,6 +348,8 @@ msrp-failure-at = { $reason }, בגשר { $bridge }
 ## Entity list columns
 
 column-vendor = יצרן
+column-entity-image = תמונת הישות
+column-vendor-image = תמונת היצרן
 column-model = דגם
 column-state = מצב
 column-entity-model-id = ID מודל ישות

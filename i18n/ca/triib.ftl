@@ -355,6 +355,8 @@ msrp-failure-at = { $reason }, al commutador { $bridge }
 ## Entity list columns
 
 column-vendor = Fabricant
+column-entity-image = Imatge de l'entitat
+column-vendor-image = Imatge del fabricant
 column-model = Model
 column-state = Estat
 column-entity-model-id = ID del model d’entitat

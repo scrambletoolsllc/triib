@@ -328,6 +328,8 @@ msrp-failure-at = { $reason }, di switch { $bridge }
 ## Entity list columns
 
 column-vendor = Vendor
+column-entity-image = Gambar entitas
+column-vendor-image = Gambar vendor
 column-model = Model
 column-state = Status
 column-entity-model-id = ID model entitas

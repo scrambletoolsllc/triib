@@ -180,6 +180,8 @@ pub struct Triib {
     pub add_stream_open: bool,
     /// What the network thread was last told the window shows.
     watched: Watch,
+    /// The entities' logos, decoded as they show.
+    pub logos: crate::logos::Logos,
 }
 
 /// What the network thread for the chosen interface is doing.
@@ -438,6 +440,7 @@ impl Triib {
             stream_selected: None,
             add_stream_open: false,
             watched: Watch::default(),
+            logos: crate::logos::Logos::default(),
         }
     }
 
@@ -514,6 +517,7 @@ impl Triib {
             stream_selected: None,
             add_stream_open: false,
             watched: Watch::default(),
+            logos: crate::logos::Logos::default(),
         };
         triib.reload_omarchy();
         triib.apply_motion();

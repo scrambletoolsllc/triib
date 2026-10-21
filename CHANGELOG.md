@@ -35,6 +35,9 @@ All notable changes to triib. Versions follow
   shows stands, and learns at once from the responses entities send
   another controller on this computer. An entity that sends triib a
   notification is asked nothing again until it goes or restarts.
+- triib reads entities' logos, their own and their vendors', through
+  Address Access: the entity list can show each in a column of its own,
+  and the inspector's Entity tab shows both.
 
 ### Linux
 
@@ -51,9 +54,9 @@ All notable changes to triib. Versions follow
   program's talkers when the program goes. It says hello to each program
   with its version and features, and answers each request to declare a
   talker, so a program can tell what it can do and why it refused.
-- This computer's entities carry triib's app icon as their logo, a PNG
-  memory object that controllers such as Hive read through Address
-  Access.
+- This computer's entities carry triib's app icon as their logo and
+  Scramble Tools' as their vendor's, PNG memory objects that controllers
+  such as Hive read through Address Access.
 - An input of triib-endpointd's that stops listening while locked to its
   stream counts an unlock, so a controller reading its counters no
   longer takes it for still receiving.

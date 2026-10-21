@@ -353,6 +353,8 @@ msrp-failure-at = { $reason }, на комутаторі { $bridge }
 ## Entity list columns
 
 column-vendor = Виробник
+column-entity-image = Зображення сутності
+column-vendor-image = Зображення виробника
 column-model = Модель
 column-state = Стан
 column-entity-model-id = ID моделі сутності

@@ -345,6 +345,8 @@ msrp-failure-at = { $reason } (híd: { $bridge })
 ## Entity list columns
 
 column-vendor = Gyártó
+column-entity-image = Entitás képe
+column-vendor-image = Gyártó képe
 column-model = Modell
 column-state = Állapot
 column-entity-model-id = Entitásmodell-ID

@@ -345,6 +345,8 @@ msrp-failure-at = { $reason }, { $bridge } köprüsünde
 ## Entity list columns
 
 column-vendor = Üretici
+column-entity-image = Varlık görseli
+column-vendor-image = Üretici görseli
 column-model = Model
 column-state = Durum
 column-entity-model-id = Varlık modeli ID'si

@@ -328,6 +328,8 @@ msrp-failure-at = { $reason } ที่สวิตช์ { $bridge }
 ## Entity list columns
 
 column-vendor = ผู้ผลิต
+column-entity-image = รูปภาพเอนทิตี
+column-vendor-image = รูปภาพผู้ผลิต
 column-model = รุ่น
 column-state = สถานะ
 column-entity-model-id = ID โมเดลเอนทิตี

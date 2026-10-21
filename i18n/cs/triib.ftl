@@ -353,6 +353,8 @@ msrp-failure-at = { $reason }, na přepínači { $bridge }
 ## Entity list columns
 
 column-vendor = Výrobce
+column-entity-image = Obrázek entity
+column-vendor-image = Obrázek výrobce
 column-model = Model
 column-state = Stav
 column-entity-model-id = ID modelu entity

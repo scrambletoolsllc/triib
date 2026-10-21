@@ -363,6 +363,8 @@ msrp-failure-at = { $reason }، عند الجسر { $bridge }
 ## Entity list columns
 
 column-vendor = المورّد
+column-entity-image = صورة الكيان
+column-vendor-image = صورة المورّد
 column-model = الطراز
 column-state = الحالة
 column-entity-model-id = ID نموذج الكيان

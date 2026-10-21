@@ -345,6 +345,8 @@ msrp-failure-at = { $reason }, ved switchen { $bridge }
 ## Entity list columns
 
 column-vendor = Producent
+column-entity-image = Entitetsbillede
+column-vendor-image = Producentbillede
 column-model = Model
 column-state = Status
 column-entity-model-id = Entitetsmodel-ID

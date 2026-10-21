@@ -223,7 +223,11 @@ pub enum View {
 pub enum EntityField {
     Group,
     Product,
+    /// The entity's own logo.
+    EntityImage,
     Vendor,
+    /// Its vendor's logo.
+    VendorImage,
     Model,
     Firmware,
     SerialNumber,
@@ -253,10 +257,12 @@ pub enum EntityField {
 
 impl EntityField {
     /// Every field, in the order the column menus offer them.
-    pub const ALL: [Self; 21] = [
+    pub const ALL: [Self; 23] = [
         Self::Group,
         Self::Product,
+        Self::EntityImage,
         Self::Vendor,
+        Self::VendorImage,
         Self::Model,
         Self::Firmware,
         Self::SerialNumber,
@@ -295,7 +301,9 @@ impl EntityField {
         match self {
             Self::Group => crate::fl!("entity-group"),
             Self::Product => crate::fl!("entity-product"),
+            Self::EntityImage => crate::fl!("column-entity-image"),
             Self::Vendor => crate::fl!("column-vendor"),
+            Self::VendorImage => crate::fl!("column-vendor-image"),
             Self::Model => crate::fl!("column-model"),
             Self::Firmware => crate::fl!("entity-firmware"),
             Self::SerialNumber => crate::fl!("entity-serial-number"),

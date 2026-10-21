@@ -343,6 +343,8 @@ msrp-failure-at = { $reason }, kwenye swichi { $bridge }
 ## Entity list columns
 
 column-vendor = Mtengenezaji
+column-entity-image = Picha ya huluki
+column-vendor-image = Picha ya mtengenezaji
 column-model = Modeli
 column-state = Hali
 column-entity-model-id = ID ya modeli ya huluki
