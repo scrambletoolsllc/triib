@@ -67,6 +67,10 @@ All notable changes to triib. Versions follow
 - triib-endpointd rides out a fault of ptp4l's own, as a transmit time
   stamp coming late while the computer is busy, rather than falling
   back to AVB Lite as though no gPTP peer answered.
+- triib-endpointd keeps its entities off AVB Lite on an interface
+  without a PTP hardware clock, which AVB Lite needs: it no longer falls
+  back to it there, says it can run it, or takes the link down to turn
+  EEE and PAUSE off for it.
 - triib starts triib-endpointd again whenever it stops while triib runs
   and this computer's entities are listed, as after a crash, not only
   as triib opens, waiting longer after each start that does not last;

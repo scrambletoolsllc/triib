@@ -862,6 +862,10 @@ pub struct Runtime {
     fallback: Fallback,
     /// AVB Lite, once the endpoints fell back to it.
     lite: Option<LiteMode>,
+    /// Whether the interface has a PTP hardware clock, which AVB Lite
+    /// needs: without one its endpoints stay off it, falling back to it
+    /// for nothing and running it for no one.
+    hardware_clock: bool,
     /// This interface's clock identity, its link speed in Mb/s, and what
     /// ptp4l says of the grandmaster there.
     own_clock: ClockIdentity,
@@ -1054,9 +1058,11 @@ impl Runtime {
                 )
             })?;
         let clock = Arc::new(MediaClock::open(found.hardware_clock)?);
-        if found.hardware_clock.is_none() {
+        let hardware_clock = found.hardware_clock.is_some();
+        if !hardware_clock {
             log(format!(
-                "{interface} has no PTP hardware clock: presentation times will mean nothing"
+                "{interface} has no PTP hardware clock: presentation times will mean nothing, \
+                 and its endpoints stay off AVB Lite, which needs one"
             ));
         }
         let avtp = Arc::new(Socket::open(&interface, atdecc::ETHERTYPE_AVTP)?);
@@ -1178,7 +1184,7 @@ impl Runtime {
         let maap = (talkers > 0).then(|| Maap::new(mac, (talkers as u16).max(MAAP_BLOCK)));
         let fallback = Fallback::new(
             own_clock.0,
-            config.avb_lite == LiteChoice::On,
+            config.avb_lite == LiteChoice::On && hardware_clock,
             Duration::ZERO,
         );
         let link_speed = found.speed.unwrap_or(0);
@@ -1198,6 +1204,7 @@ impl Runtime {
             ptp,
             fallback,
             lite: None,
+            hardware_clock,
             own_clock,
             link_speed,
             ptp_status: None,
@@ -1867,7 +1874,11 @@ impl Runtime {
                 if source != self.mac {
                     self.watch_stamps(&bytes);
                 }
-                self.fallback.handle_ptp(since, &bytes);
+                // Without a hardware clock nothing is weighed: AVB Lite is
+                // not for it.
+                if self.hardware_clock {
+                    self.fallback.handle_ptp(since, &bytes);
+                }
                 if let Some((grandmaster, speed)) = lite::grandmaster_link(&bytes)
                     && self.grandmaster_links.insert(grandmaster, speed) != Some(speed)
                 {
@@ -2005,11 +2016,14 @@ impl Runtime {
         if let Some(maap) = &mut self.maap {
             maap.handle_timeout(now);
         }
-        // ptp4l's own fault stops its requests while it lasts.
-        if self.ptp_status.as_ref().is_some_and(|status| status.faulty) {
-            self.fallback.ptp4l_faulty(since);
+        // ptp4l's own fault stops its requests while it lasts. Without a
+        // hardware clock nothing is weighed, nor a beacon sent.
+        if self.hardware_clock {
+            if self.ptp_status.as_ref().is_some_and(|status| status.faulty) {
+                self.fallback.ptp4l_faulty(since);
+            }
+            self.fallback.handle_timeout(since);
         }
-        self.fallback.handle_timeout(since);
         if self.steer_pending && !self.switched_at.is_some_and(|at| since < at + SWITCH_AGAIN) {
             self.steer_profile();
         }
@@ -3543,7 +3557,8 @@ impl Runtime {
             }
             return;
         }
-        if self.config.avb_lite == LiteChoice::Off {
+        // Not where AVB Lite is off, nor runs for want of a hardware clock.
+        if self.config.avb_lite == LiteChoice::Off || !self.hardware_clock {
             return;
         }
         let since = self.elapsed();
@@ -3667,7 +3682,9 @@ impl Runtime {
             ));
             return;
         }
-        let profile = if self.lite.is_some() || self.config.avb_lite == LiteChoice::On {
+        let profile = if self.lite.is_some()
+            || (self.config.avb_lite == LiteChoice::On && self.hardware_clock)
+        {
             Profile::Lite
         } else {
             Profile::Gptp
@@ -4584,7 +4601,13 @@ impl Runtime {
         let ptp = self.ptp_status.as_ref();
         let offset = ptp.and_then(|status| status.offset);
         let gptp_runs = ptp.is_some_and(|status| !status.end_to_end);
-        let mut flags = LiteFlags::CAPABLE | LiteFlags::EGRESS_VALID;
+        // AVB Lite needs a hardware clock: without one an interface is not
+        // capable of it.
+        let mut flags = if self.hardware_clock {
+            LiteFlags::CAPABLE | LiteFlags::EGRESS_VALID
+        } else {
+            LiteFlags::empty()
+        };
         if self.lite.is_some() {
             flags |= LiteFlags::ACTIVE;
         }
