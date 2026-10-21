@@ -13,7 +13,7 @@ pub use elsewhere::*;
 
 #[cfg(unix)]
 mod unix {
-    use std::collections::{HashMap, HashSet};
+    use std::collections::HashMap;
     use std::io::ErrorKind;
     use std::os::unix::net::{UnixListener, UnixStream};
     use std::path::PathBuf;
@@ -23,6 +23,7 @@ mod unix {
     use std::thread::JoinHandle;
     use std::time::Duration;
 
+    use avb_mrp::msrp::{ListenerState, TalkerDeclaration};
     use avb_mrp::sharing::{self, Notice, Request};
 
     /// Where a program sharing the participant is told.
@@ -139,7 +140,14 @@ mod unix {
     /// it declared.
     struct Sharer {
         writer: UnixStream,
-        streams: HashSet<u64>,
+        streams: HashMap<u64, Declared>,
+    }
+
+    /// A stream a program declared: its Talker Advertise, and the listeners
+    /// it was last told of.
+    struct Declared {
+        declaration: TalkerDeclaration,
+        told: Option<ListenerState>,
     }
 
     /// The programs sharing the participant, by connection.
@@ -154,15 +162,22 @@ mod unix {
                 id,
                 Sharer {
                     writer,
-                    streams: HashSet::new(),
+                    streams: HashMap::new(),
                 },
             );
         }
 
-        /// Notes that `id` declared `stream_id`.
-        pub fn declared(&mut self, id: u64, stream_id: u64) {
+        /// Notes that `id` declared `declaration`, of which it knows no
+        /// listener yet.
+        pub fn declared(&mut self, id: u64, declaration: TalkerDeclaration) {
             if let Some(sharer) = self.sharers.get_mut(&id) {
-                sharer.streams.insert(stream_id);
+                sharer.streams.insert(
+                    declaration.stream_id,
+                    Declared {
+                        declaration,
+                        told: None,
+                    },
+                );
             }
         }
 
@@ -170,14 +185,14 @@ mod unix {
         pub fn withdrawn(&mut self, id: u64, stream_id: u64) -> bool {
             self.sharers
                 .get_mut(&id)
-                .is_some_and(|sharer| sharer.streams.remove(&stream_id))
+                .is_some_and(|sharer| sharer.streams.remove(&stream_id).is_some())
         }
 
         /// `id` went: the streams it had declared.
         pub fn close(&mut self, id: u64) -> Vec<u64> {
             self.sharers
                 .remove(&id)
-                .map(|sharer| sharer.streams.into_iter().collect())
+                .map(|sharer| sharer.streams.into_keys().collect())
                 .unwrap_or_default()
         }
 
@@ -187,7 +202,7 @@ mod unix {
         pub fn forget_streams(&mut self) -> Vec<u64> {
             self.sharers
                 .values_mut()
-                .flat_map(|sharer| sharer.streams.drain())
+                .flat_map(|sharer| sharer.streams.drain().map(|(stream_id, _)| stream_id))
                 .collect()
         }
 
@@ -195,7 +210,7 @@ mod unix {
         pub fn streams(&self) -> Vec<u64> {
             self.sharers
                 .values()
-                .flat_map(|sharer| sharer.streams.iter().copied())
+                .flat_map(|sharer| sharer.streams.keys().copied())
                 .collect()
         }
 
@@ -203,8 +218,36 @@ mod unix {
         pub fn owner(&self, stream_id: u64) -> Option<u64> {
             self.sharers
                 .iter()
-                .find(|(_, sharer)| sharer.streams.contains(&stream_id))
+                .find(|(_, sharer)| sharer.streams.contains_key(&stream_id))
                 .map(|(id, _)| *id)
+        }
+
+        /// The Talker Advertise a program declared for `stream_id`.
+        pub fn declaration(&self, stream_id: u64) -> Option<TalkerDeclaration> {
+            self.sharers
+                .values()
+                .find_map(|sharer| sharer.streams.get(&stream_id))
+                .map(|declared| declared.declaration)
+        }
+
+        /// Tells the program that declared `stream_id` its listeners'
+        /// `state`, unless that is what it was told last.
+        pub fn tell_listener(&mut self, stream_id: u64, state: Option<ListenerState>) {
+            let Some(owner) = self.owner(stream_id) else {
+                return;
+            };
+            let Some(declared) = self
+                .sharers
+                .get_mut(&owner)
+                .and_then(|sharer| sharer.streams.get_mut(&stream_id))
+            else {
+                return;
+            };
+            if declared.told == state {
+                return;
+            }
+            declared.told = state;
+            self.tell(owner, Notice::Listener { stream_id, state });
         }
 
         /// Tells `id` `notice`, dropping it if it can no longer be told.
@@ -237,16 +280,33 @@ mod unix {
     #[cfg(test)]
     mod tests {
         use super::*;
-        use avb_mrp::msrp::ListenerState;
+        use atdecc::MacAddress;
+
+        fn talker(stream_id: u64) -> TalkerDeclaration {
+            TalkerDeclaration {
+                stream_id,
+                destination: MacAddress([0x91, 0xe0, 0xf0, 0x00, 0x63, 0x26]),
+                vlan_id: 2,
+                max_frame_size: 224,
+                max_interval_frames: 1,
+                priority: 3,
+                rank: true,
+                accumulated_latency: 500_000,
+                failure: None,
+                event: avb_mrp::Event::New,
+            }
+        }
 
         #[test]
         fn sharers_keep_their_streams() {
             let (ours, mut theirs) = UnixStream::pair().unwrap();
             let mut sharers = Sharers::default();
             sharers.open(1, ours);
-            sharers.declared(1, 0x77);
+            sharers.declared(1, talker(0x77));
             assert_eq!(sharers.owner(0x77), Some(1));
             assert_eq!(sharers.owner(0x78), None);
+            assert_eq!(sharers.declaration(0x77), Some(talker(0x77)));
+            assert_eq!(sharers.declaration(0x78), None);
             sharers.tell(
                 1,
                 Notice::Listener {
@@ -264,8 +324,41 @@ mod unix {
             assert!(!sharers.withdrawn(1, 0x78));
             assert_eq!(sharers.forget_streams(), [0x77]);
             assert!(sharers.streams().is_empty());
-            sharers.declared(1, 0x79);
+            sharers.declared(1, talker(0x79));
             assert_eq!(sharers.close(1), [0x79]);
+        }
+
+        #[test]
+        fn a_sharer_hears_of_its_listeners_once_each_change() {
+            let (ours, mut theirs) = UnixStream::pair().unwrap();
+            let mut sharers = Sharers::default();
+            sharers.open(1, ours);
+            sharers.declared(1, talker(0x77));
+            // None is what a new stream starts from, so nothing goes.
+            sharers.tell_listener(0x77, None);
+            sharers.tell_listener(0x77, Some(ListenerState::Ready));
+            sharers.tell_listener(0x77, Some(ListenerState::Ready));
+            sharers.tell_listener(0x77, None);
+            // Nobody declared this one.
+            sharers.tell_listener(0x78, Some(ListenerState::Ready));
+            drop(sharers);
+            let mut told = Vec::new();
+            while let Ok(notice) = sharing::read_notice(&mut theirs) {
+                told.push(notice);
+            }
+            assert_eq!(
+                told,
+                [
+                    Notice::Listener {
+                        stream_id: 0x77,
+                        state: Some(ListenerState::Ready),
+                    },
+                    Notice::Listener {
+                        stream_id: 0x77,
+                        state: None,
+                    },
+                ]
+            );
         }
     }
 }
@@ -275,6 +368,7 @@ mod unix {
 mod elsewhere {
     use std::sync::mpsc::Sender;
 
+    use avb_mrp::msrp::{ListenerState, TalkerDeclaration};
     use avb_mrp::sharing::{Notice, Request};
 
     /// No program to tell.
@@ -303,7 +397,7 @@ mod elsewhere {
         pub fn open(&mut self, _id: u64, writer: Writer) {
             match writer {}
         }
-        pub fn declared(&mut self, _id: u64, _stream_id: u64) {}
+        pub fn declared(&mut self, _id: u64, _declaration: TalkerDeclaration) {}
         pub fn withdrawn(&mut self, _id: u64, _stream_id: u64) -> bool {
             false
         }
@@ -319,6 +413,10 @@ mod elsewhere {
         pub fn owner(&self, _stream_id: u64) -> Option<u64> {
             None
         }
+        pub fn declaration(&self, _stream_id: u64) -> Option<TalkerDeclaration> {
+            None
+        }
+        pub fn tell_listener(&mut self, _stream_id: u64, _state: Option<ListenerState>) {}
         pub fn tell(&mut self, _id: u64, _notice: Notice) {}
         pub fn tell_all(&mut self, _notice: Notice) {}
         pub fn close_all(&mut self) {}

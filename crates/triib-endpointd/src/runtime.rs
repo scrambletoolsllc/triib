@@ -344,6 +344,8 @@ struct InputState {
     /// The clock its stream carries, which the entity's talkers follow
     /// while it is the clock source.
     recovered: RecoveredClock,
+    /// The counters its entity was last given.
+    counters: [u32; 32],
 }
 
 /// One of this computer's entities: a talker, a listener, or a device
@@ -1869,6 +1871,7 @@ impl Runtime {
                         msrp::attribute::TALKER_ADVERTISE,
                         &stream_id.to_be_bytes(),
                     );
+                    self.talker_heard(stream_id);
                 }
             }
             Input::Link(link) => {
@@ -2307,9 +2310,8 @@ impl Runtime {
             Some(state) => self.listener_states.insert(stream_id, state),
             None => self.listener_states.remove(&stream_id),
         };
-        if let Some(owner) = self.sharers.owner(stream_id) {
-            self.sharers
-                .tell(owner, Notice::Listener { stream_id, state });
+        if self.sharers.owner(stream_id).is_some() {
+            self.tell_sharer(stream_id);
             return;
         }
         let ready = state.is_some_and(ListenerState::ready);
@@ -2337,17 +2339,11 @@ impl Runtime {
                     msrp::talker_value(&declaration),
                     None,
                 );
-                self.sharers.declared(id, stream_id);
-                // Listeners already there for it.
-                if let Some(state) = self.listener_states.get(&stream_id).copied() {
-                    self.sharers.tell(
-                        id,
-                        Notice::Listener {
-                            stream_id,
-                            state: Some(state),
-                        },
-                    );
-                }
+                self.sharers.declared(id, declaration);
+                // Our inputs settled on it listen, and it hears of them and
+                // of listeners already there for it.
+                self.talker_heard(stream_id);
+                self.tell_sharer(stream_id);
             }
             Request::Withdraw(stream_id) => {
                 if self.sharers.withdrawn(id, stream_id) {
@@ -2356,9 +2352,42 @@ impl Runtime {
                         msrp::attribute::TALKER_ADVERTISE,
                         &stream_id.to_be_bytes(),
                     );
+                    self.talker_heard(stream_id);
                 }
             }
         }
+    }
+
+    /// Tells the program sharing the port that declared `stream_id` of its
+    /// listeners: those on the network as the port registers them, merged
+    /// with ours here, which are ready as its frames reach them as they
+    /// leave (35.2.4.4.1).
+    fn tell_sharer(&mut self, stream_id: u64) {
+        let remote = self.listener_states.get(&stream_id).copied();
+        let state = if self.local_listeners(stream_id) == 0 {
+            remote
+        } else {
+            Some(match remote {
+                Some(ListenerState::AskingFailed | ListenerState::ReadyFailed) => {
+                    ListenerState::ReadyFailed
+                }
+                _ => ListenerState::Ready,
+            })
+        };
+        self.sharers.tell_listener(stream_id, state);
+    }
+
+    /// How many of our inputs listen to `stream_id`.
+    fn local_listeners(&self, stream_id: u64) -> usize {
+        self.ins()
+            .into_iter()
+            .filter(|input| {
+                self.input(*input).listener.is_some()
+                    && self
+                        .input_stream(*input)
+                        .is_some_and(|stream| stream.stream_id.0 == stream_id)
+            })
+            .count()
     }
 
     /// Starts an output's stream when a listener is ready for it, on the
@@ -2376,16 +2405,7 @@ impl Runtime {
             .get(&stream_id.0)
             .copied()
             .unwrap_or(false);
-        let local = self
-            .ins()
-            .into_iter()
-            .filter(|input| {
-                self.input(*input).listener.is_some()
-                    && self
-                        .input_stream(*input)
-                        .is_some_and(|stream| stream.stream_id == stream_id)
-            })
-            .count();
+        let local = self.local_listeners(stream_id.0);
         let listeners = usize::from(remote) + local;
         let ready = listeners > 0;
         self.endpoints[out.0].entity.set_output_reservation(
@@ -2508,9 +2528,10 @@ impl Runtime {
     }
 
     /// Declares a listener endpoint's input as its talker's declaration
-    /// allows, and listens when it is advertised. A talker of ours needs
-    /// no reservation, as the bridge never sends our own declarations back
-    /// to us; its frames reach the listener as they leave.
+    /// allows, and listens when it is advertised. A talker here, ours or a
+    /// program's sharing the port, needs no reservation, as the bridge
+    /// never sends our own declarations back to us; its frames reach the
+    /// listener as they leave.
     fn update_listener(&mut self, input: In) {
         if self.lite.is_some() {
             self.lite_update_listener(input);
@@ -2521,10 +2542,12 @@ impl Runtime {
             return;
         };
         let own = self.own_talker(stream.stream_id.0);
+        let shared = self.sharers.declaration(stream.stream_id.0);
+        let here = own.is_some() || shared.is_some();
         let declaration = match own {
             Some(talker) if self.addressed() => self.declaration(talker),
             Some(_) => None,
-            None => self.talkers.get(&stream.stream_id.0).copied(),
+            None => shared.or_else(|| self.talkers.get(&stream.stream_id.0).copied()),
         };
         let key = stream.stream_id.0.to_be_bytes().to_vec();
         let (state, reservation) = match declaration {
@@ -2546,7 +2569,7 @@ impl Runtime {
             None => (None, InputReservation::default()),
         };
         match state {
-            Some(_) if own.is_some() => {
+            Some(_) if here => {
                 if let Some(key) = self.input_mut(input).declared.take() {
                     self.port
                         .msrp
@@ -2679,10 +2702,14 @@ impl Runtime {
         }
     }
 
-    /// Our talkers, again, after one of our listeners started or stopped.
+    /// Our talkers, again, after one of our listeners started or stopped,
+    /// and the programs sharing the port hear of it.
     fn update_own_talkers(&mut self) {
         for out in self.outs() {
             self.update_talker(out);
+        }
+        for stream_id in self.sharers.streams() {
+            self.tell_sharer(stream_id);
         }
     }
 
@@ -2900,25 +2927,32 @@ impl Runtime {
                     counters,
                 );
             }
-            for (at, input) in endpoint.inputs.iter().enumerate() {
-                let Some(listener) = &input.listener else {
-                    continue;
-                };
-                let stats = listener.stats();
-                let mut counters = [0; 32];
-                counters[0] = low(stats.media_locked);
-                counters[1] = low(stats.media_unlocked);
-                counters[2] = low(stats.interrupted);
-                counters[3] = low(stats.sequence_mismatches);
-                counters[6] = low(stats.frames_received);
-                counters[8] = low(stats.unsupported_formats);
-                counters[9] = low(stats.late);
-                counters[10] = low(stats.early);
-                counters[11] = low(stats.frames_received);
+            for (at, input) in endpoint.inputs.iter_mut().enumerate() {
+                match &input.listener {
+                    Some(listener) => {
+                        let stats = listener.stats();
+                        let counters = &mut input.counters;
+                        *counters = [0; 32];
+                        counters[0] = low(stats.media_locked);
+                        counters[1] = low(stats.media_unlocked);
+                        counters[2] = low(stats.interrupted);
+                        counters[3] = low(stats.sequence_mismatches);
+                        counters[6] = low(stats.frames_received);
+                        counters[8] = low(stats.unsupported_formats);
+                        counters[9] = low(stats.late);
+                        counters[10] = low(stats.early);
+                        counters[11] = low(stats.frames_received);
+                    }
+                    // A listener that stopped while locked unlocked as it
+                    // stopped, so a controller reading the counters sees
+                    // the stream gone.
+                    None if input.counters[0] > input.counters[1] => input.counters[1] += 1,
+                    None => continue,
+                }
                 endpoint.entity.set_counters(
                     atdecc::DescriptorType::STREAM_INPUT,
                     at as u16,
-                    counters,
+                    input.counters,
                 );
             }
         }
