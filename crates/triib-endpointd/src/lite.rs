@@ -61,12 +61,6 @@ const PEERLESS: Duration = Duration::from_secs(10);
 /// unanswered still says nothing of the peer: twice its default
 /// fault_reset_interval, 2^4 s, for it to reset and ask again.
 const FAULT_GRACE: Duration = Duration::from_secs(32);
-/// The first wait before trying gPTP again from AVB Lite, the longest
-/// after tries that fell back again, and how long gPTP must hold for the
-/// next fallback to wait the first again.
-const RETRY_FIRST: Duration = Duration::from_secs(60);
-const RETRY_LONGEST: Duration = Duration::from_secs(30 * 60);
-const RETRY_HELD: Duration = Duration::from_secs(5 * 60);
 
 /// A Pdelay_Req from `identity` (clock identity, port 1) with the
 /// Endpoint Declaration TLV, as esp_ptp sends its own and its beacons.
@@ -436,53 +430,6 @@ impl Fallback {
     }
 }
 
-/// When to try gPTP again from AVB Lite fallen back to as no gPTP peer
-/// answered, which ptp4l's own lasting fault makes too: once one gPTP peer
-/// asks for peer delay without the Endpoint Declaration TLV, as an AVB
-/// bridge does every second, after a wait each try that falls back again
-/// soon doubles.
-#[derive(Debug, Default)]
-pub struct Retry {
-    wait: Duration,
-    at: Option<Duration>,
-    tried_at: Option<Duration>,
-}
-
-impl Retry {
-    /// The endpoints fell back to AVB Lite for `reason`: only peers not
-    /// answering is tried again.
-    pub fn fell_back(&mut self, now: Duration, reason: FallbackReason) {
-        if reason != FallbackReason::PDELAY_UNANSWERED {
-            self.at = None;
-            return;
-        }
-        let again = self.tried_at.is_some_and(|tried| now < tried + RETRY_HELD);
-        self.wait = if again {
-            (self.wait * 2).clamp(RETRY_FIRST, RETRY_LONGEST)
-        } else {
-            RETRY_FIRST
-        };
-        self.at = Some(now + self.wait);
-    }
-
-    /// How long it waits before trying gPTP again, while it waits.
-    pub fn wait(&self) -> Option<Duration> {
-        self.at.map(|_| self.wait)
-    }
-
-    /// Whether to try gPTP now, with `gptp_peers` peers heard asking for
-    /// peer delay: one, as an AVB bridge, shows the link has one.
-    pub fn due(&self, now: Duration, gptp_peers: usize) -> bool {
-        self.at.is_some_and(|at| now >= at) && gptp_peers == 1
-    }
-
-    /// It tries gPTP now.
-    pub fn tried(&mut self, now: Duration) {
-        self.at = None;
-        self.tried_at = Some(now);
-    }
-}
-
 /// An AECP vendor unique command carrying one MSRP message as CVU SRP
 /// (profile 6), from `sender`.
 pub fn cvu_command(sender: EntityId, sequence: u16, message: &mrpdu::Message) -> Option<Vec<u8>> {
@@ -769,47 +716,6 @@ mod tests {
         assert_eq!(fallback.reason(), None);
         fallback.handle_timeout(Duration::from_secs(68));
         assert_eq!(fallback.reason(), Some(FallbackReason::PDELAY_UNANSWERED));
-    }
-
-    #[test]
-    fn gptp_is_tried_again_once_a_bridge_asks() {
-        let seconds = Duration::from_secs;
-        let mut retry = Retry::default();
-        retry.fell_back(seconds(0), FallbackReason::PDELAY_UNANSWERED);
-        assert_eq!(retry.wait(), Some(seconds(60)));
-        assert!(!retry.due(seconds(59), 1));
-        assert!(retry.due(seconds(60), 1));
-        // No peer asking, or two as a flooding switch, is no AVB bridge.
-        assert!(!retry.due(seconds(60), 0));
-        assert!(!retry.due(seconds(60), 2));
-        // Falling back again soon after a try waits twice as long, up to
-        // half an hour.
-        retry.tried(seconds(60));
-        assert!(!retry.due(seconds(61), 1));
-        retry.fell_back(seconds(100), FallbackReason::PDELAY_UNANSWERED);
-        assert_eq!(retry.wait(), Some(seconds(120)));
-        let mut now = seconds(100);
-        for _ in 0..10 {
-            now += retry.wait().unwrap();
-            retry.tried(now);
-            retry.fell_back(now + seconds(10), FallbackReason::PDELAY_UNANSWERED);
-            now += seconds(10);
-        }
-        assert_eq!(retry.wait(), Some(seconds(30 * 60)));
-        // gPTP held five minutes: the next fallback waits a minute again.
-        retry.tried(now);
-        retry.fell_back(now + seconds(5 * 60), FallbackReason::PDELAY_UNANSWERED);
-        assert_eq!(retry.wait(), Some(seconds(60)));
-        // An AVB Lite endpoint on the link, or a choice, is not tried again.
-        for reason in [
-            FallbackReason::ENDPOINT_TLV,
-            FallbackReason::MULTIPLE_RESPONDERS,
-            FallbackReason::CONFIGURED,
-        ] {
-            retry.fell_back(now, reason);
-            assert_eq!(retry.wait(), None);
-            assert!(!retry.due(now + seconds(3600), 1));
-        }
     }
 
     #[test]

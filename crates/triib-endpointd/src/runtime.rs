@@ -860,8 +860,6 @@ pub struct Runtime {
     /// Sends whole frames, VLAN tag and all: AVB Lite's declarations.
     tagged: FrameSender,
     fallback: Fallback,
-    /// When to try gPTP again from AVB Lite.
-    gptp_retry: lite::Retry,
     /// AVB Lite, once the endpoints fell back to it.
     lite: Option<LiteMode>,
     /// This interface's clock identity, its link speed in Mb/s, and what
@@ -1199,7 +1197,6 @@ impl Runtime {
             tagged: FrameSender::open(&interface)?,
             ptp,
             fallback,
-            gptp_retry: lite::Retry::default(),
             lite: None,
             own_clock,
             link_speed,
@@ -2024,7 +2021,6 @@ impl Runtime {
         {
             self.enter_lite(reason);
         }
-        self.retry_gptp();
         self.lite_turn();
         while let Some((group, pdu)) = self.local_cvu.pop_front() {
             self.cvu_heard(self.mac, group, &pdu);
@@ -3377,15 +3373,6 @@ impl Runtime {
             }
         ));
         let since = self.elapsed();
-        self.gptp_retry.fell_back(since, reason);
-        if let Some(wait) = self.gptp_retry.wait()
-            && self.config.avb_lite == LiteChoice::Auto
-        {
-            log(format!(
-                "AVB Lite: trying AVB again in {} s, once an AVB bridge asks for peer delay",
-                wait.as_secs()
-            ));
-        }
         // Programs sharing the port declare by MSRP, which AVB Lite does
         // without: those running AVB Lite with it keep their streams and
         // listening, declared by CVU SRP from now on, and the others' go
@@ -3538,23 +3525,6 @@ impl Runtime {
         self.sharers.tell_unable(&Notice::Available);
         self.update_lite_status();
         self.steer_profile();
-    }
-
-    /// Tries AVB again from AVB Lite fallen back to as no gPTP peer
-    /// answered, once its wait is over and an AVB bridge asks for peer
-    /// delay: a fault of ptp4l's own that lasted falls back so too, and
-    /// the bridge's asking shows the link has one to follow.
-    fn retry_gptp(&mut self) {
-        let since = self.elapsed();
-        if self.lite.is_none()
-            || self.config.avb_lite != LiteChoice::Auto
-            || !self.gptp_retry.due(since, self.fallback.gptp_peers())
-        {
-            return;
-        }
-        self.gptp_retry.tried(since);
-        log("AVB Lite: an AVB bridge asks for peer delay, trying AVB again");
-        self.leave_lite();
     }
 
     /// Keeps EEE and PAUSE off the link, as the AVB Lite profile asks (6):
