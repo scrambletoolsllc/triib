@@ -83,6 +83,11 @@ All notable changes to triib. Versions follow
 - This computer's entities answer for their AVB interface's counters:
   how often its link came up and went down, and how often its gPTP
   grandmaster changed, as Milan has a controller ask.
+- In AVB Lite, triib-endpointd hears other computers' CVU SRP on an
+  interface that drops frames of unregistered VLANs in hardware, as the
+  Intel I210 does: it holds the interface promiscuous while AVB Lite
+  runs, where before it heard them only while one of its inputs
+  listened.
 
 ### Development
 

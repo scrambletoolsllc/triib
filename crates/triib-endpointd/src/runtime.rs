@@ -3481,6 +3481,16 @@ impl Runtime {
         };
         lite.next_refresh = lite.refresh_after(since);
         self.lite = Some(lite);
+        // Other computers' CVU SRP comes tagged in the media VLAN, which an
+        // interface filtering VLANs drops unless it is promiscuous.
+        if profile::filters_vlans(&self.interface)
+            && let Err(error) = self.avtp.set_promiscuous(true)
+        {
+            log(format!(
+                "{}: cannot hear other computers' CVU SRP, not promiscuous: {error}",
+                self.interface
+            ));
+        }
         // Programs running AVB Lite with the port hear it does, before
         // where their copies go.
         let mode = self.mode();
@@ -3554,6 +3564,7 @@ impl Runtime {
         self.withdraw_lite_listening();
         self.withdraw_lite_shared();
         self.lite = None;
+        let _ = self.avtp.set_promiscuous(false);
         self.talkers.clear();
         self.ready_remotely.clear();
         self.listener_states.clear();

@@ -195,6 +195,21 @@ pub fn reset_unit(interface: &str) -> String {
     format!("triib-link-reset@{interface}.service")
 }
 
+/// Whether `interface` drops in hardware the frames of VLANs not
+/// registered with it, as the I210 does, so CVU SRP, tagged in the media
+/// VLAN, reaches a socket only with the interface promiscuous.
+pub fn filters_vlans(interface: &str) -> bool {
+    #[cfg(target_os = "linux")]
+    {
+        avb_net::interfaces::filters_vlans(interface).unwrap_or(false)
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = interface;
+        false
+    }
+}
+
 /// What `interface` does about EEE and PAUSE, where the system says.
 pub fn power(interface: &str) -> Option<avb_net::LinkPower> {
     #[cfg(target_os = "linux")]
