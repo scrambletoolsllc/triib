@@ -20,6 +20,14 @@ All notable changes to triib. Versions follow
   brings the whole stream forward with all its listeners.
 - A stream its talker says it sends with no known listener bound to it
   still shows, on a wire from the talker to its bridge.
+- On the network map, devices that found no AVB bridge and fell back to
+  AVB Lite hang under a dashed card for the non-AVB switch in front of
+  them, one for each PTP grandmaster they follow, with their streams
+  crossing it and their clock as AVB Lite runs it; their details say
+  why they fell back. Devices that run AVB Lite only, those set to it by
+  hand, and those on another gPTP domain sit in areas of their own, apart
+  from those off the tree for a fault, and each tree is labelled with
+  its gPTP domain.
 
 ### Linux
 

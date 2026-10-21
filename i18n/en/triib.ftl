@@ -505,6 +505,9 @@ stream-numbered = Stream { $index }
 netmap-bridge = Bridge
 # A bridge whose port is a Wi-Fi access point.
 netmap-access-point = Access point
+# A card standing in for the switches that take no part in AVB in front of
+# devices that found no AVB bridge and fell back to AVB Lite.
+netmap-plain-switch = Non-AVB switch
 netmap-device = Device
 netmap-this-computer = This computer
 netmap-connected = Connected
@@ -526,6 +529,14 @@ netmap-off-ptp = Not on the PTP tree
 # A device on a network running AVB Lite that does not run it.
 netmap-not-lite = Not in AVB Lite
 netmap-lite-not-reported = AVB Lite not reported
+# A gPTP domain's number. Also a label over a tree and over the devices on
+# another domain than the tree's, in capitals where the script has them.
+netmap-domain = gPTP domain { $domain }
+# Labels over devices running AVB Lite, in capitals where the script has
+# them: those whose interface supports no gPTP, and those the operator or a
+# controller set to it.
+netmap-lite-only = AVB Lite only
+netmap-lite-set = AVB Lite, set by hand
 # In step with the grandmaster's clock: short for in sync.
 netmap-synced = Sync
 netmap-not-synced = No sync
@@ -553,6 +564,11 @@ netmap-apart-cannot-listen = This computer cannot listen for gPTP on its interfa
 netmap-apart-on-this-computer = It runs on this computer; read it from another computer to see its gPTP state
 netmap-apart-not-lite = It does not run AVB Lite, so it does not follow the grandmaster
 netmap-apart-lite-unreported = It reports nothing of AVB Lite, so whom it follows is not known
+netmap-apart-other-domain = It runs gPTP on domain { $domain } and the tree on domain { $network }, so it does not follow the tree's grandmaster
+netmap-apart-lite-only = It runs AVB Lite only, taking no part in gPTP or SRP, so AVB bridges reserve nothing for its streams
+netmap-apart-lite-set = It runs AVB Lite because the operator or a controller set it to, taking no part in gPTP or SRP
+# What the card for the switches that take no part in AVB stands for.
+netmap-switch-state = Takes no part in AVB: it stands for the switches in front of the devices below, which found no AVB bridge and fell back to AVB Lite, following one PTP grandmaster
 netmap-clock-tree = Clock tree
 netmap-no-grandmaster = No grandmaster heard
 netmap-grandmaster-is = Grandmaster: { $grandmaster }
@@ -595,6 +611,7 @@ netmap-help-back = Click the background to go back to the overview.
 netmap-help-stream = Click a stream to inspect it, or the background to go back to the overview.
 netmap-help-ptp = In AVB Lite the clock flows end to end from the grandmaster to every device, through switches that take no part, so none are shown. A device is in sync while it follows the grandmaster within 50 µs. Click a device or its wire to inspect its clock; click the background to clear.
 netmap-help-clock = The clock flows from the grandmaster through each bridge to every node on the tree. A broken gray line is a link gPTP does not run on. Click a device or its wire to inspect its clock path; click the background to clear.
+netmap-help-lite = Devices that found no AVB bridge and fell back to AVB Lite hang under a dashed card standing for the switches in front of them, one for each PTP grandmaster they follow. Devices that run AVB Lite only or were set to, and devices on another gPTP domain, sit in areas of their own.
 netmap-help-media-clock = Media clock (CRF) streams only, drawn the same way as audio: a wire for each stream's frames on each link, colored by talker. Click a wire to inspect its stream, or a device to see its streams; click the background to clear.
 netmap-help-audio = Each wire is a stream's frames on a link, entering and leaving every bridge it crosses. A multicast stream has one wire as far as its listeners' paths run together and branches where they part; a unicast stream, as AVB Lite can send, has a wire of its own from the talker to each listener. Color is by talker: each talker has a hue, and each of its streams is a shade of it on every branch. Moving dots mean audio is flowing, even from a talker sending with no known listener; a still red line is a failed reservation and a still gray line is advertised with no listener ready; both stop where the reservation stops. Devices in the middle column connect straight to the grandmaster's bridge. Click a wire to inspect its stream, a shared wire to see all its listeners, or a device to see its streams; click the background to clear.
 

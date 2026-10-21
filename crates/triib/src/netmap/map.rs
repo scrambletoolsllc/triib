@@ -5,6 +5,8 @@
 //! dots while something flows: a wire for the frames on each link, so a
 //! multicast stream's listeners share one as far as their paths do and it
 //! branches where they part, while a unicast stream's each have their own.
+//! Each tree is labelled with its gPTP domain, and what is on no tree sits
+//! in bands by why: a fault, or each reason it is set apart by design.
 
 use std::cell::Cell as Memo;
 use std::cmp::Reverse;
@@ -35,7 +37,7 @@ use scramble_ui::{Scheme, blend, faded, motion};
 use super::{Card, Focus, Map, Paint, Status};
 use crate::app::Message;
 use crate::text::{fit, measure};
-use crate::topology::{NodeId, Topology};
+use crate::topology::{Apart, Kind, NodeId, Topology};
 
 /// A device card at its smallest, in a bridge's column.
 const DEVICE: Size = Size::new(200.0, 46.0);
@@ -75,9 +77,13 @@ const COMPACT_MARGIN: f32 = 16.0;
 /// The smallest the map is drawn before it takes the compact layout or
 /// scrolls; smaller, its text would be hard to read.
 const MIN_SCALE: f32 = 0.6;
-/// Around what is on no tree.
+/// Around what is on no tree, the room for each band's label, and between
+/// bands.
 const BAND_PADDING: f32 = 16.0;
 const BAND_LABEL: f32 = 36.0;
+const BAND_GAP: f32 = 16.0;
+/// In the compact layout, the room for a tree's label above it.
+const TREE_LABEL: f32 = 22.0;
 /// Between the dots moving along a wire.
 const STEP: f32 = 14.0;
 /// The time a dot takes to move one step, and the glow to pulse once.
@@ -221,8 +227,10 @@ struct Placement {
     cards: Vec<Option<Rectangle>>,
     /// Drawn as a bridge: rounder, with a larger name.
     hubs: Vec<bool>,
-    /// Around what is on no tree.
-    band: Option<Rectangle>,
+    /// Around what is on no tree, by why, each with its label.
+    bands: Vec<(Rectangle, String)>,
+    /// Each tree's label, by the middle of its left end.
+    labels: Vec<(Point, String)>,
     size: Size,
     /// Stacked under each other rather than in columns.
     compact: bool,
@@ -291,7 +299,7 @@ fn share(wires: &mut [Vec<Option<Wire>>], copies: &[(Leg, Leg)]) {
 /// Whether a node heads a column of its own: a bridge, or anything with
 /// nodes below it.
 fn is_head(topology: &Topology, node: NodeId) -> bool {
-    topology.nodes[node].kind == crate::topology::Kind::Bridge
+    topology.nodes[node].kind == Kind::Bridge
         || !topology.nodes[node].children.is_empty()
 }
 
@@ -389,6 +397,64 @@ fn gutter(lanes: usize) -> f32 {
     } else {
         ELBOW + (lanes - 1) as f32 * LANE + 10.0
     }
+}
+
+/// Why a node is on no tree, as its band tells: a fault, or by design.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum Band {
+    Fault,
+    Domain(u8),
+    LiteOnly,
+    LiteSet,
+}
+
+/// What is on no tree, in its bands: those set apart by a fault first, then
+/// each reason they were set apart by design, each band with its label.
+fn bands(topology: &Topology) -> Vec<(String, Vec<NodeId>)> {
+    let mut bands: Vec<(Band, Vec<NodeId>)> = Vec::new();
+    for &node in &topology.apart {
+        let band = match topology.nodes[node].apart {
+            Some(Apart::OtherDomain(domain)) => Band::Domain(domain),
+            Some(Apart::LiteOnly) => Band::LiteOnly,
+            Some(Apart::LiteSet) => Band::LiteSet,
+            _ => Band::Fault,
+        };
+        match bands.iter_mut().find(|(other, _)| *other == band) {
+            Some((_, nodes)) => nodes.push(node),
+            None => bands.push((band, vec![node])),
+        }
+    }
+    bands.sort_by_key(|(band, _)| *band);
+    bands
+        .into_iter()
+        .map(|(band, nodes)| {
+            let label = match band {
+                Band::Fault if topology.ptp => crate::fl!("netmap-off-ptp"),
+                Band::Fault => crate::fl!("netmap-off-tree"),
+                Band::Domain(domain) => crate::fl!("netmap-domain", domain = domain),
+                Band::LiteOnly => crate::fl!("netmap-lite-only"),
+                Band::LiteSet => crate::fl!("netmap-lite-set"),
+            };
+            (label, nodes)
+        })
+        .collect()
+}
+
+/// A tree's label: its gPTP domain where known, or AVB Lite for the
+/// switches that take no part in AVB.
+fn tree_label(topology: &Topology, root: NodeId) -> Option<String> {
+    match topology.nodes[root].kind {
+        Kind::Switch { .. } => Some("AVB Lite".to_owned()),
+        _ => topology.nodes[root]
+            .domain
+            .map(|domain| crate::fl!("netmap-domain", domain = domain)),
+    }
+}
+
+/// A label as the map writes it: in capitals where the script has them,
+/// gPTP kept as written.
+fn label_text(label: &str) -> String {
+    crate::i18n::uppercase(label).replace("GPTP", "gPTP")
 }
 
 /// The wide layout: each tree with its grandmaster at the top, the bridges
@@ -522,6 +588,17 @@ fn fan(map: &Map, width: f32) -> Placement {
         .collect();
 
     let mut cards = vec![None; count];
+    let mut labels = Vec::new();
+    // The trees start lower where any has a label, which sits level with
+    // the bands' labels.
+    let top = if groves
+        .iter()
+        .any(|grove| tree_label(topology, grove.root).is_some())
+    {
+        MARGIN + BAND_LABEL
+    } else {
+        MARGIN
+    };
     // Where each grandmaster's own column starts.
     let mut middle: HashMap<NodeId, f32> = HashMap::new();
     let mut left = MARGIN;
@@ -581,10 +658,13 @@ fn fan(map: &Map, width: f32) -> Placement {
         let shift = left - low;
 
         let root_card = Rectangle::new(
-            Point::new(root_left + shift, MARGIN),
+            Point::new(root_left + shift, top),
             Size::new(root_right - root_left, heights[root]),
         );
         cards[root] = Some(root_card);
+        if let Some(label) = tree_label(topology, root) {
+            labels.push((Point::new(root_card.x, MARGIN + BAND_LABEL / 2.0), label));
+        }
         let most_arches = columns
             .iter()
             .map(|&(head, ..)| count_of(&arches, head))
@@ -636,14 +716,15 @@ fn fan(map: &Map, width: f32) -> Placement {
         .map(|card| card.y + card.height)
         .fold(MARGIN, f32::max);
 
-    // What is on no tree: to the right in a column, or below in rows.
+    // What is on no tree, in its bands: to the right in a column, or below
+    // in rows, the bands one under another.
     let apart_width = topology
         .apart
         .iter()
         .map(|&node| natural[node])
         .fold(DEVICE.width, f32::max)
         .min(WIDEST);
-    let mut band = None;
+    let mut placed_bands = Vec::new();
     if !topology.apart.is_empty() {
         let band_width = apart_width + 2.0 * BAND_PADDING;
         let beside = if groves.is_empty() {
@@ -651,7 +732,7 @@ fn fan(map: &Map, width: f32) -> Placement {
         } else {
             trees_right + TREE_GAP
         };
-        let (origin, per_row) = if beside + band_width + MARGIN <= width {
+        let (mut origin, per_row) = if beside + band_width + MARGIN <= width {
             (Point::new(beside, MARGIN), 1)
         } else {
             let room = (trees_right - MARGIN).max(band_width);
@@ -665,29 +746,33 @@ fn fan(map: &Map, width: f32) -> Placement {
             };
             (Point::new(MARGIN, top), per_row)
         };
-        for (place, &node) in topology.apart.iter().enumerate() {
-            let (row, column) = (place / per_row, place % per_row);
-            cards[node] = Some(Rectangle::new(
-                Point::new(
-                    origin.x + BAND_PADDING + column as f32 * (apart_width + COLUMN_GAP),
-                    origin.y + BAND_LABEL + row as f32 * (DEVICE.height + STACK_GAP),
-                ),
-                Size::new(apart_width, DEVICE.height),
-            ));
+        for (label, nodes) in bands(topology) {
+            for (place, &node) in nodes.iter().enumerate() {
+                let (row, column) = (place / per_row, place % per_row);
+                cards[node] = Some(Rectangle::new(
+                    Point::new(
+                        origin.x + BAND_PADDING + column as f32 * (apart_width + COLUMN_GAP),
+                        origin.y + BAND_LABEL + row as f32 * (DEVICE.height + STACK_GAP),
+                    ),
+                    Size::new(apart_width, DEVICE.height),
+                ));
+            }
+            let rows = nodes.len().div_ceil(per_row);
+            let columns = nodes.len().min(per_row);
+            let band = Rectangle {
+                x: origin.x,
+                y: origin.y,
+                width: 2.0 * BAND_PADDING
+                    + columns as f32 * apart_width
+                    + columns.saturating_sub(1) as f32 * COLUMN_GAP,
+                height: BAND_LABEL
+                    + rows as f32 * DEVICE.height
+                    + rows.saturating_sub(1) as f32 * STACK_GAP
+                    + BAND_PADDING,
+            };
+            origin.y += band.height + BAND_GAP;
+            placed_bands.push((band, label));
         }
-        let rows = topology.apart.len().div_ceil(per_row);
-        let columns = topology.apart.len().min(per_row);
-        band = Some(Rectangle {
-            x: origin.x,
-            y: origin.y,
-            width: 2.0 * BAND_PADDING
-                + columns as f32 * apart_width
-                + columns.saturating_sub(1) as f32 * COLUMN_GAP,
-            height: BAND_LABEL
-                + rows as f32 * DEVICE.height
-                + rows.saturating_sub(1) as f32 * STACK_GAP
-                + BAND_PADDING,
-        });
     }
 
     let mut wires: Vec<Vec<Option<Wire>>> = map
@@ -810,18 +895,19 @@ fn fan(map: &Map, width: f32) -> Placement {
         .iter()
         .flatten()
         .map(|card| card.x + card.width)
-        .chain(band.map(|band| band.x + band.width))
+        .chain(placed_bands.iter().map(|(band, _)| band.x + band.width))
         .fold(trees_right, f32::max);
     let bottom = cards
         .iter()
         .flatten()
         .map(|card| card.y + card.height)
-        .chain(band.map(|band| band.y + band.height))
+        .chain(placed_bands.iter().map(|(band, _)| band.y + band.height))
         .fold(MARGIN, f32::max);
     Placement {
         cards,
         hubs,
-        band,
+        bands: placed_bands,
+        labels,
         size: Size::new(right + MARGIN, bottom + MARGIN),
         compact: false,
         wires: wires
@@ -914,7 +1000,12 @@ fn compact(map: &Map) -> Placement {
         }
     }
     let mut y = COMPACT_MARGIN;
+    let mut labels = Vec::new();
     for &root in &topology.roots {
+        if let Some(label) = tree_label(topology, root) {
+            labels.push((Point::new(COMPACT_MARGIN, y + 8.0), label));
+            y += TREE_LABEL;
+        }
         put(
             root,
             COMPACT_MARGIN,
@@ -926,28 +1017,32 @@ fn compact(map: &Map) -> Placement {
         );
         y += 2.0 * COMPACT_GAP;
     }
-    let mut band = None;
+    let mut placed_bands = Vec::new();
     if !topology.apart.is_empty() {
-        let top = y;
         let width = topology
             .apart
             .iter()
             .map(|&node| sizes[node].width)
             .fold(DEVICE.width, f32::max);
-        let mut y = top + BAND_LABEL;
-        for &node in &topology.apart {
-            cards[node] = Some(Rectangle::new(
-                Point::new(COMPACT_MARGIN + BAND_PADDING, y),
-                Size::new(width, DEVICE.height),
-            ));
-            y += DEVICE.height + STACK_GAP;
+        for (label, nodes) in bands(topology) {
+            let top = y;
+            y += BAND_LABEL;
+            for &node in &nodes {
+                cards[node] = Some(Rectangle::new(
+                    Point::new(COMPACT_MARGIN + BAND_PADDING, y),
+                    Size::new(width, DEVICE.height),
+                ));
+                y += DEVICE.height + STACK_GAP;
+            }
+            let band = Rectangle {
+                x: COMPACT_MARGIN,
+                y: top,
+                width: width + 2.0 * BAND_PADDING,
+                height: y - STACK_GAP - top + BAND_PADDING,
+            };
+            y = band.y + band.height + BAND_GAP;
+            placed_bands.push((band, label));
         }
-        band = Some(Rectangle {
-            x: COMPACT_MARGIN,
-            y: top,
-            width: width + 2.0 * BAND_PADDING,
-            height: y - STACK_GAP - top + BAND_PADDING,
-        });
     }
 
     let mut wires: Vec<Vec<Option<Wire>>> = map
@@ -983,18 +1078,19 @@ fn compact(map: &Map) -> Placement {
         .iter()
         .flatten()
         .map(|card| card.x + card.width)
-        .chain(band.map(|band| band.x + band.width))
+        .chain(placed_bands.iter().map(|(band, _)| band.x + band.width))
         .fold(COMPACT_MARGIN, f32::max);
     let bottom = cards
         .iter()
         .flatten()
         .map(|card| card.y + card.height)
-        .chain(band.map(|band| band.y + band.height))
+        .chain(placed_bands.iter().map(|(band, _)| band.y + band.height))
         .fold(COMPACT_MARGIN, f32::max);
     Placement {
         cards,
         hubs,
-        band,
+        bands: placed_bands,
+        labels,
         size: Size::new(right + COMPACT_MARGIN, bottom + COMPACT_MARGIN),
         compact: true,
         wires: wires
@@ -1283,23 +1379,10 @@ impl NetMap {
     }
 
     fn draw_still(&self, frame: &mut Frame, colors: &Colors) {
-        if let Some(band) = self.placement.band {
-            frame.stroke(
-                &Path::rounded_rectangle(band.position(), band.size(), border::Radius::from(16.0)),
-                Stroke::default()
-                    .with_color(colors.border)
-                    .with_width(1.0)
-                    .dashed(&[5.0, 4.0]),
-            );
+        let label = |frame: &mut Frame, position: Point, text: &str| {
             frame.fill_text(Text {
-                // In capitals where the script has them, gPTP kept as written.
-                content: crate::i18n::uppercase(&if self.map.topology.ptp {
-                    crate::fl!("netmap-off-ptp")
-                } else {
-                    crate::fl!("netmap-off-tree")
-                })
-                .replace("GPTP", "gPTP"),
-                position: Point::new(band.x + BAND_PADDING, band.y + BAND_LABEL / 2.0),
+                content: label_text(text),
+                position,
                 color: colors.muted,
                 size: Pixels(11.0),
                 line_height: LineHeight::Absolute(Pixels(16.0)),
@@ -1307,6 +1390,23 @@ impl NetMap {
                 align_y: Vertical::Center,
                 ..Text::default()
             });
+        };
+        for (band, text) in &self.placement.bands {
+            frame.stroke(
+                &Path::rounded_rectangle(band.position(), band.size(), border::Radius::from(16.0)),
+                Stroke::default()
+                    .with_color(colors.border)
+                    .with_width(1.0)
+                    .dashed(&[5.0, 4.0]),
+            );
+            label(
+                frame,
+                Point::new(band.x + BAND_PADDING, band.y + BAND_LABEL / 2.0),
+                text,
+            );
+        }
+        for (position, text) in &self.placement.labels {
+            label(frame, *position, text);
         }
 
         for &index in &self.order {
@@ -1719,7 +1819,7 @@ mod tests {
 
     use super::super::{Line, NodeKey, paints};
     use super::*;
-    use crate::topology::{EntityReport, HostReport, InterfaceReport, Kind, Route};
+    use crate::topology::{EntityReport, HostReport, InterfaceReport, Route};
 
     fn info(grandmaster: ClockIdentity, delay: u32) -> AvbInfo {
         let mut payload = [0u8; 20];
@@ -1822,6 +1922,7 @@ mod tests {
                     Kind::Host => (Icon::Computer, crate::fl!("netmap-this-computer")),
                     Kind::Entity { .. } => (Icon::GraphicEq, node.name.clone()),
                     Kind::Clock => (Icon::Schedule, node.name.clone()),
+                    Kind::Switch { .. } => (Icon::Lan, crate::fl!("netmap-plain-switch")),
                 };
                 let mut sending = streams
                     .iter()
@@ -1838,7 +1939,15 @@ mod tests {
                     .iter()
                     .any(|bound| Some(bound.1) == entity && bound.2 == Status::Failed);
                 let (subtitle, paint) = match (clock, node.kind, node.apart) {
-                    (_, _, Some(_)) => (crate::fl!("netmap-off-tree"), Paint::Failed),
+                    (true, _, Some(apart)) if apart.by_design() => {
+                        (crate::fl!("netmap-synced"), Paint::Muted)
+                    }
+                    (_, _, Some(apart)) if !apart.by_design() => {
+                        (crate::fl!("netmap-off-tree"), Paint::Failed)
+                    }
+                    (true, Kind::Switch { .. }, _) => {
+                        ("AVB Lite PTP, domain 0".to_owned(), Paint::Muted)
+                    }
                     (true, _, _) if node.parent.is_none() => {
                         (crate::fl!("avb-interface-grandmaster"), Paint::Clock)
                     }
@@ -1874,7 +1983,11 @@ mod tests {
                     tag: String::new(),
                     subtitle,
                     subtitle_paint: paint,
-                    border: if clock && node.parent.is_none() && node.apart.is_none() {
+                    border: if clock
+                        && node.parent.is_none()
+                        && node.apart.is_none()
+                        && !matches!(node.kind, Kind::Switch { .. })
+                    {
                         Paint::Clock
                     } else if failed && !clock {
                         Paint::Failed
@@ -1882,7 +1995,9 @@ mod tests {
                         Paint::Plain
                     },
                     strong: false,
-                    dashed: node.apart.is_some() || (clock && !node.link.synced),
+                    dashed: node.apart.is_some()
+                        || matches!(node.kind, Kind::Switch { .. })
+                        || (clock && node.parent.is_some() && !node.link.synced),
                     faded: false,
                     focus: Focus::Node(NodeKey::Host),
                 }
@@ -1920,6 +2035,8 @@ mod tests {
                 path,
                 info,
                 wireless: None,
+                lite: None,
+                gptp: true,
             }],
         };
         let mut topology = Topology::build(
@@ -1989,6 +2106,8 @@ mod tests {
                 path,
                 info,
                 wireless,
+                lite: None,
+                gptp: true,
             }],
         };
         let mut topology = Topology::build(
@@ -2041,6 +2160,139 @@ mod tests {
             ],
             clock,
             None,
+        )
+    }
+
+    /// The bench on a gPTP network with devices that fell back to AVB Lite
+    /// behind plain switches, following two grandmasters, and one in each
+    /// band: running AVB Lite only, set to it, on another gPTP domain, and
+    /// on no tree for a fault.
+    fn mixed(clock: bool) -> Map {
+        use atdecc::lite::{FallbackReason, LiteFlags, LiteStatus, PtpProfile};
+        let own = |place: u64| ClockIdentity(0x0011_22ff_fe00_0000 | place);
+        let entity = |place: u64| EntityId(0x0011_2200_0000_0000 | place);
+        let elsewhere = ClockIdentity(0x0066_77ff_fe00_0001);
+        let running = |reason, grandmaster, offset: i32| LiteStatus {
+            interface: 0,
+            flags: LiteFlags::CAPABLE | LiteFlags::ACTIVE | LiteFlags::OFFSET_VALID,
+            fallback_reason: reason,
+            ptp_profile: PtpProfile::AVB_LITE_PTP,
+            ptp_domain: 0,
+            media_vlan_id: 2,
+            unicast_fanout_limit: 2,
+            link_speed: 100,
+            committed_egress: 0,
+            grandmaster,
+            offset_from_grandmaster: offset,
+        };
+        let statuses = [
+            running(FallbackReason::PDELAY_UNANSWERED, own(1), 0),
+            running(FallbackReason::MULTIPLE_RESPONDERS, own(1), -180),
+            running(FallbackReason::MULTIPLE_RESPONDERS, own(1), 900),
+            running(FallbackReason::ENDPOINT_TLV, elsewhere, 72_000),
+            running(FallbackReason::PDELAY_UNANSWERED, own(1), 40),
+            running(FallbackReason::CONFIGURED, own(1), 40),
+        ];
+        let names = [
+            "Synthia",
+            "Power Amp",
+            "Condenser Mic",
+            "Wireless ESP3",
+            "Lite gadget",
+            "Test rig",
+        ];
+        let mac_path = [SWITCH, MAC_CLOCK];
+        let wired_path = [SWITCH, WIRED_CLOCK];
+        let on_domain = |grandmaster: ClockIdentity, domain: u8| {
+            let mut payload = [0u8; 20];
+            payload[4..12].copy_from_slice(&grandmaster.0.to_be_bytes());
+            payload[16] = domain;
+            AvbInfo::decode(&payload).unwrap()
+        };
+        let (mac_info, wired_info) = (info(SWITCH, 58), info(SWITCH, 432));
+        let (other_info, lost_info) = (on_domain(own(8), 1), on_domain(elsewhere, 0));
+        let report = |entity_id, name, clock, path, info, lite, gptp| EntityReport {
+            entity_id,
+            name,
+            interfaces: vec![InterfaceReport {
+                index: 0,
+                clock,
+                path,
+                info,
+                wireless: None,
+                lite,
+                gptp,
+            }],
+        };
+        let mut reports: Vec<EntityReport<'_>> = (1..=6u64)
+            .map(|place| {
+                let index = place as usize - 1;
+                report(
+                    entity(place),
+                    names[index],
+                    own(place),
+                    None,
+                    None,
+                    Some(&statuses[index]),
+                    place != 5,
+                )
+            })
+            .collect();
+        reports.extend([
+            report(
+                MAC,
+                "Mac mini",
+                MAC_CLOCK,
+                Some(&mac_path[..]),
+                Some(&mac_info),
+                None,
+                true,
+            ),
+            report(
+                WIRED,
+                "AVB Example Entity",
+                WIRED_CLOCK,
+                Some(&wired_path[..]),
+                Some(&wired_info),
+                None,
+                true,
+            ),
+            report(
+                entity(8),
+                "Domain one box",
+                own(8),
+                None,
+                Some(&other_info),
+                None,
+                true,
+            ),
+            report(
+                entity(9),
+                "Lost box",
+                own(9),
+                None,
+                Some(&lost_info),
+                None,
+                true,
+            ),
+        ]);
+        let mut topology = Topology::build(&reports, Some(HostReport::Heard(SWITCH, 6, true)));
+        for node in &mut topology.nodes {
+            if node.kind == Kind::Bridge {
+                node.name = "Mark of the Unicorn".to_owned();
+            }
+        }
+        draw_as(
+            topology,
+            &[
+                (WIRED, MAC, Status::Flowing),
+                (entity(1), entity(2), Status::Flowing),
+                (entity(3), entity(1), Status::Flowing),
+                (entity(4), entity(2), Status::Advertised),
+            ],
+            clock,
+            None,
+            false,
         )
     }
 
@@ -2102,6 +2354,8 @@ mod tests {
                     path: Some(path),
                     info: None,
                     wireless: None,
+                    lite: None,
+                    gptp: true,
                 }],
             })
             .collect();
@@ -2314,6 +2568,10 @@ mod tests {
             ("show-unicast", show_as(false, None, false), natural),
             ("show-medium", show(false, None), Size::new(700.0, 600.0)),
             ("show-phone", show(false, None), phone),
+            ("mixed", mixed(false), natural),
+            ("mixed-clock", mixed(true), natural),
+            ("mixed-medium", mixed(false), Size::new(700.0, 760.0)),
+            ("mixed-phone", mixed(true), phone),
         ] {
             let file = format!("{path}-{suffix}.png");
             // The simulator adds its renderer's name to the file name.
