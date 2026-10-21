@@ -282,6 +282,11 @@ fn watch_endpoints() {
                 } else {
                     None
                 };
+                // This computer's entities come back as triib opens, and
+                // whenever the daemon stops while it runs.
+                if now.is_none() && elsewhere.is_none() {
+                    host::bring_back();
+                }
                 if recalling || Some(&now) != last.as_ref() {
                     post(External::Endpoints(now.clone()));
                     last = Some(now);

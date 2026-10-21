@@ -141,9 +141,18 @@ pub fn read() -> Option<DaemonStatus> {
     running(status.pid).then_some(status)
 }
 
+/// Whether process `pid` runs: there, and not a zombie, which ended
+/// with its parent yet to collect it, as the app is the parent of a
+/// daemon it started until the app ends.
 #[cfg(target_os = "linux")]
 fn running(pid: u32) -> bool {
-    std::path::Path::new(&format!("/proc/{pid}")).exists()
+    std::fs::read_to_string(format!("/proc/{pid}/stat")).is_ok_and(|stat| {
+        // The state follows the command's name, in parentheses that can
+        // hold parentheses of its own.
+        stat.rsplit_once(')')
+            .and_then(|(_, rest)| rest.split_whitespace().next())
+            .is_some_and(|state| !matches!(state, "Z" | "X"))
+    })
 }
 
 #[cfg(not(target_os = "linux"))]
@@ -167,5 +176,22 @@ mod tests {
         drop(claim);
         assert!(!interface_claimed(&interface));
         assert!(claim_interface(&interface).unwrap().is_some());
+    }
+
+    /// A process that ended but was not yet collected, a zombie, runs no
+    /// longer; one gone altogether neither.
+    #[test]
+    fn a_zombie_does_not_run() {
+        assert!(running(std::process::id()));
+        let mut child = std::process::Command::new("true").spawn().unwrap();
+        let pid = child.id();
+        let until = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        while running(pid) && std::time::Instant::now() < until {
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        assert!(!running(pid));
+        assert!(std::path::Path::new(&format!("/proc/{pid}")).exists());
+        child.wait().unwrap();
+        assert!(!running(pid));
     }
 }

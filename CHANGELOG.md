@@ -67,6 +67,12 @@ All notable changes to triib. Versions follow
 - triib-endpointd rides out a fault of ptp4l's own, as a transmit time
   stamp coming late while the computer is busy, rather than falling
   back to AVB Lite as though no gPTP peer answered.
+- triib starts triib-endpointd again whenever it stops while triib runs
+  and this computer's entities are listed, as after a crash, not only
+  as triib opens, waiting longer after each start that does not last;
+  the log of the run before is kept as `endpointd.log.1`. A daemon triib
+  started no longer lingers as a zombie once it stops, which triib took
+  for one still running.
 - An input of triib-endpointd's that stops listening while locked to its
   stream counts an unlock, so a controller reading its counters no
   longer takes it for still receiving.

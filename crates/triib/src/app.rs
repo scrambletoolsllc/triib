@@ -122,7 +122,6 @@ pub struct Triib {
     pub endpoints_elsewhere: Option<String>,
     /// triib-endpointd was started this session for the host entities
     /// listed, as triib opened.
-    endpoints_brought_back: bool,
     /// The audio devices' names: inputs, then outputs.
     pub audio_devices: (Vec<String>, Vec<String>),
     /// How loud this computer's running streams are, for the Streams tab's
@@ -412,7 +411,6 @@ impl Triib {
             monitor: None,
             monitor_status: crate::monitor::Status::off(),
             endpoints_elsewhere: None,
-            endpoints_brought_back: false,
             audio_devices: (Vec::new(), Vec::new()),
             meter_levels: crate::meters::Levels::default(),
             network_focus: None,
@@ -489,7 +487,6 @@ impl Triib {
             monitor: None,
             monitor_status: crate::monitor::Status::off(),
             endpoints_elsewhere: None,
-            endpoints_brought_back: false,
             audio_devices: (Vec::new(), Vec::new()),
             meter_levels: crate::meters::Levels::default(),
             network_focus: None,
@@ -669,25 +666,6 @@ impl Triib {
         (ours || self.is_this_mac(entity_id)).then_some(scramble_ui::icon::Icon::Computer)
     }
 
-    /// Starts triib-endpointd once a session where host entities are
-    /// listed for the chosen interface and it does not run, so they are
-    /// back on the network as triib opens, after a restart.
-    fn bring_back_endpoints(&mut self) {
-        if self.endpoints.is_some() || self.endpoints_brought_back || !self.hosts_endpoints() {
-            return;
-        }
-        let Some(interface) = self.interface().map(|interface| interface.name.clone()) else {
-            return;
-        };
-        if crate::host::endpoints(&interface).is_empty() {
-            return;
-        }
-        self.endpoints_brought_back = true;
-        if let Err(error) = crate::host::ensure_running() {
-            eprintln!("triib: could not start triib-endpointd: {error}");
-        }
-    }
-
     /// Goes on with a preset recalled while this computer's endpoints
     /// start again, once they are back or have taken too long.
     fn go_on_recalling(&mut self) -> Task<Message> {
@@ -812,6 +790,13 @@ impl Triib {
     /// shows, should that have changed.
     pub fn update(&mut self, message: Message) -> Task<Message> {
         let task = self.handle(message);
+        // The entities of the interface shown, where it runs this
+        // computer's, stay running while triib does.
+        let kept = self
+            .interface()
+            .filter(|_| self.hosts_endpoints())
+            .map(|interface| interface.name.as_str());
+        crate::host::keep_running(kept);
         let shown = self.shown();
         if shown != self.watched {
             if let Some(network) = &self.network {
@@ -1253,7 +1238,6 @@ impl Triib {
             }
             Message::External(External::Endpoints(status)) => {
                 self.endpoints = status;
-                self.bring_back_endpoints();
                 return self.go_on_recalling();
             }
             Message::External(External::EndpointsElsewhere(interface)) => {
