@@ -24,7 +24,9 @@ const STARTING: Duration = Duration::from_secs(5);
 /// How long a daemon the app started must run for the next start to wait
 /// no longer than `STARTING`, and the longest the app waits to start one
 /// again after starts that did not last.
+#[cfg(unix)]
 const LASTING: Duration = Duration::from_secs(60);
+#[cfg(unix)]
 const LONGEST_WAIT: Duration = Duration::from_secs(5 * 60);
 /// How long a daemon asked to stop has to go, before one on another file
 /// starts anyway.
