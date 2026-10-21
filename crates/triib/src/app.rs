@@ -19,7 +19,9 @@ use crate::entity_table::Column;
 use crate::log_view::{Log, LogMessage};
 use crate::matrix::{FormatMenu, Hover, Side};
 use crate::netmap::{Focus, NodeKey};
-use crate::network::{Action, Failure, Name, NameTarget, Neighbor, Network, Report, ReportKind};
+use crate::network::{
+    Action, Failure, Name, NameTarget, Neighbor, Network, Report, ReportKind, Watch,
+};
 use crate::presets::Preset;
 use crate::settings::{EntityField, NetworkShows, Settings, Streams, View};
 use crate::settings_view::SettingsTab;
@@ -176,6 +178,8 @@ pub struct Triib {
     pub stream_selected: Option<(EntityId, bool, u16)>,
     /// Whether the Streams tab's menu of streams a device adds is open.
     pub add_stream_open: bool,
+    /// What the network thread was last told the window shows.
+    watched: Watch,
 }
 
 /// What the network thread for the chosen interface is doing.
@@ -433,6 +437,7 @@ impl Triib {
             agents: crate::agents::Agents::default(),
             stream_selected: None,
             add_stream_open: false,
+            watched: Watch::default(),
         }
     }
 
@@ -508,6 +513,7 @@ impl Triib {
             agents: crate::agents::Agents::default(),
             stream_selected: None,
             add_stream_open: false,
+            watched: Watch::default(),
         };
         triib.reload_omarchy();
         triib.apply_motion();
@@ -798,7 +804,48 @@ impl Triib {
         })
     }
 
+    /// Runs `message`; the network thread then hears what the window
+    /// shows, should that have changed.
     pub fn update(&mut self, message: Message) -> Task<Message> {
+        let task = self.handle(message);
+        let shown = self.shown();
+        if shown != self.watched {
+            if let Some(network) = &self.network {
+                network.watch(shown.clone());
+            }
+            self.watched = shown;
+        }
+        task
+    }
+
+    /// What the window shows that entities elsewhere can change
+    /// unannounced: every entity not from this computer's address, whose
+    /// entities send notifications, and the stream the inspector's Streams
+    /// tab shows.
+    pub(crate) fn shown(&self) -> Watch {
+        let here = self.interface().map(|interface| interface.mac);
+        let elsewhere = |entity_id: &EntityId| {
+            self.entities
+                .get(entity_id)
+                .is_some_and(|entity| Some(entity.mac) != here)
+        };
+        let stream = self
+            .selected
+            .filter(|_| self.settings.inspector && self.inspector_tab == InspectorTab::Streams)
+            .filter(elsewhere)
+            .and_then(|entity_id| {
+                let model = self.models.get(&entity_id)?;
+                let streams: Vec<_> = model.streams(false).chain(model.streams(true)).collect();
+                let stream = streams.get(crate::view::picked_stream(self, entity_id, &streams)?)?;
+                Some((entity_id, stream.descriptor_type, stream.index))
+            });
+        Watch {
+            entities: self.entities.keys().copied().filter(elsewhere).collect(),
+            stream,
+        }
+    }
+
+    fn handle(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::InterfacePicked(name) => {
                 if self.settings.interface.as_deref() != Some(name.as_str()) {
@@ -1371,6 +1418,7 @@ impl Triib {
         self.refresh_avb();
         self.mac_audio_device = None;
         self.reconfiguring.clear();
+        self.watched = Watch::default();
         let Some(interface) = self.settings.interface.clone() else {
             self.network_state = NetworkState::Idle;
             return;

@@ -1344,7 +1344,7 @@ fn stream_sections<'a>(
 
 /// Which of `streams` the Streams tab shows: the one picked, else the
 /// first.
-fn picked_stream(
+pub(crate) fn picked_stream(
     triib: &Triib,
     entity_id: EntityId,
     streams: &[StreamDescriptor<'_>],
@@ -3189,6 +3189,63 @@ pub(crate) mod tests {
             Rate(SamplingRate(1 << 29 | 48_000)).to_string(),
             "48 kHz × 1/1.001"
         );
+    }
+
+    /// The network thread asks entities elsewhere again for what the window
+    /// shows of them: every one in turn, and the stream the Streams tab
+    /// shows; not this computer's, which notify.
+    #[test]
+    fn entities_elsewhere_are_asked_again() {
+        let (entities, models) = bench();
+        // The wired board's address stands for this computer's.
+        let here = entities[&WIRED_ESP].mac;
+        let interface = Interface {
+            name: "enp6s0".to_owned(),
+            mac: here,
+            up: true,
+            speed: Some(1000),
+            physical: true,
+            wireless: false,
+            hardware_clock: Some(0),
+        };
+        let settings = Settings {
+            interface: Some(interface.name.clone()),
+            inspector: true,
+            ..Settings::default()
+        };
+        let first_output = models[&MAC_MINI]
+            .streams(false)
+            .next()
+            .map(|stream| stream.index);
+        let mut triib = Triib::sample(settings, interface, entities.clone(), models);
+        let elsewhere: Vec<EntityId> = entities
+            .values()
+            .filter(|entity| entity.mac != here)
+            .map(DiscoveredEntity::entity_id)
+            .collect();
+        assert!(!elsewhere.is_empty() && elsewhere.len() < entities.len());
+        let shown = triib.shown();
+        assert_eq!(shown.entities, elsewhere);
+        assert_eq!(shown.stream, None);
+        // The Streams tab: the stream picked, else the first.
+        triib.selected = Some(MAC_MINI);
+        triib.inspector_tab = InspectorTab::Streams;
+        triib.stream_selected = Some((MAC_MINI, true, 0));
+        assert_eq!(
+            triib.shown().stream,
+            Some((MAC_MINI, DescriptorType::STREAM_INPUT, 0))
+        );
+        triib.stream_selected = None;
+        assert_eq!(
+            triib.shown().stream,
+            first_output.map(|index| (MAC_MINI, DescriptorType::STREAM_OUTPUT, index))
+        );
+        // Not on another tab, nor for this computer's entity.
+        triib.inspector_tab = InspectorTab::Entity;
+        assert_eq!(triib.shown().stream, None);
+        triib.inspector_tab = InspectorTab::Streams;
+        triib.selected = Some(WIRED_ESP);
+        assert_eq!(triib.shown().stream, None);
     }
 
     /// What pressing and releasing at each point sends from a desktop

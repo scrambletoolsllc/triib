@@ -28,6 +28,12 @@ All notable changes to triib. Versions follow
   hand, and those on another gPTP domain sit in areas of their own, apart
   from those off the tree for a fault, and each tree is labelled with
   its gPTP domain.
+- Entities that send no notifications, as some ESP32 endpoints do not,
+  stay current as other controllers change them: triib reads each
+  entity's names, stream formats, sampling rates and clock sources again
+  in turn, asks every second how the stream the inspector's Streams tab
+  shows stands, and learns at once from the responses entities send
+  another controller on this computer.
 
 ### Linux
 

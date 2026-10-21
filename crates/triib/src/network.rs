@@ -277,6 +277,73 @@ const NPCAP_DOWNLOAD: &str = "https://npcap.com/#download";
 enum Command {
     Discover,
     Act(Action),
+    Watch(Watch),
+}
+
+/// What the window shows that entities can change unannounced: some, the
+/// bench's ESP32 boards among them, send no notifications, so what other
+/// controllers change on them reaches triib only when it asks again.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Watch {
+    /// The entities read again in turn: their names, their streams'
+    /// formats, sampling rates and clock sources.
+    pub entities: Vec<EntityId>,
+    /// The stream the inspector shows, asked every second how it stands.
+    pub stream: Option<(EntityId, DescriptorType, u16)>,
+}
+
+/// How often the stream the inspector shows is asked how it stands, and
+/// the next entity in turn is read again.
+const STREAM_EVERY: Duration = Duration::from_secs(1);
+const ENTITY_EVERY: Duration = Duration::from_secs(1);
+
+/// When what the window shows was last asked for, and the entity read
+/// again next.
+#[derive(Default)]
+struct Asked {
+    stream_at: Option<std::time::Instant>,
+    entity_at: Option<std::time::Instant>,
+    turn: usize,
+}
+
+/// Asks again for what `watch` names, as it falls due.
+fn refresh(driver: &mut Driver, watch: &Watch, asked: &mut Asked) {
+    let due = |at: Option<std::time::Instant>, every| at.is_none_or(|at| at.elapsed() >= every);
+    let now = driver.now();
+    let controller = driver.controller_mut();
+    if let Some((entity, descriptor_type, index)) = watch.stream
+        && due(asked.stream_at, STREAM_EVERY)
+    {
+        asked.stream_at = Some(std::time::Instant::now());
+        controller.refresh_stream(now, entity, descriptor_type, index);
+        controller.refresh_descriptor(now, entity, descriptor_type, index);
+    }
+    if watch.entities.is_empty() || !due(asked.entity_at, ENTITY_EVERY) {
+        return;
+    }
+    asked.entity_at = Some(std::time::Instant::now());
+    let entity = watch.entities[asked.turn % watch.entities.len()];
+    asked.turn = asked.turn.wrapping_add(1);
+    let Some(model) = controller.model(entity) else {
+        return;
+    };
+    let descriptors: Vec<(DescriptorType, u16)> = [
+        DescriptorType::STREAM_INPUT,
+        DescriptorType::STREAM_OUTPUT,
+        DescriptorType::AUDIO_UNIT,
+        DescriptorType::CLOCK_DOMAIN,
+    ]
+    .into_iter()
+    .flat_map(|descriptor_type| {
+        model
+            .descriptors(descriptor_type)
+            .map(move |(index, _)| (descriptor_type, index))
+    })
+    .collect();
+    controller.refresh_descriptor(now, entity, DescriptorType::ENTITY, 0);
+    for (descriptor_type, index) in descriptors {
+        controller.refresh_descriptor(now, entity, descriptor_type, index);
+    }
 }
 
 /// A running network thread. Dropping it stops the thread.
@@ -309,6 +376,12 @@ impl Network {
     /// Carries out `action`, reporting how it went.
     pub fn act(&self, action: Action) {
         let _ = self.commands.send(Command::Act(action));
+    }
+
+    /// Asks entities again for what the window shows, as `watch` says,
+    /// from now on.
+    pub fn watch(&self, watch: Watch) {
+        let _ = self.commands.send(Command::Watch(watch));
     }
 }
 
@@ -361,6 +434,8 @@ fn run(
     }
     driver.controller_mut().discover(None);
     let mut actions: HashMap<CommandId, Action> = HashMap::new();
+    let mut watch = Watch::default();
+    let mut asked = Asked::default();
     // Without it the network view only lacks this computer's place.
     let mut gptp = match NeighborListener::open(interface) {
         Ok(listener) => Some(listener),
@@ -378,6 +453,7 @@ fn run(
         while let Ok(command) = commands.try_recv() {
             match command {
                 Command::Discover => driver.controller_mut().discover(None),
+                Command::Watch(watched) => watch = watched,
                 Command::Act(action) => {
                     let now = driver.now();
                     let controller = driver.controller_mut();
@@ -450,6 +526,7 @@ fn run(
                 }
             }
         }
+        refresh(&mut driver, &watch, &mut asked);
         if let Err(error) = driver.turn(TURN) {
             report(generation, ReportKind::Failed(Failure::from_io(&error)));
             return;
