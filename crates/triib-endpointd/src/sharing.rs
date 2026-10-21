@@ -1,15 +1,26 @@
 //! The port's MRP participant, shared with other programs on this
 //! computer (`avb_mrp::sharing`), such as plaa sending what it plays: two
 //! participants on one port would withdraw each other's declarations, so
-//! the daemon declares their talkers in its own, tells them as listeners
-//! for their streams come and go, and withdraws a program's talkers when
-//! it goes.
+//! the daemon declares their talkers in its own, and listeners for the
+//! streams they listen to, tells them as the listeners of their streams
+//! and the talkers of the others come and go, and withdraws a program's
+//! declarations when it goes. Programs that run AVB Lite with it it
+//! declares there too, by CVU SRP in their entities' names.
+
+use avb_mrp::msrp::TalkerDeclaration;
 
 #[cfg(unix)]
 pub use unix::*;
 
 #[cfg(not(unix))]
 pub use elsewhere::*;
+
+/// What a program that went had declared and listened to.
+pub struct Closed {
+    pub entity: Option<u64>,
+    pub streams: Vec<TalkerDeclaration>,
+    pub listens: Vec<u64>,
+}
 
 #[cfg(unix)]
 mod unix {
@@ -23,8 +34,11 @@ mod unix {
     use std::thread::JoinHandle;
     use std::time::Duration;
 
+    use atdecc::MacAddress;
     use avb_mrp::msrp::{ListenerState, TalkerDeclaration};
-    use avb_mrp::sharing::{self, Notice, Request};
+    use avb_mrp::sharing::{self, Hello, Mode, Notice, Request, feature};
+
+    use super::Closed;
 
     /// Where a program sharing the participant is told.
     pub type Writer = UnixStream;
@@ -136,18 +150,33 @@ mod unix {
             });
     }
 
-    /// A program sharing the participant: where to tell it, and the streams
-    /// it declared.
+    /// A program sharing the participant: where to tell it, what it said
+    /// in its hello and the entity it named, the streams it declared and
+    /// those it listens to, with the talker it was last told of for each,
+    /// none before the first Talker notice, and the mode it was last told.
     struct Sharer {
         writer: UnixStream,
+        hello: Option<Hello>,
+        entity: Option<u64>,
         streams: HashMap<u64, Declared>,
+        listens: HashMap<u64, Option<Option<TalkerDeclaration>>>,
+        mode: Option<Mode>,
     }
 
-    /// A stream a program declared: its Talker Advertise, and the listeners
-    /// it was last told of.
+    impl Sharer {
+        /// Whether it runs AVB Lite with the participant: its hello says
+        /// so and it named its entity, which AVB Lite's declarations name.
+        fn lite(&self) -> bool {
+            self.entity.is_some() && self.hello.is_some_and(|hello| hello.has(feature::AVB_LITE))
+        }
+    }
+
+    /// A stream a program declared: its Talker Advertise, the listeners it
+    /// was last told of, and in AVB Lite the copies.
     struct Declared {
         declaration: TalkerDeclaration,
         told: Option<ListenerState>,
+        copies: Option<(u16, Vec<MacAddress>)>,
     }
 
     /// The programs sharing the participant, by connection.
@@ -162,9 +191,32 @@ mod unix {
                 id,
                 Sharer {
                     writer,
+                    hello: None,
+                    entity: None,
                     streams: HashMap::new(),
+                    listens: HashMap::new(),
+                    mode: None,
                 },
             );
+        }
+
+        /// Notes `id`'s hello.
+        pub fn said_hello(&mut self, id: u64, hello: Hello) {
+            if let Some(sharer) = self.sharers.get_mut(&id) {
+                sharer.hello = Some(hello);
+            }
+        }
+
+        /// Notes the entity `id` declares and listens for.
+        pub fn named(&mut self, id: u64, entity: u64) {
+            if let Some(sharer) = self.sharers.get_mut(&id) {
+                sharer.entity = Some(entity);
+            }
+        }
+
+        /// Whether `id` runs AVB Lite with the participant.
+        pub fn lite(&self, id: u64) -> bool {
+            self.sharers.get(&id).is_some_and(Sharer::lite)
         }
 
         /// Notes that `id` declared `declaration`, of which it knows no
@@ -176,34 +228,73 @@ mod unix {
                     Declared {
                         declaration,
                         told: None,
+                        copies: None,
                     },
                 );
             }
         }
 
-        /// Notes that `id` withdrew `stream_id`: whether it had declared it.
-        pub fn withdrawn(&mut self, id: u64, stream_id: u64) -> bool {
+        /// Notes that `id` withdrew `stream_id`: what it had declared.
+        pub fn withdrawn(&mut self, id: u64, stream_id: u64) -> Option<TalkerDeclaration> {
             self.sharers
                 .get_mut(&id)
-                .is_some_and(|sharer| sharer.streams.remove(&stream_id).is_some())
+                .and_then(|sharer| sharer.streams.remove(&stream_id))
+                .map(|declared| declared.declaration)
         }
 
-        /// `id` went: the streams it had declared.
-        pub fn close(&mut self, id: u64) -> Vec<u64> {
-            self.sharers
-                .remove(&id)
-                .map(|sharer| sharer.streams.into_keys().collect())
-                .unwrap_or_default()
+        /// Notes that `id` listens to `stream_id`: whether it did not
+        /// already.
+        pub fn listen(&mut self, id: u64, stream_id: u64) -> bool {
+            let Some(sharer) = self.sharers.get_mut(&id) else {
+                return false;
+            };
+            if sharer.listens.contains_key(&stream_id) {
+                return false;
+            }
+            sharer.listens.insert(stream_id, None);
+            true
         }
 
-        /// Every stream the programs declared, which no longer are, as when
-        /// the port moves to AVB Lite: they declare them again when told they
-        /// can.
-        pub fn forget_streams(&mut self) -> Vec<u64> {
+        /// Notes that `id` stopped listening to `stream_id`: whether it
+        /// did.
+        pub fn unlisten(&mut self, id: u64, stream_id: u64) -> bool {
             self.sharers
-                .values_mut()
-                .flat_map(|sharer| sharer.streams.drain().map(|(stream_id, _)| stream_id))
-                .collect()
+                .get_mut(&id)
+                .is_some_and(|sharer| sharer.listens.remove(&stream_id).is_some())
+        }
+
+        /// `id` went: what it had declared and listened to.
+        pub fn close(&mut self, id: u64) -> Closed {
+            let Some(sharer) = self.sharers.remove(&id) else {
+                return Closed {
+                    entity: None,
+                    streams: Vec::new(),
+                    listens: Vec::new(),
+                };
+            };
+            Closed {
+                entity: sharer.entity,
+                streams: sharer
+                    .streams
+                    .into_values()
+                    .map(|declared| declared.declaration)
+                    .collect(),
+                listens: sharer.listens.into_keys().collect(),
+            }
+        }
+
+        /// The streams that the programs not running AVB Lite with the
+        /// participant declared and listened to, which no longer are, as
+        /// the port moves to AVB Lite: they declare and listen again when
+        /// told they can.
+        pub fn forget_unable(&mut self) -> (Vec<u64>, Vec<u64>) {
+            let mut streams = Vec::new();
+            let mut listens = Vec::new();
+            for sharer in self.sharers.values_mut().filter(|sharer| !sharer.lite()) {
+                streams.extend(sharer.streams.drain().map(|(stream_id, _)| stream_id));
+                listens.extend(sharer.listens.drain().map(|(stream_id, _)| stream_id));
+            }
+            (streams, listens)
         }
 
         /// Every stream the programs declared.
@@ -214,12 +305,51 @@ mod unix {
                 .collect()
         }
 
+        /// Every stream the programs listen to, once each.
+        pub fn listened(&self) -> Vec<u64> {
+            let mut listened: Vec<u64> = self
+                .sharers
+                .values()
+                .flat_map(|sharer| sharer.listens.keys().copied())
+                .collect();
+            listened.sort_unstable();
+            listened.dedup();
+            listened
+        }
+
+        /// How many programs listen to `stream_id`.
+        pub fn listening(&self, stream_id: u64) -> usize {
+            self.sharers
+                .values()
+                .filter(|sharer| sharer.listens.contains_key(&stream_id))
+                .count()
+        }
+
+        /// The entity of a program running AVB Lite with the participant
+        /// that listens to `stream_id`, in whose name to declare.
+        pub fn listening_entity(&self, stream_id: u64) -> Option<u64> {
+            let mut ids: Vec<&u64> = self.sharers.keys().collect();
+            ids.sort_unstable();
+            ids.into_iter()
+                .filter_map(|id| self.sharers.get(id))
+                .filter(|sharer| sharer.lite() && sharer.listens.contains_key(&stream_id))
+                .find_map(|sharer| sharer.entity)
+        }
+
         /// The program that declared `stream_id`.
         pub fn owner(&self, stream_id: u64) -> Option<u64> {
             self.sharers
                 .iter()
                 .find(|(_, sharer)| sharer.streams.contains_key(&stream_id))
                 .map(|(id, _)| *id)
+        }
+
+        /// The entity of the program that declared `stream_id`.
+        pub fn owner_entity(&self, stream_id: u64) -> Option<u64> {
+            self.sharers
+                .values()
+                .find(|sharer| sharer.streams.contains_key(&stream_id))
+                .and_then(|sharer| sharer.entity)
         }
 
         /// The Talker Advertise a program declared for `stream_id`.
@@ -250,6 +380,75 @@ mod unix {
             self.tell(owner, Notice::Listener { stream_id, state });
         }
 
+        /// Tells the program that declared `stream_id` where to send its
+        /// copies in AVB Lite, and with which tag, unless that is what it
+        /// was told last.
+        pub fn tell_copies(&mut self, stream_id: u64, tag: u16, destinations: Vec<MacAddress>) {
+            let Some(owner) = self.owner(stream_id) else {
+                return;
+            };
+            let Some(declared) = self
+                .sharers
+                .get_mut(&owner)
+                .and_then(|sharer| sharer.streams.get_mut(&stream_id))
+            else {
+                return;
+            };
+            let copies = (tag, destinations);
+            if declared.copies.as_ref() == Some(&copies) {
+                return;
+            }
+            declared.copies = Some(copies.clone());
+            let (tag, destinations) = copies;
+            self.tell(
+                owner,
+                Notice::Copies {
+                    stream_id,
+                    tag,
+                    destinations,
+                },
+            );
+        }
+
+        /// Tells each program listening to `stream_id` its `talker`, unless
+        /// that is what it was told last; the first time, whatever it is.
+        pub fn tell_talker(&mut self, stream_id: u64, talker: Option<TalkerDeclaration>) {
+            let mut ids: Vec<u64> = Vec::new();
+            for (id, sharer) in &mut self.sharers {
+                if let Some(told) = sharer.listens.get_mut(&stream_id)
+                    && *told != Some(talker)
+                {
+                    *told = Some(talker);
+                    ids.push(*id);
+                }
+            }
+            for id in ids {
+                self.tell(id, Notice::Talker { stream_id, talker });
+            }
+        }
+
+        /// Tells each program running AVB Lite with the participant the
+        /// port's `mode`, unless that is what it was told last. Back to
+        /// AVB, their copies end.
+        pub fn tell_mode(&mut self, mode: Mode) {
+            let mut ids: Vec<u64> = Vec::new();
+            for (id, sharer) in &mut self.sharers {
+                if !sharer.lite() || sharer.mode == Some(mode) {
+                    continue;
+                }
+                sharer.mode = Some(mode);
+                if mode.lite.is_none() {
+                    for declared in sharer.streams.values_mut() {
+                        declared.copies = None;
+                    }
+                }
+                ids.push(*id);
+            }
+            for id in ids {
+                self.tell(id, Notice::Mode(mode));
+            }
+        }
+
         /// Tells `id` `notice`, dropping it if it can no longer be told.
         pub fn tell(&mut self, id: u64, notice: Notice) {
             let gone = self
@@ -261,10 +460,17 @@ mod unix {
             }
         }
 
-        pub fn tell_all(&mut self, notice: Notice) {
-            let ids: Vec<u64> = self.sharers.keys().copied().collect();
+        /// Tells the programs not running AVB Lite with the participant
+        /// `notice`, as that their streams cannot be declared there.
+        pub fn tell_unable(&mut self, notice: &Notice) {
+            let ids: Vec<u64> = self
+                .sharers
+                .iter()
+                .filter(|(_, sharer)| !sharer.lite())
+                .map(|(id, _)| *id)
+                .collect();
             for id in ids {
-                self.tell(id, notice);
+                self.tell(id, notice.clone());
             }
         }
 
@@ -280,7 +486,6 @@ mod unix {
     #[cfg(test)]
     mod tests {
         use super::*;
-        use atdecc::MacAddress;
 
         fn talker(stream_id: u64) -> TalkerDeclaration {
             TalkerDeclaration {
@@ -295,6 +500,17 @@ mod unix {
                 failure: None,
                 event: avb_mrp::Event::New,
             }
+        }
+
+        /// Everything `theirs` was told until the participant's end
+        /// closed.
+        fn told(sharers: Sharers, theirs: &mut UnixStream) -> Vec<Notice> {
+            drop(sharers);
+            let mut told = Vec::new();
+            while let Ok(notice) = sharing::read_notice(theirs) {
+                told.push(notice);
+            }
+            told
         }
 
         #[test]
@@ -321,11 +537,111 @@ mod unix {
                     state: Some(ListenerState::Ready),
                 }
             );
-            assert!(!sharers.withdrawn(1, 0x78));
-            assert_eq!(sharers.forget_streams(), [0x77]);
+            assert_eq!(sharers.withdrawn(1, 0x78), None);
+            assert!(sharers.listen(1, 0x80));
+            assert_eq!(sharers.forget_unable(), (vec![0x77], vec![0x80]));
             assert!(sharers.streams().is_empty());
+            assert!(sharers.listened().is_empty());
             sharers.declared(1, talker(0x79));
-            assert_eq!(sharers.close(1), [0x79]);
+            sharers.listen(1, 0x81);
+            let closed = sharers.close(1);
+            assert_eq!(closed.streams, [talker(0x79)]);
+            assert_eq!(closed.listens, [0x81]);
+        }
+
+        /// A program listening hears of the talker at once, whatever it
+        /// is, then once each change; asking twice is asking once.
+        #[test]
+        fn a_listener_hears_of_its_talker_once_each_change() {
+            let (ours, mut theirs) = UnixStream::pair().unwrap();
+            let mut sharers = Sharers::default();
+            sharers.open(1, ours);
+            assert!(sharers.listen(1, 0x77));
+            assert!(!sharers.listen(1, 0x77));
+            assert_eq!(sharers.listening(0x77), 1);
+            assert_eq!(sharers.listened(), [0x77]);
+            sharers.tell_talker(0x77, None);
+            sharers.tell_talker(0x77, None);
+            sharers.tell_talker(0x77, Some(talker(0x77)));
+            sharers.tell_talker(0x77, Some(talker(0x77)));
+            // Nobody listens to this one.
+            sharers.tell_talker(0x78, Some(talker(0x78)));
+            assert!(sharers.unlisten(1, 0x77));
+            assert!(!sharers.unlisten(1, 0x77));
+            sharers.tell_talker(0x77, None);
+            assert_eq!(
+                told(sharers, &mut theirs),
+                [
+                    Notice::Talker {
+                        stream_id: 0x77,
+                        talker: None,
+                    },
+                    Notice::Talker {
+                        stream_id: 0x77,
+                        talker: Some(talker(0x77)),
+                    },
+                ]
+            );
+        }
+
+        /// A program runs AVB Lite with the participant once its hello
+        /// says so and it named its entity: it keeps its streams as the
+        /// port moves there, hears the mode, and where its copies go.
+        #[test]
+        fn a_program_naming_its_entity_runs_avb_lite() {
+            let (ours, mut theirs) = UnixStream::pair().unwrap();
+            let (other, _) = UnixStream::pair().unwrap();
+            let mut sharers = Sharers::default();
+            sharers.open(1, ours);
+            sharers.open(2, other);
+            sharers.said_hello(
+                1,
+                Hello {
+                    version: sharing::VERSION,
+                    features: feature::AVB_LITE,
+                },
+            );
+            assert!(!sharers.lite(1));
+            sharers.named(1, 0xa010_a3ff_fea5_1726);
+            assert!(sharers.lite(1));
+            sharers.declared(1, talker(0x77));
+            sharers.listen(1, 0x80);
+            sharers.declared(2, talker(0x78));
+            assert_eq!(sharers.owner_entity(0x77), Some(0xa010_a3ff_fea5_1726));
+            assert_eq!(sharers.listening_entity(0x80), Some(0xa010_a3ff_fea5_1726));
+            assert_eq!(sharers.forget_unable(), (vec![0x78], vec![]));
+            assert_eq!(sharers.streams(), [0x77]);
+            let lite = Mode {
+                lite: Some(2),
+                media_vlan: 2,
+                unicast_fanout: 2,
+                escalation: false,
+            };
+            sharers.tell_mode(lite);
+            sharers.tell_mode(lite);
+            let peer = MacAddress([0xe8, 0xf6, 0x0a, 0xe0, 0x92, 0x20]);
+            sharers.tell_copies(0x77, 0xa002, vec![peer]);
+            sharers.tell_copies(0x77, 0xa002, vec![peer]);
+            let avb = Mode { lite: None, ..lite };
+            sharers.tell_mode(avb);
+            // Back in AVB Lite, its copies are told afresh.
+            sharers.tell_mode(lite);
+            sharers.tell_copies(0x77, 0xa002, vec![peer]);
+            let copies = Notice::Copies {
+                stream_id: 0x77,
+                tag: 0xa002,
+                destinations: vec![peer],
+            };
+            assert_eq!(
+                told(sharers, &mut theirs),
+                [
+                    Notice::Mode(lite),
+                    copies.clone(),
+                    Notice::Mode(avb),
+                    Notice::Mode(lite),
+                    copies,
+                ]
+            );
         }
 
         #[test]
@@ -341,13 +657,8 @@ mod unix {
             sharers.tell_listener(0x77, None);
             // Nobody declared this one.
             sharers.tell_listener(0x78, Some(ListenerState::Ready));
-            drop(sharers);
-            let mut told = Vec::new();
-            while let Ok(notice) = sharing::read_notice(&mut theirs) {
-                told.push(notice);
-            }
             assert_eq!(
-                told,
+                told(sharers, &mut theirs),
                 [
                     Notice::Listener {
                         stream_id: 0x77,
@@ -368,8 +679,11 @@ mod unix {
 mod elsewhere {
     use std::sync::mpsc::Sender;
 
+    use atdecc::MacAddress;
     use avb_mrp::msrp::{ListenerState, TalkerDeclaration};
-    use avb_mrp::sharing::{Notice, Request};
+    use avb_mrp::sharing::{Hello, Mode, Notice, Request};
+
+    use super::Closed;
 
     /// No program to tell.
     pub enum Writer {}
@@ -397,28 +711,58 @@ mod elsewhere {
         pub fn open(&mut self, _id: u64, writer: Writer) {
             match writer {}
         }
-        pub fn declared(&mut self, _id: u64, _declaration: TalkerDeclaration) {}
-        pub fn withdrawn(&mut self, _id: u64, _stream_id: u64) -> bool {
+        pub fn said_hello(&mut self, _id: u64, _hello: Hello) {}
+        pub fn named(&mut self, _id: u64, _entity: u64) {}
+        pub fn lite(&self, _id: u64) -> bool {
             false
         }
-        pub fn close(&mut self, _id: u64) -> Vec<u64> {
-            Vec::new()
+        pub fn declared(&mut self, _id: u64, _declaration: TalkerDeclaration) {}
+        pub fn withdrawn(&mut self, _id: u64, _stream_id: u64) -> Option<TalkerDeclaration> {
+            None
         }
-        pub fn forget_streams(&mut self) -> Vec<u64> {
-            Vec::new()
+        pub fn listen(&mut self, _id: u64, _stream_id: u64) -> bool {
+            false
+        }
+        pub fn unlisten(&mut self, _id: u64, _stream_id: u64) -> bool {
+            false
+        }
+        pub fn close(&mut self, _id: u64) -> Closed {
+            Closed {
+                entity: None,
+                streams: Vec::new(),
+                listens: Vec::new(),
+            }
+        }
+        pub fn forget_unable(&mut self) -> (Vec<u64>, Vec<u64>) {
+            (Vec::new(), Vec::new())
         }
         pub fn streams(&self) -> Vec<u64> {
             Vec::new()
         }
+        pub fn listened(&self) -> Vec<u64> {
+            Vec::new()
+        }
+        pub fn listening(&self, _stream_id: u64) -> usize {
+            0
+        }
+        pub fn listening_entity(&self, _stream_id: u64) -> Option<u64> {
+            None
+        }
         pub fn owner(&self, _stream_id: u64) -> Option<u64> {
+            None
+        }
+        pub fn owner_entity(&self, _stream_id: u64) -> Option<u64> {
             None
         }
         pub fn declaration(&self, _stream_id: u64) -> Option<TalkerDeclaration> {
             None
         }
         pub fn tell_listener(&mut self, _stream_id: u64, _state: Option<ListenerState>) {}
+        pub fn tell_copies(&mut self, _stream_id: u64, _tag: u16, _destinations: Vec<MacAddress>) {}
+        pub fn tell_talker(&mut self, _stream_id: u64, _talker: Option<TalkerDeclaration>) {}
+        pub fn tell_mode(&mut self, _mode: Mode) {}
         pub fn tell(&mut self, _id: u64, _notice: Notice) {}
-        pub fn tell_all(&mut self, _notice: Notice) {}
+        pub fn tell_unable(&mut self, _notice: &Notice) {}
         pub fn close_all(&mut self) {}
     }
 }

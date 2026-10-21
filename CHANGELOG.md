@@ -48,12 +48,19 @@ All notable changes to triib. Versions follow
   any other program.
 - triib-endpointd shares its MSRP participant with other programs on
   this computer, such as plaa sending what it plays, which ask it on a
-  socket in the user's runtime folder to declare their talkers, and hear
-  from it as their listeners come and go, this computer's entities among
-  them, which take those streams as they take their own; it withdraws a
-  program's talkers when the program goes. It says hello to each program
-  with its version and features, and answers each request to declare a
-  talker, so a program can tell what it can do and why it refused.
+  socket in the user's runtime folder to declare their talkers and to
+  listen to streams for them, and hear from it as their listeners and
+  the talkers of the streams they listen to come and go, this computer's
+  entities among them, which take those streams as they take their own;
+  it withdraws a program's declarations when the program goes. It says
+  hello to each program with its version and features, and answers each
+  request to declare a talker, so a program can tell what it can do and
+  why it refused. In AVB Lite it declares for the programs that run it
+  too, by CVU SRP in their entities' names, admitting their listeners
+  with its own entities' and telling them where to send each copy.
+- Two of triib-endpointd's inputs on one stream no longer withdraw each
+  other's listener declaration as one of them stops: a stream has one,
+  for all its listeners on this computer, in AVB Lite too.
 - This computer's entities carry triib's app icon as their logo and
   Scramble Tools' as their vendor's, PNG memory objects that controllers
   such as Hive read through Address Access.

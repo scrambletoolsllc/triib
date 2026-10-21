@@ -311,7 +311,7 @@ dependencies = [
 [[package]]
 name = "atdecc"
 version = "0.1.0"
-source = "git+https://github.com/scrambletools/avb?rev=dc1b9dc10f40255295da3e4c8e0e9fa6f711caf9#dc1b9dc10f40255295da3e4c8e0e9fa6f711caf9"
+source = "git+https://github.com/scrambletools/avb?rev=b8a58d63e7693f09fbdf16c2dbcce85343dab09d#b8a58d63e7693f09fbdf16c2dbcce85343dab09d"
 dependencies = [
  "avb-mrp",
  "avb-net",
@@ -335,7 +335,7 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 [[package]]
 name = "avb-mrp"
 version = "0.1.0"
-source = "git+https://github.com/scrambletools/avb?rev=dc1b9dc10f40255295da3e4c8e0e9fa6f711caf9#dc1b9dc10f40255295da3e4c8e0e9fa6f711caf9"
+source = "git+https://github.com/scrambletools/avb?rev=b8a58d63e7693f09fbdf16c2dbcce85343dab09d#b8a58d63e7693f09fbdf16c2dbcce85343dab09d"
 dependencies = [
  "avb-net",
 ]
@@ -343,7 +343,7 @@ dependencies = [
 [[package]]
 name = "avb-net"
 version = "0.1.0"
-source = "git+https://github.com/scrambletools/avb?rev=dc1b9dc10f40255295da3e4c8e0e9fa6f711caf9#dc1b9dc10f40255295da3e4c8e0e9fa6f711caf9"
+source = "git+https://github.com/scrambletools/avb?rev=b8a58d63e7693f09fbdf16c2dbcce85343dab09d#b8a58d63e7693f09fbdf16c2dbcce85343dab09d"
 dependencies = [
  "libc",
  "windows-sys 0.61.2",
@@ -352,7 +352,7 @@ dependencies = [
 [[package]]
 name = "avb-stream"
 version = "0.1.0"
-source = "git+https://github.com/scrambletools/avb?rev=dc1b9dc10f40255295da3e4c8e0e9fa6f711caf9#dc1b9dc10f40255295da3e4c8e0e9fa6f711caf9"
+source = "git+https://github.com/scrambletools/avb?rev=b8a58d63e7693f09fbdf16c2dbcce85343dab09d#b8a58d63e7693f09fbdf16c2dbcce85343dab09d"
 dependencies = [
  "atdecc",
  "avb-net",
@@ -1099,7 +1099,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -1729,7 +1729,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.62.2",
+ "windows-core 0.58.0",
 ]
 
 [[package]]
@@ -3580,7 +3580,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.12.1",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4064,7 +4064,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix 1.1.5",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -4909,7 +4909,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
