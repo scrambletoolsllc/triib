@@ -2302,6 +2302,7 @@ pub(crate) mod tests {
             inputs: inputs.iter().map(stream).collect(),
             clock_source: 0,
             clock_source_inputs: (0..inputs.len() as u16).collect(),
+            logo: Some(triib_endpointd::runtime::LOGO.to_vec()),
         };
         let mut entity = Entity::new(model, &[]);
         let mut controller = Controller::new(Config::new(EntityId(0x9c6b_00ff_fe30_9a2b)));

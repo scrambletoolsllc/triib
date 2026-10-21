@@ -51,6 +51,9 @@ All notable changes to triib. Versions follow
   program's talkers when the program goes. It says hello to each program
   with its version and features, and answers each request to declare a
   talker, so a program can tell what it can do and why it refused.
+- This computer's entities carry triib's app icon as their logo, a PNG
+  memory object that controllers such as Hive read through Address
+  Access.
 - An input of triib-endpointd's that stops listening while locked to its
   stream counts an unlock, so a controller reading its counters no
   longer takes it for still receiving.
