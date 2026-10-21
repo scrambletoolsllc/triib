@@ -814,6 +814,8 @@ pub struct Runtime {
     /// Sends whole frames, VLAN tag and all: AVB Lite's declarations.
     tagged: FrameSender,
     fallback: Fallback,
+    /// When to try gPTP again from AVB Lite.
+    gptp_retry: lite::Retry,
     /// AVB Lite, once the endpoints fell back to it.
     lite: Option<LiteMode>,
     /// This interface's clock identity, its link speed in Mb/s, and what
@@ -1142,6 +1144,7 @@ impl Runtime {
             tagged: FrameSender::open(&interface)?,
             ptp,
             fallback,
+            gptp_retry: lite::Retry::default(),
             lite: None,
             own_clock,
             link_speed,
@@ -1840,6 +1843,7 @@ impl Runtime {
                     .filter(|offset| offset.unsigned_abs() > OFF_SYNC);
                 self.off_since = off.map(|_| self.off_since.unwrap_or(since));
                 let state = |status: &gptp::Status| match off {
+                    _ if status.faulty => "ptp4l's port FAULTY".into(),
                     Some(offset) => format!("{offset} ns off it, not in sync"),
                     None if status.gptp.as_capable => "asCapable".into(),
                     None => "not asCapable".into(),
@@ -1916,6 +1920,7 @@ impl Runtime {
                     && last.is_some_and(|last| last.carrier == Some(false))
                     && !self.link_own_until.is_some_and(|until| since < until);
                 if came_up && self.lite.is_some() && self.config.avb_lite == LiteChoice::Auto {
+                    log("AVB Lite: the link came up again, trying AVB");
                     self.leave_lite();
                 }
                 self.update_ptp4l();
@@ -1937,6 +1942,10 @@ impl Runtime {
         if let Some(maap) = &mut self.maap {
             maap.handle_timeout(now);
         }
+        // ptp4l's own fault stops its requests while it lasts.
+        if self.ptp_status.as_ref().is_some_and(|status| status.faulty) {
+            self.fallback.ptp4l_faulty(since);
+        }
         self.fallback.handle_timeout(since);
         if self.steer_pending && !self.switched_at.is_some_and(|at| since < at + SWITCH_AGAIN) {
             self.steer_profile();
@@ -1949,6 +1958,7 @@ impl Runtime {
         {
             self.enter_lite(reason);
         }
+        self.retry_gptp();
         self.lite_turn();
         while let Some((group, pdu)) = self.local_cvu.pop_front() {
             self.cvu_heard(self.mac, group, &pdu);
@@ -3146,6 +3156,15 @@ impl Runtime {
             }
         ));
         let since = self.elapsed();
+        self.gptp_retry.fell_back(since, reason);
+        if let Some(wait) = self.gptp_retry.wait()
+            && self.config.avb_lite == LiteChoice::Auto
+        {
+            log(format!(
+                "AVB Lite: trying AVB again in {} s, once an AVB bridge asks for peer delay",
+                wait.as_secs()
+            ));
+        }
         // Programs sharing the port declare by MSRP, which AVB Lite does
         // without: their streams go until it leaves.
         for stream_id in self.sharers.forget_streams() {
@@ -3224,7 +3243,6 @@ impl Runtime {
     /// declarations go, the endpoints declare with MSRP and MVRP as at the
     /// start, and the fallback is armed again.
     fn leave_lite(&mut self) {
-        log("AVB Lite: the link came up again, trying AVB");
         let since = self.elapsed();
         for out in self.outs() {
             self.withdraw_talker(out);
@@ -3246,12 +3264,30 @@ impl Runtime {
         self.talkers.clear();
         self.ready_remotely.clear();
         self.fallback = Fallback::new(self.own_clock.0, false, since);
+        self.update_ptp4l();
         self.port.join(since);
         self.declare_all();
         // Programs sharing the port declare their streams again.
         self.sharers.tell_all(Notice::Available);
         self.update_lite_status();
         self.steer_profile();
+    }
+
+    /// Tries AVB again from AVB Lite fallen back to as no gPTP peer
+    /// answered, once its wait is over and an AVB bridge asks for peer
+    /// delay: a fault of ptp4l's own that lasted falls back so too, and
+    /// the bridge's asking shows the link has one to follow.
+    fn retry_gptp(&mut self) {
+        let since = self.elapsed();
+        if self.lite.is_none()
+            || self.config.avb_lite != LiteChoice::Auto
+            || !self.gptp_retry.due(since, self.fallback.gptp_peers())
+        {
+            return;
+        }
+        self.gptp_retry.tried(since);
+        log("AVB Lite: an AVB bridge asks for peer delay, trying AVB again");
+        self.leave_lite();
     }
 
     /// Keeps EEE and PAUSE off the link, as the AVB Lite profile asks (6):

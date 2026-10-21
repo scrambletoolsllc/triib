@@ -25,6 +25,10 @@ pub struct Status {
     /// ptp4l measures delay end to end, as the AVB Lite PTP profile does,
     /// not peer to peer as gPTP does.
     pub end_to_end: bool,
+    /// ptp4l's port is FAULTY, as after a fault of its own such as a
+    /// transmit time stamp coming late; it resets after its
+    /// fault_reset_interval.
+    pub faulty: bool,
 }
 
 /// A clock identity as linuxptp prints it, such as `0001f2.fffe.ff3b14`.
@@ -63,6 +67,7 @@ pub fn parse(output: &str) -> Option<Status> {
     let offset = value("master_offset").and_then(|text| text.parse().ok());
     // PORT_DATA_SET's delayMechanism: 1 end to end, 2 peer to peer.
     let end_to_end = value("delayMechanism") == Some("1");
+    let faulty = value("portState") == Some("FAULTY");
     let mut path = Vec::new();
     if present {
         path.push(grandmaster);
@@ -83,6 +88,7 @@ pub fn parse(output: &str) -> Option<Status> {
         own_clock,
         offset,
         end_to_end,
+        faulty,
     })
 }
 
@@ -167,6 +173,9 @@ mod tests {
         assert!(!status.end_to_end);
         let lite = ANSWER.replace("asCapable", "delayMechanism 1\n asCapable");
         assert!(parse(&lite).unwrap().end_to_end);
+        assert!(!status.faulty);
+        let faulty = ANSWER.replace("asCapable", "portState FAULTY\n asCapable");
+        assert!(parse(&faulty).unwrap().faulty);
         assert_eq!(
             status.gptp.path,
             [

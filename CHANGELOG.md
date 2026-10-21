@@ -57,6 +57,12 @@ All notable changes to triib. Versions follow
 - This computer's entities carry triib's app icon as their logo and
   Scramble Tools' as their vendor's, PNG memory objects that controllers
   such as Hive read through Address Access.
+- triib-endpointd rides out a fault of ptp4l's own, as a transmit time
+  stamp coming late while the computer is busy, rather than falling
+  back to AVB Lite as though no gPTP peer answered; and from AVB Lite
+  fallen back to for want of answers it tries AVB again once an AVB
+  bridge asks for peer delay, after a minute, and twice as long after
+  each try that falls back again, up to half an hour.
 - An input of triib-endpointd's that stops listening while locked to its
   stream counts an unlock, so a controller reading its counters no
   longer takes it for still receiving.

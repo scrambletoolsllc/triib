@@ -57,6 +57,16 @@ const MOST_UNANSWERED: u32 = 9;
 /// How long ptp4l may say it has no gPTP peer before that counts as the
 /// same.
 const PEERLESS: Duration = Duration::from_secs(10);
+/// How long after ptp4l last said its port is FAULTY its requests going
+/// unanswered still says nothing of the peer: twice its default
+/// fault_reset_interval, 2^4 s, for it to reset and ask again.
+const FAULT_GRACE: Duration = Duration::from_secs(32);
+/// The first wait before trying gPTP again from AVB Lite, the longest
+/// after tries that fell back again, and how long gPTP must hold for the
+/// next fallback to wait the first again.
+const RETRY_FIRST: Duration = Duration::from_secs(60);
+const RETRY_LONGEST: Duration = Duration::from_secs(30 * 60);
+const RETRY_HELD: Duration = Duration::from_secs(5 * 60);
 
 /// A Pdelay_Req from `identity` (clock identity, port 1) with the
 /// Endpoint Declaration TLV, as esp_ptp sends its own and its beacons.
@@ -177,7 +187,9 @@ pub enum Ptp4l {
 /// nobody here asks, so it listens: one gPTP peer asking without the TLV,
 /// as an AVB bridge does every second, may be a bridge; two are a switch
 /// flooding the bridge-group address, as condition 3 shows by its
-/// responders; and none for 10 s, condition 2's silence.
+/// responders; and none for 10 s, condition 2's silence. A fault of
+/// ptp4l's own, as a transmit time stamp coming late under load, stops its
+/// requests until it resets, so none answering then does not count.
 pub struct Fallback {
     identity: u64,
     sequence: u16,
@@ -193,6 +205,8 @@ pub struct Fallback {
     ptp4l_since: Option<Duration>,
     answered_at: Option<Duration>,
     ptp4l_request: Option<(u16, Vec<[u8; 10]>)>,
+    /// When ptp4l last said its port is FAULTY.
+    faulty_at: Option<Duration>,
     reason: Option<FallbackReason>,
     /// The link is down, so nothing can answer and nothing is weighed.
     link_down: bool,
@@ -219,6 +233,7 @@ impl Fallback {
             ptp4l_since: None,
             answered_at: None,
             ptp4l_request: None,
+            faulty_at: None,
             reason: configured.then_some(FallbackReason::CONFIGURED),
             link_down: false,
             armed_at: now,
@@ -244,6 +259,11 @@ impl Fallback {
             self.ptp4l_since = None;
             self.ptp4l_request = None;
         }
+    }
+
+    /// ptp4l says its port is FAULTY: its requests stop until it resets.
+    pub fn ptp4l_faulty(&mut self, now: Duration) {
+        self.faulty_at = Some(now);
     }
 
     /// Whether the link is up. While it is down nothing is weighed, and
@@ -352,8 +372,12 @@ impl Fallback {
             return;
         }
         // Where ptp4l asks, nine requests unanswered are 10 s without an
-        // answer to it, counted from when ptp4l was first seen.
-        if let Some(since) = self.ptp4l_since {
+        // answer to it, counted from when ptp4l was first seen; not while
+        // its own fault stops it asking.
+        let faulted = self.faulty_at.is_some_and(|at| now < at + FAULT_GRACE);
+        if let Some(since) = self.ptp4l_since
+            && !faulted
+        {
             let last = self.answered_at.map_or(since, |at| at.max(since));
             if now.saturating_sub(last) >= PEERLESS {
                 self.fall_back(FallbackReason::PDELAY_UNANSWERED);
@@ -409,6 +433,53 @@ impl Fallback {
     /// A PTP message to send to [`PDELAY_DESTINATION`].
     pub fn poll_transmit(&mut self) -> Option<Vec<u8>> {
         self.outgoing.pop_front()
+    }
+}
+
+/// When to try gPTP again from AVB Lite fallen back to as no gPTP peer
+/// answered, which ptp4l's own lasting fault makes too: once one gPTP peer
+/// asks for peer delay without the Endpoint Declaration TLV, as an AVB
+/// bridge does every second, after a wait each try that falls back again
+/// soon doubles.
+#[derive(Debug, Default)]
+pub struct Retry {
+    wait: Duration,
+    at: Option<Duration>,
+    tried_at: Option<Duration>,
+}
+
+impl Retry {
+    /// The endpoints fell back to AVB Lite for `reason`: only peers not
+    /// answering is tried again.
+    pub fn fell_back(&mut self, now: Duration, reason: FallbackReason) {
+        if reason != FallbackReason::PDELAY_UNANSWERED {
+            self.at = None;
+            return;
+        }
+        let again = self.tried_at.is_some_and(|tried| now < tried + RETRY_HELD);
+        self.wait = if again {
+            (self.wait * 2).clamp(RETRY_FIRST, RETRY_LONGEST)
+        } else {
+            RETRY_FIRST
+        };
+        self.at = Some(now + self.wait);
+    }
+
+    /// How long it waits before trying gPTP again, while it waits.
+    pub fn wait(&self) -> Option<Duration> {
+        self.at.map(|_| self.wait)
+    }
+
+    /// Whether to try gPTP now, with `gptp_peers` peers heard asking for
+    /// peer delay: one, as an AVB bridge, shows the link has one.
+    pub fn due(&self, now: Duration, gptp_peers: usize) -> bool {
+        self.at.is_some_and(|at| now >= at) && gptp_peers == 1
+    }
+
+    /// It tries gPTP now.
+    pub fn tried(&mut self, now: Duration) {
+        self.at = None;
+        self.tried_at = Some(now);
     }
 }
 
@@ -647,6 +718,98 @@ mod tests {
         assert_eq!(fallback.reason(), None);
         run(&mut fallback, 11, 14, |_| Vec::new());
         assert_eq!(fallback.reason(), Some(FallbackReason::PDELAY_UNANSWERED));
+    }
+
+    /// ptp4l running gPTP, answered every second until `faulty_from`,
+    /// then FAULTY until `faulty_until` and silent, and answered again from
+    /// `answered_again`, if ever; run to `until` seconds.
+    fn ptp4l_faulting(
+        fallback: &mut Fallback,
+        faulty_from: u64,
+        faulty_until: u64,
+        answered_again: Option<u64>,
+        until: u64,
+    ) {
+        const BRIDGE: u64 = 0x0001_f2ff_feff_3b14;
+        for second in 0..until {
+            let now = Duration::from_secs(second);
+            let answered =
+                second < faulty_from || answered_again.is_some_and(|again| second >= again);
+            if answered {
+                fallback.handle_ptp(now, &response(BRIDGE, IDENTITY, second as u16, false));
+            }
+            // pmc asks every 2 s.
+            if (faulty_from..=faulty_until).contains(&second) && second % 2 == 0 {
+                fallback.ptp4l_faulty(now);
+            }
+            fallback.handle_timeout(now);
+        }
+    }
+
+    #[test]
+    fn a_fault_of_ptp4ls_own_does_not_fall_back() {
+        // Unanswered for 10 s, with no fault, falls back as before.
+        let mut fallback = Fallback::new(IDENTITY, false, Duration::ZERO);
+        fallback.set_ptp4l(Duration::ZERO, Ptp4l::Gptp);
+        ptp4l_faulting(&mut fallback, 20, 0, None, 31);
+        assert_eq!(fallback.reason(), Some(FallbackReason::PDELAY_UNANSWERED));
+        // FAULTY for 16 s, as ptp4l resets, then answered again.
+        let mut fallback = Fallback::new(IDENTITY, false, Duration::ZERO);
+        fallback.set_ptp4l(Duration::ZERO, Ptp4l::Gptp);
+        ptp4l_faulting(&mut fallback, 20, 36, Some(38), 120);
+        assert_eq!(fallback.reason(), None);
+    }
+
+    #[test]
+    fn a_lasting_fault_falls_back_after_its_grace() {
+        let mut fallback = Fallback::new(IDENTITY, false, Duration::ZERO);
+        fallback.set_ptp4l(Duration::ZERO, Ptp4l::Gptp);
+        // Last FAULTY at 36 s; nothing answers after.
+        ptp4l_faulting(&mut fallback, 20, 36, None, 68);
+        assert_eq!(fallback.reason(), None);
+        fallback.handle_timeout(Duration::from_secs(68));
+        assert_eq!(fallback.reason(), Some(FallbackReason::PDELAY_UNANSWERED));
+    }
+
+    #[test]
+    fn gptp_is_tried_again_once_a_bridge_asks() {
+        let seconds = Duration::from_secs;
+        let mut retry = Retry::default();
+        retry.fell_back(seconds(0), FallbackReason::PDELAY_UNANSWERED);
+        assert_eq!(retry.wait(), Some(seconds(60)));
+        assert!(!retry.due(seconds(59), 1));
+        assert!(retry.due(seconds(60), 1));
+        // No peer asking, or two as a flooding switch, is no AVB bridge.
+        assert!(!retry.due(seconds(60), 0));
+        assert!(!retry.due(seconds(60), 2));
+        // Falling back again soon after a try waits twice as long, up to
+        // half an hour.
+        retry.tried(seconds(60));
+        assert!(!retry.due(seconds(61), 1));
+        retry.fell_back(seconds(100), FallbackReason::PDELAY_UNANSWERED);
+        assert_eq!(retry.wait(), Some(seconds(120)));
+        let mut now = seconds(100);
+        for _ in 0..10 {
+            now += retry.wait().unwrap();
+            retry.tried(now);
+            retry.fell_back(now + seconds(10), FallbackReason::PDELAY_UNANSWERED);
+            now += seconds(10);
+        }
+        assert_eq!(retry.wait(), Some(seconds(30 * 60)));
+        // gPTP held five minutes: the next fallback waits a minute again.
+        retry.tried(now);
+        retry.fell_back(now + seconds(5 * 60), FallbackReason::PDELAY_UNANSWERED);
+        assert_eq!(retry.wait(), Some(seconds(60)));
+        // An AVB Lite endpoint on the link, or a choice, is not tried again.
+        for reason in [
+            FallbackReason::ENDPOINT_TLV,
+            FallbackReason::MULTIPLE_RESPONDERS,
+            FallbackReason::CONFIGURED,
+        ] {
+            retry.fell_back(now, reason);
+            assert_eq!(retry.wait(), None);
+            assert!(!retry.due(now + seconds(3600), 1));
+        }
     }
 
     #[test]
