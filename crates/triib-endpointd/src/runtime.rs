@@ -102,6 +102,12 @@ const AGE_OUT: Duration = Duration::from_secs(16);
 /// can.
 const FAILURE_BANDWIDTH: u8 = 1;
 const FAILURE_RESOURCES: u8 = 2;
+/// An AVB_INTERFACE's counters by their place in GET_COUNTERS (Milan
+/// 1.3, 5.4.2.25): the link coming up and going down, and the grandmaster
+/// changing.
+const LINK_UP: usize = 0;
+const LINK_DOWN: usize = 1;
+const GPTP_GM_CHANGED: usize = 5;
 /// The least time between starting one ptp4l unit and the next, so a
 /// profile switch has time to show.
 const SWITCH_AGAIN: Duration = Duration::from_secs(30);
@@ -920,6 +926,11 @@ pub struct Runtime {
     inputs: Receiver<Input>,
     last_report: Clock,
     last_counters: Clock,
+    /// The interface's counters, as every endpoint on it reports them for
+    /// its AVB_INTERFACE: how often the link came up and went down, and
+    /// the grandmaster changed; and the grandmaster ptp4l last named.
+    interface_counters: [u32; 32],
+    grandmaster: Option<ClockIdentity>,
     /// The configuration running, its file, and when that last changed.
     config: Config,
     path: Option<PathBuf>,
@@ -1232,6 +1243,8 @@ impl Runtime {
             inputs,
             last_report: Clock::now(),
             last_counters: Clock::now(),
+            interface_counters: [0; 32],
+            grandmaster: None,
             modified: modified(path.as_ref()),
             path,
             config,
@@ -1902,6 +1915,13 @@ impl Runtime {
                     return;
                 }
                 self.ptp_status.clone_from(&status);
+                if let Some(status) = &status {
+                    let grandmaster = status.gptp.grandmaster;
+                    if self.grandmaster.is_some_and(|known| known != grandmaster) {
+                        self.interface_counters[GPTP_GM_CHANGED] += 1;
+                    }
+                    self.grandmaster = Some(grandmaster);
+                }
                 self.update_ptp4l();
                 self.update_correction();
                 // A clock that far off keeps no gPTP time for the streams,
@@ -1987,6 +2007,14 @@ impl Runtime {
                 let since = self.elapsed();
                 if let Some(carrier) = link.carrier {
                     self.fallback.set_link(since, carrier);
+                    let before = last.and_then(|last| last.carrier);
+                    if before != Some(carrier) {
+                        let counter = if carrier { LINK_UP } else { LINK_DOWN };
+                        // Down from not known yet is no change.
+                        if carrier || before.is_some() {
+                            self.interface_counters[counter] += 1;
+                        }
+                    }
                 }
                 // AVB Lite holds until the link comes up again, though not
                 // from a link unit taking it down.
@@ -3203,6 +3231,11 @@ impl Runtime {
     fn update_counters(&mut self) {
         let low = |value: u64| value as u32;
         for endpoint in &mut self.endpoints {
+            endpoint.entity.set_counters(
+                atdecc::DescriptorType::AVB_INTERFACE,
+                0,
+                self.interface_counters,
+            );
             for (at, output) in endpoint.outputs.iter().enumerate() {
                 let Some(talker) = &output.talker else {
                     continue;

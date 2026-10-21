@@ -80,6 +80,9 @@ All notable changes to triib. Versions follow
 - An input of triib-endpointd's that stops listening while locked to its
   stream counts an unlock, so a controller reading its counters no
   longer takes it for still receiving.
+- This computer's entities answer for their AVB interface's counters:
+  how often its link came up and went down, and how often its gPTP
+  grandmaster changed, as Milan has a controller ask.
 
 ### Development
 
