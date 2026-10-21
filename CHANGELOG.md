@@ -33,7 +33,8 @@ All notable changes to triib. Versions follow
   entity's names, stream formats, sampling rates and clock sources again
   in turn, asks every second how the stream the inspector's Streams tab
   shows stands, and learns at once from the responses entities send
-  another controller on this computer.
+  another controller on this computer. An entity that sends triib a
+  notification is asked nothing again until it goes or restarts.
 
 ### Linux
 

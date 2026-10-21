@@ -1,7 +1,7 @@
 //! The network thread: one per chosen interface, running the ATDECC
 //! controller and posting what it learns to the app.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -15,8 +15,9 @@ use atdecc::descriptor::{DescriptorType, SamplingRate};
 use atdecc::model::EntityModel;
 pub use atdecc::neighbor::Neighbor;
 use atdecc::neighbor::NeighborListener;
+use atdecc::pdu::{self, Pdu};
 use atdecc::stream_format::StreamFormat;
-use atdecc::{DiscoveredEntity, EntityId, EntityModelId, Event, OfflineReason};
+use atdecc::{AecpMessageType, DiscoveredEntity, EntityId, EntityModelId, Event, OfflineReason};
 
 use crate::External;
 
@@ -280,9 +281,10 @@ enum Command {
     Watch(Watch),
 }
 
-/// What the window shows that entities can change unannounced: some, the
-/// bench's ESP32 boards among them, send no notifications, so what other
-/// controllers change on them reaches triib only when it asks again.
+/// What the window shows that entities can change unannounced: some, as
+/// some ESP32 endpoints, send no notifications, so what other controllers
+/// change on them reaches triib only when it asks again. Those that sent
+/// triib a notification are asked nothing again.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Watch {
     /// The entities read again in turn: their names, their streams'
@@ -306,23 +308,46 @@ struct Asked {
     turn: usize,
 }
 
-/// Asks again for what `watch` names, as it falls due.
-fn refresh(driver: &mut Driver, watch: &Watch, asked: &mut Asked) {
+/// The entity that sent `frame` to `controller` as a notification, which
+/// tells the controller what changes on it from then on.
+fn notifier(frame: &Frame, controller: EntityId) -> Option<EntityId> {
+    if frame.sent {
+        return None;
+    }
+    let Ok(Pdu::Aem(aem)) = pdu::decode(&frame.bytes) else {
+        return None;
+    };
+    (aem.unsolicited
+        && aem.header.message_type == AecpMessageType::AEM_RESPONSE
+        && aem.header.controller_entity_id == controller)
+        .then_some(aem.header.target_entity_id)
+}
+
+/// Asks again for what `watch` names, as it falls due, of the entities
+/// but those `notifying`, which tell what changes.
+fn refresh(driver: &mut Driver, watch: &Watch, notifying: &HashSet<EntityId>, asked: &mut Asked) {
     let due = |at: Option<std::time::Instant>, every| at.is_none_or(|at| at.elapsed() >= every);
     let now = driver.now();
     let controller = driver.controller_mut();
     if let Some((entity, descriptor_type, index)) = watch.stream
+        && !notifying.contains(&entity)
         && due(asked.stream_at, STREAM_EVERY)
     {
         asked.stream_at = Some(std::time::Instant::now());
         controller.refresh_stream(now, entity, descriptor_type, index);
         controller.refresh_descriptor(now, entity, descriptor_type, index);
     }
-    if watch.entities.is_empty() || !due(asked.entity_at, ENTITY_EVERY) {
+    let silent: Vec<EntityId> = watch
+        .entities
+        .iter()
+        .copied()
+        .filter(|entity| !notifying.contains(entity))
+        .collect();
+    if silent.is_empty() || !due(asked.entity_at, ENTITY_EVERY) {
         return;
     }
     asked.entity_at = Some(std::time::Instant::now());
-    let entity = watch.entities[asked.turn % watch.entities.len()];
+    let entity = silent[asked.turn % silent.len()];
     asked.turn = asked.turn.wrapping_add(1);
     let Some(model) = controller.model(entity) else {
         return;
@@ -436,6 +461,9 @@ fn run(
     let mut actions: HashMap<CommandId, Action> = HashMap::new();
     let mut watch = Watch::default();
     let mut asked = Asked::default();
+    // The entities that sent this controller notifications, until they
+    // go or restart, and must register again.
+    let mut notifying: HashSet<EntityId> = HashSet::new();
     // Without it the network view only lacks this computer's place.
     let mut gptp = match NeighborListener::open(interface) {
         Ok(listener) => Some(listener),
@@ -526,7 +554,7 @@ fn run(
                 }
             }
         }
-        refresh(&mut driver, &watch, &mut asked);
+        refresh(&mut driver, &watch, &notifying, &mut asked);
         if let Err(error) = driver.turn(TURN) {
             report(generation, ReportKind::Failed(Failure::from_io(&error)));
             return;
@@ -537,10 +565,19 @@ fn run(
             report(generation, ReportKind::Neighbor(neighbor));
         }
         let frames: Vec<Frame> = std::iter::from_fn(|| driver.poll_frame()).collect();
+        let controller = driver.controller().entity_id();
+        notifying.extend(
+            frames
+                .iter()
+                .filter_map(|frame| notifier(frame, controller)),
+        );
         if !frames.is_empty() {
             report(generation, ReportKind::Frames(frames));
         }
         while let Some(event) = driver.controller_mut().poll_event() {
+            if let Event::EntityRestarted(entity_id) | Event::EntityOffline(entity_id, _) = event {
+                notifying.remove(&entity_id);
+            }
             let controller = driver.controller();
             let snapshot = |entity_id| controller.entity(entity_id).copied();
             let kind = match event {
@@ -652,5 +689,71 @@ mod models {
         if let Err(error) = triib_store::atomic::write(&path, &model.encode()) {
             eprintln!("triib: could not keep {}: {error}", path.display());
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use atdecc::aecp::AemPdu;
+    use atdecc::{AecpHeader, AemCommandType, AemStatus, MacAddress};
+
+    const CONTROLLER: EntityId = EntityId(0x9c6b_00ff_fe30_9a2b);
+    const AMP: EntityId = EntityId(0xe8f6_0ae0_9220_0000);
+
+    fn frame(sent: bool, message_type: AecpMessageType, unsolicited: bool, to: EntityId) -> Frame {
+        let pdu = AemPdu {
+            header: AecpHeader {
+                message_type,
+                status: AemStatus::SUCCESS.0,
+                target_entity_id: AMP,
+                controller_entity_id: to,
+                sequence_id: 7,
+            },
+            unsolicited,
+            controller_request: false,
+            command_type: AemCommandType::GET_COUNTERS,
+            payload: &[0, 5, 0, 0],
+        };
+        let mut out = [0; 128];
+        let length = pdu.encode(&mut out).unwrap();
+        Frame {
+            at: std::time::SystemTime::UNIX_EPOCH,
+            sent,
+            peer: MacAddress([0; 6]),
+            bytes: out[..length].to_vec(),
+        }
+    }
+
+    /// Only a notification an entity sends this controller shows that it
+    /// tells it what changes.
+    #[test]
+    fn a_notification_to_us_shows_an_entity_notifies() {
+        let response = AecpMessageType::AEM_RESPONSE;
+        assert_eq!(
+            notifier(&frame(false, response, true, CONTROLLER), CONTROLLER),
+            Some(AMP)
+        );
+        // A response to a command, ours or overheard.
+        assert_eq!(
+            notifier(&frame(false, response, false, CONTROLLER), CONTROLLER),
+            None
+        );
+        // A notification to another controller.
+        assert_eq!(
+            notifier(&frame(false, response, true, EntityId(1)), CONTROLLER),
+            None
+        );
+        // What we sent.
+        assert_eq!(
+            notifier(&frame(true, response, true, CONTROLLER), CONTROLLER),
+            None
+        );
+        let command = AecpMessageType::AEM_COMMAND;
+        assert_eq!(
+            notifier(&frame(false, command, true, CONTROLLER), CONTROLLER),
+            None
+        );
     }
 }
