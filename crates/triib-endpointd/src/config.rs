@@ -27,7 +27,7 @@ pub struct Config {
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub multicast_escalation: bool,
     /// How many listeners a talker serves a stream to unicast in AVB Lite,
-    /// 2 when not given, as the profile recommends; at least 1.
+    /// 5 when not given, as the profile recommends; at least 1.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub unicast_fanout: Option<u8>,
     /// The VLAN AVB Lite's streams and CVU SRP go in, 2 when not given,

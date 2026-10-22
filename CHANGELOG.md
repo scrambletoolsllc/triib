@@ -101,6 +101,9 @@ All notable changes to triib. Versions follow
   Intel I210 does: it holds the interface promiscuous while AVB Lite
   runs, where before it heard them only while one of its inputs
   listened.
+- In AVB Lite, a talker of triib-endpointd's serves up to 5 listeners
+  unicast unless `unicast_fanout` says otherwise, as the profile now
+  recommends, where before it served 2.
 
 ### Development
 

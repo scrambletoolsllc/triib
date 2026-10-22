@@ -144,7 +144,7 @@ At the top of the file:
 
 - `avb_lite = "off"` keeps them on AVB, and `"on"` puts them on AVB Lite
   from the start.
-- `unicast_fanout` sets how many listeners a talker serves unicast, 2 if
+- `unicast_fanout` sets how many listeners a talker serves unicast, 5 if
   not given. A listener beyond that is refused with Talker Failed,
   unless `multicast_escalation = true` lets the talker move the stream
   to multicast, which non-AVB switches flood to every port; allow it

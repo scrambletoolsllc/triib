@@ -87,7 +87,7 @@ const MAAP_BLOCK: u16 = 32;
 const LITE_PRIORITY: u8 = 5;
 const BROADCAST: MacAddress = MacAddress([0xff; 6]);
 /// The unicast fan-out the profile recommends.
-const FANOUT: u8 = 2;
+const FANOUT: u8 = 5;
 /// CVU SRP's timing, MRP's (IEEE 802.1Q-2022, Table 10-7) as the AVB Lite
 /// profile carries it over: a declaration goes out twice, JoinTime
 /// apart; a withdrawn one lasts LeaveTime more; all are sent again every
