@@ -13,8 +13,8 @@ use atdecc::blocking::{Driver, Frame};
 use atdecc::controller::{Advertise, CommandId, Outcome};
 use atdecc::descriptor::{DescriptorType, SamplingRate};
 use atdecc::model::EntityModel;
-pub use atdecc::neighbor::Neighbor;
 use atdecc::neighbor::NeighborListener;
+pub use atdecc::neighbor::{Peer, Plugged};
 use atdecc::pdu::{self, Pdu};
 use atdecc::stream_format::StreamFormat;
 use atdecc::{AecpMessageType, DiscoveredEntity, EntityId, EntityModelId, Event, OfflineReason};
@@ -56,9 +56,9 @@ pub enum ReportKind {
     Model(EntityId, Box<EntityModel>),
     /// An action the app asked for finished.
     Finished(Action, Outcome),
-    /// The bridge this computer is plugged into, as its gPTP messages show,
-    /// or none heard.
-    Neighbor(Option<Neighbor>),
+    /// The ports sending gPTP peer delay requests on this computer's link,
+    /// which tell what it is plugged into.
+    Peers(Vec<Peer>),
     /// This computer cannot listen for gPTP on the interface, and why.
     CannotListen(String),
     /// ATDECC frames sent and received since the last report, oldest
@@ -560,9 +560,9 @@ fn run(
             return;
         }
         if let Some(gptp) = &mut gptp
-            && let Some(neighbor) = gptp.poll()
+            && let Some(peers) = gptp.poll()
         {
-            report(generation, ReportKind::Neighbor(neighbor));
+            report(generation, ReportKind::Peers(peers));
         }
         let frames: Vec<Frame> = std::iter::from_fn(|| driver.poll_frame()).collect();
         let controller = driver.controller().entity_id();

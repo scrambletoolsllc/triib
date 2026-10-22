@@ -871,6 +871,7 @@ mod tests {
             gptp: String::new(),
             foreign_mrp: false,
             config: None,
+            clock: None,
             endpoints: Vec::new(),
         });
         assert!(!host_ready(&triib, &preset, 2_000));

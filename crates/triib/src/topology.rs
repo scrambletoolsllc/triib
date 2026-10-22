@@ -89,6 +89,9 @@ pub enum Apart {
     NoNeighbor,
     /// This computer cannot listen for gPTP, so where it is is unknown.
     CannotListen,
+    /// This computer is behind a switch taking no part in AVB, which no
+    /// device sharing it runs AVB Lite behind.
+    PlainSwitch,
     /// An entity on this computer, which cannot be read from here.
     OnThisComputer,
 }
@@ -186,15 +189,28 @@ impl<'a> InterfaceReport<'a> {
     }
 }
 
-/// What this computer heard of its neighbor.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// What this computer heard of what it is plugged into.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HostReport {
     /// The bridge's clock, its port and whether gPTP runs on the link.
     Heard(ClockIdentity, u16, bool),
+    /// A switch taking no part in AVB, shared with the endpoints of these
+    /// clocks; and this computer's clock, where its ptp4l runs.
+    Shared(Vec<ClockIdentity>, Option<HostClock>),
     /// No bridge heard.
     Unheard,
     /// This computer cannot listen for gPTP on the interface.
     CannotListen,
+}
+
+/// This computer's clock, as its ptp4l runs it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct HostClock {
+    pub grandmaster: ClockIdentity,
+    /// Its offset from the grandmaster, in nanoseconds.
+    pub offset: Option<i32>,
+    /// It runs AVB Lite's PTP, end to end, rather than gPTP.
+    pub ptp: bool,
 }
 
 /// One stream's way through the tree.
@@ -506,6 +522,46 @@ impl Topology {
                         topology.nodes[bridge].apart = None;
                         topology.apart.retain(|&apart| apart != bridge);
                         topology.roots.push(bridge);
+                    }
+                }
+                // Under the switches in front of the devices sharing its link
+                // where they run AVB Lite behind them, else apart.
+                // In sync there while its ptp4l follows the grandmaster the
+                // devices behind the switch do, as closely as AVB Lite asks.
+                HostReport::Shared(clocks, clock) => {
+                    let switch = topology.nodes.iter().find_map(|entry| {
+                        entry
+                            .parent
+                            .filter(|_| entry.clock.is_some_and(|clock| clocks.contains(&clock)))
+                            .filter(|&parent| {
+                                matches!(topology.nodes[parent].kind, Kind::Switch { .. })
+                            })
+                    });
+                    match switch {
+                        Some(switch) => {
+                            node.apart = None;
+                            let offset = match topology.nodes[switch].kind {
+                                Kind::Switch { grandmaster, .. } => clock
+                                    .filter(|clock| clock.ptp && clock.grandmaster == grandmaster)
+                                    .and_then(|clock| clock.offset),
+                                _ => None,
+                            };
+                            node.link = Link {
+                                offset,
+                                synced: offset.is_some_and(|offset| {
+                                    offset.unsigned_abs()
+                                        <= crate::lite_view::OFFSET_ALARM.unsigned_abs()
+                                }),
+                                ..Link::default()
+                            };
+                            let host = topology.push(node);
+                            topology.attach(host, switch);
+                        }
+                        None => {
+                            node.apart = Some(Apart::PlainSwitch);
+                            let host = topology.push(node);
+                            topology.apart.push(host);
+                        }
                     }
                 }
                 HostReport::Unheard | HostReport::CannotListen => {
@@ -1475,6 +1531,45 @@ mod tests {
                 (Some(WIFI_CLOCK), Some(1)),
             ]
         );
+    }
+
+    /// Behind a switch taking no part in AVB, this computer hangs under the
+    /// card for the devices running AVB Lite there, in sync while its own
+    /// ptp4l follows their grandmaster within 50 us.
+    #[test]
+    fn this_computer_behind_a_plain_switch_follows_its_grandmaster() {
+        use atdecc::lite::FallbackReason;
+        let wired = running(FallbackReason::ENDPOINT_TLV, WIRED_CLOCK, None);
+        let entities = [lite_report(WIRED, "Synthia", WIRED_CLOCK, &wired)];
+        let host = |clock| {
+            let topology = Topology::build(
+                &entities,
+                Some(HostReport::Shared(vec![WIRED_CLOCK], clock)),
+            );
+            let host = topology
+                .nodes
+                .iter()
+                .position(|node| node.kind == Kind::Host)
+                .unwrap();
+            let parent = topology.nodes[host].parent.unwrap();
+            assert!(matches!(topology.nodes[parent].kind, Kind::Switch { .. }));
+            topology.nodes[host].link
+        };
+        let following = |grandmaster, offset| {
+            Some(HostClock {
+                grandmaster,
+                offset: Some(offset),
+                ptp: true,
+            })
+        };
+        let near = host(following(WIRED_CLOCK, -120));
+        assert!(near.synced);
+        assert_eq!(near.offset, Some(-120));
+        assert!(!host(following(WIRED_CLOCK, 72_000)).synced);
+        let elsewhere = host(following(SWITCH, -120));
+        assert!(!elsewhere.synced);
+        assert_eq!(elsewhere.offset, None);
+        assert!(!host(None).synced);
     }
 
     /// Followers of a grandmaster triib does not read hang under a node of

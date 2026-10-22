@@ -34,6 +34,13 @@ All notable changes to triib. Versions follow
 - The connection matrix keeps talkers and listeners in different clock
   domains, as the network map shows them, from connecting: their cell
   says so and does nothing, and hiding what cannot connect hides them.
+- Where this computer runs none of its own entities, the network map and
+  `triib-cli network` tell what it is plugged into from the gPTP
+  messages on its link: an AVB bridge's port, or a switch taking no part
+  in AVB, which lets the endpoints' own peer delay requests through, AVB
+  Lite's declaring themselves and others known by their clocks. Behind
+  one it hangs under the card for the devices running AVB Lite there,
+  rather than taking an endpoint for its bridge.
 - Entities that send no notifications, as some ESP32 endpoints do not,
   stay current as other controllers change them: triib reads each
   entity's names, stream formats, sampling rates and clock sources again

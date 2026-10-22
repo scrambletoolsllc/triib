@@ -26,8 +26,34 @@ pub struct DaemonStatus {
     /// The file it lists its entities in.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub config: Option<String>,
+    /// This computer's clock, as ptp4l runs it, when ptp4l answers.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clock: Option<ClockStatus>,
     #[serde(rename = "endpoint", default)]
     pub endpoints: Vec<EndpointStatus>,
+}
+
+/// This computer's clock as ptp4l runs it on the interface.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ClockStatus {
+    /// The grandmaster it follows, as text, `0x` and sixteen hex digits.
+    pub grandmaster: String,
+    /// The servo's last offset from the grandmaster, in nanoseconds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub offset: Option<i64>,
+    /// It runs the AVB Lite PTP profile, end to end, rather than gPTP.
+    #[serde(default)]
+    pub end_to_end: bool,
+    /// Its port is as-capable and not FAULTY.
+    #[serde(default)]
+    pub as_capable: bool,
+}
+
+impl ClockStatus {
+    /// The grandmaster it follows.
+    pub fn grandmaster(&self) -> Option<atdecc::ClockIdentity> {
+        self.grandmaster.parse().ok()
+    }
 }
 
 /// One of this computer's entities.
@@ -163,6 +189,37 @@ fn running(_pid: u32) -> bool {
 #[cfg(all(test, target_os = "linux"))]
 mod tests {
     use super::*;
+
+    /// The clock's table goes between the daemon's values and its entities,
+    /// and names its grandmaster as it reads back.
+    #[test]
+    fn the_status_carries_this_computers_clock() {
+        let grandmaster = atdecc::ClockIdentity(0xe8f6_0aff_fee0_9220);
+        let status = DaemonStatus {
+            pid: 1,
+            started: 0,
+            interface: "enp2s0".into(),
+            gptp: String::new(),
+            foreign_mrp: false,
+            config: None,
+            clock: Some(ClockStatus {
+                grandmaster: grandmaster.to_string(),
+                offset: Some(-120),
+                end_to_end: true,
+                as_capable: true,
+            }),
+            endpoints: vec![EndpointStatus {
+                entity_id: "0xa010a3ff00a51726".into(),
+                name: "Host entity 1".into(),
+                state: "waiting".into(),
+                streams: Vec::new(),
+            }],
+        };
+        let text = toml::to_string(&status).unwrap();
+        let read: DaemonStatus = toml::from_str(&text).unwrap();
+        assert_eq!(read, status);
+        assert_eq!(read.clock.unwrap().grandmaster(), Some(grandmaster));
+    }
 
     #[test]
     fn one_daemon_claims_an_interface() {

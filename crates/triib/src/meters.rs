@@ -390,6 +390,7 @@ mod tests {
             gptp: String::new(),
             foreign_mrp: false,
             config: None,
+            clock: None,
             endpoints: vec![EndpointStatus {
                 entity_id: host.to_string(),
                 name: "Host entity 1".into(),

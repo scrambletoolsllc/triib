@@ -522,6 +522,7 @@ netmap-failed-at = Reservation failed at { $bridge }: { $reason }
 netmap-failed = Reservation failed: { $reason }
 netmap-no-bridge-on = No bridge heard on { $interface }
 netmap-cannot-listen-on = Cannot listen for gPTP on { $interface }
+netmap-behind-plain-switch = Behind a non-AVB switch
 netmap-on-this-computer = On this computer
 netmap-path-not-reported = Path not reported
 netmap-gptp-not-reported = gPTP not reported
@@ -560,6 +561,7 @@ netmap-apart-no-path = Its path was not reported; it follows grandmaster { $gran
 netmap-apart-unreported = It has not reported its gPTP state
 netmap-apart-no-neighbor = No bridge heard on this computer's interface
 netmap-apart-cannot-listen = This computer cannot listen for gPTP on its interface
+netmap-apart-plain-switch = This computer is behind a switch taking no part in AVB, and no device sharing it runs AVB Lite there, so it is in no domain
 netmap-apart-on-this-computer = It runs on this computer; read it from another computer to see its gPTP state
 # What the card for the switches that take no part in AVB stands for.
 netmap-switch-state = Takes no part in AVB: it stands for the switches in front of the devices below, which found no AVB bridge and fell back to AVB Lite, following one PTP grandmaster
@@ -577,6 +579,7 @@ netmap-bridge-port = Bridge port
 netmap-link-drops = Link drops
 netmap-synced-to-grandmaster = In sync with the grandmaster
 netmap-host-no-gptp = No sync: this computer does not run gPTP
+netmap-host-no-ptp = No sync: this computer does not follow this domain's grandmaster
 netmap-link-no-gptp = No sync: gPTP does not run on its link
 # In AVB Lite. $offset is a time such as "-72 µs".
 netmap-ptp-offset-high = No sync: { $offset } from the grandmaster, past the 50 µs AVB Lite allows

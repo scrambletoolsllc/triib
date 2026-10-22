@@ -19,9 +19,7 @@ use crate::entity_table::Column;
 use crate::log_view::{Log, LogMessage};
 use crate::matrix::{FormatMenu, Hover, Side};
 use crate::netmap::{Focus, NodeKey};
-use crate::network::{
-    Action, Failure, Name, NameTarget, Neighbor, Network, Report, ReportKind, Watch,
-};
+use crate::network::{Action, Failure, Name, NameTarget, Network, Peer, Report, ReportKind, Watch};
 use crate::presets::Preset;
 use crate::settings::{EntityField, NetworkShows, Settings, Streams, View};
 use crate::settings_view::SettingsTab;
@@ -87,8 +85,9 @@ pub struct Triib {
     pub notice: Option<String>,
     /// What the pointer is over in the matrix.
     pub hover: Hover,
-    /// The bridge this computer is plugged into.
-    pub neighbor: Option<Neighbor>,
+    /// The ports sending gPTP peer delay requests on this computer's link,
+    /// which tell what it is plugged into.
+    pub peers: Vec<Peer>,
     /// Why this computer cannot listen for the bridge's gPTP messages,
     /// when it cannot.
     pub cannot_listen: Option<String>,
@@ -397,7 +396,7 @@ impl Triib {
             entity_list_offset: (0.0, 0.0),
             notice: None,
             hover: Hover::default(),
-            neighbor: None,
+            peers: Vec::new(),
             cannot_listen: None,
             endpoints: None,
             avb_enabled: None,
@@ -473,7 +472,7 @@ impl Triib {
             entity_list_offset: (0.0, 0.0),
             notice: None,
             hover: Hover::default(),
-            neighbor: None,
+            peers: Vec::new(),
             cannot_listen: None,
             endpoints: None,
             avb_enabled: None,
@@ -1400,7 +1399,7 @@ impl Triib {
         self.pending.clear();
         self.agent_actions_dropped();
         self.hover = Hover::default();
-        self.neighbor = None;
+        self.peers.clear();
         self.cannot_listen = None;
         self.network_focus = None;
         self.refresh_avb();
@@ -1459,7 +1458,7 @@ impl Triib {
                     self.models.insert(entity_id, *model);
                 }
             }
-            ReportKind::Neighbor(neighbor) => self.neighbor = neighbor,
+            ReportKind::Peers(peers) => self.peers = peers,
             ReportKind::CannotListen(reason) => self.cannot_listen = Some(reason),
             ReportKind::Frames(frames) => {
                 // The Mac's audio device comes and goes a few seconds

@@ -18,7 +18,7 @@ use atdecc::descriptor::{ClockSourceType, DescriptorType, LocalizedStringRef, Sa
 use atdecc::lite::LiteFlags;
 use atdecc::media_clock::{Broken, ClockFrom, DomainClock, DomainId, media_clocks};
 use atdecc::model::{EntityModel, EnumerationState};
-use atdecc::neighbor::{Neighbor, NeighborListener};
+use atdecc::neighbor::{NeighborListener, Peer, Plugged};
 use atdecc::stream_format::StreamFormat;
 use atdecc::wireless::{AsCapableReason, Band, StationFlags, TimeMode, WirelessFlags};
 use atdecc::{
@@ -2430,7 +2430,7 @@ fn network(interface: &str) -> std::io::Result<()> {
     let listener = NeighborListener::open(interface);
     let driver = read(interface, None)?;
     let host = match listener {
-        Ok(mut listener) => Host::Heard(listener.neighbor()),
+        Ok(mut listener) => Host::Heard(listener.peers()),
         Err(error) => Host::CannotListen(error.to_string()),
     };
     let controller = driver.controller();
@@ -2527,15 +2527,21 @@ fn network(interface: &str) -> std::io::Result<()> {
         "network on {interface} as gPTP paths show it, {} entities\n",
         controller.entities().count()
     );
+    // What this computer is plugged into, the ports with an entity's clock
+    // being endpoints.
+    let plugged = match &host {
+        Host::Heard(peers) => Some(Plugged::of(peers, |clock| owners.contains_key(&clock))),
+        Host::CannotListen(_) => None,
+    };
     let tree = Tree {
         controller,
         access_points: &access_points,
         owners: &owners,
         children: &children,
         leaves: &leaves,
-        host: match host {
-            Host::Heard(neighbor) => neighbor,
-            Host::CannotListen(_) => None,
+        host: match plugged {
+            Some(Plugged::Bridge(bridge)) => Some(bridge),
+            _ => None,
         },
     };
     for root in &roots {
@@ -2544,18 +2550,39 @@ fn network(interface: &str) -> std::io::Result<()> {
     let placed = |clock: ClockIdentity| {
         roots.contains(&clock) || children.values().any(|below| below.contains(&clock))
     };
-    match &host {
-        Host::Heard(Some(neighbor)) if placed(neighbor.clock) => {}
-        Host::Heard(Some(neighbor)) => println!(
+    match (&host, &plugged) {
+        (_, Some(Plugged::Bridge(bridge))) if placed(bridge.clock) => {}
+        (_, Some(Plugged::Bridge(bridge))) => println!(
             "this computer  port {} of bridge {}, {}",
-            neighbor.port,
-            neighbor.clock,
-            synced(neighbor.synced)
+            bridge.port,
+            bridge.clock,
+            synced(bridge.synced)
         ),
-        Host::Heard(None) => println!("this computer  no bridge heard on {interface}"),
-        Host::CannotListen(reason) => {
+        (_, Some(Plugged::Shared(endpoints))) => {
+            let names: Vec<String> = endpoints
+                .iter()
+                .map(|peer| match owners.get(&peer.clock) {
+                    Some((entity_id, _)) => controller
+                        .model(*entity_id)
+                        .and_then(EntityModel::entity_name)
+                        .map_or_else(|| entity_id.to_string(), |name| format!("\"{name}\"")),
+                    None => peer.clock.to_string(),
+                })
+                .collect();
+            if names.is_empty() {
+                println!("this computer  behind a switch taking no part in AVB");
+            } else {
+                println!(
+                    "this computer  behind a switch taking no part in AVB, with {}",
+                    names.join(", ")
+                );
+            }
+        }
+        (_, Some(Plugged::Unheard)) => println!("this computer  no bridge heard on {interface}"),
+        (Host::CannotListen(reason), _) => {
             println!("this computer  cannot listen for gPTP on {interface}: {reason}");
         }
+        (Host::Heard(_), None) => {}
     }
     if let Some(unplaced) = leaves.get(&None) {
         println!("not placed, no gPTP path reported:");
@@ -2572,9 +2599,10 @@ fn network(interface: &str) -> std::io::Result<()> {
     driver.close()
 }
 
-/// What this computer heard of the bridge it is plugged into.
+/// The ports this computer heard sending gPTP peer delay requests on its
+/// link.
 enum Host {
-    Heard(Option<Neighbor>),
+    Heard(Vec<Peer>),
     CannotListen(String),
 }
 
@@ -2589,7 +2617,8 @@ struct Tree<'a> {
     owners: &'a BTreeMap<ClockIdentity, (EntityId, u16)>,
     children: &'a BTreeMap<ClockIdentity, BTreeSet<ClockIdentity>>,
     leaves: &'a BTreeMap<Option<ClockIdentity>, Vec<Leaf>>,
-    host: Option<Neighbor>,
+    /// The bridge port this computer is plugged into.
+    host: Option<Peer>,
 }
 
 impl Tree<'_> {

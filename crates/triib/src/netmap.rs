@@ -26,10 +26,11 @@ use scramble_ui::{column, dir, line, row};
 use crate::app::{Message, NetworkState, Triib};
 use crate::describe;
 use crate::fl;
+use crate::network::Plugged;
 use crate::settings::NetworkShows;
 use crate::topology::{
-    Apart, EntityReport, HostReport, InterfaceReport, Kind as NodeKind, NodeId, Route, Topology,
-    WirelessLink,
+    Apart, EntityReport, HostClock, HostReport, InterfaceReport, Kind as NodeKind, NodeId, Route,
+    Topology, WirelessLink,
 };
 use crate::view::VIEW_MARGIN;
 
@@ -548,11 +549,35 @@ fn topology_of(triib: &Triib) -> Topology {
                 model.state != EnumerationState::Failed(EnumerationFailure::OnThisComputer)
             })
     });
+    // What it is plugged into, from the ports heard on its link: those
+    // with an entity's clock are endpoints, however they declare themselves.
+    let entity = |clock: ClockIdentity| {
+        reports
+            .iter()
+            .flat_map(|report| &report.interfaces)
+            .any(|interface| interface.clock == clock)
+    };
+    // Its clock, as its triib-endpointd's ptp4l runs it on the interface.
+    let clock = triib
+        .endpoints
+        .as_ref()
+        .filter(|status| Some(status.interface.as_str()) == triib.settings.interface.as_deref())
+        .and_then(|status| status.clock.as_ref())
+        .and_then(|clock| {
+            Some(HostClock {
+                grandmaster: clock.grandmaster()?,
+                offset: clock.offset.and_then(|offset| i32::try_from(offset).ok()),
+                ptp: clock.end_to_end,
+            })
+        });
     let host = (matches!(triib.network_state, NetworkState::Running { .. }) && !shown_by_entities)
-        .then(|| match triib.neighbor {
+        .then(|| match Plugged::of(&triib.peers, entity) {
             _ if triib.cannot_listen.is_some() => HostReport::CannotListen,
-            Some(neighbor) => HostReport::Heard(neighbor.clock, neighbor.port, neighbor.synced),
-            None => HostReport::Unheard,
+            Plugged::Bridge(bridge) => HostReport::Heard(bridge.clock, bridge.port, bridge.synced),
+            Plugged::Shared(endpoints) => {
+                HostReport::Shared(endpoints.iter().map(|peer| peer.clock).collect(), clock)
+            }
+            Plugged::Unheard => HostReport::Unheard,
         });
     let mut topology = Topology::build(&reports, host);
     // An entity this computer runs, which triib cannot read from here.
@@ -1084,6 +1109,9 @@ fn cards(
                     fl!("netmap-cannot-listen-on", interface = interface),
                     Paint::Muted,
                 ),
+                (_, Some(Apart::PlainSwitch), _) => {
+                    (fl!("netmap-behind-plain-switch"), Paint::Muted)
+                }
                 (_, Some(Apart::OnThisComputer), _) => {
                     (fl!("netmap-on-this-computer"), Paint::Muted)
                 }
@@ -1540,6 +1568,7 @@ fn apart_reason(apart: Apart) -> String {
         Apart::Unreported => fl!("netmap-apart-unreported"),
         Apart::NoNeighbor => fl!("netmap-apart-no-neighbor"),
         Apart::CannotListen => fl!("netmap-apart-cannot-listen"),
+        Apart::PlainSwitch => fl!("netmap-apart-plain-switch"),
         Apart::OnThisComputer => fl!("netmap-apart-on-this-computer"),
     }
 }
@@ -1671,6 +1700,9 @@ fn clock_details(triib: &Triib, topology: &Topology, node: NodeId) -> Page {
     if let Some(port) = entry.link.port {
         facts.push((fl!("netmap-bridge-port"), port.to_string()));
     }
+    if let Some(offset) = entry.link.offset {
+        facts.push((fl!("lite-offset"), crate::lite_view::duration(offset)));
+    }
     if let NodeKind::Entity {
         entity_id,
         interface,
@@ -1698,6 +1730,16 @@ fn clock_details(triib: &Triib, topology: &Topology, node: NodeId) -> Page {
     let state = match entry.apart {
         Some(apart) => apart_reason(apart),
         None if ok => fl!("netmap-synced-to-grandmaster"),
+        // Behind a switch taking no part in AVB, in a PTP domain.
+        None if entry.kind == NodeKind::Host && topology.is_ptp(topology.root_of(node)) => {
+            match entry.link.offset {
+                Some(offset) => fl!(
+                    "netmap-ptp-offset-high",
+                    offset = crate::lite_view::duration(offset)
+                ),
+                None => fl!("netmap-host-no-ptp"),
+            }
+        }
         None if entry.kind == NodeKind::Host => fl!("netmap-host-no-gptp"),
         None if entry.link.wireless.is_some() => fl!("wireless-alarm-not-locked"),
         None => fl!("netmap-link-no-gptp"),
@@ -2338,6 +2380,7 @@ mod tests {
             gptp: String::new(),
             foreign_mrp: false,
             config: None,
+            clock: None,
             endpoints: vec![EndpointStatus {
                 entity_id: crate::view::tests::WIRED_ESP.to_string(),
                 name: "Host entity 1".into(),
@@ -2539,12 +2582,55 @@ mod tests {
                 .collect()
         };
         let alone = devices(&topology_of(&triib));
-        triib.neighbor = Some(crate::network::Neighbor {
+        triib.peers = vec![crate::network::Peer {
             clock: ClockIdentity(0x0001_f2ff_feff_3b14),
             port: 6,
+            endpoint: false,
             synced: true,
-        });
+        }];
         assert_eq!(devices(&topology_of(&triib)), alone);
+    }
+
+    /// With no entity of its own, this computer hangs under the bridge it
+    /// alone hears; hearing an endpoint's peer delay requests instead, it
+    /// is behind a switch taking no part in AVB, under the card for the
+    /// devices running AVB Lite there, or apart where none do.
+    #[test]
+    fn this_computer_hangs_under_what_it_is_plugged_into() {
+        let esp = EntityId(0xe8f6_0ae0_9220_0000);
+        let mut triib = lite_triib(-180);
+        let host = |triib: &Triib| {
+            let topology = topology_of(triib);
+            let host = find(&topology, NodeKey::Host).expect("this computer shows");
+            let entry = &topology.nodes[host];
+            (
+                entry.parent.map(|parent| topology.nodes[parent].kind),
+                entry.apart,
+            )
+        };
+        assert_eq!(host(&triib), (None, Some(Apart::NoNeighbor)));
+        let topology = topology_of(&triib);
+        let node = find(&topology, NodeKey::Entity(esp)).unwrap();
+        let clock = topology.nodes[node].clock.unwrap();
+        let switch = topology.nodes[topology.nodes[node].parent.unwrap()].kind;
+        // The ESP's own requests, declared or known by its clock.
+        for endpoint in [true, false] {
+            triib.peers = vec![crate::network::Peer {
+                clock,
+                port: 1,
+                endpoint,
+                synced: false,
+            }];
+            assert_eq!(host(&triib), (Some(switch), None), "{endpoint}");
+        }
+        // An endpoint triib does not read, with no AVB Lite device shown.
+        triib.peers = vec![crate::network::Peer {
+            clock: ClockIdentity(0x0011_22ff_fe00_0001),
+            port: 1,
+            endpoint: true,
+            synced: false,
+        }];
+        assert_eq!(host(&triib), (None, Some(Apart::PlainSwitch)));
     }
 
     /// Writes a picture of the network view in AVB Lite to the PNG file the

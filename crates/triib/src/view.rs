@@ -3136,6 +3136,7 @@ pub(crate) mod tests {
                     gptp: "grandmaster 0x0001f2fffeff3b14, asCapable".into(),
                     foreign_mrp: false,
                     config: None,
+                    clock: None,
                     endpoints: vec![EndpointStatus {
                         entity_id: host.map(|id| id.to_string()).unwrap_or_default(),
                         name: "Host entity 1".into(),
@@ -3488,6 +3489,7 @@ pub(crate) mod tests {
             gptp: "grandmaster 0x0001f2fffeff3b14, asCapable".into(),
             foreign_mrp: false,
             config: None,
+            clock: None,
             endpoints: vec![EndpointStatus {
                 entity_id: WIRED_ESP.to_string(),
                 name: "Host device 1".into(),

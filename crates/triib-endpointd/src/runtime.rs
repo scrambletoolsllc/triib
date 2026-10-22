@@ -45,7 +45,7 @@ use crate::meters::{self, Meters, StreamMeter};
 use crate::port::{Port, VLAN};
 use crate::profile::{self, Profile};
 use crate::sharing::{self, Server, Sharers};
-use crate::status::{DaemonStatus, EndpointStatus, StreamStatus, status_path};
+use crate::status::{ClockStatus, DaemonStatus, EndpointStatus, StreamStatus, status_path};
 
 /// The entity models of devices, under Scramble Tools' MA-S
 /// `8C-1F-64-36-C`: this, and a hash of their streams. triib 1.0's
@@ -1736,6 +1736,12 @@ impl Runtime {
             gptp: self.gptp_text.clone(),
             foreign_mrp: self.foreign_mrp_heard(),
             config: self.path.as_ref().map(|file| file.display().to_string()),
+            clock: self.ptp_status.as_ref().map(|status| ClockStatus {
+                grandmaster: status.gptp.grandmaster.to_string(),
+                offset: status.offset,
+                end_to_end: status.end_to_end,
+                as_capable: status.gptp.as_capable && !status.faulty,
+            }),
             endpoints,
         };
         let _ = triib_store::save(&path, &status);
