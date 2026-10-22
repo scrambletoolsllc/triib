@@ -10,7 +10,7 @@ set -euo pipefail
 
 root=$(cd "$(dirname "$0")/.." && pwd)
 svg=$root/data/icons/triib-icon.svg
-id=io.github.scrambletools.triib
+id=run.triib.Triib
 hicolor=$root/data/icons/hicolor
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT

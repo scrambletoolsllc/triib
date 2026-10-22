@@ -114,6 +114,17 @@ All notable changes to triib. Versions follow
   channels or fewer; a stream saved in the old AM824 comes back in the
   new one.
 
+### Packages
+
+- triib's app IDs come from triib.run in place of
+  `io.github.scrambletools.triib`: the Mac bundle and its BPF launch
+  daemon are `run.triib`, as registered with Apple, and the desktop
+  file, AppStream ID, icons and Wayland app ID `run.triib.Triib`, with
+  the three parts Flatpak asks for. The Mac package removes the launch
+  daemon and receipt earlier releases installed under the old ID, and
+  the AppStream data says it replaces it. macOS asks again once for the
+  microphone and audio capture, which it grants by bundle ID.
+
 ### Development
 
 - The AVB crates moved, with their history, to

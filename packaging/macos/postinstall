@@ -4,13 +4,22 @@
 # and triib-cli goes on the PATH.
 group=access_bpf
 support="/Library/Application Support/triib"
-daemon=/Library/LaunchDaemons/io.github.scrambletools.triib.bpf.plist
+daemon=/Library/LaunchDaemons/run.triib.bpf.plist
+# The launch daemon and receipt of releases up to 1.1.1, under the app ID
+# io.github.scrambletools.triib.
+old_id=io.github.scrambletools.triib
+old_daemon=/Library/LaunchDaemons/$old_id.bpf.plist
 
 dseditgroup -q -o read "$group" >/dev/null 2>&1 || dseditgroup -q -o create "$group"
 user=$(stat -f%Su /dev/console)
 if [ -n "$user" ] && [ "$user" != root ]; then
     dseditgroup -q -o edit -a "$user" -t user "$group"
 fi
+if [ -e "$old_daemon" ]; then
+    launchctl bootout system "$old_daemon" 2>/dev/null || true
+    rm -f "$old_daemon"
+fi
+pkgutil --forget "$old_id" >/dev/null 2>&1 || true
 chown root:wheel "$daemon"
 chmod 644 "$daemon"
 launchctl bootout system "$daemon" 2>/dev/null || true

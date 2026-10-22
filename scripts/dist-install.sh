@@ -20,7 +20,7 @@ binaries=${1:?usage: dist-install.sh BINARY_DIR [DESTDIR] [PREFIX]}
 destdir=${2:-}
 prefix=${3:-/usr}
 root=$(cd "$(dirname "$0")/.." && pwd)
-id=io.github.scrambletools.triib
+id=run.triib.Triib
 share="$destdir$prefix/share"
 
 install -Dm755 "$binaries/triib" "$destdir$prefix/bin/triib"

@@ -211,9 +211,8 @@ fn serve_control() {
 /// The app's icon on its windows, where the desktop takes it from them,
 /// as X11 and Windows do; Wayland desktops take it from the desktop entry.
 fn window_icon() -> Option<iced::window::Icon> {
-    let file: &[u8] = include_bytes!(
-        "../../../data/icons/hicolor/256x256/apps/io.github.scrambletools.triib.png"
-    );
+    let file: &[u8] =
+        include_bytes!("../../../data/icons/hicolor/256x256/apps/run.triib.Triib.png");
     let mut reader = png::Decoder::new(std::io::Cursor::new(file))
         .read_info()
         .ok()?;

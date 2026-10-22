@@ -1,4 +1,4 @@
-<img src="data/icons/hicolor/scalable/apps/io.github.scrambletools.triib.svg" width="128" alt="The triib icon: an electric guitar and a microphone cabled into a network switch">
+<img src="data/icons/hicolor/scalable/apps/run.triib.Triib.svg" width="128" alt="The triib icon: an electric guitar and a microphone cabled into a network switch">
 
 # triib
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>io.github.scrambletools.triib</id>
+  <id>run.triib.Triib</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT OR Apache-2.0</project_license>
 
@@ -33,7 +33,12 @@
     </p>
   </description>
 
-  <launchable type="desktop-id">io.github.scrambletools.triib.desktop</launchable>
+  <launchable type="desktop-id">run.triib.Triib.desktop</launchable>
+
+  <!-- triib.run reversed, then the app; releases up to 1.1.1 used this ID. -->
+  <replaces>
+    <id>io.github.scrambletools.triib</id>
+  </replaces>
 
   <url type="homepage">https://triib.run</url>
   <url type="bugtracker">https://github.com/scrambletoolsllc/triib/issues</url>

@@ -294,7 +294,7 @@ jobs:
           echo "$version"
           [[ $version == triib\ [0-9]* ]]
           dist/triib.app/Contents/MacOS/triib-cli --version
-          pkgutil --payload-files dist/*.pkg | grep -q 'Library/LaunchDaemons/io.github.scrambletools.triib.bpf.plist'
+          pkgutil --payload-files dist/*.pkg | grep -q 'Library/LaunchDaemons/run.triib.bpf.plist'
       # The signatures, checked against the identities named: a package
       # signed by anyone else, or not notarized, must not go out.
       - if: env.SIGNING == 'true'

@@ -15,7 +15,7 @@ set -euo pipefail
 
 package=$(cd "$(dirname "$1")" && pwd)/$(basename "$1")
 previous=${2:+$(cd "$(dirname "$2")" && pwd)/$(basename "$2")}
-id=io.github.scrambletools.triib
+id=run.triib
 app=/Applications/triib.app
 daemon=/Library/LaunchDaemons/$id.bpf.plist
 support="/Library/Application Support/triib"

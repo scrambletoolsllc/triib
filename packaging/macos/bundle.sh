@@ -43,9 +43,9 @@ done
 
 version=$(sed -n 's/^version = "\(.*\)"/\1/p' "$root/Cargo.toml" | head -1)
 if [ -n "${TRIIB_PRODUCTION:-}" ]; then
-    name=triib; id=io.github.scrambletools.triib
+    name=triib; id=run.triib
 else
-    name=triib-dev; id=io.github.scrambletools.triib.dev
+    name=triib-dev; id=run.triib.dev
 fi
 
 cargo build --release --locked -p triib -p triib-cli --manifest-path "$root/Cargo.toml"
@@ -60,7 +60,7 @@ cp "$root"/packaging/licenses/* "$app/Contents/Resources/licenses/fonts/"
 # The icon, when there is one: each size an .iconset asks for, from the
 # PNGs the Linux packages use and the 1024 one they are made from.
 icons="$root/data/icons/hicolor"
-png() { echo "$icons/$1x$1/apps/io.github.scrambletools.triib.png"; }
+png() { echo "$icons/$1x$1/apps/run.triib.Triib.png"; }
 icon_entry=""
 if [ -e "$(png 512)" ]; then
     iconset=$(mktemp -d)/triib.iconset
@@ -125,7 +125,7 @@ if $pkg; then
     mkdir -p "$payload/Applications" "$payload/Library/LaunchDaemons" \
         "$payload/Library/Application Support/triib"
     cp -R "$app" "$payload/Applications/"
-    cp "$here/io.github.scrambletools.triib.bpf.plist" "$payload/Library/LaunchDaemons/"
+    cp "$here/run.triib.bpf.plist" "$payload/Library/LaunchDaemons/"
     install -m 755 "$here/bpf-access" "$here/uninstall" "$payload/Library/Application Support/triib/"
     scripts=$(mktemp -d)
     install -m 755 "$here/postinstall" "$scripts/postinstall"

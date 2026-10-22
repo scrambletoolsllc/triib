@@ -413,7 +413,7 @@ impl SentTap {
             (key(kAudioAggregateDeviceNameKey), string(&name)),
             (
                 key(kAudioAggregateDeviceUIDKey),
-                string(&format!("io.github.scrambletools.triib.listen.{id}")),
+                string(&format!("run.triib.listen.{id}")),
             ),
             (key(kAudioAggregateDeviceIsPrivateKey), number(1)),
             (key(kAudioAggregateDeviceTapAutoStartKey), number(1)),

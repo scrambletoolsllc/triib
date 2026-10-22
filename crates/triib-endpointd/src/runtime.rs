@@ -57,7 +57,7 @@ const MODEL_REVISION: u8 = 7;
 /// The logo controllers show this computer's entities with: triib's app
 /// icon, at 128 pixels.
 pub const LOGO: &[u8] =
-    include_bytes!("../../../data/icons/hicolor/128x128/apps/io.github.scrambletools.triib.png");
+    include_bytes!("../../../data/icons/hicolor/128x128/apps/run.triib.Triib.png");
 /// Their vendor's logo: Scramble Tools' square white logo on a black
 /// circle, at 128 pixels.
 pub const VENDOR_LOGO: &[u8] = include_bytes!("../../../data/icons/scramble-vendor.png");

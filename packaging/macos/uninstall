@@ -3,9 +3,13 @@
 # as Wireshark may use it too.
 #
 #   sudo "/Library/Application Support/triib/uninstall"
-daemon=/Library/LaunchDaemons/io.github.scrambletools.triib.bpf.plist
+daemon=/Library/LaunchDaemons/run.triib.bpf.plist
+# As releases up to 1.1.1 named it.
+old_daemon=/Library/LaunchDaemons/io.github.scrambletools.triib.bpf.plist
 launchctl bootout system "$daemon" 2>/dev/null
-rm -f "$daemon" /usr/local/bin/triib-cli
+launchctl bootout system "$old_daemon" 2>/dev/null
+rm -f "$daemon" "$old_daemon" /usr/local/bin/triib-cli
 rm -rf /Applications/triib.app "/Library/Application Support/triib"
+pkgutil --forget run.triib >/dev/null 2>&1
 pkgutil --forget io.github.scrambletools.triib >/dev/null 2>&1
 exit 0
