@@ -60,7 +60,7 @@ cp "$root"/packaging/licenses/* "$app/Contents/Resources/licenses/fonts/"
 # The icon, when there is one: each size an .iconset asks for, from the
 # PNGs the Linux packages use and the 1024 one they are made from.
 icons="$root/data/icons/hicolor"
-png() { echo "$icons/$1x$1/apps/run.triib.Triib.png"; }
+png() { echo "$icons/$1x$1/apps/run.triib.png"; }
 icon_entry=""
 if [ -e "$(png 512)" ]; then
     iconset=$(mktemp -d)/triib.iconset

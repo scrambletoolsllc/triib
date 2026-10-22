@@ -27,9 +27,9 @@ use crate::view::InspectorTab;
 
 /// The desktop app ID, also the Wayland app ID.
 pub const APP_ID: &str = if triib_store::paths::PRODUCTION {
-    "run.triib.Triib"
+    "run.triib"
 } else {
-    "run.triib.Triib.dev"
+    "run.triib.dev"
 };
 
 /// How long a recalled preset waits for this computer's endpoints to

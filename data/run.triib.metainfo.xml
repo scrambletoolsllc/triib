@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>run.triib.Triib</id>
+  <id>run.triib</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT OR Apache-2.0</project_license>
 
@@ -33,9 +33,10 @@
     </p>
   </description>
 
-  <launchable type="desktop-id">run.triib.Triib.desktop</launchable>
+  <launchable type="desktop-id">run.triib.desktop</launchable>
 
-  <!-- triib.run reversed, then the app; releases up to 1.1.1 used this ID. -->
+  <!-- The ID is triib.run reversed, run.triib.Triib only for a Flatpak,
+       which wants three parts; releases up to 1.1.1 used this one. -->
   <replaces>
     <id>io.github.scrambletools.triib</id>
   </replaces>

@@ -20,7 +20,7 @@ binaries=${1:?usage: dist-install.sh BINARY_DIR [DESTDIR] [PREFIX]}
 destdir=${2:-}
 prefix=${3:-/usr}
 root=$(cd "$(dirname "$0")/.." && pwd)
-id=run.triib.Triib
+id=run.triib
 share="$destdir$prefix/share"
 
 install -Dm755 "$binaries/triib" "$destdir$prefix/bin/triib"

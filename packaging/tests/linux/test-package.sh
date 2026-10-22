@@ -18,7 +18,7 @@ package=$(readlink -f "${1:?usage: test-package.sh PACKAGE [PREVIOUS]}")
 previous=${2:+$(readlink -f "$2")}
 emulated=${TRIIB_TEST_EMULATED:-}
 shots=${TRIIB_TEST_SHOTS:-}
-id=run.triib.Triib
+id=run.triib
 programs=(triib triib-cli triib-endpointd)
 
 section() { printf '\n== %s\n' "$*"; }

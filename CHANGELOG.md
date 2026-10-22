@@ -116,14 +116,13 @@ All notable changes to triib. Versions follow
 
 ### Packages
 
-- triib's app IDs come from triib.run in place of
-  `io.github.scrambletools.triib`: the Mac bundle and its BPF launch
-  daemon are `run.triib`, as registered with Apple, and the desktop
-  file, AppStream ID, icons and Wayland app ID `run.triib.Triib`, with
-  the three parts Flatpak asks for. The Mac package removes the launch
-  daemon and receipt earlier releases installed under the old ID, and
-  the AppStream data says it replaces it. macOS asks again once for the
-  microphone and audio capture, which it grants by bundle ID.
+- triib's app ID is `run.triib`, triib.run reversed, as registered with
+  Apple, in place of `io.github.scrambletools.triib`: the Mac bundle and
+  its BPF launch daemon, the desktop file, AppStream ID, icons and
+  Wayland app ID. The Mac package removes the launch daemon and receipt
+  earlier releases installed under the old ID, and the AppStream data
+  says it replaces it. macOS asks again once for the microphone and
+  audio capture, which it grants by bundle ID.
 
 ### Development
 

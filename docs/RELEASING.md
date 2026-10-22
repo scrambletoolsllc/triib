@@ -4,8 +4,8 @@ Everything a release ships is built from this repository:
 
 | Path | What |
 |---|---|
-| `data/run.triib.Triib.desktop` | Desktop entry |
-| `data/run.triib.Triib.metainfo.xml` | AppStream metadata, with the release history |
+| `data/run.triib.desktop` | Desktop entry |
+| `data/run.triib.metainfo.xml` | AppStream metadata, with the release history |
 | `data/icons/triib-icon.svg` | The app icon, which `scripts/make-icons.sh` renders into `data/icons/hicolor/` (which every package picks up), `data/icons/triib-1024.png` for macOS and `packaging/windows/triib.ico` |
 | `packaging/licenses/` | The licenses of the fonts triib carries, from scramble-ui |
 | `scripts/cross-setup.sh` | Sets up an x86_64 Ubuntu to cross-compile for RISC-V |
@@ -28,7 +28,7 @@ built for Apple Silicon only.
 Packages are built with `TRIIB_PRODUCTION=1`, which makes the installed
 copy: settings in `triib.toml` (`~/.config` on Linux, `%APPDATA%\triib`
 on Windows, `~/Library/Application Support/triib` on macOS), cache under
-`triib`, app ID `run.triib.Triib` (bundle ID `run.triib` on macOS).
+`triib`, app ID `run.triib` (`run.triib.Triib` for a Flatpak).
 Builds without it are development builds, which keep their own.
 
 ## What each system needs
