@@ -104,6 +104,15 @@ All notable changes to triib. Versions follow
 - In AVB Lite, a talker of triib-endpointd's serves up to 5 listeners
   unicast unless `unicast_fanout` says otherwise, as the profile now
   recommends, where before it served 2.
+- triib-endpointd's streams offer the same formats as plaa's, from avb's
+  shared set: each of a stream's sizes at every rate where it fits a
+  frame, as the Extended Audio profile asks, where before a size went
+  only at the rates its stream's own channels fit. A stream of many
+  channels now offers 96 and 192 kHz at the smaller sizes, and a new
+  rate moves a stream too large for it to the most channels of its
+  packing that fit. AM824 is declared as MOTU's 8D declares it, of its
+  channels or fewer; a stream saved in the old AM824 comes back in the
+  new one.
 
 ### Development
 

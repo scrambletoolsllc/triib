@@ -86,9 +86,13 @@ audio stream each way, and the inspector's Streams tab adds and removes
 streams: audio streams of AAF or AM824 at 48, 96 or 192 kHz, 8 channels
 unless it picks another count, each taking 2 and 8 channels too, as the
 [Basic Audio](https://github.com/avbcommunity/profiles/blob/main/audio_basic.md)
-profile has every stream do, and each by default with a virtual audio
-device of its own that apps play into or record from, or a test tone,
-silence or one of the computer's devices; and media clock streams of
+profile has every stream do, each size at every rate where it fits a
+frame, as the
+[Extended Audio](https://github.com/avbcommunity/profiles/blob/main/audio_extended.md)
+profile asks (a new rate moves a stream too large for it to the most
+channels that fit), and each by default with a virtual audio device of
+its own that apps play into or record from, or a test tone, silence or
+one of the computer's devices; and media clock streams of
 CRF. An output sends in SR class B in class B's own formats, a frame
 each 250 µs, and in class A in the others, so a controller picks its
 class by picking its format; `class = "B"` starts it in class B's. Any input can be the entity's clock source, its talkers then
