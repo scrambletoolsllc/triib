@@ -481,12 +481,12 @@ column-add = Add a column
 common-percent = { $value }%
 
 ## Network view
-# The network map: bridges (AVB switches) and devices on the gPTP tree,
-# with the clock or the streams flowing along their wires. "gPTP" and
-# "CRF" (media clock streams) stay as written.
+# The network map: bridges (AVB switches) and devices in their clock
+# domains, gPTP or PTP, with the clock or the streams flowing along their
+# wires. "gPTP" and "CRF" (media clock streams) stay as written.
 
 netmap-empty = No network to show yet
-netmap-empty-note = Entities appear here once they have been read and have said where they sit in the gPTP tree.
+netmap-empty-note = Entities appear here once they have been read and have said which clock domain they are in.
 # What the map brings forward; $name is a device or bridge.
 netmap-focus-clock-path = { $name }’s clock path
 netmap-focus-streams = { $name }’s streams
@@ -517,7 +517,7 @@ netmap-this-computer = This computer
 netmap-connected = Connected
 # A talker offers the stream, but no listener has asked for it.
 netmap-advertised = Advertised, no listener ready
-netmap-advertised-off-tree = Advertised, no listener ready ({ $listener } is not on the gPTP tree)
+netmap-advertised-unknown-domain = Advertised, no listener ready (the clock domain of { $listener } is not known)
 netmap-failed-at = Reservation failed at { $bridge }: { $reason }
 netmap-failed = Reservation failed: { $reason }
 netmap-no-bridge-on = No bridge heard on { $interface }
@@ -525,24 +525,20 @@ netmap-cannot-listen-on = Cannot listen for gPTP on { $interface }
 netmap-on-this-computer = On this computer
 netmap-path-not-reported = Path not reported
 netmap-gptp-not-reported = gPTP not reported
-# Also a label over the devices off the tree, in capitals where the script
-# has them.
-netmap-off-tree = Not on the gPTP tree
-# The same in AVB Lite, over the devices not following a grandmaster.
-netmap-off-ptp = Not on the PTP tree
-# A device on a network running AVB Lite that does not run it.
-netmap-not-lite = Not in AVB Lite
-netmap-lite-not-reported = AVB Lite not reported
-# A gPTP domain's number. Also a label over a tree and over the devices on
-# another domain than the tree's, in capitals where the script has them.
+# A gPTP domain's number. Also a label over its area, in capitals where the
+# script has them.
 netmap-domain = gPTP domain { $domain }
-# Labels over devices running AVB Lite, in capitals where the script has
-# them: those whose interface supports no gPTP, and those the operator or a
-# controller set to it.
-netmap-lite-only = AVB Lite only
-netmap-lite-set = AVB Lite, set by hand
+# A PTP domain's number, as devices running AVB Lite follow a grandmaster
+# in it. Also a label over its area, in capitals where the script has them.
+netmap-ptp-domain = PTP domain { $domain }
+# Over the devices whose clock domain is not known, in capitals where the
+# script has them; also on their cards.
+netmap-domain-unknown = Domain not known
 # In step with the grandmaster's clock: short for in sync.
 netmap-synced = Sync
+# The choice showing how the devices keep time, gPTP or PTP, over the map:
+# synchronization, as short as the language allows.
+netmap-sync = Sync
 netmap-not-synced = No sync
 netmap-triib-on = triib on { $interface }
 # Streams passing through a bridge.
@@ -560,17 +556,11 @@ netmap-sending-unheard = Sending, with no known listener bound to it
 # In place of a stream's listener, when none is known; also over a list of
 # such streams.
 netmap-no-listener = No known listener
-netmap-apart-own-grandmaster = Not on the gPTP tree: it is its own grandmaster
 netmap-apart-no-path = Its path was not reported; it follows grandmaster { $grandmaster }
 netmap-apart-unreported = It has not reported its gPTP state
 netmap-apart-no-neighbor = No bridge heard on this computer's interface
 netmap-apart-cannot-listen = This computer cannot listen for gPTP on its interface
 netmap-apart-on-this-computer = It runs on this computer; read it from another computer to see its gPTP state
-netmap-apart-not-lite = It does not run AVB Lite, so it does not follow the grandmaster
-netmap-apart-lite-unreported = It reports nothing of AVB Lite, so whom it follows is not known
-netmap-apart-other-domain = It runs gPTP on domain { $domain } and the tree on domain { $network }, so it does not follow the tree's grandmaster
-netmap-apart-lite-only = It runs AVB Lite only, taking no part in gPTP or SRP, so AVB bridges reserve nothing for its streams
-netmap-apart-lite-set = It runs AVB Lite because the operator or a controller set it to, taking no part in gPTP or SRP
 # What the card for the switches that take no part in AVB stands for.
 netmap-switch-state = Takes no part in AVB: it stands for the switches in front of the devices below, which found no AVB bridge and fell back to AVB Lite, following one PTP grandmaster
 netmap-clock-tree = Clock tree
@@ -613,9 +603,8 @@ netmap-receiving = Receiving
 netmap-problems = Problems
 netmap-help-back = Click the background to go back to the overview.
 netmap-help-stream = Click a stream to inspect it, or the background to go back to the overview.
-netmap-help-ptp = In AVB Lite the clock flows end to end from the grandmaster to every device, through switches that take no part, so none are shown. A device is in sync while it follows the grandmaster within 50 µs. Click a device or its wire to inspect its clock; click the background to clear.
 netmap-help-clock = The clock flows from the grandmaster through each bridge to every node on the tree. A broken gray line is a link gPTP does not run on. Click a device or its wire to inspect its clock path; click the background to clear.
-netmap-help-lite = Devices that found no AVB bridge and fell back to AVB Lite hang under a dashed card standing for the switches in front of them, one for each PTP grandmaster they follow. Devices that run AVB Lite only or were set to, and devices on another gPTP domain, sit in areas of their own.
+netmap-help-domains = Each area is a clock domain. In a gPTP domain the clock passes from the grandmaster down through the AVB bridges. In a PTP domain the devices run AVB Lite and follow their grandmaster end to end, in sync within 50 µs; a dashed card stands for the switches taking no part in AVB that some of them fell back to AVB Lite behind. A device that shares its domain with no other has an area of its own.
 netmap-help-media-clock = Media clock (CRF) streams only, drawn the same way as audio: a wire for each stream's frames on each link, colored by talker. Click a wire to inspect its stream, or a device to see its streams; click the background to clear.
 netmap-help-audio = Each wire is a stream's frames on a link, entering and leaving every bridge it crosses. A multicast stream has one wire as far as its listeners' paths run together and branches where they part; a unicast stream, as AVB Lite can send, has a wire of its own from the talker to each listener. Color is by talker: each talker has a hue, and each of its streams is a shade of it on every branch. Moving dots mean audio is flowing, even from a talker sending with no known listener; a still red line is a failed reservation and a still gray line is advertised with no listener ready; both stop where the reservation stops. Devices in the middle column connect straight to the grandmaster's bridge. Click a wire to inspect its stream, a shared wire to see all its listeners, or a device to see its streams; click the background to clear.
 
@@ -655,6 +644,7 @@ matrix-format-both = Change both to
 matrix-format-talker-busy = The talker streams to other listeners, so its format stays.
 matrix-format-anyway = Connect without changing formats
 matrix-incompatible = The input does not take { $sent }. It is set to { $set }.
+matrix-other-domain = They keep time in different clock domains, so no stream can pass between them.
 # An entity's row or column folded into one cell.
 matrix-group-none = Not connected. Expand to connect streams one by one.
 matrix-group-connected = { $count } connected. Expand to see each one.
@@ -684,6 +674,7 @@ matrix-legend-trouble = Bound, something is wrong
 matrix-legend-open = Can connect
 matrix-legend-change = Input format must change first
 matrix-legend-incompatible = Formats cannot meet
+matrix-legend-other-domain = Other clock domain
 # Over the matrix's corner: which way each side runs.
 matrix-talker-outputs = Talker outputs
 matrix-listener-inputs = Listener inputs

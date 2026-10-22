@@ -56,5 +56,4 @@ How `i18n/ja/triib.ftl` renders the glossary's roles and terms of art.
 - アップ for an interface that is up, beside リンクダウン.
 - インターフェイス rather than インターフェース.
 - Spacing: a half-width space separates Latin terms from Japanese (AVB インターフェイス, triib は, gPTP ツリー). The tests need it, because a standards word written against kana counts as lost. Values such as { $entity } are spaced the same way.
-- The NOT ON THE gPTP TREE band uses a string-literal selector so the word check finds the English capitals; only gPTP ツリー外 shows.
 - ステーション for a Wi-Fi station; Wi-Fi users may know クライアント or 子機 better. ロック済み / 未ロック for the station's time, parallel to 同期済み / 未同期.

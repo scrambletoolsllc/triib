@@ -22,6 +22,7 @@ use scramble_ui::{column, dir, row};
 
 use crate::app::{self, Message, Triib};
 use crate::fl;
+use crate::netmap::Domains;
 use crate::network::Action;
 use crate::settings::Streams;
 use crate::view::VIEW_MARGIN;
@@ -85,6 +86,9 @@ pub enum State {
     Change,
     /// The input does not take the talker's format.
     Incompatible,
+    /// The talker and listener keep time in different clock domains, so no
+    /// stream can pass between them.
+    OtherDomain,
 }
 
 impl State {
@@ -98,6 +102,7 @@ impl State {
             State::Open => (Icon::RadioButtonUnchecked, false),
             State::Change => (Icon::ChangeCircle, false),
             State::Incompatible => (Icon::Remove, false),
+            State::OtherDomain => (Icon::LinkOff, false),
         }
     }
 
@@ -109,7 +114,7 @@ impl State {
             State::Working => scheme.on_surface_variant,
             State::Open => faded(scheme.on_surface_variant, 0.45),
             State::Change => faded(scheme.on_surface_variant, 0.6),
-            State::Incompatible => faded(scheme.on_surface_variant, 0.22),
+            State::Incompatible | State::OtherDomain => faded(scheme.on_surface_variant, 0.22),
         }
     }
 }
@@ -242,7 +247,8 @@ fn view_at(triib: &Triib, size: iced::Size) -> Element<'_, Message> {
     // How many streams leaving out what cannot connect hides, when it is on.
     let hidden = triib.settings.matrix_connectable_only.then(|| {
         let before = count(&talkers) + count(&listeners);
-        connectable_only(&mut talkers, &mut listeners);
+        let domains = crate::netmap::Domains::of(triib);
+        connectable_only(&domains, &mut talkers, &mut listeners);
         before - count(&talkers) - count(&listeners)
     });
     let body: Element<'_, Message> = if talkers.is_empty() || listeners.is_empty() {
@@ -433,10 +439,15 @@ pub(crate) fn tag(entity: &DiscoveredEntity) -> String {
 
 /// Leaves out the streams that nothing on the other side could connect
 /// to, keeping bound ones.
-fn connectable_only<'a>(talkers: &mut Vec<Group<'a>>, listeners: &mut Vec<Group<'a>>) {
+fn connectable_only<'a>(
+    domains: &Domains,
+    talkers: &mut Vec<Group<'a>>,
+    listeners: &mut Vec<Group<'a>>,
+) {
     let reaches = |output: &Stream<'_>, input: &Stream<'_>| {
         input.bound_to() == Some(output.key())
             || (!input.own(output)
+                && !domains.apart(output.entity_id, input.entity_id)
                 && fit(output.format, input.format, input.supported.iter().copied())
                     != Fit::Incompatible)
     };
@@ -533,6 +544,7 @@ fn lines<'s, 'a>(
 }
 
 fn grid(triib: &Triib, talkers: &[Group<'_>], listeners: &[Group<'_>]) -> Grid {
+    let domains = Domains::of(triib);
     let (columns, outputs): (Vec<_>, Vec<_>) =
         lines(triib, talkers, Side::Talker).into_iter().unzip();
     let (rows, inputs): (Vec<_>, Vec<_>) =
@@ -544,7 +556,7 @@ fn grid(triib: &Triib, talkers: &[Group<'_>], listeners: &[Group<'_>]) -> Grid {
                 (Some(inputs), Some(outputs)) => match (inputs.as_slice(), outputs.as_slice()) {
                     ([input], [output]) if input.own(output) => Cell::Own,
                     ([input], [output]) => {
-                        let (state, action) = assess(triib, output, input);
+                        let (state, action) = assess(triib, &domains, output, input);
                         Cell::Stream { state, action }
                     }
                     _ => {
@@ -582,11 +594,18 @@ fn grid(triib: &Triib, talkers: &[Group<'_>], listeners: &[Group<'_>]) -> Grid {
 }
 
 /// How `output` and `input` stand, and what clicking their cell does.
-fn assess(triib: &Triib, output: &Stream<'_>, input: &Stream<'_>) -> (State, Option<Action>) {
+fn assess(
+    triib: &Triib,
+    domains: &Domains,
+    output: &Stream<'_>,
+    input: &Stream<'_>,
+) -> (State, Option<Action>) {
     let talker = output.key();
     let listener = input.key();
     let bound_here = input.bound_to() == Some(talker);
     let fits = fit(output.format, input.format, input.supported.iter().copied());
+    // Bound across domains, it still shows how it stands and unbinds.
+    let elsewhere = !bound_here && domains.apart(output.entity_id, input.entity_id);
     let state = if bound_here {
         let info = input
             .model
@@ -597,6 +616,8 @@ fn assess(triib: &Triib, output: &Stream<'_>, input: &Stream<'_>) -> (State, Opt
             (Fit::Matches, _) => State::Connected,
             _ => State::Trouble,
         }
+    } else if elsewhere {
+        State::OtherDomain
     } else {
         match fits {
             Fit::Matches => State::Open,
@@ -620,7 +641,7 @@ fn assess(triib: &Triib, output: &Stream<'_>, input: &Stream<'_>) -> (State, Opt
         // Another change to this input is on its way.
         Some(false) => (state, None),
         None if bound_here => (state, Some(Action::Disconnect { listener })),
-        None if fits == Fit::Incompatible => (state, None),
+        None if fits == Fit::Incompatible || elsewhere => (state, None),
         None => (state, Some(Action::Connect { talker, listener })),
     }
 }
@@ -901,10 +922,11 @@ fn say(triib: &Triib, grid: &Grid, talkers: &[Group<'_>], listeners: &[Group<'_>
             if input.own(output) {
                 return info(route, fl!("matrix-own"));
             }
-            let (state, action) = assess(triib, output, input);
+            let (state, action) = assess(triib, &Domains::of(triib), output, input);
             let (sent, set) = (output.format.to_string(), input.format.to_string());
             let detail = match state {
                 State::Working => fl!("matrix-working"),
+                State::OtherDomain => fl!("matrix-other-domain"),
                 _ if action.is_none() && state != State::Incompatible => {
                     fl!("matrix-waiting-change")
                 }
@@ -1047,6 +1069,7 @@ fn legend<'a>() -> Element<'a, Message> {
         entry(State::Open, fl!("matrix-legend-open")),
         entry(State::Change, fl!("matrix-legend-change")),
         entry(State::Incompatible, fl!("matrix-legend-incompatible")),
+        entry(State::OtherDomain, fl!("matrix-legend-other-domain")),
     ]
     .spacing(20)
     .wrap()
@@ -1178,6 +1201,93 @@ mod tests {
             }
         }
         assert!(own > 0, "each entity meets its own streams");
+    }
+
+    /// Entities keeping time in different clock domains cannot connect: the
+    /// cell between them says so and does nothing, and leaving out what
+    /// cannot connect leaves it out. Where a domain is not known, it can.
+    #[test]
+    fn entities_in_different_domains_do_not_connect() {
+        use crate::topology::{EntityReport, InterfaceReport, Topology};
+        use atdecc::ClockIdentity;
+
+        let (entities, models) = crate::view::tests::bench();
+        let interface = avb_net::Interface {
+            name: "enp6s0".to_owned(),
+            mac: avb_net::MacAddress([0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b]),
+            up: true,
+            speed: None,
+            physical: true,
+            wireless: false,
+            hardware_clock: None,
+        };
+        let triib = Triib::sample(Settings::default(), interface, entities, models);
+        let esp = crate::view::tests::WIRED_ESP;
+        let talkers = groups(&triib, Side::Talker);
+        let listeners = groups(&triib, Side::Listener);
+        let output = talkers
+            .iter()
+            .flat_map(|group| &group.streams)
+            .find(|stream| stream.entity_id == esp)
+            .expect("the ESP talks");
+        let input = listeners
+            .iter()
+            .flat_map(|group| &group.streams)
+            .find(|stream| stream.entity_id != esp && stream.bound_to() != Some(output.key()))
+            .expect("another entity listens");
+        // Each under a bridge of its own: two gPTP domains.
+        let report = |entity_id, place: u64| EntityReport {
+            entity_id,
+            name: "",
+            interfaces: vec![InterfaceReport {
+                index: 0,
+                clock: ClockIdentity(0x0011_22ff_fe00_0010 | place),
+                path: None,
+                info: None,
+                wireless: None,
+                lite: None,
+                gptp: true,
+            }],
+        };
+        let paths = [
+            [
+                ClockIdentity(0x0066_77ff_fe00_0001),
+                ClockIdentity(0x0011_22ff_fe00_0011),
+            ],
+            [
+                ClockIdentity(0x0066_77ff_fe00_0002),
+                ClockIdentity(0x0011_22ff_fe00_0012),
+            ],
+        ];
+        let mut reports = [report(esp, 1), report(input.entity_id, 2)];
+        for (report, path) in reports.iter_mut().zip(&paths) {
+            report.interfaces[0].path = Some(path);
+        }
+        let apart = Domains::in_topology(&Topology::build(&reports, None));
+        assert!(apart.apart(esp, input.entity_id));
+        assert_eq!(
+            assess(&triib, &apart, output, input),
+            (State::OtherDomain, None)
+        );
+        let unknown = Domains::in_topology(&Topology::default());
+        assert_ne!(
+            assess(&triib, &unknown, output, input).0,
+            State::OtherDomain
+        );
+        // With only those two, leaving out what cannot connect leaves both.
+        let (talker, listener) = (output.key(), input.key());
+        let only = |side: Side, key: (EntityId, u16)| {
+            let mut kept = groups(&triib, side);
+            for group in &mut kept {
+                group.streams.retain(|stream| stream.key() == key);
+            }
+            kept.retain(|group| !group.streams.is_empty());
+            kept
+        };
+        let (mut talkers, mut listeners) =
+            (only(Side::Talker, talker), only(Side::Listener, listener));
+        connectable_only(&apart, &mut talkers, &mut listeners);
+        assert!(talkers.is_empty() && listeners.is_empty());
     }
 
     /// A cell whose input must change first offers the talker's format,

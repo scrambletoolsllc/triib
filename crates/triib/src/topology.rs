@@ -1,12 +1,14 @@
-//! Where things sit in the network, from what entities report of their
-//! gPTP paths: a tree from each grandmaster down through the bridges to the
-//! entities, what is not on any tree and why, and the links a stream
-//! between two entities crosses. Where the network runs AVB Lite, the
-//! clock instead flows end to end from each grandmaster to the devices
-//! following it, as they report it. A Wi-Fi station hangs under its access
-//! point, its link the Wi-Fi hop, as AVB Wireless has it. Devices that fell
-//! back to AVB Lite on finding no AVB bridge hang under the switches that
-//! take no part in AVB, one for each PTP grandmaster they follow.
+//! Where things sit in the network, from what entities report: a clock
+//! domain for each grandmaster, and what is in none and why. In a gPTP
+//! domain the clock passes from the grandmaster down through the bridges
+//! to the entities, as their gPTP paths show; a Wi-Fi station hangs under
+//! its access point, its link the Wi-Fi hop, as AVB Wireless has it. In a
+//! PTP domain, devices running AVB Lite follow their grandmaster end to
+//! end: those that fell back to it on finding no AVB bridge hang under the
+//! switches that take no part in AVB, one for each PTP grandmaster they
+//! follow. A device sharing its domain with no other is a domain of its
+//! own. The links a stream between two entities crosses follow from where
+//! they sit.
 
 use std::cmp::Reverse;
 use std::collections::{BTreeMap, HashMap};
@@ -76,11 +78,9 @@ impl WirelessLink {
     }
 }
 
-/// Why a node is not on any tree.
+/// Why a node is in no domain known.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Apart {
-    /// It is its own grandmaster: gPTP does not run on its link.
-    OwnGrandmaster,
     /// It follows this grandmaster but did not report its path.
     NoPath(ClockIdentity),
     /// It reported nothing of its gPTP state.
@@ -91,23 +91,17 @@ pub enum Apart {
     CannotListen,
     /// An entity on this computer, which cannot be read from here.
     OnThisComputer,
-    /// An entity on a network running AVB Lite that does not run it.
-    NotLite,
-    /// An entity on a network running AVB Lite that reports nothing of it.
-    LiteUnreported,
-    /// It runs gPTP on another domain than the trees'.
-    OtherDomain(u8),
-    /// It runs AVB Lite only, taking no part in gPTP or SRP.
-    LiteOnly,
-    /// It runs AVB Lite because the operator or a controller set it to.
-    LiteSet,
 }
 
-impl Apart {
-    /// Set apart by how it was made or set up rather than by a fault.
-    pub fn by_design(self) -> bool {
-        matches!(self, Self::OtherDomain(_) | Self::LiteOnly | Self::LiteSet)
-    }
+/// How a device came to run AVB Lite.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Lite {
+    /// It found no AVB bridge and fell back to it.
+    FellBack,
+    /// It runs AVB Lite only, taking no part in gPTP or SRP.
+    Only,
+    /// The operator or a controller set it to.
+    Set,
 }
 
 #[derive(Debug, Clone, PartialEq, Hash)]
@@ -122,8 +116,11 @@ pub struct Node {
     pub apart: Option<Apart>,
     /// A bridge or entity whose port is a Wi-Fi access point.
     pub access_point: bool,
-    /// The gPTP domain an entity reports; for a grandmaster, its tree's.
+    /// The gPTP domain an entity reports, for a gPTP grandmaster its
+    /// tree's; the PTP domain of one running AVB Lite.
     pub domain: Option<u8>,
+    /// How an entity came to run AVB Lite, where it does.
+    pub lite: Option<Lite>,
 }
 
 impl Node {
@@ -138,6 +135,7 @@ impl Node {
             apart: None,
             access_point: false,
             domain: None,
+            lite: None,
         }
     }
 }
@@ -145,16 +143,12 @@ impl Node {
 #[derive(Debug, Clone, Default, PartialEq, Hash)]
 pub struct Topology {
     pub nodes: Vec<Node>,
-    /// The grandmasters, each the root of a tree, then the switches that
-    /// take no part in AVB.
+    /// The domains, each the root of a tree: gPTP grandmasters, then the
+    /// switches taking no part in AVB in front of devices that fell back
+    /// to AVB Lite, and the PTP grandmasters followed without one.
     pub roots: Vec<NodeId>,
-    /// What is on no tree.
+    /// What is in no domain known.
     pub apart: Vec<NodeId>,
-    /// Built from AVB Lite's PTP rather than from gPTP paths.
-    pub ptp: bool,
-    /// The gPTP domain the trees run on: this computer's tree's, else the
-    /// one most entities report.
-    pub domain: Option<u8>,
 }
 
 /// What an entity reports, for building the topology.
@@ -190,15 +184,6 @@ impl<'a> InterfaceReport<'a> {
         self.lite
             .filter(|status| status.flags.contains(LiteFlags::ACTIVE))
     }
-}
-
-/// What an entity reports of AVB Lite, for the PTP topology.
-pub struct LiteReport<'a> {
-    pub entity_id: EntityId,
-    pub name: &'a str,
-    /// Each AVB interface: its index, its clock identity, and its AVB Lite
-    /// status when it reports one.
-    pub interfaces: Vec<(u16, ClockIdentity, Option<&'a LiteStatus>)>,
 }
 
 /// What this computer heard of its neighbor.
@@ -347,20 +332,13 @@ impl Topology {
                 topology.reported(node, interface);
             }
         }
-        // A path of the entity alone makes it a grandmaster, a root only
-        // when another entity's path starts at it.
+        // Each path starts at a grandmaster; a path of the entity alone
+        // makes it the grandmaster of a domain of its own.
         topology.roots = (0..topology.nodes.len())
             .filter(|&node| {
-                topology.nodes[node].parent.is_none() && !topology.nodes[node].children.is_empty()
+                topology.nodes[node].parent.is_none() && topology.nodes[node].apart.is_none()
             })
             .collect();
-        for node in 0..topology.nodes.len() {
-            let entry = &topology.nodes[node];
-            if entry.parent.is_none() && entry.children.is_empty() && entry.apart.is_none() {
-                topology.nodes[node].apart = Some(Apart::OwnGrandmaster);
-                topology.apart.push(node);
-            }
-        }
 
         // Entities that did not report a path are placed when another's
         // path names them, and set apart otherwise.
@@ -402,13 +380,14 @@ impl Topology {
                 topology.reported(node, interface);
                 continue;
             }
+            // Its own grandmaster, it is a domain of its own.
             let apart = match interface.info {
-                Some(info) if info.gptp_grandmaster_id == interface.clock => Apart::OwnGrandmaster,
-                Some(info) => Apart::NoPath(info.gptp_grandmaster_id),
-                None => Apart::Unreported,
+                Some(info) if info.gptp_grandmaster_id == interface.clock => None,
+                Some(info) => Some(Apart::NoPath(info.gptp_grandmaster_id)),
+                None => Some(Apart::Unreported),
             };
             let node = topology.push(Node {
-                apart: Some(apart),
+                apart,
                 ..Node::new(
                     entity_kind(entity, interface.index),
                     Some(interface.clock),
@@ -416,14 +395,20 @@ impl Topology {
                 )
             });
             topology.reported(node, interface);
-            topology.apart.push(node);
+            if apart.is_some() {
+                topology.apart.push(node);
+            } else {
+                by_clock.entry(interface.clock).or_insert(node);
+                topology.roots.push(node);
+            }
         }
 
-        // Interfaces running AVB Lite: those that fell back on finding no
-        // AVB bridge hang under the switches they found instead, one for
-        // each PTP grandmaster and domain they follow; those that run it
-        // only, or were set to, are set apart.
-        let mut switches: HashMap<(ClockIdentity, u8), NodeId> = HashMap::new();
+        // Interfaces running AVB Lite, in a PTP domain for each grandmaster
+        // they follow. Where any of them fell back on finding no AVB
+        // bridge, they all hang under the switches taking no part in AVB
+        // in front of them; otherwise under their grandmaster, a node of
+        // its own where it is no entity triib reads.
+        let mut groups: Vec<((ClockIdentity, u8), Vec<NodeId>)> = Vec::new();
         for (entity, interface, status) in running_lite {
             // An endpoint alone names no grandmaster, or itself.
             let grandmaster = if status.grandmaster.0 == 0 {
@@ -432,12 +417,6 @@ impl Topology {
                 status.grandmaster
             };
             let offset = status.offset();
-            let apart = match status.fallback_reason {
-                _ if !interface.gptp => Some(Apart::LiteOnly),
-                FallbackReason::NONE => Some(Apart::LiteOnly),
-                FallbackReason::CONFIGURED => Some(Apart::LiteSet),
-                _ => None,
-            };
             let node = topology.push(Node {
                 link: Link {
                     offset,
@@ -447,31 +426,52 @@ impl Topology {
                         }),
                     ..Link::default()
                 },
-                apart,
+                domain: Some(status.ptp_domain),
+                lite: Some(match status.fallback_reason {
+                    _ if !interface.gptp => Lite::Only,
+                    FallbackReason::NONE => Lite::Only,
+                    FallbackReason::CONFIGURED => Lite::Set,
+                    _ => Lite::FellBack,
+                }),
                 ..Node::new(
                     entity_kind(entity, interface.index),
                     Some(interface.clock),
                     entity.name,
                 )
             });
-            if apart.is_some() {
-                topology.apart.push(node);
-                continue;
+            let key = (grandmaster, status.ptp_domain);
+            match groups.iter_mut().find(|(other, _)| *other == key) {
+                Some((_, nodes)) => nodes.push(node),
+                None => groups.push((key, vec![node])),
             }
-            let domain = status.ptp_domain;
-            let switch = *switches.entry((grandmaster, domain)).or_insert_with(|| {
-                let switch = topology.push(Node::new(
+        }
+        for ((grandmaster, domain), nodes) in groups {
+            let fell_back = nodes
+                .iter()
+                .any(|&node| topology.nodes[node].lite == Some(Lite::FellBack));
+            let leader = nodes
+                .iter()
+                .copied()
+                .find(|&node| topology.nodes[node].clock == Some(grandmaster));
+            let root = match leader {
+                _ if fell_back => topology.push(Node::new(
                     Kind::Switch {
                         grandmaster,
                         domain,
                     },
                     None,
                     "",
-                ));
-                topology.roots.push(switch);
-                switch
-            });
-            topology.attach(node, switch);
+                )),
+                Some(leader) => leader,
+                None => topology.push(Node {
+                    domain: Some(domain),
+                    ..Node::new(Kind::Clock, Some(grandmaster), "")
+                }),
+            };
+            topology.roots.push(root);
+            for node in nodes {
+                topology.attach(node, root);
+            }
         }
 
         // The access points the wireless interfaces name.
@@ -518,20 +518,7 @@ impl Topology {
             }
         }
 
-        // An entity on another gPTP domain than the trees' is set apart by
-        // its domain rather than by a fault.
-        topology.domain = topology.domains();
-        if let Some(network) = topology.domain {
-            for &node in &topology.apart {
-                let entry = &mut topology.nodes[node];
-                if matches!(entry.apart, Some(Apart::OwnGrandmaster | Apart::NoPath(_)))
-                    && let Some(domain) = entry.domain.filter(|&domain| domain != network)
-                {
-                    entry.apart = Some(Apart::OtherDomain(domain));
-                }
-            }
-        }
-
+        topology.domains();
         topology.sort();
         topology
     }
@@ -544,12 +531,10 @@ impl Topology {
         self.wireless_hop(node, interface);
     }
 
-    /// Gives each tree the domain most of its entities report, and returns
-    /// the trees' domain: that of this computer's tree, else the one most
-    /// entities on trees report, else the one most entities report.
-    fn domains(&mut self) -> Option<u8> {
+    /// Gives each gPTP tree the domain most of its entities report.
+    fn domains(&mut self) {
         for root in self.roots.clone() {
-            if matches!(self.nodes[root].kind, Kind::Switch { .. }) {
+            if self.is_ptp(root) {
                 continue;
             }
             let tree = (0..self.nodes.len()).filter(|&node| self.is_below(node, root));
@@ -557,113 +542,13 @@ impl Topology {
                 self.nodes[root].domain = Some(domain);
             }
         }
-        let placed = |node: &&Node| node.apart.is_none();
-        self.nodes
-            .iter()
-            .position(|node| node.kind == Kind::Host && node.parent.is_some())
-            .and_then(|host| self.upward(host).last().copied())
-            .and_then(|root| self.nodes[root].domain)
-            .or_else(|| {
-                most(
-                    self.nodes
-                        .iter()
-                        .filter(placed)
-                        .filter_map(|node| node.domain),
-                )
-            })
-            .or_else(|| most(self.nodes.iter().filter_map(|node| node.domain)))
     }
 
-    /// The clock as AVB Lite runs it (AVB Lite profile, 5): PTP end to end
-    /// from each grandmaster to every device following it, through
-    /// switches that take no part, so no bridges. A follower is in sync
-    /// while its offset is measured and within `alarm` nanoseconds; an
-    /// entity that does not run AVB Lite is set apart.
-    pub fn build_lite(entities: &[LiteReport<'_>], alarm: i32) -> Self {
-        let mut topology = Topology {
-            ptp: true,
-            ..Topology::default()
-        };
-        let mut by_clock: HashMap<ClockIdentity, NodeId> = HashMap::new();
-        // Each node running AVB Lite, its grandmaster and its offset.
-        let mut follows: Vec<(NodeId, ClockIdentity, Option<i32>)> = Vec::new();
-        for entity in entities {
-            let mut running = false;
-            let reported = entity
-                .interfaces
-                .iter()
-                .any(|(_, _, status)| status.is_some());
-            for &(interface, clock, status) in &entity.interfaces {
-                let Some(status) = status.filter(|status| status.flags.contains(LiteFlags::ACTIVE))
-                else {
-                    continue;
-                };
-                running = true;
-                // Its own node, even where it shares a clock with another,
-                // as this computer's endpoints share its clock.
-                let node = topology.push(Node::new(
-                    Kind::Entity {
-                        entity_id: entity.entity_id,
-                        interface,
-                    },
-                    Some(clock),
-                    entity.name,
-                ));
-                by_clock.entry(clock).or_insert(node);
-                // An endpoint alone names no grandmaster, or itself.
-                let grandmaster = if status.grandmaster.0 == 0 {
-                    clock
-                } else {
-                    status.grandmaster
-                };
-                follows.push((node, grandmaster, status.offset()));
-            }
-            if !running {
-                let first = entity.interfaces.first();
-                let node = topology.push(Node {
-                    apart: Some(if reported {
-                        Apart::NotLite
-                    } else {
-                        Apart::LiteUnreported
-                    }),
-                    ..Node::new(
-                        Kind::Entity {
-                            entity_id: entity.entity_id,
-                            interface: first.map_or(0, |(index, _, _)| *index),
-                        },
-                        first.map(|(_, clock, _)| *clock),
-                        entity.name,
-                    )
-                });
-                topology.apart.push(node);
-            }
-        }
-        for (node, grandmaster, offset) in follows {
-            if topology.nodes[node].clock == Some(grandmaster) {
-                continue;
-            }
-            let root = match by_clock.get(&grandmaster) {
-                Some(&root) => root,
-                None => {
-                    let root = topology.push(Node::new(Kind::Clock, Some(grandmaster), ""));
-                    by_clock.insert(grandmaster, root);
-                    root
-                }
-            };
-            topology.attach(node, root);
-            topology.nodes[node].link = Link {
-                offset,
-                synced: offset.is_some_and(|offset| offset.unsigned_abs() <= alarm.unsigned_abs()),
-                ..Link::default()
-            };
-        }
-        topology.roots = (0..topology.nodes.len())
-            .filter(|&node| {
-                topology.nodes[node].parent.is_none() && topology.nodes[node].apart.is_none()
-            })
-            .collect();
-        topology.sort();
-        topology
+    /// Whether the node heads or is in a PTP domain, its clock AVB Lite's
+    /// rather than gPTP's.
+    pub fn is_ptp(&self, node: NodeId) -> bool {
+        let entry = &self.nodes[node];
+        matches!(entry.kind, Kind::Switch { .. } | Kind::Clock) || entry.lite.is_some()
     }
 
     /// Makes the link up from a station's node its Wi-Fi hop, in sync while
@@ -722,29 +607,33 @@ impl Topology {
         for node in &mut self.nodes {
             node.children.sort_by_key(|&child| keys[child].clone());
         }
-        self.roots.sort_by_key(|&root| match self.nodes[root].kind {
-            Kind::Switch {
-                grandmaster,
-                domain,
-            } => (1, domain, Some(grandmaster)),
-            _ => (0, 0, self.nodes[root].clock),
+        // The gPTP domains, then the PTP ones, each the larger first.
+        let sizes: Vec<usize> = self
+            .roots
+            .iter()
+            .map(|&root| {
+                (0..self.nodes.len())
+                    .filter(|&node| self.is_below(node, root))
+                    .count()
+            })
+            .collect();
+        let mut roots: Vec<(NodeId, usize)> = self.roots.iter().copied().zip(sizes).collect();
+        roots.sort_by_key(|&(root, size)| {
+            let entry = &self.nodes[root];
+            let grandmaster = match entry.kind {
+                Kind::Switch { grandmaster, .. } => Some(grandmaster),
+                _ => entry.clock,
+            };
+            (self.is_ptp(root), Reverse(size), entry.domain, grandmaster)
         });
+        self.roots = roots.into_iter().map(|(root, _)| root).collect();
         self.apart.sort_by_key(|&node| keys[node].clone());
     }
 
     /// Whether the node is an entity running AVB Lite, its clock PTP's.
     pub fn runs_lite(&self, node: NodeId) -> bool {
         let entry = &self.nodes[node];
-        matches!(entry.kind, Kind::Entity { .. })
-            && match entry.apart {
-                Some(apart) => matches!(apart, Apart::LiteOnly | Apart::LiteSet),
-                None => {
-                    self.ptp
-                        || entry.parent.is_some_and(|parent| {
-                            matches!(self.nodes[parent].kind, Kind::Switch { .. })
-                        })
-                }
-            }
+        matches!(entry.kind, Kind::Entity { .. }) && entry.lite.is_some()
     }
 
     /// The first of the entity's interfaces that is on a tree.
@@ -753,6 +642,11 @@ impl Topology {
             matches!(node.kind, Kind::Entity { entity_id: id, .. } if id == entity_id)
                 && node.apart.is_none()
         })
+    }
+
+    /// The node heading the node's domain.
+    pub fn root_of(&self, node: NodeId) -> NodeId {
+        self.upward(node).last().copied().unwrap_or(node)
     }
 
     /// The node and its ancestors, up to its root.
@@ -981,10 +875,12 @@ mod tests {
         Topology::build(&entities, host)
     }
 
+    /// The switch heads the bench's tree, and the Wi-Fi entity, its own
+    /// grandmaster, is a domain of its own.
     #[test]
     fn the_bench() {
         let topology = bench(Some(HostReport::Heard(SWITCH, 6, false)));
-        assert_eq!(topology.roots.len(), 1);
+        assert_eq!(topology.roots.len(), 2);
         let root = topology.roots[0];
         assert_eq!(kind_of(&topology, root), Kind::Bridge);
         assert_eq!(topology.nodes[root].clock, Some(SWITCH));
@@ -1013,10 +909,11 @@ mod tests {
         let host = topology.nodes[root].children[2];
         assert_eq!(topology.nodes[host].link.port, Some(6));
         assert!(!topology.nodes[host].link.synced);
-        assert_eq!(topology.apart.len(), 1);
-        let wifi = topology.apart[0];
-        assert_eq!(topology.nodes[wifi].apart, Some(Apart::OwnGrandmaster));
-        assert_eq!(topology.placed(WIFI), None);
+        assert!(topology.apart.is_empty());
+        let wifi = topology.placed(WIFI).unwrap();
+        assert_eq!(topology.roots[1], wifi);
+        assert!(topology.nodes[wifi].children.is_empty());
+        assert!(!topology.is_ptp(wifi));
     }
 
     /// A station that reports its path hangs under its access point, and
@@ -1317,85 +1214,78 @@ mod tests {
         }
     }
 
-    /// A plain switch with the wired ESP as grandmaster: the Wi-Fi one
-    /// follows it closely, and this computer's endpoint too far off; the
-    /// Mac, which runs no AVB Lite, is set apart. No switch is shown, and
-    /// each follower hangs straight under the grandmaster.
+    /// What an entity running AVB Lite reports, with no gPTP path.
+    fn lite_report<'a>(
+        entity_id: EntityId,
+        name: &'a str,
+        clock: ClockIdentity,
+        status: &'a LiteStatus,
+    ) -> EntityReport<'a> {
+        EntityReport {
+            entity_id,
+            name,
+            interfaces: vec![InterfaceReport {
+                index: 0,
+                clock,
+                path: None,
+                info: None,
+                wireless: None,
+                lite: Some(status),
+                gptp: true,
+            }],
+        }
+    }
+
+    /// Devices set to AVB Lite by hand, the wired ESP their grandmaster,
+    /// are a PTP domain with no switch shown, as none of them found one:
+    /// the Wi-Fi one follows closely and this computer's entity too far off,
+    /// each straight under the grandmaster. The Mac, which runs no AVB
+    /// Lite and reports nothing of gPTP, is in no domain known.
     #[test]
     fn avb_lite_flows_end_to_end_from_the_grandmaster() {
+        use atdecc::lite::FallbackReason;
         const HOST_CLOCK: ClockIdentity = ClockIdentity(0x9c6b_00ff_fe30_9a2b);
         const HOST_TALKER: EntityId = EntityId(0x9c6b_00ff_0030_9a2b);
-        let active = LiteFlags::CAPABLE.union(LiteFlags::ACTIVE);
-        let wired = lite(active, WIRED_CLOCK, None);
-        let wifi = lite(active, WIRED_CLOCK, Some(-180));
-        let talker = lite(active, WIRED_CLOCK, Some(72_000));
+        let set = |offset| running(FallbackReason::CONFIGURED, WIRED_CLOCK, offset);
+        let (wired, wifi, talker) = (set(None), set(Some(-180)), set(Some(72_000)));
         let mac = lite(LiteFlags::CAPABLE, ClockIdentity(0), None);
         let entities = [
-            LiteReport {
-                entity_id: WIRED,
-                name: "Synthia",
-                interfaces: vec![(0, WIRED_CLOCK, Some(&wired))],
-            },
-            LiteReport {
-                entity_id: WIFI,
-                name: "AVB Wireless Entity",
-                interfaces: vec![(0, WIFI_CLOCK, Some(&wifi))],
-            },
-            LiteReport {
-                entity_id: HOST_TALKER,
-                name: "Host talker 1",
-                interfaces: vec![(0, HOST_CLOCK, Some(&talker))],
-            },
-            LiteReport {
-                entity_id: MAC,
-                name: "Mac mini",
-                interfaces: vec![(0, MAC_CLOCK, Some(&mac))],
-            },
+            lite_report(WIRED, "Synthia", WIRED_CLOCK, &wired),
+            lite_report(WIFI, "AVB Wireless Entity", WIFI_CLOCK, &wifi),
+            lite_report(HOST_TALKER, "Host talker 1", HOST_CLOCK, &talker),
+            lite_report(MAC, "Mac mini", MAC_CLOCK, &mac),
         ];
-        let topology = Topology::build_lite(&entities, 50_000);
-        assert!(topology.ptp);
-        assert!(topology.nodes.iter().all(|node| node.kind != Kind::Bridge));
-        assert_eq!(topology.roots.len(), 1);
-        let root = topology.roots[0];
-        assert_eq!(topology.nodes[root].clock, Some(WIRED_CLOCK));
-        assert_eq!(topology.nodes[root].children.len(), 2);
-        let node = |kind: Kind| {
+        let topology = Topology::build(&entities, None);
+        assert!(
             topology
                 .nodes
                 .iter()
-                .find(|node| node.kind == kind)
-                .unwrap()
-        };
-        let wifi = node(Kind::Entity {
-            entity_id: WIFI,
-            interface: 0,
-        });
+                .all(|node| !matches!(node.kind, Kind::Bridge | Kind::Switch { .. }))
+        );
+        assert_eq!(topology.roots.len(), 1);
+        let root = topology.roots[0];
+        assert_eq!(topology.nodes[root].clock, Some(WIRED_CLOCK));
+        assert!(topology.is_ptp(root));
+        assert_eq!(topology.nodes[root].domain, Some(0));
+        assert_eq!(topology.nodes[root].children.len(), 2);
+        let node = |entity_id| &topology.nodes[topology.placed(entity_id).unwrap()];
+        let wifi = node(WIFI);
         assert_eq!(wifi.parent, Some(root));
+        assert_eq!(wifi.lite, Some(Lite::Set));
         assert!(wifi.link.synced);
         assert_eq!(wifi.link.offset, Some(-180));
         // 72 us is past the 50 us AVB Lite allows. This computer shows as
         // its entity alone.
-        let talker = node(Kind::Entity {
-            entity_id: HOST_TALKER,
-            interface: 0,
-        });
+        let talker = node(HOST_TALKER);
         assert_eq!(talker.parent, Some(root));
         assert!(!talker.link.synced);
         assert!(topology.nodes.iter().all(|node| node.kind != Kind::Host));
-        let mac = node(Kind::Entity {
-            entity_id: MAC,
-            interface: 0,
-        });
-        assert_eq!(mac.apart, Some(Apart::NotLite));
+        assert_eq!(topology.placed(MAC), None);
         assert_eq!(topology.apart.len(), 1);
-        // One that reports no AVB Lite status at all is set apart for that.
-        let quiet = [LiteReport {
-            entity_id: MAC,
-            name: "Mac mini",
-            interfaces: vec![(0, MAC_CLOCK, None)],
-        }];
-        let topology = Topology::build_lite(&quiet, 50_000);
-        assert_eq!(topology.nodes[0].apart, Some(Apart::LiteUnreported));
+        assert_eq!(
+            topology.nodes[topology.apart[0]].apart,
+            Some(Apart::Unreported)
+        );
     }
 
     /// An AVB Lite status for an interface running it: fallen back for
@@ -1415,11 +1305,11 @@ mod tests {
         }
     }
 
-    /// On a gPTP network, devices that fell back to AVB Lite on finding no
-    /// AVB bridge hang under a switch for each PTP grandmaster they follow,
-    /// a stream between two of them crossing it; those running AVB Lite
-    /// only, or set to it, are set apart for that, and one only capable of
-    /// it stays on the tree.
+    /// Devices that fell back to AVB Lite on finding no AVB bridge hang
+    /// under a switch for each PTP grandmaster they follow, beside the gPTP
+    /// tree, a stream between two of them crossing it; those running AVB
+    /// Lite only, or set to it, following the same grandmaster hang there
+    /// too, and one only capable of it stays on the tree.
     #[test]
     fn devices_behind_a_plain_switch_hang_under_it() {
         use atdecc::lite::FallbackReason;
@@ -1512,23 +1402,17 @@ mod tests {
             topology.route(entity(1), entity(2)).hops,
             [(leader, true), (follower, false)]
         );
-        let apart = |place| {
-            topology
-                .nodes
-                .iter()
-                .find(|node| {
-                    node.kind
-                        == Kind::Entity {
-                            entity_id: entity(place),
-                            interface: 0,
-                        }
-                })
-                .and_then(|node| node.apart)
-        };
-        assert_eq!(apart(4), Some(Apart::LiteOnly));
-        assert_eq!(apart(5), Some(Apart::LiteOnly));
-        assert_eq!(apart(6), Some(Apart::LiteSet));
-        assert!(Apart::LiteSet.by_design() && !Apart::Unreported.by_design());
+        for (place, how) in [
+            (1, Lite::FellBack),
+            (4, Lite::Only),
+            (5, Lite::Only),
+            (6, Lite::Set),
+        ] {
+            let node = node(place).unwrap();
+            assert_eq!(topology.nodes[node].parent, Some(switch));
+            assert_eq!(topology.nodes[node].lite, Some(how));
+        }
+        assert!(topology.apart.is_empty());
         let capable = node(7).unwrap();
         assert_eq!(
             topology.nodes[topology.nodes[capable].parent.unwrap()].clock,
@@ -1537,10 +1421,11 @@ mod tests {
         assert!(!topology.runs_lite(capable));
     }
 
-    /// An entity set apart on another gPTP domain than the trees' is set
-    /// apart by its domain; one on the trees' own is not.
+    /// Each gPTP domain is a tree of its own, labelled with its number: one
+    /// device alone on another domain heads one, and so does one alone on
+    /// the same domain as the switch's tree, the larger tree first.
     #[test]
-    fn another_domain_sets_a_device_apart_by_design() {
+    fn devices_alone_head_domains_of_their_own() {
         let on_domain = |grandmaster: ClockIdentity, domain: u8| {
             let mut payload = [0u8; 20];
             payload[4..12].copy_from_slice(&grandmaster.0.to_be_bytes());
@@ -1576,34 +1461,35 @@ mod tests {
             ],
             Some(HostReport::Heard(SWITCH, 6, true)),
         );
-        assert_eq!(topology.domain, Some(0));
-        assert_eq!(topology.nodes[topology.roots[0]].domain, Some(0));
-        let apart: Vec<Option<Apart>> = topology
-            .apart
+        assert!(topology.apart.is_empty());
+        let heads: Vec<(Option<ClockIdentity>, Option<u8>)> = topology
+            .roots
             .iter()
-            .map(|&node| topology.nodes[node].apart)
+            .map(|&root| (topology.nodes[root].clock, topology.nodes[root].domain))
             .collect();
         assert_eq!(
-            apart,
-            [Some(Apart::OtherDomain(1)), Some(Apart::OwnGrandmaster)]
+            heads,
+            [
+                (Some(SWITCH), Some(0)),
+                (Some(LOST_CLOCK), Some(0)),
+                (Some(WIFI_CLOCK), Some(1)),
+            ]
         );
     }
 
     /// Followers of a grandmaster triib does not read hang under a node of
-    /// its own; one with no offset measured is not in sync.
+    /// its own where none of them fell back behind a switch; one with no
+    /// offset measured is not in sync.
     #[test]
     fn an_unread_grandmaster_gets_a_node() {
-        let active = LiteFlags::CAPABLE.union(LiteFlags::ACTIVE);
-        let wired = lite(active, SWITCH, None);
-        let entities = [LiteReport {
-            entity_id: WIRED,
-            name: "Synthia",
-            interfaces: vec![(0, WIRED_CLOCK, Some(&wired))],
-        }];
-        let topology = Topology::build_lite(&entities, 50_000);
+        use atdecc::lite::FallbackReason;
+        let wired = running(FallbackReason::CONFIGURED, SWITCH, None);
+        let entities = [lite_report(WIRED, "Synthia", WIRED_CLOCK, &wired)];
+        let topology = Topology::build(&entities, None);
         let root = topology.roots[0];
         assert_eq!(topology.nodes[root].kind, Kind::Clock);
         assert_eq!(topology.nodes[root].clock, Some(SWITCH));
+        assert_eq!(topology.nodes[root].domain, Some(0));
         let follower = topology.nodes[root].children[0];
         assert!(!topology.nodes[follower].link.synced);
     }

@@ -65,7 +65,7 @@ inspector «Επιθεωρητής», log «Αρχείο καταγραφής».
 - «ζεύξη» for *link*: correct, but some engineers simply say «link».
 - «ρολόι πολυμέσων» for *media clock*, and «συχνότητα δειγματοληψίας»,
   which may be too long for the inspector's labels.
-- The map's band label is `netmap-off-tree` uppercased by the code, which
-  keeps the tonos (ΕΚΤΌΣ ΔΈΝΤΡΟΥ gPTP); Greek capitals normally drop it.
+- The map's area labels are uppercased by the code, which drops the tonos
+  as Greek capitals do («Άγνωστος τομέας» shows as ΑΓΝΩΣΤΟΣ ΤΟΜΕΑΣ).
 - «σε holdover» kept in Latin script; «σε κατάσταση διατήρησης» is the
   Greek phrase. The station's *Time* label is «Χρονισμός».

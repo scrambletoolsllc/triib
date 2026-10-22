@@ -11,11 +11,9 @@ take them («X varlığının», «X akışının») or by
 postpositions that need none («ile», «olarak», «üzerinde»). Suffixes on
 the loanwords below follow their pronunciation, after an apostrophe.
 
-Two strings are uppercased or capitalized by the code with a
-locale-independent rule that turns *i* into *I*, not *İ*: the map's band
-label (`netmap-off-tree`) and the start of role and diagnostics lists.
-Those strings are written so they do not depend on it («gPTP ağacı
-dışında» has no *i*).
+The code uppercases the map's area labels and capitalizes the start of
+role and diagnostics lists as Turkish writes them, *i* as *İ*
+(«Alan bilinmiyor» shows as ALAN BİLİNMİYOR).
 
 | English | Rendering | Note |
 |---|---|---|

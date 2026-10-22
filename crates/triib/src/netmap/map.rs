@@ -5,8 +5,8 @@
 //! dots while something flows: a wire for the frames on each link, so a
 //! multicast stream's listeners share one as far as their paths do and it
 //! branches where they part, while a unicast stream's each have their own.
-//! Each tree is labelled with its gPTP domain, and what is on no tree sits
-//! in bands by why: a fault, or each reason it is set apart by design.
+//! Each tree is a clock domain, labelled gPTP or PTP with its number, and
+//! what is in no domain known sits in a band of its own.
 
 use std::cell::Cell as Memo;
 use std::cmp::Reverse;
@@ -37,7 +37,7 @@ use scramble_ui::{Scheme, blend, faded, motion};
 use super::{Card, Focus, Map, Paint, Status};
 use crate::app::Message;
 use crate::text::{fit, measure};
-use crate::topology::{Apart, Kind, NodeId, Topology};
+use crate::topology::{Kind, NodeId, Topology};
 
 /// A device card at its smallest, in a bridge's column.
 const DEVICE: Size = Size::new(200.0, 46.0);
@@ -398,56 +398,26 @@ fn gutter(lanes: usize) -> f32 {
     }
 }
 
-/// Why a node is on no tree, as its band tells: a fault, or by design.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum Band {
-    Fault,
-    Domain(u8),
-    LiteOnly,
-    LiteSet,
-}
-
-/// What is on no tree, in its bands: those set apart by a fault first, then
-/// each reason they were set apart by design, each band with its label.
+/// What is in no domain known, in its band with its label.
 fn bands(topology: &Topology) -> Vec<(String, Vec<NodeId>)> {
-    let mut bands: Vec<(Band, Vec<NodeId>)> = Vec::new();
-    for &node in &topology.apart {
-        let band = match topology.nodes[node].apart {
-            Some(Apart::OtherDomain(domain)) => Band::Domain(domain),
-            Some(Apart::LiteOnly) => Band::LiteOnly,
-            Some(Apart::LiteSet) => Band::LiteSet,
-            _ => Band::Fault,
-        };
-        match bands.iter_mut().find(|(other, _)| *other == band) {
-            Some((_, nodes)) => nodes.push(node),
-            None => bands.push((band, vec![node])),
-        }
+    if topology.apart.is_empty() {
+        return Vec::new();
     }
-    bands.sort_by_key(|(band, _)| *band);
-    bands
-        .into_iter()
-        .map(|(band, nodes)| {
-            let label = match band {
-                Band::Fault if topology.ptp => crate::fl!("netmap-off-ptp"),
-                Band::Fault => crate::fl!("netmap-off-tree"),
-                Band::Domain(domain) => crate::fl!("netmap-domain", domain = domain),
-                Band::LiteOnly => crate::fl!("netmap-lite-only"),
-                Band::LiteSet => crate::fl!("netmap-lite-set"),
-            };
-            (label, nodes)
-        })
-        .collect()
+    vec![(crate::fl!("netmap-domain-unknown"), topology.apart.clone())]
 }
 
-/// A tree's label: its gPTP domain where known, or AVB Lite for the
-/// switches that take no part in AVB.
+/// A tree's label: its gPTP domain, or its PTP domain where it runs AVB
+/// Lite, where known.
 fn tree_label(topology: &Topology, root: NodeId) -> Option<String> {
-    match topology.nodes[root].kind {
-        Kind::Switch { .. } => Some("AVB Lite".to_owned()),
-        _ => topology.nodes[root]
-            .domain
-            .map(|domain| crate::fl!("netmap-domain", domain = domain)),
-    }
+    let domain = match topology.nodes[root].kind {
+        Kind::Switch { domain, .. } => Some(domain),
+        _ => topology.nodes[root].domain,
+    }?;
+    Some(if topology.is_ptp(root) {
+        crate::fl!("netmap-ptp-domain", domain = domain)
+    } else {
+        crate::fl!("netmap-domain", domain = domain)
+    })
 }
 
 /// A label as the map writes it: in capitals where the script has them,
@@ -1938,12 +1908,7 @@ mod tests {
                     .iter()
                     .any(|bound| Some(bound.1) == entity && bound.2 == Status::Failed);
                 let (subtitle, paint) = match (clock, node.kind, node.apart) {
-                    (true, _, Some(apart)) if apart.by_design() => {
-                        (crate::fl!("netmap-synced"), Paint::Muted)
-                    }
-                    (_, _, Some(apart)) if !apart.by_design() => {
-                        (crate::fl!("netmap-off-tree"), Paint::Failed)
-                    }
+                    (_, _, Some(_)) => (crate::fl!("netmap-domain-unknown"), Paint::Failed),
                     (true, Kind::Switch { .. }, _) => {
                         ("AVB Lite PTP, domain 0".to_owned(), Paint::Muted)
                     }

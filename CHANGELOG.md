@@ -20,14 +20,20 @@ All notable changes to triib. Versions follow
   brings the whole stream forward with all its listeners.
 - A stream its talker says it sends with no known listener bound to it
   still shows, on a wire from the talker to its bridge.
-- On the network map, devices that found no AVB bridge and fell back to
-  AVB Lite hang under a dashed card for the non-AVB switch in front of
-  them, one for each PTP grandmaster they follow, with their streams
-  crossing it and their clock as AVB Lite runs it; their details say
-  why they fell back. Devices that run AVB Lite only, those set to it by
-  hand, and those on another gPTP domain sit in areas of their own, apart
-  from those off the tree for a fault, and each tree is labelled with
-  its gPTP domain.
+- The network map shows every entity and bridge it hears in its clock
+  domain, each labelled with its number: a gPTP domain from its
+  grandmaster down through the AVB bridges, or a PTP domain whose devices
+  run AVB Lite, those that found no AVB bridge and fell back to it hanging
+  under a dashed card for the non-AVB switch in front of them, with their
+  streams crossing it; their details say why they run AVB Lite. A device
+  that shares its domain with no other, as an AVB device alone on a
+  non-AVB switch, has an area of its own, and only those whose domain is
+  not known sit apart. The map is the same whether this computer's
+  entities run gPTP, AVB Lite or nothing, its choices always Sync, Audio
+  and CRF.
+- The connection matrix keeps talkers and listeners in different clock
+  domains, as the network map shows them, from connecting: their cell
+  says so and does nothing, and hiding what cannot connect hides them.
 - Entities that send no notifications, as some ESP32 endpoints do not,
   stay current as other controllers change them: triib reads each
   entity's names, stream formats, sampling rates and clock sources again

@@ -28,8 +28,8 @@ use crate::describe;
 use crate::fl;
 use crate::settings::NetworkShows;
 use crate::topology::{
-    Apart, EntityReport, HostReport, InterfaceReport, Kind as NodeKind, LiteReport, NodeId, Route,
-    Topology, WirelessLink,
+    Apart, EntityReport, HostReport, InterfaceReport, Kind as NodeKind, NodeId, Route, Topology,
+    WirelessLink,
 };
 use crate::view::VIEW_MARGIN;
 
@@ -224,13 +224,7 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
     let wide = width >= WIDE;
     let list_open = !wide && triib.network_list;
     let shows = triib.settings.network_shows;
-    // Where the network runs AVB Lite, the clock is PTP's, end to end.
-    let lite = lite_topology(triib);
-    let ptp = lite.is_some();
-    let topology = match lite {
-        Some(lite) if shows == NetworkShows::Clock => lite,
-        _ => topology_of(triib),
-    };
+    let topology = topology_of(triib);
     let streams: Vec<Stream> = match shows {
         NetworkShows::Clock => Vec::new(),
         _ => streams(triib, &topology)
@@ -252,7 +246,7 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
             .any(|stream| stream.key() == (*talker, *output)),
         Focus::Node(key) => find(&topology, *key).is_some(),
     });
-    let (header, focused) = header(&topology, ptp, shows, &streams, focus, width, list_open);
+    let (header, focused) = header(&topology, shows, &streams, focus, width, list_open);
     // The chips a view's margin from the toolbar and 16 from what is below,
     // as the other views' are. On narrow windows the list's toggle makes
     // their row 8 taller.
@@ -337,7 +331,6 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
 /// no room for it.
 fn header<'a>(
     topology: &Topology,
-    ptp: bool,
     shows: NetworkShows,
     streams: &[Stream],
     focus: Option<Focus>,
@@ -359,11 +352,9 @@ fn header<'a>(
             .selected(shows == value)
             .on_press(Message::NetworkShows(value))
     };
-    let labels = [
-        if ptp { "PTP" } else { "gPTP" }.to_owned(),
-        fl!("netmap-audio"),
-        "CRF".to_owned(),
-    ];
+    // The same whether this computer's entities run gPTP, AVB Lite or
+    // nothing.
+    let labels = [fl!("netmap-sync"), fl!("netmap-audio"), "CRF".to_owned()];
     // The group's buttons, and the gaps between them.
     used.push(labels.iter().map(|label| labelled(label)).sum::<f32>() + 2.0 * 2.0);
     let [clock, audio, crf] = labels;
@@ -404,10 +395,12 @@ fn header<'a>(
     }
     header = header.push(choices);
     if width >= TITLED {
+        // AVB bridges, and the switches taking no part in AVB that devices
+        // fell back to AVB Lite behind.
         let bridges = topology
             .nodes
             .iter()
-            .filter(|node| node.kind == NodeKind::Bridge)
+            .filter(|node| matches!(node.kind, NodeKind::Bridge | NodeKind::Switch { .. }))
             .count();
         let mut entities: Vec<EntityId> = topology
             .nodes
@@ -420,12 +413,10 @@ fn header<'a>(
         entities.sort_by_key(|entity_id| entity_id.0);
         entities.dedup();
         let devices = entities.len();
-        // AVB Lite's switches take no part, so none are shown.
-        let mut counts = vec![fl!("netmap-devices", count = devices)];
-        if !topology.ptp {
-            counts.push(fl!("netmap-bridges", count = bridges));
-        }
-        let counts = crate::i18n::list(counts);
+        let counts = crate::i18n::list(vec![
+            fl!("netmap-devices", count = devices),
+            fl!("netmap-bridges", count = bridges),
+        ]);
         used.push(scramble_ui::font::measure(&counts, Type::BodyMedium).ceil());
         header = header.push(styled(counts, Type::BodyMedium).style(style::on_surface_variant));
     }
@@ -475,6 +466,42 @@ fn mapped_entities(triib: &Triib) -> impl Iterator<Item = &DiscoveredEntity> {
             || crate::describe::is_talker(adp)
             || crate::describe::is_listener(adp)
     })
+}
+
+/// The clock domains each entity on the map is in, by the node heading
+/// each: one with interfaces in several is in each, and one whose domain
+/// is not known in none.
+pub struct Domains(std::collections::HashMap<EntityId, Vec<NodeId>>);
+
+impl Domains {
+    pub fn of(triib: &Triib) -> Self {
+        Self::in_topology(&topology_of(triib))
+    }
+
+    pub(crate) fn in_topology(topology: &Topology) -> Self {
+        let mut domains: std::collections::HashMap<EntityId, Vec<NodeId>> =
+            std::collections::HashMap::new();
+        for (node, entry) in topology.nodes.iter().enumerate() {
+            if let NodeKind::Entity { entity_id, .. } = entry.kind
+                && entry.apart.is_none()
+            {
+                domains
+                    .entry(entity_id)
+                    .or_default()
+                    .push(topology.root_of(node));
+            }
+        }
+        Self(domains)
+    }
+
+    /// Whether the two keep time in different domains, so no stream can
+    /// pass between them, as far as their domains are known.
+    pub fn apart(&self, one: EntityId, other: EntityId) -> bool {
+        match (self.0.get(&one), self.0.get(&other)) {
+            (Some(one), Some(other)) => !one.iter().any(|domain| other.contains(domain)),
+            _ => false,
+        }
+    }
 }
 
 /// The tree the entities' reports make, with this computer when the
@@ -540,55 +567,6 @@ fn topology_of(triib: &Triib) -> Topology {
         }
     }
     topology
-}
-
-/// The clock as AVB Lite runs it, when it does: this computer hears no
-/// AVB bridge with gPTP running to it, and an entity it reads, its own
-/// endpoints or another's, operates in AVB Lite.
-fn lite_topology(triib: &Triib) -> Option<Topology> {
-    if triib.neighbor.is_some_and(|neighbor| neighbor.synced) {
-        return None;
-    }
-    let active = |status: &&LiteStatus| status.flags.contains(LiteFlags::ACTIVE);
-    let names: Vec<(EntityId, String)> = mapped_entities(triib)
-        .map(|entity| (entity.entity_id(), triib.entity_name(entity)))
-        .collect();
-    let reports: Vec<LiteReport<'_>> = names
-        .iter()
-        .map(|(entity_id, name)| LiteReport {
-            entity_id: *entity_id,
-            name,
-            interfaces: triib
-                .models
-                .get(entity_id)
-                .map(|model| {
-                    model
-                        .avb_interfaces()
-                        .map(|interface| {
-                            (
-                                interface.index,
-                                interface.clock_identity,
-                                model.lite_status(interface.index),
-                            )
-                        })
-                        .collect()
-                })
-                .unwrap_or_default(),
-        })
-        .collect();
-    let running = reports
-        .iter()
-        .flat_map(|report| &report.interfaces)
-        .any(|(_, _, status)| status.as_ref().is_some_and(active));
-    if !running {
-        return None;
-    }
-    // This computer shows as its own entities, which follow whom it
-    // follows, as they share its ptp4l.
-    Some(Topology::build_lite(
-        &reports,
-        crate::lite_view::OFFSET_ALARM,
-    ))
 }
 
 fn key_of(topology: &Topology, node: NodeId) -> NodeKey {
@@ -676,6 +654,18 @@ fn leads_ptp(triib: &Triib, topology: &Topology, node: NodeId) -> bool {
         && lite_status(triib, topology, node).is_some_and(|status| {
             status.grandmaster.0 == 0 || Some(status.grandmaster) == topology.nodes[node].clock
         })
+}
+
+/// Whether the node is the grandmaster of the switches taking no part in
+/// AVB that it hangs under, its clock going out through them.
+fn leads_switch(topology: &Topology, node: NodeId) -> bool {
+    let entry = &topology.nodes[node];
+    entry.parent.is_some_and(|parent| {
+        matches!(
+            topology.nodes[parent].kind,
+            NodeKind::Switch { grandmaster, .. } if Some(grandmaster) == entry.clock
+        )
+    })
 }
 
 /// AVB Lite PTP and its domain, as the switches that take no part in AVB
@@ -801,7 +791,7 @@ fn bound_streams(triib: &Triib, topology: &Topology) -> Vec<Stream> {
                     talker_leg,
                     if topology.placed(listener_id).is_none() {
                         fl!(
-                            "netmap-advertised-off-tree",
+                            "netmap-advertised-unknown-domain",
                             listener = listener_name.clone()
                         )
                     } else {
@@ -982,17 +972,21 @@ fn lines(
     focus: Option<Focus>,
 ) -> Vec<Line> {
     if shows == NetworkShows::Clock {
-        // The link up from every node on a tree, the clock flowing down it.
+        // The link up from every node on a tree, the clock flowing down it,
+        // but up it from a grandmaster behind the switches in front of it,
+        // which carry its clock to the others there.
         let focused = match focus {
             Some(Focus::Node(key)) => find(topology, key),
             _ => None,
         };
+        let parent = |node: NodeId| topology.nodes[node].parent;
+        let ahead = |node: NodeId| parent(node).filter(|_| leads_switch(topology, node));
         return (0..topology.nodes.len())
             .filter(|&node| topology.nodes[node].parent.is_some())
             .map(|node| {
                 let synced = topology.nodes[node].link.synced;
                 Line {
-                    hops: vec![(node, false)],
+                    hops: vec![(node, ahead(node).is_some())],
                     status: if synced {
                         Status::Flowing
                     } else {
@@ -1004,7 +998,10 @@ fn lines(
                         Paint::Unsynced
                     },
                     related: focused.is_none_or(|focused| {
-                        below(topology, node, focused) || below(topology, focused, node)
+                        below(topology, node, focused)
+                            || below(topology, focused, node)
+                            || ahead(node).is_some_and(|switch| below(topology, focused, switch))
+                            || ahead(focused).is_some_and(|switch| below(topology, node, switch))
                     }),
                     picked: false,
                     focus: Focus::Node(key_of(topology, node)),
@@ -1078,10 +1075,7 @@ fn cards(
                 }
             };
             let mut border = Paint::Plain;
-            // Set apart by design, a node says how it is doing as one on a
-            // tree does, the band it sits in saying why it is apart.
-            let apart = entry.apart.filter(|apart| !apart.by_design());
-            let (subtitle, subtitle_paint) = match (shows, apart, entry.kind) {
+            let (subtitle, subtitle_paint) = match (shows, entry.apart, entry.kind) {
                 (_, Some(Apart::NoNeighbor), _) => (
                     fl!("netmap-no-bridge-on", interface = interface),
                     Paint::Muted,
@@ -1093,29 +1087,13 @@ fn cards(
                 (_, Some(Apart::OnThisComputer), _) => {
                     (fl!("netmap-on-this-computer"), Paint::Muted)
                 }
-                (_, Some(Apart::NotLite), _) => (fl!("netmap-not-lite"), Paint::Muted),
-                (_, Some(Apart::LiteUnreported), _) => {
-                    (fl!("netmap-lite-not-reported"), Paint::Muted)
-                }
-                (_, Some(apart), _) => (
-                    match apart {
-                        Apart::NoPath(_) => fl!("netmap-path-not-reported"),
-                        Apart::Unreported => fl!("netmap-gptp-not-reported"),
-                        _ => fl!("netmap-off-tree"),
-                    },
-                    Paint::Failed,
-                ),
+                (_, Some(Apart::NoPath(_)), _) => (fl!("netmap-path-not-reported"), Paint::Failed),
+                (_, Some(Apart::Unreported), _) => (fl!("netmap-gptp-not-reported"), Paint::Failed),
                 (NetworkShows::Clock, None, NodeKind::Switch { domain, .. }) => {
                     (lite_domain(domain), Paint::Muted)
                 }
                 (NetworkShows::Clock, None, _)
-                    if let Some(Apart::OtherDomain(domain)) = entry.apart =>
-                {
-                    (fl!("netmap-domain", domain = domain), Paint::Muted)
-                }
-                (NetworkShows::Clock, None, _)
-                    if (entry.parent.is_none() && entry.apart.is_none())
-                        || leads_ptp(triib, topology, node) =>
+                    if entry.parent.is_none() || leads_ptp(triib, topology, node) =>
                 {
                     border = Paint::Clock;
                     (fl!("avb-interface-grandmaster"), Paint::Clock)
@@ -1143,7 +1121,12 @@ fn cards(
                 (_, None, NodeKind::Host) => {
                     (fl!("netmap-triib-on", interface = interface), Paint::Muted)
                 }
-                (_, None, _) if entity.is_none() || !entry.children.is_empty() => {
+                // A bridge, or an entity streams pass through, as an access
+                // point; in AVB Lite they pass the switches in front instead.
+                (_, None, _)
+                    if entity.is_none()
+                        || (!entry.children.is_empty() && !topology.runs_lite(node)) =>
+                {
                     let through = traffic(
                         streams
                             .iter()
@@ -1437,36 +1420,18 @@ fn wireless_facts(triib: &Triib, topology: &Topology, node: NodeId) -> Vec<(Stri
     ]
 }
 
-/// Whether the node is in sync: on a tree with the clock running up to
-/// it, or, set apart running AVB Lite, following its grandmaster closely.
+/// Whether the node is in sync: in a domain, with the clock running up
+/// to it from its grandmaster, or following it closely in AVB Lite.
 fn synced(topology: &Topology, node: NodeId) -> bool {
     let entry = &topology.nodes[node];
-    match entry.apart {
-        None => entry.parent.is_none() || entry.link.synced,
-        Some(Apart::LiteOnly | Apart::LiteSet) => entry.link.synced,
-        Some(_) => false,
-    }
+    entry.apart.is_none() && (entry.parent.is_none() || entry.link.synced)
 }
 
-/// Whether the node's clock needs looking at: out of sync, unless that is
-/// for being on another gPTP domain.
-fn needs_attention(topology: &Topology, node: NodeId) -> bool {
-    !synced(topology, node) && !matches!(topology.nodes[node].apart, Some(Apart::OtherDomain(_)))
-}
-
-/// What the overviews add to their help where the map holds devices
-/// running AVB Lite or set apart by design.
-fn with_lite_help(topology: &Topology, help: String) -> String {
-    let lite = topology
-        .roots
-        .iter()
-        .any(|&root| matches!(topology.nodes[root].kind, NodeKind::Switch { .. }))
-        || topology
-            .apart
-            .iter()
-            .any(|&node| topology.nodes[node].apart.is_some_and(Apart::by_design));
-    if lite {
-        format!("{help}\n\n{}", fl!("netmap-help-lite"))
+/// What the overviews add to their help where the map holds more than one
+/// domain or a PTP one.
+fn with_domain_help(topology: &Topology, help: String) -> String {
+    if topology.roots.len() > 1 || topology.roots.iter().any(|&root| topology.is_ptp(root)) {
+        format!("{help}\n\n{}", fl!("netmap-help-domains"))
     } else {
         help
     }
@@ -1474,26 +1439,14 @@ fn with_lite_help(topology: &Topology, help: String) -> String {
 
 fn clock_item(topology: &Topology, node: NodeId) -> Item {
     let ok = synced(topology, node);
-    // In AVB Lite, a device taking no part says why, as one on another
-    // gPTP domain does.
-    let apart = match topology.nodes[node].apart {
-        Some(Apart::NotLite) => Some(fl!("netmap-not-lite")),
-        Some(Apart::LiteUnreported) => Some(fl!("netmap-lite-not-reported")),
-        Some(Apart::OtherDomain(domain)) => Some(fl!("netmap-domain", domain = domain)),
-        _ => None,
-    };
     Item {
         name: node_name(topology, node),
-        detail: match &apart {
-            Some(apart) => apart.clone(),
-            None if ok => fl!("netmap-synced"),
-            None => fl!("netmap-not-synced"),
-        },
-        detail_paint: if ok || apart.is_some() {
-            Paint::Muted
+        detail: if ok {
+            fl!("netmap-synced")
         } else {
-            Paint::Failed
+            fl!("netmap-not-synced")
         },
+        detail_paint: if ok { Paint::Muted } else { Paint::Failed },
         swatch: if ok { Paint::Clock } else { Paint::Unsynced },
         focus: Focus::Node(key_of(topology, node)),
     }
@@ -1550,7 +1503,7 @@ fn lite_details(
     let ok = synced(topology, node);
     let leads = leads_ptp(triib, topology, node);
     let state = match (entry.apart, entry.link.offset) {
-        (Some(apart), _) => apart_reason(apart, topology.domain),
+        (Some(apart), _) => apart_reason(apart),
         (None, _) if leads => fl!("avb-interface-grandmaster"),
         (None, _) if ok => fl!("netmap-synced-to-grandmaster"),
         (None, Some(offset)) => fl!(
@@ -1577,11 +1530,9 @@ fn lite_details(
     }
 }
 
-/// Why a node is not on a tree, in words, the trees running gPTP on
-/// `network`.
-fn apart_reason(apart: Apart, network: Option<u8>) -> String {
+/// Why a node is in no domain known, in words.
+fn apart_reason(apart: Apart) -> String {
     match apart {
-        Apart::OwnGrandmaster => fl!("netmap-apart-own-grandmaster"),
         Apart::NoPath(grandmaster) => fl!(
             "netmap-apart-no-path",
             grandmaster = grandmaster.to_string()
@@ -1590,31 +1541,25 @@ fn apart_reason(apart: Apart, network: Option<u8>) -> String {
         Apart::NoNeighbor => fl!("netmap-apart-no-neighbor"),
         Apart::CannotListen => fl!("netmap-apart-cannot-listen"),
         Apart::OnThisComputer => fl!("netmap-apart-on-this-computer"),
-        Apart::NotLite => fl!("netmap-apart-not-lite"),
-        Apart::LiteUnreported => fl!("netmap-apart-lite-unreported"),
-        Apart::OtherDomain(domain) => fl!(
-            "netmap-apart-other-domain",
-            domain = domain,
-            network = network.unwrap_or_default()
-        ),
-        Apart::LiteOnly => fl!("netmap-apart-lite-only"),
-        Apart::LiteSet => fl!("netmap-apart-lite-set"),
     }
 }
 
 fn clock_overview(topology: &Topology) -> Page {
     let unsynced: Vec<Item> = (0..topology.nodes.len())
-        .filter(|&node| needs_attention(topology, node))
+        .filter(|&node| !synced(topology, node))
         .map(|node| clock_item(topology, node))
         .collect();
+    // Each domain's, a PTP domain behind a switch naming its own.
     let grandmasters: Vec<String> = topology
         .roots
         .iter()
-        .filter(|&&root| !matches!(topology.nodes[root].kind, NodeKind::Switch { .. }))
-        .map(|&root| node_name(topology, root))
+        .map(|&root| match topology.nodes[root].kind {
+            NodeKind::Switch { grandmaster, .. } => clock_name(topology, grandmaster),
+            _ => node_name(topology, root),
+        })
         .collect();
     Page {
-        kicker: if topology.ptp { "PTP" } else { "gPTP" }.to_owned(),
+        kicker: fl!("netmap-sync"),
         title: fl!("netmap-clock-tree"),
         swatch: Some(Paint::Clock),
         state: if grandmasters.is_empty() {
@@ -1640,14 +1585,7 @@ fn clock_overview(topology: &Topology) -> Page {
         } else {
             vec![(fl!("netmap-needs-attention"), unsynced)]
         },
-        help: with_lite_help(
-            topology,
-            if topology.ptp {
-                fl!("netmap-help-ptp")
-            } else {
-                fl!("netmap-help-clock")
-            },
-        ),
+        help: with_domain_help(topology, fl!("netmap-help-clock")),
     }
 }
 
@@ -1710,7 +1648,7 @@ fn clock_details(triib: &Triib, topology: &Topology, node: NodeId) -> Page {
             help: fl!("netmap-help-back"),
         };
     }
-    if topology.ptp || topology.runs_lite(node) {
+    if topology.runs_lite(node) {
         return lite_details(triib, topology, node, kicker, title);
     }
     let mut facts = Vec::new();
@@ -1757,9 +1695,8 @@ fn clock_details(triib: &Triib, topology: &Topology, node: NodeId) -> Page {
         facts.push((fl!("avb-interface-clock-identity"), clock.to_string()));
     }
     let ok = synced(topology, node);
-    let by_design = entry.apart.is_some_and(Apart::by_design);
     let state = match entry.apart {
-        Some(apart) => apart_reason(apart, topology.domain),
+        Some(apart) => apart_reason(apart),
         None if ok => fl!("netmap-synced-to-grandmaster"),
         None if entry.kind == NodeKind::Host => fl!("netmap-host-no-gptp"),
         None if entry.link.wireless.is_some() => fl!("wireless-alarm-not-locked"),
@@ -1770,15 +1707,9 @@ fn clock_details(triib: &Triib, topology: &Topology, node: NodeId) -> Page {
         title,
         swatch: Some(if ok { Paint::Clock } else { Paint::Unsynced }),
         state,
-        state_icon: if ok {
-            Icon::CheckCircle
-        } else if by_design {
-            Icon::Info
-        } else {
-            Icon::Error
-        },
+        state_icon: if ok { Icon::CheckCircle } else { Icon::Error },
         state_filled: true,
-        state_paint: if ok || by_design || entry.kind == NodeKind::Host {
+        state_paint: if ok || entry.kind == NodeKind::Host {
             Paint::Soft
         } else {
             Paint::Failed
@@ -1902,7 +1833,7 @@ fn stream_overview(
         .into_iter()
         .filter(|(_, items)| !items.is_empty())
         .collect(),
-        help: with_lite_help(
+        help: with_domain_help(
             topology,
             if media_clock {
                 fl!("netmap-help-media-clock")
@@ -2052,16 +1983,7 @@ fn node_details(topology: &Topology, streams: &[Stream], paints: &[Paint], node:
         counts.push(fl!("netmap-in", count = receiving.len()));
     }
     let (state, state_icon, state_paint) = match entry.apart {
-        Some(apart) if apart.by_design() => (
-            apart_reason(apart, topology.domain),
-            Icon::Info,
-            Paint::Soft,
-        ),
-        Some(apart) => (
-            apart_reason(apart, topology.domain),
-            Icon::Error,
-            Paint::Failed,
-        ),
+        Some(apart) => (apart_reason(apart), Icon::Error, Paint::Failed),
         None if counts.is_empty() => (fl!("common-none"), glyph, Paint::Soft),
         None => (crate::i18n::list(counts), glyph, Paint::Soft),
     };
@@ -2346,7 +2268,6 @@ mod tests {
             let content: Element<'_, Message> = iced::widget::column![
                 header(
                     &topology,
-                    false,
                     NetworkShows::Audio,
                     &streams,
                     focus,
@@ -2490,9 +2411,6 @@ mod tests {
         Triib::sample(settings, interface, entities, models)
     }
 
-    /// With no AVB bridge heard and an entity in AVB Lite, the clock is
-    /// PTP's: the ESP hangs under its grandmaster, in sync within 50 us
-    /// and out of it past that.
     /// What is brought forward goes beside the header's chips where its row
     /// has room, and below the map where it has not, so the map stays where
     /// it is as it comes and goes.
@@ -2501,7 +2419,7 @@ mod tests {
         let (topology, streams) = bench();
         let below = |focus: Option<Focus>, width: f32| {
             let shows = NetworkShows::Audio;
-            let (_, below) = header(&topology, false, shows, &streams, focus, width, false);
+            let (_, below) = header(&topology, shows, &streams, focus, width, false);
             below.is_some()
         };
         let focus = Some(streams[2].focus());
@@ -2511,42 +2429,23 @@ mod tests {
         assert!(!below(None, 360.0));
     }
 
+    /// An entity that fell back to AVB Lite hangs under the switch in front
+    /// of it, its PTP domain beside any gPTP one: in sync within 50 us and
+    /// out of it past that, its details saying whom it follows and why.
     #[test]
     fn avb_lite_shows_the_ptp_clock() {
+        let esp = EntityId(0xe8f6_0ae0_9220_0000);
         let triib = lite_triib(-180);
-        let topology = lite_topology(&triib).expect("AVB Lite runs");
-        assert!(topology.ptp);
-        let esp = find(&topology, NodeKey::Entity(EntityId(0xe8f6_0ae0_9220_0000))).unwrap();
-        assert!(synced(&topology, esp));
-        assert!(topology.nodes[topology.nodes[esp].parent.unwrap()].kind == NodeKind::Clock);
-        let triib = lite_triib(72_000);
-        let topology = lite_topology(&triib).unwrap();
-        let esp = find(&topology, NodeKey::Entity(EntityId(0xe8f6_0ae0_9220_0000))).unwrap();
-        assert!(!synced(&topology, esp));
-    }
-
-    /// On a gPTP network an entity that fell back to AVB Lite hangs under
-    /// the switch in front of it, the PTP view being for networks running
-    /// AVB Lite alone; its details say whom it follows and why.
-    #[test]
-    fn a_device_behind_a_plain_switch_shows_on_a_gptp_network() {
-        let mut triib = lite_triib(-180);
-        triib.neighbor = Some(crate::network::Neighbor {
-            clock: ClockIdentity(0x0001_f2ff_feff_3b14),
-            port: 6,
-            synced: true,
-        });
-        assert!(lite_topology(&triib).is_none());
         let topology = topology_of(&triib);
-        let esp = find(&topology, NodeKey::Entity(EntityId(0xe8f6_0ae0_9220_0000))).unwrap();
-        let switch = topology.nodes[esp].parent.unwrap();
+        let node = find(&topology, NodeKey::Entity(esp)).unwrap();
+        let switch = topology.nodes[node].parent.unwrap();
         assert!(matches!(
             topology.nodes[switch].kind,
             NodeKind::Switch { domain: 0, .. }
         ));
         assert!(topology.roots.contains(&switch));
-        assert!(synced(&topology, esp));
-        let page = clock_details(&triib, &topology, esp);
+        assert!(synced(&topology, node));
+        let page = clock_details(&triib, &topology, node);
         assert!(
             page.facts
                 .iter()
@@ -2554,6 +2453,98 @@ mod tests {
         );
         let page = clock_details(&triib, &topology, switch);
         assert_eq!(page.state, fl!("netmap-switch-state"));
+        let triib = lite_triib(72_000);
+        let topology = topology_of(&triib);
+        let node = find(&topology, NodeKey::Entity(esp)).unwrap();
+        assert!(!synced(&topology, node));
+    }
+
+    /// A grandmaster behind the switches in front of it sends its clock up
+    /// to them, and they down to the device following it.
+    #[test]
+    fn the_clock_flows_out_of_a_grandmaster_behind_a_switch() {
+        use atdecc::lite::{FallbackReason, LiteFlags, PtpProfile};
+        let leader = ClockIdentity(0x0011_22ff_fe00_0001);
+        let follower = ClockIdentity(0x0011_22ff_fe00_0002);
+        let status = |offset| LiteStatus {
+            interface: 0,
+            flags: LiteFlags::CAPABLE
+                .union(LiteFlags::ACTIVE)
+                .union(LiteFlags::OFFSET_VALID),
+            fallback_reason: FallbackReason::PDELAY_UNANSWERED,
+            ptp_profile: PtpProfile::AVB_LITE_PTP,
+            ptp_domain: 0,
+            media_vlan_id: 2,
+            unicast_fanout_limit: 2,
+            link_speed: 100,
+            committed_egress: 0,
+            grandmaster: leader,
+            offset_from_grandmaster: offset,
+        };
+        let statuses = [status(0), status(-180)];
+        let reports: Vec<EntityReport<'_>> = [(1, leader), (2, follower)]
+            .iter()
+            .zip(&statuses)
+            .map(|(&(id, clock), status)| EntityReport {
+                entity_id: EntityId(id),
+                name: "",
+                interfaces: vec![InterfaceReport {
+                    index: 0,
+                    clock,
+                    path: None,
+                    info: None,
+                    wireless: None,
+                    lite: Some(status),
+                    gptp: true,
+                }],
+            })
+            .collect();
+        let topology = Topology::build(&reports, None);
+        let lines = lines(&topology, NetworkShows::Clock, &[], &[], None);
+        let up = |clock| {
+            lines
+                .iter()
+                .find_map(|line| {
+                    let (node, up) = line.hops[0];
+                    (topology.nodes[node].clock == Some(clock)).then_some(up)
+                })
+                .unwrap()
+        };
+        assert!(up(leader));
+        assert!(!up(follower));
+        // Brought forward, the follower lights the grandmaster's link too.
+        let follower = find(&topology, NodeKey::Entity(EntityId(2)));
+        let focus = follower.map(|node| Focus::Node(key_of(&topology, node)));
+        let lines = super::lines(&topology, NetworkShows::Clock, &[], &[], focus);
+        assert!(lines.iter().all(|line| line.related));
+    }
+
+    /// The devices sit in the same domains whether or not this computer
+    /// hears a bridge running gPTP, as what it hears says nothing of them;
+    /// only this computer moves.
+    #[test]
+    fn devices_sit_the_same_whatever_this_computer_hears() {
+        let mut triib = lite_triib(-180);
+        let devices = |topology: &Topology| -> Vec<(NodeKey, Option<NodeKey>)> {
+            (0..topology.nodes.len())
+                .filter(|&node| entity_of(topology, node).is_some())
+                .map(|node| {
+                    (
+                        key_of(topology, node),
+                        topology.nodes[node]
+                            .parent
+                            .map(|parent| key_of(topology, parent)),
+                    )
+                })
+                .collect()
+        };
+        let alone = devices(&topology_of(&triib));
+        triib.neighbor = Some(crate::network::Neighbor {
+            clock: ClockIdentity(0x0001_f2ff_feff_3b14),
+            port: 6,
+            synced: true,
+        });
+        assert_eq!(devices(&topology_of(&triib)), alone);
     }
 
     /// Writes a picture of the network view in AVB Lite to the PNG file the
@@ -2568,25 +2559,16 @@ mod tests {
         let mut triib = lite_triib(-180);
         let esp = EntityId(0xe8f6_0ae0_9220_0000);
         let device = Some(Focus::Node(NodeKey::Entity(esp)));
-        // On a gPTP network, the ESP behind a plain switch.
-        let gptp = Some(crate::network::Neighbor {
-            clock: ClockIdentity(0x0001_f2ff_feff_3b14),
-            port: 6,
-            synced: true,
-        });
         let switch = Some(Focus::Node(NodeKey::Switch(
             ClockIdentity(0x9c6b_00ff_fe30_9a2b),
             0,
         )));
-        for (suffix, neighbor, shows, focus) in [
-            ("overview", None, NetworkShows::Clock, None),
-            ("device", None, NetworkShows::Clock, device),
-            ("gptp", gptp, NetworkShows::Clock, None),
-            ("gptp-device", gptp, NetworkShows::Clock, device),
-            ("gptp-switch", gptp, NetworkShows::Clock, switch),
-            ("gptp-audio", gptp, NetworkShows::Audio, None),
+        for (suffix, shows, focus) in [
+            ("overview", NetworkShows::Clock, None),
+            ("device", NetworkShows::Clock, device),
+            ("switch", NetworkShows::Clock, switch),
+            ("audio", NetworkShows::Audio, None),
         ] {
-            triib.neighbor = neighbor;
             triib.settings.network_shows = shows;
             triib.network_focus = focus;
             let settings = iced::Settings {

@@ -58,5 +58,4 @@ How `i18n/ko/triib.ftl` renders the glossary's roles and terms of art.
 - 업 for an interface that is up, beside 링크 다운.
 - Particles after values use the 을(를), 과(와), (으)로 forms Korean software writes, or a noun such as 인터페이스 or 포맷 takes the particle.
 - No particle is written against a Latin term, because the tests need each standards word on its own: "triib 앱이", "gPTP 미실행", "스트림 ID".
-- The NOT ON THE gPTP TREE band uses a string-literal selector so the word check finds the English capitals; only gPTP 트리에 없음 shows.
 - 스테이션 for a Wi-Fi station, where consumer settings say 클라이언트. 락됨 / 락 안 됨 for the station's time, parallel to 동기화됨 / 동기화 안 됨.
