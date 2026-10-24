@@ -509,6 +509,7 @@ mod tests {
             foreign_mrp: false,
             config: None,
             clock: None,
+            setup: None,
             endpoints: vec![endpoint(EntityId(0x1234)), endpoint(WIRED_ESP)],
         };
         triib.endpoints = Some(status.clone());

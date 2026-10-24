@@ -46,7 +46,7 @@ use crate::meters::{self, Meters, StreamMeter};
 use crate::port::{Port, VLAN};
 use crate::profile::{self, Profile};
 use crate::sharing::{self, Server, Sharers};
-use crate::status::{ClockStatus, DaemonStatus, EndpointStatus, StreamStatus, status_path};
+use crate::status::{ClockStatus, DaemonStatus, EndpointStatus, Setup, StreamStatus, status_path};
 
 /// The entity models of devices, under Scramble Tools' MA-S
 /// `8C-1F-64-36-C`: this, and a hash of their streams. triib 1.0's
@@ -129,6 +129,9 @@ const PTP4L_WAIT: Duration = Duration::from_secs(8);
 /// The least time between tries at starting triib's ptp4l unit where none
 /// answers.
 const PTP4L_AGAIN: Duration = Duration::from_secs(120);
+/// How long after starting a ptp4l unit the status says ptp4l is starting,
+/// should it not answer before: a few of the gPTP watch's turns.
+const PTP4L_ANSWER: Duration = Duration::from_secs(10);
 /// How far ptp4l's clock may be off the grandmaster's, in nanoseconds,
 /// before the daemon holds it out of sync: far past a servo settling, well
 /// short of what a stream's presentation times bear.
@@ -1650,9 +1653,40 @@ impl Runtime {
                 end_to_end: status.end_to_end,
                 as_capable: status.gptp.as_capable && !status.faulty,
             }),
+            setup: self.setup(),
             endpoints,
         };
         let _ = triib_store::save(&path, &status);
+    }
+
+    /// What it is setting up, or misses, that the entities wait on: the
+    /// link while a link unit runs or it is down, then ptp4l until it
+    /// answers.
+    fn setup(&self) -> Option<Setup> {
+        let link = self.link?;
+        let since = self.elapsed();
+        let unit_runs = [self.link_fixed_at, self.link_reset_at]
+            .into_iter()
+            .flatten()
+            .any(|at| since < at + LINK_SETTLE);
+        let power_on = link.power.is_some_and(|power| power.eee || power.pause);
+        if unit_runs && (link.carrier != Some(true) || power_on) {
+            return Some(Setup::Link);
+        }
+        if link.carrier == Some(false) {
+            return Some(Setup::NoLink);
+        }
+        if self.ptp_status.is_some() {
+            return None;
+        }
+        if !profile::ptp4l_installed() {
+            return Some(Setup::NoLinuxptp);
+        }
+        // While it waits to see whether a ptp4l answers before starting
+        // one, and for a moment after it starts one.
+        let starting =
+            since < PTP4L_WAIT || self.switched_at.is_some_and(|at| since < at + PTP4L_ANSWER);
+        starting.then_some(Setup::Ptp4l)
     }
 
     /// Writes how loud each running audio stream is each
@@ -1928,6 +1962,15 @@ impl Runtime {
                         if carrier || before.is_some() {
                             self.interface_counters[counter] += 1;
                         }
+                    }
+                }
+                // What the entities advertised while it was down reached no
+                // controller, this computer's own among them.
+                if link.carrier == Some(true)
+                    && last.is_some_and(|last| last.carrier == Some(false))
+                {
+                    for endpoint in &mut self.endpoints {
+                        endpoint.entity.link_up(now);
                     }
                 }
                 // AVB Lite holds until the link comes up again, though not

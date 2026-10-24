@@ -119,6 +119,9 @@ pub struct Triib {
     pub monitor_status: crate::monitor::Status,
     /// The interface another user's or root's triib-endpointd holds.
     pub endpoints_elsewhere: Option<String>,
+    /// This computer's entities added this session that triib has yet to
+    /// hear.
+    pub starting: Vec<crate::host::Starting>,
     /// triib-endpointd was started this session for the host entities
     /// listed, as triib opened.
     /// The audio devices' names: inputs, then outputs.
@@ -410,6 +413,7 @@ impl Triib {
             monitor: None,
             monitor_status: crate::monitor::Status::off(),
             endpoints_elsewhere: None,
+            starting: Vec::new(),
             audio_devices: (Vec::new(), Vec::new()),
             meter_levels: crate::meters::Levels::default(),
             network_focus: None,
@@ -486,6 +490,7 @@ impl Triib {
             monitor: None,
             monitor_status: crate::monitor::Status::off(),
             endpoints_elsewhere: None,
+            starting: Vec::new(),
             audio_devices: (Vec::new(), Vec::new()),
             meter_levels: crate::meters::Levels::default(),
             network_focus: None,
@@ -746,7 +751,10 @@ impl Triib {
     }
 
     fn add_host(&mut self) {
-        let Some(interface) = self.interface().map(|interface| interface.name.clone()) else {
+        let Some((interface, mac)) = self
+            .interface()
+            .map(|interface| (interface.name.clone(), interface.mac))
+        else {
             return;
         };
         let count = self
@@ -755,10 +763,18 @@ impl Triib {
             .map_or(0, |status| status.endpoints.len())
             + 1;
         let name = crate::fl!("host-new-entity", number = count);
-        let result =
-            crate::host::add(&interface, name).and_then(|()| crate::host::ensure_running());
-        if let Err(error) = result {
-            self.notice = Some(crate::fl!("host-failed", reason = error));
+        let result = crate::host::add(&interface, name.clone()).and_then(|instance| {
+            crate::host::ensure_running()?;
+            Ok(instance)
+        });
+        match result {
+            // Listed at once, starting, until triib hears it.
+            Ok(instance) => self.starting.push(crate::host::Starting {
+                interface,
+                entity_id: triib_endpointd::runtime::entity_id(mac, instance),
+                name,
+            }),
+            Err(error) => self.notice = Some(crate::fl!("host-failed", reason = error)),
         }
     }
 
@@ -789,6 +805,14 @@ impl Triib {
     /// shows, should that have changed.
     pub fn update(&mut self, message: Message) -> Task<Message> {
         let task = self.handle(message);
+        // An entity starting is listed as such until it is heard, or the
+        // list shows another interface.
+        let interface = self.settings.interface.as_deref();
+        let entities = &self.entities;
+        self.starting.retain(|starting| {
+            Some(starting.interface.as_str()) == interface
+                && !entities.contains_key(&starting.entity_id)
+        });
         // The entities of the interface shown, where it runs this
         // computer's, stay running while triib does.
         let kept = self
@@ -1589,6 +1613,17 @@ impl Triib {
         );
         listed.sort_by_key(|entity| (self.entity_name(entity).to_lowercase(), entity.entity_id()));
         listed
+    }
+
+    /// This computer's entities starting, which the entity list shows as
+    /// such: on the interface shown, unless another user's triib-endpointd
+    /// holds it, and that the search finds, by name.
+    pub fn starting_entities(&self) -> impl Iterator<Item = &crate::host::Starting> {
+        let search = self.search_text();
+        let here = self.endpoints_elsewhere.is_none();
+        self.starting.iter().filter(move |starting| {
+            here && (search.is_empty() || starting.name.to_lowercase().contains(&search))
+        })
     }
 
     /// "Entity name: stream name" for a stream of an entity.

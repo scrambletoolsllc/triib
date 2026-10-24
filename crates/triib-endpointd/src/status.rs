@@ -29,8 +29,29 @@ pub struct DaemonStatus {
     /// This computer's clock, as ptp4l runs it, when ptp4l answers.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub clock: Option<ClockStatus>,
+    /// What it is setting up, or misses, that the entities wait on.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub setup: Option<Setup>,
     #[serde(rename = "endpoint", default)]
     pub endpoints: Vec<EndpointStatus>,
+}
+
+/// What the daemon is setting up, or misses, that its entities wait on
+/// to reach controllers or keep the network's time.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Setup {
+    /// A link unit runs, which takes the link down for a moment.
+    Link,
+    /// The link is down.
+    NoLink,
+    /// ptp4l is starting, and does not answer yet.
+    Ptp4l,
+    /// No ptp4l answers, and linuxptp is not installed.
+    NoLinuxptp,
+    /// What a later daemon says, which this app does not know.
+    #[serde(other)]
+    Other,
 }
 
 /// This computer's clock as ptp4l runs it on the interface.
@@ -208,6 +229,7 @@ mod tests {
                 end_to_end: true,
                 as_capable: true,
             }),
+            setup: Some(Setup::Ptp4l),
             endpoints: vec![EndpointStatus {
                 entity_id: "0xa010a3ff00a51726".into(),
                 name: "Host entity 1".into(),
@@ -219,6 +241,12 @@ mod tests {
         let read: DaemonStatus = toml::from_str(&text).unwrap();
         assert_eq!(read, status);
         assert_eq!(read.clock.unwrap().grandmaster(), Some(grandmaster));
+        assert!(text.contains("setup = \"ptp4l\""), "{text}");
+        // A step a later daemon names is one this app does not know,
+        // rather than no status at all.
+        let later: DaemonStatus =
+            toml::from_str(&text.replace("\"ptp4l\"", "\"later-step\"")).unwrap();
+        assert_eq!(later.setup, Some(Setup::Other));
     }
 
     #[test]

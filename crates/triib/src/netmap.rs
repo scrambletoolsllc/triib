@@ -2381,6 +2381,7 @@ mod tests {
             foreign_mrp: false,
             config: None,
             clock: None,
+            setup: None,
             endpoints: vec![EndpointStatus {
                 entity_id: crate::view::tests::WIRED_ESP.to_string(),
                 name: "Host entity 1".into(),

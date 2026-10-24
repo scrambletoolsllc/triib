@@ -2,9 +2,9 @@
 //! columns the user picked. Each column's heading is a menu that removes
 //! the column or shows another field in it, and a last heading adds one.
 
-use atdecc::DiscoveredEntity;
 use atdecc::descriptor::DescriptorType;
 use atdecc::model::EntityModel;
+use atdecc::{DiscoveredEntity, EntityId};
 use iced::widget::text::Wrapping;
 use iced::widget::{container, mouse_area, opaque, scrollable, space, table};
 use iced::{Center, Element, Fill, Length};
@@ -228,7 +228,9 @@ fn unshown(columns: &[EntityField]) -> impl Iterator<Item = EntityField> + '_ {
 /// An entity's row: its name and the values of the columns shown.
 #[derive(Clone)]
 struct Row<'a> {
-    entity: &'a DiscoveredEntity,
+    /// The entity, or `None` for one of this computer's still starting.
+    entity: Option<&'a DiscoveredEntity>,
+    entity_id: EntityId,
     name: String,
     values: Vec<String>,
 }
@@ -239,14 +241,15 @@ struct Row<'a> {
 fn view_at(triib: &Triib, width: f32, under_bar: bool) -> Element<'_, Message> {
     let columns: &[EntityField] = &triib.settings.entity_columns;
     let only_host = triib.settings.host_entities_only && triib.hosts_endpoints();
-    let rows: Vec<Row<'_>> = triib
+    let mut rows: Vec<Row<'_>> = triib
         .listed_entities()
         .into_iter()
         .filter(|entity| !only_host || triib.is_host(entity.entity_id()))
         .map(|entity| {
             let model = triib.models.get(&entity.entity_id());
             Row {
-                entity,
+                entity: Some(entity),
+                entity_id: entity.entity_id(),
                 name: triib.entity_name(entity),
                 values: columns
                     .iter()
@@ -255,6 +258,30 @@ fn view_at(triib: &Triib, width: f32, under_bar: bool) -> Element<'_, Message> {
             }
         })
         .collect();
+    // This computer's entities still starting, saying what they wait on
+    // in the State column, else the first.
+    let step_at = columns
+        .iter()
+        .position(|&field| field == EntityField::State)
+        .unwrap_or(0);
+    rows.extend(triib.starting_entities().map(|starting| {
+        let step = crate::host_view::starting_step(triib, starting.entity_id);
+        Row {
+            entity: None,
+            entity_id: starting.entity_id,
+            name: starting.name.clone(),
+            values: (0..columns.len())
+                .map(|index| {
+                    if index == step_at {
+                        step.clone()
+                    } else {
+                        String::new()
+                    }
+                })
+                .collect(),
+        }
+    }));
+    rows.sort_by_key(|row| (row.name.to_lowercase(), row.entity_id));
     let can_add = unshown(columns).next().is_some();
     // Each column's own width: its widest text, its heading with the menu's
     // arrow, and for the name its icon and the row button's padding.
@@ -368,18 +395,20 @@ fn view_at(triib: &Triib, width: f32, under_bar: bool) -> Element<'_, Message> {
         name_width,
     );
     let name_cell = move |row: Row<'_>| {
-        let entity_id = row.entity.entity_id();
+        let entity_id = row.entity_id;
         let name = fit(&row.name, TEXT, 14.0, name_width - NAME_ROOM).name;
+        // One starting is this computer's, and nothing to select yet.
+        let glyph = match row.entity {
+            Some(entity) => triib
+                .host_icon(entity_id)
+                .unwrap_or_else(|| describe::glyph(&entity.adp)),
+            None => Icon::Computer,
+        };
         body_cell(
             button::custom(
                 Kind::Row,
                 scramble_ui::row![
-                    icon::icon(
-                        triib
-                            .host_icon(entity_id)
-                            .unwrap_or_else(|| describe::glyph(&row.entity.adp)),
-                        20
-                    ),
+                    icon::icon(glyph, 20),
                     styled(name, Type::BodyMedium).wrapping(Wrapping::None),
                 ]
                 .spacing(8)
@@ -387,7 +416,7 @@ fn view_at(triib: &Triib, width: f32, under_bar: bool) -> Element<'_, Message> {
             )
             .height(ROW_HEIGHT)
             .selected(triib.selected == Some(entity_id))
-            .on_press(Message::EntitySelected(entity_id)),
+            .on_press_maybe(row.entity.map(|_| Message::EntitySelected(entity_id))),
             name_width,
         )
     };
@@ -436,12 +465,16 @@ fn view_at(triib: &Triib, width: f32, under_bar: bool) -> Element<'_, Message> {
         ));
         cells.push((
             Box::new(move |row: Row<'_>| {
-                let content = match field {
-                    EntityField::MediaClock => {
-                        media_clock_cell(triib, row.entity, &row.values[index], width)
+                let content = match (field, row.entity) {
+                    (EntityField::MediaClock, Some(entity)) => {
+                        media_clock_cell(triib, entity, &row.values[index], width)
                     }
-                    EntityField::EntityImage => logo_cell(triib, row.entity, Logo::Entity, width),
-                    EntityField::VendorImage => logo_cell(triib, row.entity, Logo::Vendor, width),
+                    (EntityField::EntityImage, Some(entity)) => {
+                        logo_cell(triib, entity, Logo::Entity, width)
+                    }
+                    (EntityField::VendorImage, Some(entity)) => {
+                        logo_cell(triib, entity, Logo::Vendor, width)
+                    }
                     _ => cell(&row.values[index], width),
                 };
                 body_cell(content, width)

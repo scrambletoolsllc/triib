@@ -139,9 +139,19 @@ fn place_of(config: &Config, mac: MacAddress, entity_id: EntityId) -> Option<usi
         })
 }
 
+/// One of this computer's entities added this session that triib has yet
+/// to hear on the network, which the entity list shows starting.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Starting {
+    pub interface: String,
+    pub entity_id: EntityId,
+    pub name: String,
+}
+
 /// Adds an entity named `name`, with a stream each way, each with its own
-/// virtual audio device; its inspector adds more and sets each up.
-pub fn add(interface: &str, name: String) -> Result<(), String> {
+/// virtual audio device; its inspector adds more and sets each up. Gives
+/// the instance its entity ID is made from.
+pub fn add(interface: &str, name: String) -> Result<u8, String> {
     let (path, mut config) = load(interface)?;
     let taken: Vec<u8> = config
         .endpoints
@@ -153,7 +163,8 @@ pub fn add(interface: &str, name: String) -> Result<(), String> {
         .find(|candidate| !taken.contains(candidate))
         .ok_or("no room")?;
     config.endpoints.push(EndpointConfig::new(name, Some(free)));
-    save(&path, &config)
+    save(&path, &config)?;
+    Ok(free)
 }
 
 /// Removes the endpoint whose entity is `entity_id`; the others keep

@@ -15,11 +15,56 @@ use scramble_ui::icon::Icon;
 use scramble_ui::popover::popover;
 use scramble_ui::{component, dir, dropdown, style};
 use triib_endpointd::config::{Direction, VIRTUAL};
+use triib_endpointd::status::{DaemonStatus, Setup};
 
 use crate::app::{Message, Triib};
 use crate::fl;
 use crate::host::StreamChange;
 use crate::view::{VIEW_MARGIN, Value, field, property};
+
+/// The daemon's status, where it runs on the interface shown.
+fn status_here(triib: &Triib) -> Option<&DaemonStatus> {
+    triib
+        .endpoints
+        .as_ref()
+        .filter(|status| Some(status.interface.as_str()) == triib.settings.interface.as_deref())
+}
+
+/// What the daemon is setting up, or misses, while it does; or, before it
+/// runs, the entity it starts for.
+fn setup_note(triib: &Triib) -> Option<String> {
+    let Some(status) = status_here(triib) else {
+        return triib
+            .starting_entities()
+            .next()
+            .map(|starting| fl!("host-starting-entity", name = starting.name.clone()));
+    };
+    let interface = status.interface.clone();
+    match status.setup? {
+        Setup::Link => Some(fl!("host-setting-up", interface = interface)),
+        Setup::NoLink => Some(fl!("host-no-link", interface = interface)),
+        Setup::Ptp4l => Some(fl!("host-starting-ptp4l")),
+        Setup::NoLinuxptp => Some(fl!("host-no-linuxptp")),
+        Setup::Other => None,
+    }
+}
+
+/// What one of this computer's entities, added but not heard yet, waits on
+/// before triib hears it: the daemon to start and run it, the link, then
+/// its next advertisement.
+pub fn starting_step(triib: &Triib, entity_id: EntityId) -> String {
+    let Some(status) = status_here(triib)
+        .filter(|status| crate::host::status_of(Some(status), entity_id).is_some())
+    else {
+        return fl!("host-starting");
+    };
+    let interface = status.interface.clone();
+    match status.setup {
+        Some(Setup::Link) => fl!("host-setting-up", interface = interface),
+        Some(Setup::NoLink) => fl!("host-no-link", interface = interface),
+        _ => fl!("host-waiting-network"),
+    }
+}
 
 /// The bar above the Entities view's table: why this computer cannot add
 /// entities of its own, or the button that adds one.
@@ -42,6 +87,8 @@ pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
         Some(fl!("host-elsewhere", interface = interface.clone()))
     } else if let Some(interface) = foreign {
         Some(fl!("host-foreign-mrp", interface = interface))
+    } else if let Some(note) = setup_note(triib) {
+        Some(note)
     } else if triib
         .endpoints
         .as_ref()

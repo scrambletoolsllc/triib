@@ -2807,6 +2807,13 @@ pub(crate) mod tests {
                 false,
                 Size::new(1440.0, 540.0),
             ),
+            // Another of its entities just added, the link being set up.
+            (
+                "entities-host-starting",
+                View::Entities,
+                false,
+                Size::new(1440.0, 540.0),
+            ),
             (
                 "entities-wide",
                 View::Entities,
@@ -3045,7 +3052,7 @@ pub(crate) mod tests {
             if suffix.contains("filtered") {
                 triib.settings.matrix_connectable_only = true;
             }
-            if suffix == "entities-host" {
+            if suffix.starts_with("entities-host") {
                 use crate::settings::EntityField;
                 triib
                     .settings
@@ -3137,6 +3144,7 @@ pub(crate) mod tests {
                     foreign_mrp: false,
                     config: None,
                     clock: None,
+                    setup: None,
                     endpoints: vec![EndpointStatus {
                         entity_id: host.map(|id| id.to_string()).unwrap_or_default(),
                         name: "Host entity 1".into(),
@@ -3162,6 +3170,25 @@ pub(crate) mod tests {
                     }),
                     std::time::Instant::now(),
                 );
+            }
+            if suffix.contains("starting")
+                && let Some(status) = &mut triib.endpoints
+            {
+                let entity_id = triib_endpointd::runtime::entity_id(MacAddress(HOST_MAC), 1);
+                status.setup = Some(triib_endpointd::status::Setup::Link);
+                status
+                    .endpoints
+                    .push(triib_endpointd::status::EndpointStatus {
+                        entity_id: entity_id.to_string(),
+                        name: "Host entity 2".into(),
+                        state: "unbound".into(),
+                        streams: Vec::new(),
+                    });
+                triib.starting.push(crate::host::Starting {
+                    interface: "enp6s0".into(),
+                    entity_id,
+                    name: "Host entity 2".into(),
+                });
             }
             if suffix.contains("formats") {
                 // The menu a cell whose input must change opens.
@@ -3490,6 +3517,7 @@ pub(crate) mod tests {
             foreign_mrp: false,
             config: None,
             clock: None,
+            setup: None,
             endpoints: vec![EndpointStatus {
                 entity_id: WIRED_ESP.to_string(),
                 name: "Host device 1".into(),
@@ -3632,6 +3660,92 @@ pub(crate) mod tests {
                     "This computer's own entities need a wired interface with a PTP hardware clock"
                 )
                 .is_ok()
+        );
+    }
+
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn an_entity_just_added_is_listed_starting_until_heard() {
+        use triib_endpointd::status::{DaemonStatus, EndpointStatus, Setup};
+
+        let mut triib = logging(View::Entities, false);
+        triib.settings.log = false;
+        // Wide enough for the State column.
+        let size = Size::new(2200.0, 600.0);
+        let entity_id = triib_endpointd::runtime::entity_id(MacAddress(HOST_MAC), 0);
+        triib.starting.push(crate::host::Starting {
+            interface: "enp6s0".into(),
+            entity_id,
+            name: "Host entity 1".into(),
+        });
+        // Before the daemon runs: listed, starting, and the bar says so.
+        {
+            let mut simulator = simulate(&triib, size);
+            assert!(simulator.find("Host entity 1").is_ok());
+            assert!(simulator.find("Starting").is_ok());
+            assert!(simulator.find("Starting Host entity 1").is_ok());
+            // Nothing to select yet.
+            let _ = simulator.click("Host entity 1");
+            let messages: Vec<Message> = simulator.into_messages().collect();
+            assert!(
+                !messages
+                    .iter()
+                    .any(|message| matches!(message, Message::EntitySelected(_))),
+                "{messages:?}"
+            );
+        }
+        // The daemon runs it, and sets the link up first.
+        let mut status = DaemonStatus {
+            pid: 1,
+            started: 0,
+            interface: "enp6s0".into(),
+            gptp: "ptp4l does not answer for this interface".into(),
+            foreign_mrp: false,
+            config: None,
+            clock: None,
+            setup: Some(Setup::Link),
+            endpoints: vec![EndpointStatus {
+                entity_id: entity_id.to_string(),
+                name: "Host entity 1".into(),
+                state: "unbound".into(),
+                streams: Vec::new(),
+            }],
+        };
+        triib.endpoints = Some(status.clone());
+        {
+            let mut simulator = simulate(&triib, size);
+            assert!(simulator.find("Setting up enp6s0 for AVB").is_ok());
+            assert!(simulator.find("Starting").is_err());
+        }
+        // Then it starts ptp4l, which keeps the entity from no controller.
+        status.setup = Some(Setup::Ptp4l);
+        triib.endpoints = Some(status.clone());
+        {
+            let mut simulator = simulate(&triib, size);
+            assert!(simulator.find("Waiting for the network").is_ok());
+            assert!(simulator.find("Starting ptp4l").is_ok());
+            assert!(
+                simulator
+                    .find("ptp4l does not answer, so this computer's streams cannot keep gPTP time")
+                    .is_err()
+            );
+        }
+        // Heard, it is listed as itself, and no longer starting.
+        let (host, model) = host_entity("Host entity 1", &["Out 1"], &["In 1"]);
+        assert_eq!(host.entity_id(), entity_id);
+        triib.entities.insert(entity_id, host);
+        triib.models.insert(entity_id, model);
+        let _ = triib.update(Message::SelectionCleared);
+        assert!(triib.starting.is_empty());
+        let mut simulator = simulate(&triib, size);
+        assert!(simulator.find("Waiting for the network").is_err());
+        simulator.click("Host entity 1").expect("its row");
+        let messages: Vec<Message> = simulator.into_messages().collect();
+        assert!(
+            messages
+                .iter()
+                .any(|message| matches!(message, Message::EntitySelected(id) if *id == entity_id)),
+            "{messages:?}"
         );
     }
 

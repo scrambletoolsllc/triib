@@ -3,6 +3,19 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Linux
+
+- An entity added to this computer is listed at once, greyed, its State
+  saying what it waits on: triib-endpointd starting, the interface being
+  set up for AVB, its link. The bar above the list says what the daemon
+  is doing until it is done, such as setting up the interface or starting
+  ptp4l, or that linuxptp is not installed.
+- This computer's entities advertise again as soon as their link comes
+  back up, as after triib-endpointd turns EEE and PAUSE off, rather than
+  10 s later: a new entity reached triib's list only after that wait.
+
 ## [1.2.0] - 2026-10-23
 
 The network map draws the traffic on each link and places every device

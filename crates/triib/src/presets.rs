@@ -872,6 +872,7 @@ mod tests {
             foreign_mrp: false,
             config: None,
             clock: None,
+            setup: None,
             endpoints: Vec::new(),
         });
         assert!(!host_ready(&triib, &preset, 2_000));

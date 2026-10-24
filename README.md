@@ -82,7 +82,8 @@ the host entities listed for its interface back on the network, starting
 the daemon. Each is a Milan
 entity with any number of streams each way, which controllers,
 triib among them, bind like any other. Add entity adds one with an
-audio stream each way, and the inspector's Streams tab adds and removes
+audio stream each way, listed at once, greyed, saying what it waits on
+until triib hears it, and the inspector's Streams tab adds and removes
 streams: audio streams of AAF or AM824 at 48, 96 or 192 kHz, 8 channels
 unless it picks another count, each taking 2 and 8 channels too, as the
 [Basic Audio](https://github.com/avbcommunity/profiles/blob/main/audio_basic.md)
