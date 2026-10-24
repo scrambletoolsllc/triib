@@ -333,7 +333,7 @@ whether raw Ethernet is ready.
 | `triib-store` | Settings and cache files |
 
 The AVB crates live in [scrambletools/avb](https://github.com/scrambletools/avb),
-shared with other apps and pinned here by revision: `atdecc` (IEEE 1722.1
+shared with other apps and taken from crates.io: `atdecc` (IEEE 1722.1
 ATDECC with Milan, frames and state machines, no I/O), `avb-mrp` (MRP,
 MSRP and MVRP, no I/O), `avb-net` (raw Ethernet, interfaces and the PTP
 hardware clock per operating system) and `avb-stream` (AAF and AM824
@@ -342,7 +342,7 @@ triib, put a checkout beside this one and build with
 `cargo --config .cargo/avb-local.toml build`, a git-ignored file with:
 
 ```toml
-[patch."https://github.com/scrambletools/avb"]
+[patch.crates-io]
 atdecc = { path = "../avb/crates/atdecc" }
 avb-mrp = { path = "../avb/crates/avb-mrp" }
 avb-net = { path = "../avb/crates/avb-net" }

@@ -142,8 +142,8 @@ Rules for these crates:
 
 On 2026-10-19, once plaa needed them for its own talker entity, they moved
 with their history to [scrambletools/avb](https://github.com/scrambletools/avb),
-with `triib-stream` as `avb-stream`, and triib pins that repository by
-revision.
+with `triib-stream` as `avb-stream`. On 2026-10-23 they were published on
+crates.io, where triib takes them from.
 
 ## Workspace layout
 

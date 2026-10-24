@@ -129,7 +129,8 @@ All notable changes to triib. Versions follow
 - The AVB crates moved, with their history, to
   [scrambletools/avb](https://github.com/scrambletools/avb), to be shared
   with other apps: `atdecc`, `avb-mrp`, `avb-net`, and `triib-stream` as
-  `avb-stream`. triib pins that repository by revision.
+  `avb-stream`. They are published on crates.io, where triib takes them
+  from.
 
 ## [1.1.1] - 2026-10-17
 
