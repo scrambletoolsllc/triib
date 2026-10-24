@@ -7,6 +7,9 @@ All notable changes to triib. Versions follow
 
 ### Controller
 
+- The connection matrix and the entity list have their title at the
+  start of the row above them, as the network map has, on windows wide
+  enough for it.
 - Where raw Ethernet needs a permission a command grants, as `setcap`
   on the helper on Linux, triib tries again every 2 s and carries on as
   soon as the command has run, rather than waiting for a restart, and

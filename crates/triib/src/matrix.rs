@@ -25,7 +25,7 @@ use crate::fl;
 use crate::netmap::Domains;
 use crate::network::Action;
 use crate::settings::Streams;
-use crate::view::VIEW_MARGIN;
+use crate::view::{TITLED, VIEW_MARGIN};
 
 const STATUS_HEIGHT: f32 = 48.0;
 
@@ -286,7 +286,7 @@ fn view_at(triib: &Triib, size: iced::Size) -> Element<'_, Message> {
         .spacing(12)
         .into()
     };
-    let view = column![filters(triib, hidden, size.width - 2.0 * VIEW_MARGIN), body]
+    let view = column![filters(triib, hidden, size.width), body]
         .spacing(16)
         .padding(VIEW_MARGIN)
         .width(Fill);
@@ -297,12 +297,14 @@ fn view_at(triib: &Triib, size: iced::Size) -> Element<'_, Message> {
     }
 }
 
-/// The streams shown, and whether only connectable ones are, with how
-/// many that hides, in a row `room` pixels wide. Where the row has no room
+/// The view's title, the streams shown, and whether only connectable ones
+/// are, with how many that hides, in a view `width` pixels wide. Where the
+/// row has no room
 /// for the option's label or the count, the option shows its icon alone
 /// and its tooltip says them, so the row stays one line and the grid where
 /// it is.
-fn filters(triib: &Triib, hidden: Option<usize>, room: f32) -> Element<'_, Message> {
+fn filters(triib: &Triib, hidden: Option<usize>, width: f32) -> Element<'_, Message> {
+    let room = width - 2.0 * VIEW_MARGIN;
     let streams = triib.settings.matrix_streams;
     let choice = |label: String, value: Streams| {
         button::button(Kind::Filled, label)
@@ -315,19 +317,27 @@ fn filters(triib: &Triib, hidden: Option<usize>, room: f32) -> Element<'_, Messa
         fl!("netmap-audio"),
         fl!("entity-media-clock"),
     ];
+    let mut filters: Vec<Element<'_, Message>> = Vec::new();
+    // The view's title first, as the network view's, and the gap after it.
+    let mut used = 0.0;
+    if width >= TITLED {
+        let title = fl!("toolbar-connections");
+        used += font::measure(&title, Type::TitleLarge).ceil() + 12.0;
+        filters.push(styled(title, Type::TitleLarge).into());
+    }
     // The stream choices' width: each label and its padding, and the gaps
     // between them.
-    let mut used = labels
+    used += labels
         .iter()
         .map(|label| font::measure(label, Type::LabelLarge) + 2.0 * 12.0)
         .sum::<f32>()
         + 2.0 * 2.0;
     let [all, audio, clock] = labels;
-    let mut filters: Vec<Element<'_, Message>> = vec![component::connected(vec![
+    filters.push(component::connected(vec![
         choice(all, Streams::All),
         choice(audio, Streams::Audio),
         choice(clock, Streams::Clock),
-    ])];
+    ]));
     let label = fl!("matrix-connectable-only");
     let count = hidden.map(|hidden| match hidden {
         0 => fl!("matrix-none-hidden"),

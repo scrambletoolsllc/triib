@@ -34,6 +34,9 @@ const STATUS_BAR_HEIGHT: f32 = 28.0;
 /// Around each view, the matrix, the entity list and the network map: below
 /// the toolbar, above the status bar, and at the window's sides.
 pub(crate) const VIEW_MARGIN: f32 = 16.0;
+/// Below this width a view leaves out its title, at the start of the row
+/// above it.
+pub(crate) const TITLED: f32 = 1040.0;
 const SEARCH_WIDTH: f32 = 280.0;
 const INTERFACE_PICKER_WIDTH: f32 = 320.0;
 /// Between the toolbar's ends and its first and last tools.
@@ -520,33 +523,64 @@ fn content(triib: &Triib) -> Element<'_, Message> {
             NetworkState::Running { .. } | NetworkState::Starting => crate::matrix::view(triib),
             state => network_state_view(triib, state),
         },
-        View::Entities => {
-            // This computer's own entities are added here.
-            let bar = crate::host_view::bar(triib);
-            let body = if !triib.entities.is_empty() {
-                crate::entity_table::view(triib, bar.is_some())
-            } else {
-                match &triib.network_state {
-                    NetworkState::Running { .. } | NetworkState::Starting => {
-                        component::empty_state(
-                            Icon::ViewList,
-                            fl!("entities-none-yet"),
-                            fl!("entities-none-yet-note"),
-                        )
-                    }
-                    state => return network_state_view(triib, state),
-                }
-            };
-            match bar {
-                Some(bar) => scramble_ui::column![bar, body].into(),
-                None => body,
-            }
-        }
+        View::Entities => iced::widget::responsive(move |size| entities(triib, size.width)).into(),
         View::Network => match &triib.network_state {
             NetworkState::Running { .. } | NetworkState::Starting => crate::netmap::view(triib),
             state => network_state_view(triib, state),
         },
     }
+}
+
+/// The Entities view, `width` pixels wide: the table, or why there is none
+/// yet, under the bar that adds this computer's own entities, with the
+/// view's title at its start on wide windows, or under the title alone.
+fn entities(triib: &Triib, width: f32) -> Element<'_, Message> {
+    let title = (width >= TITLED).then(|| fl!("toolbar-entities"));
+    let bar = crate::host_view::bar(triib, title.clone()).or_else(|| title.map(title_bar));
+    // An entity this computer is starting is listed before any is heard.
+    let body = if !triib.entities.is_empty() || triib.starting_entities().next().is_some() {
+        crate::entity_table::view(triib, bar.is_some())
+    } else {
+        match &triib.network_state {
+            NetworkState::Running { .. } | NetworkState::Starting => component::empty_state(
+                Icon::ViewList,
+                fl!("entities-none-yet"),
+                fl!("entities-none-yet-note"),
+            ),
+            state => return network_state_view(triib, state),
+        }
+    };
+    match bar {
+        Some(bar) => scramble_ui::column![bar, body].into(),
+        None => body,
+    }
+}
+
+/// `row`, the row above a view, after the view's title where there is one.
+pub(crate) fn titled<'a>(
+    title: Option<String>,
+    row: impl Into<Element<'a, Message>>,
+) -> Element<'a, Message> {
+    match title {
+        Some(title) => scramble_ui::row![styled(title, Type::TitleLarge), row.into()]
+            .spacing(12)
+            .align_y(Center)
+            .into(),
+        None => row.into(),
+    }
+}
+
+/// The row above a view with nothing in it but the view's title: as far
+/// from the toolbar and what is below as the other views' rows, and as
+/// tall.
+fn title_bar<'a>(title: String) -> Element<'a, Message> {
+    container(styled(title, Type::TitleLarge))
+        .padding(VIEW_MARGIN)
+        .width(Fill)
+        .height(Size::ExtraSmall.height() + 2.0 * VIEW_MARGIN)
+        .align_x(dir::horizontal_start())
+        .align_y(Center)
+        .into()
 }
 
 /// What the inspector's header has beside its title: its padding, the
@@ -3667,6 +3701,36 @@ pub(crate) mod tests {
                 )
                 .is_ok()
         );
+    }
+
+    /// Each view has its title at the start of the row above it on wide
+    /// windows, the Entities view the title alone where it has no bar, and
+    /// none on narrow windows.
+    #[test]
+    fn views_are_titled_on_wide_windows() {
+        for (view, title) in [
+            (View::Matrix, "Connections"),
+            (View::Entities, "Entities"),
+            (View::Network, "Network"),
+        ] {
+            let mut triib = logging(view, false);
+            triib.settings.log = false;
+            let wide = simulate(&triib, Size::new(1280.0, 800.0))
+                .find(title)
+                .is_ok();
+            assert!(wide, "{title} on a wide window");
+            let narrow = simulate(&triib, Size::new(800.0, 800.0))
+                .find(title)
+                .is_ok();
+            assert!(!narrow, "{title} on a narrow window");
+        }
+        // Where this computer adds no entities of its own.
+        let mut triib = logging(View::Entities, false);
+        triib.settings.log = false;
+        triib.interfaces.clear();
+        let mut simulator = simulate(&triib, Size::new(1280.0, 800.0));
+        assert!(simulator.find("Entities").is_ok());
+        assert!(simulator.find("Add entity").is_err());
     }
 
     /// Where raw Ethernet wants a permission a command grants, the window

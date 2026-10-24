@@ -32,7 +32,7 @@ use crate::topology::{
     Apart, EntityReport, HostClock, HostReport, InterfaceReport, Kind as NodeKind, NodeId, Route,
     Topology, WirelessLink,
 };
-use crate::view::VIEW_MARGIN;
+use crate::view::{TITLED, VIEW_MARGIN};
 
 const PANEL_WIDTH: f32 = 360.0;
 const NARROW_PANEL_WIDTH: f32 = 300.0;
@@ -41,8 +41,6 @@ const NARROW_PANEL_WIDTH: f32 = 300.0;
 const WIDE: f32 = 880.0;
 /// From this width the side panel takes its full width.
 const ROOMY: f32 = 1200.0;
-/// Below this width the header leaves out its title and summary.
-const TITLED: f32 = 1040.0;
 
 /// What the view brings forward: a stream, or a node with its streams or
 /// its clock path.
@@ -395,6 +393,7 @@ fn header<'a>(
         header = header.push(styled(title, Type::TitleLarge));
     }
     header = header.push(choices);
+    // The summary as well, where the title is.
     if width >= TITLED {
         // AVB bridges, and the switches taking no part in AVB that devices
         // fell back to AVB Lite behind.

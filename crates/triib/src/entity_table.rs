@@ -916,8 +916,9 @@ mod tests {
             })
         };
         // Where the Group heading's edge is depends on the fonts measuring
-        // the columns, so it is found along the heading row.
-        let row = 92.0;
+        // the columns, so it is found along the heading row, below the
+        // view's title.
+        let row = 140.0;
         // Steps narrower than the edge's grab area cannot miss it.
         let (edge, messages) = (200..900)
             .step_by(6)

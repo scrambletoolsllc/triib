@@ -66,11 +66,12 @@ pub fn starting_step(triib: &Triib, entity_id: EntityId) -> String {
     }
 }
 
-/// The bar above the Entities view's table: why this computer cannot add
-/// entities of its own, or the button that adds one.
-pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
+/// The bar above the Entities view's table, after the view's `title`
+/// where there is one: why this computer cannot add entities of its own,
+/// or the button that adds one.
+pub fn bar(triib: &Triib, title: Option<String>) -> Option<Element<'_, Message>> {
     if triib.avb_enabled == Some(false) {
-        return mac_avb_off(triib);
+        return mac_avb_off(triib, title);
     }
     if !crate::host::SUPPORTED || triib.interface().is_none() {
         return None;
@@ -110,7 +111,8 @@ pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
         None => space().width(Fill).into(),
     };
     Some(
-        container(
+        container(crate::view::titled(
+            title,
             scramble_ui::row![
                 text,
                 component::toggle_tool(
@@ -127,7 +129,7 @@ pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
             ]
             .spacing(8)
             .align_y(Center),
-        )
+        ))
         // The button a view's margin from the toolbar and the table, as the
         // other views' filters are, in a row the toggle makes 8 taller.
         .padding([VIEW_MARGIN - 4.0, VIEW_MARGIN])
@@ -136,11 +138,12 @@ pub fn bar(triib: &Triib) -> Option<Element<'_, Message>> {
 }
 
 /// On a Mac where AVB is off on the interface, so the Mac has no entity
-/// of its own: where to turn it on.
-fn mac_avb_off(triib: &Triib) -> Option<Element<'_, Message>> {
+/// of its own: where to turn it on, after the view's `title`.
+fn mac_avb_off(triib: &Triib, title: Option<String>) -> Option<Element<'_, Message>> {
     let interface = triib.settings.interface.clone()?;
     Some(
-        container(
+        container(crate::view::titled(
+            title,
             scramble_ui::row![
                 styled(fl!("mac-avb-off", interface = interface), Type::BodySmall)
                     .style(style::on_surface_variant)
@@ -150,7 +153,7 @@ fn mac_avb_off(triib: &Triib) -> Option<Element<'_, Message>> {
             ]
             .spacing(8)
             .align_y(Center),
-        )
+        ))
         // As far from the toolbar and the table as the other views' filters.
         .padding(VIEW_MARGIN)
         .into(),
