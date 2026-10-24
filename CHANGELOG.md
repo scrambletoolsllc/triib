@@ -3,7 +3,17 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.2.0] - 2026-10-23
+
+The network map draws the traffic on each link and places every device
+in its clock domain, those running AVB Lite behind the non-AVB switch in
+front of them, and the connection matrix keeps talkers and listeners in
+different domains from connecting. triib follows entities that send no
+notifications, shows entities' logos and their vendors', and on a Mac
+has a menu bar. On Linux only a small helper holds `CAP_NET_RAW`, and
+triib-endpointd shares its MSRP participant with other programs such as
+plaa, hears other computers' AVB Lite declarations on the Intel I210 and
+offers the same stream formats as plaa. The app ID is now `run.triib`.
 
 ### Controller
 

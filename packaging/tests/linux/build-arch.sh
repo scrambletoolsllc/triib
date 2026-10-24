@@ -3,9 +3,9 @@
 # PKGBUILD would, but from SOURCE, an archive of this tree, rather than
 # the tag's, in a fresh Arch container. run.sh then tests the package.
 #
-#   git archive --prefix=triib-1.1.1/ -o triib-1.1.1.tar.gz HEAD
+#   git archive --prefix=triib-1.2.0/ -o triib-1.2.0.tar.gz HEAD
 #   docker run --rm -v "$PWD:/work" -w /work archlinux:latest \
-#       packaging/tests/linux/build-arch.sh triib-1.1.1.tar.gz dist-arch
+#       packaging/tests/linux/build-arch.sh triib-1.2.0.tar.gz dist-arch
 #
 # The archive's name and folder must carry the PKGBUILD's pkgver.
 set -euo pipefail

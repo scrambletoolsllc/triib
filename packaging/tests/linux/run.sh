@@ -3,7 +3,7 @@
 # QEMU when the package's architecture is not the host's:
 #
 #   packaging/tests/linux/run.sh IMAGE PACKAGE [PREVIOUS]
-#   packaging/tests/linux/run.sh debian:13 dist/triib_1.1.1-1_amd64.deb
+#   packaging/tests/linux/run.sh debian:13 dist/triib_1.2.0-1_amd64.deb
 #
 # TRIIB_TEST_SHOTS names a directory for the screenshot of the window.
 set -euo pipefail
