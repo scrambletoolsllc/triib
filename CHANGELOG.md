@@ -14,6 +14,9 @@ All notable changes to triib. Versions follow
   on the helper on Linux, triib tries again every 2 s and carries on as
   soon as the command has run, rather than waiting for a restart, and
   says so under the command.
+- Opening Settings or Presets, or an agent's prompt, leaves the window
+  under it as it was: the inspector no longer slides in again, nor do
+  the lists scroll back.
 
 ### Linux
 

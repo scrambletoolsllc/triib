@@ -5,7 +5,8 @@
 use std::collections::BTreeSet;
 use std::time::{Duration, Instant};
 
-use iced::{Element, Task, window};
+use iced::widget::space;
+use iced::{Element, Fill, Task, window};
 use scramble_ui::button::{self, Kind};
 use scramble_ui::component;
 use scramble_ui::icon::Icon;
@@ -246,16 +247,15 @@ impl Triib {
         }
     }
 
-    /// The prompt asking whether the first agent may control triib, over
-    /// `base`.
-    pub fn agent_prompt<'a>(&'a self, base: Element<'a, Message>) -> Element<'a, Message> {
-        let Some(prompt) = self.agents.prompts.first() else {
-            return base;
-        };
+    /// The prompt asking whether the first agent may control triib, for
+    /// the layer over the window, while one asks.
+    pub fn agent_prompt(&self) -> Option<Element<'_, Message>> {
+        let prompt = self.agents.prompts.first()?;
         let agent = prompt.shown.as_str();
         let ready = self.prompt_ready();
-        component::dialog(
-            base,
+        Some(component::dialog(
+            // Over nothing of its own: the window is in the layer below.
+            space().width(Fill).height(Fill),
             Some(Icon::Lock),
             fl!("agent-prompt-title", agent = agent),
             fl!("agent-prompt-body", agent = agent),
@@ -267,7 +267,7 @@ impl Triib {
                     .on_press_maybe(ready.then_some(Message::AgentAnswered(true)))
                     .into(),
             ],
-        )
+        ))
     }
 }
 
@@ -276,4 +276,41 @@ fn declined(agent: &str) -> Error {
         code::DECLINED,
         format!("The user did not allow {agent} to control triib."),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use iced::Size;
+
+    use crate::app::Triib;
+
+    /// The prompt about an agent comes over the whole window, in the layer
+    /// above it, with the window still there under it.
+    #[test]
+    fn the_prompt_comes_over_the_whole_window() {
+        let (entities, models) = crate::view::tests::bench();
+        let interface = avb_net::Interface {
+            name: "enp6s0".to_owned(),
+            mac: avb_net::MacAddress([0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b]),
+            up: true,
+            speed: None,
+            physical: true,
+            wireless: false,
+            hardware_clock: None,
+        };
+        let settings = crate::settings::Settings {
+            view: crate::settings::View::Entities,
+            ..crate::settings::Settings::default()
+        };
+        let mut triib = Triib::sample(settings, interface, entities, models);
+        let _ = triib.ask_about("claude-code".into(), "Claude Code".into(), None);
+        let mut simulator = crate::view::tests::simulate(&triib, Size::new(1280.0, 800.0));
+        let title = simulator
+            .find("Allow Claude Code to control triib?")
+            .expect("the prompt")
+            .bounds();
+        assert!(title.width > 0.0, "{title:?}");
+        assert!((title.center_x() - 640.0).abs() < 40.0, "{title:?}");
+        assert!(simulator.find("Entities").is_ok());
+    }
 }

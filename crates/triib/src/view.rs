@@ -81,15 +81,20 @@ pub fn window(triib: &Triib) -> Element<'_, Message> {
     } else {
         window
     };
-    let window = if triib.settings_open {
-        crate::settings_view::dialog(triib, window)
+    // What comes over the window, each in a layer of its own that is empty
+    // space while nothing is there, so the window's widgets keep their
+    // state as a dialog comes and goes: the inspector does not slide in
+    // again, nor do lists scroll back.
+    let dialog = if triib.settings_open {
+        crate::settings_view::dialog(triib)
     } else if triib.presets_open {
-        crate::presets::dialog(triib, window)
+        crate::presets::dialog(triib)
     } else {
-        window
+        space().into()
     };
     // An agent asking to control triib comes before anything else.
-    triib.agent_prompt(window)
+    let prompt = triib.agent_prompt().unwrap_or_else(|| space().into());
+    iced::widget::stack![window, dialog, prompt].into()
 }
 
 /// The active view with the log under it and the inspector beside both,
@@ -3701,6 +3706,35 @@ pub(crate) mod tests {
                 )
                 .is_ok()
         );
+    }
+
+    /// A dialog coming or going leaves the window under it as it was, so
+    /// its widgets keep their state, as the inspector its slide: the same
+    /// layers, with the same widgets in the window's.
+    #[test]
+    fn a_dialog_leaves_the_window_under_it_as_it_was() {
+        use iced::advanced::widget::{Tree, tree::Tag};
+
+        fn tags(tree: &Tree, into: &mut Vec<Tag>) {
+            into.push(tree.tag);
+            for child in &tree.children {
+                tags(child, into);
+            }
+        }
+        let shape = |triib: &Triib| {
+            let window = window(triib);
+            let tree = Tree::new(window.as_widget());
+            let mut under = Vec::new();
+            tags(&tree.children[0], &mut under);
+            (tree.tag, tree.children.len(), under)
+        };
+        let mut triib = logging(View::Matrix, true);
+        let closed = shape(&triib);
+        triib.settings_open = true;
+        assert!(shape(&triib) == closed, "under the settings");
+        triib.settings_open = false;
+        triib.presets_open = true;
+        assert!(shape(&triib) == closed, "under the presets");
     }
 
     /// Each view has its title at the start of the row above it on wide

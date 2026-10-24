@@ -48,9 +48,9 @@ const ACCENT_SWATCHES: [Color; 11] = [
     Color::from_rgb8(0x75, 0x75, 0x75),
 ];
 
-/// The dialog over `base`, dimming it; a click outside the dialog closes
-/// it.
-pub fn dialog<'a>(triib: &'a Triib, base: Element<'a, Message>) -> Element<'a, Message> {
+/// The dialog, dimming the window under it; a click outside the dialog
+/// closes it.
+pub fn dialog(triib: &Triib) -> Element<'_, Message> {
     let tab = |label: String, which: SettingsTab| component::Tab {
         label: crate::i18n::lasting(label),
         icon: None,
@@ -109,17 +109,14 @@ pub fn dialog<'a>(triib: &'a Triib, base: Element<'a, Message>) -> Element<'a, M
     .width(Fill)
     .height(Fill)
     .style(style::dialog);
-    iced::widget::stack![
-        base,
-        mouse_area(
-            // The card appears at once, even where animations are on.
-            container(opaque(card))
-                .padding(24)
-                .center(Fill)
-                .style(style::scrim),
-        )
-        .on_press(Message::SettingsClosed),
-    ]
+    mouse_area(
+        // The card appears at once, even where animations are on.
+        container(opaque(card))
+            .padding(24)
+            .center(Fill)
+            .style(style::scrim),
+    )
+    .on_press(Message::SettingsClosed)
     .into()
 }
 

@@ -518,9 +518,9 @@ pub fn delete(name: &str) -> Result<(), String> {
     }
 }
 
-/// The presets dialog over `base`: a name to save the network as, and
-/// each preset saved, to recall or delete.
-pub fn dialog<'a>(triib: &'a Triib, base: Element<'a, Message>) -> Element<'a, Message> {
+/// The presets dialog, dimming the window under it: a name to save the
+/// network as, and each preset saved, to recall or delete.
+pub fn dialog(triib: &Triib) -> Element<'_, Message> {
     let name = triib.preset_name.trim();
     let save = (!name.is_empty()).then_some(Message::PresetSaved);
     let header = row![
@@ -616,17 +616,14 @@ pub fn dialog<'a>(triib: &'a Triib, base: Element<'a, Message>) -> Element<'a, M
     .width(Fill)
     .height(Fill)
     .style(style::dialog);
-    iced::widget::stack![
-        base,
-        mouse_area(
-            // The card appears at once, even where animations are on.
-            container(opaque(card))
-                .padding(24)
-                .center(Fill)
-                .style(style::scrim),
-        )
-        .on_press(Message::PresetsClosed),
-    ]
+    mouse_area(
+        // The card appears at once, even where animations are on.
+        container(opaque(card))
+            .padding(24)
+            .center(Fill)
+            .style(style::scrim),
+    )
+    .on_press(Message::PresetsClosed)
     .into()
 }
 
