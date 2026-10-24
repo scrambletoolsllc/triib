@@ -16,8 +16,10 @@ set -euo pipefail
 package=$(cd "$(dirname "$1")" && pwd)/$(basename "$1")
 previous=${2:+$(cd "$(dirname "$2")" && pwd)/$(basename "$2")}
 id=run.triib
+old_id=io.github.scrambletools.triib
 app=/Applications/triib.app
 daemon=/Library/LaunchDaemons/$id.bpf.plist
+old_daemon=/Library/LaunchDaemons/$old_id.bpf.plist
 support="/Library/Application Support/triib"
 console=$(stat -f%Su /dev/console)
 
@@ -118,6 +120,18 @@ for device in /dev/bpf*; do
     [ $((8#$mode & 8#060)) -eq $((8#060)) ] || fail "$device is not open to access_bpf"
 done
 dseditgroup -o checkmember -m "$console" access_bpf || fail "$console did not join access_bpf"
+
+# Releases up to 1.1.1 installed under the old app ID, which the package
+# takes away as it upgrades them.
+if [ -n "$previous" ]; then
+    section "What the upgrade replaced"
+    leftovers=()
+    [ -e "$old_daemon" ] && leftovers+=("$old_daemon")
+    sudo launchctl print "system/$old_id.bpf" >/dev/null 2>&1 && leftovers+=("the old launch daemon")
+    pkgutil --pkg-info "$old_id" >/dev/null 2>&1 && leftovers+=("the old package receipt")
+    [ ${#leftovers[@]} -eq 0 ] || fail "upgrading left ${leftovers[*]}"
+    echo "nothing left of $old_id"
+fi
 
 # sudo -u takes the groups from the directory, as a new login would.
 section "BPF, as $console"

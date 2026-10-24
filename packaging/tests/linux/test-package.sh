@@ -19,6 +19,7 @@ previous=${2:+$(readlink -f "$2")}
 emulated=${TRIIB_TEST_EMULATED:-}
 shots=${TRIIB_TEST_SHOTS:-}
 id=run.triib
+old_id=io.github.scrambletools.triib
 programs=(triib triib-cli triib-endpointd)
 
 section() { printf '\n== %s\n' "$*"; }
@@ -121,6 +122,14 @@ for file in \
     [ -f "$file" ] || fail "$file is missing"
 done
 echo "all there"
+
+# Releases up to 1.1.1 installed these under the old app ID.
+if [ -n "$previous" ]; then
+    section "What the upgrade replaced"
+    old=$(find /usr/share/applications /usr/share/metainfo /usr/share/icons -name "$old_id.*")
+    [ -z "$old" ] || fail "upgrading left $old"
+    echo "nothing left of $old_id"
+fi
 
 # Only the helper holds the capability; the programs get their raw
 # sockets from it.
