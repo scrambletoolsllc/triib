@@ -129,10 +129,13 @@ if $pkg; then
     install -m 755 "$here/bpf-access" "$here/uninstall" "$payload/Library/Application Support/triib/"
     scripts=$(mktemp -d)
     install -m 755 "$here/postinstall" "$scripts/postinstall"
-    # The app goes to /Applications even when a copy is elsewhere.
+    # The app goes to /Applications even when a copy is elsewhere, and
+    # replaces the one there whatever its bundle ID, as releases up to
+    # 1.1.1 had another.
     components=$(mktemp -d)/components.plist
     pkgbuild --analyze --root "$payload" "$components" >/dev/null
     plutil -replace 0.BundleIsRelocatable -bool false "$components"
+    plutil -replace 0.BundleHasStrictIdentifier -bool false "$components"
     component=$(mktemp -d)
     pkgbuild --root "$payload" --component-plist "$components" --scripts "$scripts" \
         --identifier "$id" --version "$version" --install-location / "$component/$id.pkg" >/dev/null
