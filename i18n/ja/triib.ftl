@@ -134,6 +134,7 @@ state-permission-needed = 権限が必要です
 state-npcap-needed = Npcap が必要です
 state-get-npcap = Npcap を入手
 state-copy-command = コマンドをコピー
+state-permission-watch = コマンドを実行すると、triibは自動的に続行します。
 state-cannot-use = { $interface } を使用できません
 state-try-again = 再試行
 

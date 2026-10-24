@@ -131,6 +131,7 @@ state-permission-needed = Нужно разрешение
 state-npcap-needed = Нужен Npcap
 state-get-npcap = Скачать Npcap
 state-copy-command = Скопировать команду
+state-permission-watch = triib продолжит сам, как только команда будет выполнена.
 state-cannot-use = Не удаётся использовать { $interface }
 state-try-again = Повторить
 

@@ -131,6 +131,7 @@ state-permission-needed = Wymagane uprawnienia
 state-npcap-needed = Wymagany Npcap
 state-get-npcap = Pobierz Npcap
 state-copy-command = Kopiuj polecenie
+state-permission-watch = triib sam wznowi działanie, gdy polecenie zostanie wykonane.
 state-cannot-use = Nie można użyć { $interface }
 state-try-again = Spróbuj ponownie
 

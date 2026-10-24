@@ -131,6 +131,7 @@ state-permission-needed = يلزم إذن
 state-npcap-needed = يلزم Npcap
 state-get-npcap = تنزيل Npcap
 state-copy-command = نسخ الأمر
+state-permission-watch = يتابع triib من تلقاء نفسه بعد تشغيل الأمر.
 state-cannot-use = تعذّر استخدام { $interface }
 state-try-again = إعادة المحاولة
 

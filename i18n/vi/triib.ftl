@@ -134,6 +134,7 @@ state-permission-needed = Cần cấp quyền
 state-npcap-needed = Cần Npcap
 state-get-npcap = Tải Npcap
 state-copy-command = Sao chép lệnh
+state-permission-watch = triib sẽ tự tiếp tục sau khi lệnh được chạy.
 state-cannot-use = Không thể dùng { $interface }
 state-try-again = Thử lại
 

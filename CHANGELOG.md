@@ -5,6 +5,13 @@ All notable changes to triib. Versions follow
 
 ## [Unreleased]
 
+### Controller
+
+- Where raw Ethernet needs a permission a command grants, as `setcap`
+  on the helper on Linux, triib tries again every 2 s and carries on as
+  soon as the command has run, rather than waiting for a restart, and
+  says so under the command.
+
 ### Linux
 
 - An entity added to this computer is listed at once, greyed, its State

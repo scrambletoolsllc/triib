@@ -134,6 +134,7 @@ state-permission-needed = Cal permís
 state-npcap-needed = Cal Npcap
 state-get-npcap = Obtén Npcap
 state-copy-command = Copia l’ordre
+state-permission-watch = triib continua tot sol un cop s'ha executat l'ordre.
 state-cannot-use = No es pot fer servir { $interface }
 state-try-again = Torna-ho a provar
 

@@ -131,6 +131,7 @@ state-permission-needed = Ruhusa inahitajika
 state-npcap-needed = Npcap inahitajika
 state-get-npcap = Pata Npcap
 state-copy-command = Nakili amri
+state-permission-watch = triib itaendelea yenyewe mara amri itakapoendeshwa.
 state-cannot-use = Haiwezi kutumia { $interface }
 state-try-again = Jaribu tena
 

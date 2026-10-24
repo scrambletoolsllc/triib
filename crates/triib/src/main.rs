@@ -113,9 +113,8 @@ fn main() -> iced::Result {
 
     #[cfg(target_os = "linux")]
     prefer_vulkan();
-    // Raw sockets come from triib-netraw, the one file granted CAP_NET_RAW.
     #[cfg(target_os = "linux")]
-    let _ = avb_net::broker::use_helper("triib-netraw", &[std::path::Path::new("/usr/lib/triib")]);
+    use_netraw();
     scramble_ui::input::remember_interface_thread();
     let (sender, receiver) = mpsc::unbounded();
     let _ = EXTERNAL_SENDER.set(sender);
@@ -183,6 +182,14 @@ fn update(triib: &mut app::Triib, message: app::Message) -> iced::Task<app::Mess
     #[cfg(target_os = "macos")]
     menu_macos::check(&triib.settings);
     task
+}
+
+/// Has raw sockets come from triib-netraw, the one file granted
+/// CAP_NET_RAW, once it starts: tried at launch, and again each time the
+/// network is, as after the capability is granted.
+#[cfg(target_os = "linux")]
+pub fn use_netraw() {
+    let _ = avb_net::broker::use_helper("triib-netraw", &[std::path::Path::new("/usr/lib/triib")]);
 }
 
 /// Asks wgpu for Vulkan alone, unless WGPU_BACKEND names others. Without

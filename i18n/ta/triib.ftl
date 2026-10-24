@@ -131,6 +131,7 @@ state-permission-needed = அனுமதி தேவை
 state-npcap-needed = Npcap தேவை
 state-get-npcap = Npcap-ஐப் பெறு
 state-copy-command = கட்டளையை நகலெடு
+state-permission-watch = கட்டளை இயங்கியதும் triib தானாகவே தொடரும்.
 state-cannot-use = { $interface }-ஐப் பயன்படுத்த முடியவில்லை
 state-try-again = மீண்டும் முயல்
 

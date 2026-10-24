@@ -134,6 +134,7 @@ state-permission-needed = 需要权限
 state-npcap-needed = 需要 Npcap
 state-get-npcap = 获取 Npcap
 state-copy-command = 复制命令
+state-permission-watch = 命令运行后，triib会自动继续。
 state-cannot-use = 无法使用 { $interface }
 state-try-again = 重试
 

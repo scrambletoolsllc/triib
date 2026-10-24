@@ -131,6 +131,7 @@ state-permission-needed = ต้องได้รับสิทธิ์
 state-npcap-needed = ต้องใช้ Npcap
 state-get-npcap = รับ Npcap
 state-copy-command = คัดลอกคำสั่ง
+state-permission-watch = เมื่อรันคำสั่งแล้ว triib จะทำงานต่อเอง
 state-cannot-use = ใช้ { $interface } ไม่ได้
 state-try-again = ลองอีกครั้ง
 

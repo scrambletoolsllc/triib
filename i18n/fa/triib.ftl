@@ -131,6 +131,7 @@ state-permission-needed = مجوز لازم است
 state-npcap-needed = Npcap لازم است
 state-get-npcap = دریافت Npcap
 state-copy-command = کپی فرمان
+state-permission-watch = triib پس از اجرای فرمان، خودش ادامه می‌دهد.
 state-cannot-use = استفاده از { $interface } ممکن نیست
 state-try-again = تلاش دوباره
 

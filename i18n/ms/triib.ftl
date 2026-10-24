@@ -131,6 +131,7 @@ state-permission-needed = Kebenaran diperlukan
 state-npcap-needed = Npcap diperlukan
 state-get-npcap = Dapatkan Npcap
 state-copy-command = Salin arahan
+state-permission-watch = triib akan bersambung dengan sendirinya sebaik sahaja arahan dijalankan.
 state-cannot-use = Tidak dapat menggunakan { $interface }
 state-try-again = Cuba lagi
 

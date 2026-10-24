@@ -131,6 +131,7 @@ state-permission-needed = Perlu izin
 state-npcap-needed = Perlu Npcap
 state-get-npcap = Dapatkan Npcap
 state-copy-command = Salin perintah
+state-permission-watch = triib berlanjut dengan sendirinya setelah perintah dijalankan.
 state-cannot-use = Tidak dapat memakai { $interface }
 state-try-again = Coba lagi
 

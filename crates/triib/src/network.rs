@@ -275,6 +275,25 @@ impl Failure {
 /// Where Npcap's installer is.
 const NPCAP_DOWNLOAD: &str = "https://npcap.com/#download";
 
+/// How often raw Ethernet is tried again while a command that grants it
+/// is offered.
+const PERMISSION_EVERY: Duration = Duration::from_secs(2);
+
+/// A tick every [`PERMISSION_EVERY`] until the subscription ends, to try
+/// raw Ethernet again on, as the command offered may have run since.
+pub fn permission_checks() -> impl iced::futures::Stream<Item = ()> {
+    let (mut sender, receiver) = iced::futures::channel::mpsc::channel(1);
+    let _ = std::thread::Builder::new()
+        .name("permission".into())
+        .spawn(move || {
+            while !sender.is_closed() {
+                std::thread::sleep(PERMISSION_EVERY);
+                let _ = sender.try_send(());
+            }
+        });
+    receiver
+}
+
 enum Command {
     Discover,
     Act(Action),
@@ -431,6 +450,9 @@ fn run(
     stop: &AtomicBool,
     commands: &Receiver<Command>,
 ) {
+    // The helper, should it have lacked the capability before.
+    #[cfg(target_os = "linux")]
+    crate::use_netraw();
     let opened = Driver::open_with(interface, |config| {
         config.advertise = Some(Advertise {
             entity_model_id: ENTITY_MODEL_ID,

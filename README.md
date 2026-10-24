@@ -309,6 +309,9 @@ cargo build -p triib-netraw
 sudo setcap cap_net_raw+ep target/debug/triib-netraw
 ```
 
+triib, if already running and offering the command, carries on by
+itself once it has run.
+
 Building on Linux needs ALSA's and PipeWire's headers for audio, and
 clang for PipeWire's bindings (`libasound2-dev`, `libpipewire-0.3-dev`
 and `libclang-dev` on Debian and Ubuntu; `alsa-lib-devel`,

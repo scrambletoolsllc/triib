@@ -133,6 +133,7 @@ state-permission-needed = Toestemming nodig
 state-npcap-needed = Npcap nodig
 state-get-npcap = Npcap downloaden
 state-copy-command = Commando kopiëren
+state-permission-watch = triib gaat vanzelf verder zodra de opdracht is uitgevoerd.
 state-cannot-use = Kan { $interface } niet gebruiken
 state-try-again = Opnieuw proberen
 

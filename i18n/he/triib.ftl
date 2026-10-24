@@ -131,6 +131,7 @@ state-permission-needed = נדרשת הרשאה
 state-npcap-needed = נדרש Npcap
 state-get-npcap = הורדת Npcap
 state-copy-command = העתקת הפקודה
+state-permission-watch = triib ימשיך מעצמו אחרי שהפקודה תרוץ.
 state-cannot-use = לא ניתן להשתמש ב-{ $interface }
 state-try-again = ניסיון חוזר
 

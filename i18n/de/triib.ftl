@@ -133,6 +133,7 @@ state-permission-needed = Berechtigung erforderlich
 state-npcap-needed = Npcap erforderlich
 state-get-npcap = Npcap herunterladen
 state-copy-command = Befehl kopieren
+state-permission-watch = triib macht von selbst weiter, sobald der Befehl ausgeführt wurde.
 state-cannot-use = { $interface } kann nicht verwendet werden
 state-try-again = Erneut versuchen
 

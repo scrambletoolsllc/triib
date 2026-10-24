@@ -133,6 +133,7 @@ state-permission-needed = Tilladelse påkrævet
 state-npcap-needed = Npcap påkrævet
 state-get-npcap = Hent Npcap
 state-copy-command = Kopiér kommandoen
+state-permission-watch = triib fortsætter af sig selv, når kommandoen er kørt.
 state-cannot-use = Kan ikke bruge { $interface }
 state-try-again = Prøv igen
 

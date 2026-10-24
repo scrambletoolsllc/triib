@@ -825,7 +825,11 @@ fn status(app: &Triib) -> Value {
         NetworkState::Failed(failure) => (
             match &failure.remedy {
                 Some(Remedy::Command(command)) => {
-                    format!("failed: {}; the user can run {command}", failure.message)
+                    format!(
+                        "failed: {}; the user can run {command}, and triib carries on by \
+                         itself once it has",
+                        failure.message
+                    )
                 }
                 _ => format!("failed: {}", failure.message),
             },

@@ -491,6 +491,12 @@ fn failure_view<'a>(interface: &str, failure: &'a Failure) -> Element<'a, Messag
                 .style(style::on_surface_variant)
                 .center(),
         );
+        // It is tried again now and then, so no restart is needed.
+        details = details.push(
+            styled(fl!("state-permission-watch"), Type::BodySmall)
+                .style(style::on_surface_variant)
+                .center(),
+        );
     }
     container(
         iced::widget::column![
@@ -3661,6 +3667,27 @@ pub(crate) mod tests {
                 )
                 .is_ok()
         );
+    }
+
+    /// Where raw Ethernet wants a permission a command grants, the window
+    /// offers the command and says triib carries on once it has run.
+    #[test]
+    fn a_missing_permission_offers_its_command() {
+        let mut triib = logging(View::Matrix, false);
+        triib.settings.log = false;
+        let command = "sudo setcap cap_net_raw+ep /usr/lib/triib/triib-netraw";
+        triib.network_state = NetworkState::Failed(Failure {
+            message: fl!("network-permission"),
+            remedy: Some(Remedy::Command(command.to_owned())),
+        });
+        let mut simulator = simulate(&triib, Size::new(1280.0, 800.0));
+        for text in [
+            "Permission needed",
+            command,
+            "triib carries on by itself once the command has run.",
+        ] {
+            assert!(simulator.find(text).is_ok(), "{text}");
+        }
     }
 
     #[test]

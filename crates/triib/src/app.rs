@@ -250,6 +250,9 @@ pub enum Message {
     /// Shift was pressed or let go, or the window lost the keyboard.
     ShiftHeld(bool),
     RetryNetwork,
+    /// Raw Ethernet is tried again where a permission kept it out, as the
+    /// command that grants it may have run since.
+    PermissionCheck,
     Copy(String),
     /// Opens a link in the browser.
     OpenLink(String),
@@ -971,6 +974,7 @@ impl Triib {
             }
             Message::ShiftHeld(held) => self.shift = held,
             Message::RetryNetwork => self.start_network(false),
+            Message::PermissionCheck => self.try_network_quietly(),
             Message::Act(action) => {
                 if let Some(network) = &self.network {
                     self.notice = None;
@@ -1384,9 +1388,20 @@ impl Triib {
         };
         #[cfg(not(target_os = "macos"))]
         let mac_meters = Subscription::none();
+        // Raw Ethernet tried again now and then while it wants a permission
+        // a command grants, so the network starts once it has run.
+        let permission = match &self.network_state {
+            NetworkState::Failed(Failure {
+                remedy: Some(crate::network::Remedy::Command(_)),
+                ..
+            }) => Subscription::run(crate::network::permission_checks)
+                .map(|()| Message::PermissionCheck),
+            _ => Subscription::none(),
+        };
         Subscription::batch([
             meters,
             mac_meters,
+            permission,
             iced::system::theme_changes().map(Message::SystemTheme),
             Subscription::run(desktop::accent_changes).map(Message::SystemAccent),
             Subscription::run(crate::external_events).map(Message::External),
@@ -1437,6 +1452,19 @@ impl Triib {
         self.generation += 1;
         self.network_state = NetworkState::Starting;
         self.network = Some(Network::start(interface, self.generation, fresh));
+    }
+
+    /// Tries the network again where it failed, unless a try is under way,
+    /// still showing why it failed until it starts.
+    fn try_network_quietly(&mut self) {
+        if self.network.is_some() || !matches!(self.network_state, NetworkState::Failed(_)) {
+            return;
+        }
+        let Some(interface) = self.settings.interface.clone() else {
+            return;
+        };
+        self.generation += 1;
+        self.network = Some(Network::start(interface, self.generation, false));
     }
 
     fn network_report(&mut self, report: Report) {

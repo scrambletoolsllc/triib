@@ -133,6 +133,7 @@ state-permission-needed = İzin gerekli
 state-npcap-needed = Npcap gerekli
 state-get-npcap = Npcap'i indir
 state-copy-command = Komutu kopyala
+state-permission-watch = Komut çalıştırıldığında triib kendiliğinden devam eder.
 state-cannot-use = { $interface } kullanılamıyor
 state-try-again = Yeniden dene
 

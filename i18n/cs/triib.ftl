@@ -131,6 +131,7 @@ state-permission-needed = Je potřeba oprávnění
 state-npcap-needed = Je potřeba Npcap
 state-get-npcap = Získat Npcap
 state-copy-command = Zkopírovat příkaz
+state-permission-watch = Jakmile příkaz proběhne, triib pokračuje sám.
 state-cannot-use = Nelze použít { $interface }
 state-try-again = Zkusit znovu
 

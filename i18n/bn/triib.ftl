@@ -131,6 +131,7 @@ state-permission-needed = অনুমতি দরকার
 state-npcap-needed = Npcap দরকার
 state-get-npcap = Npcap নিন
 state-copy-command = কমান্ড কপি করুন
+state-permission-watch = কমান্ডটি চালানো হলে triib নিজে থেকেই এগিয়ে যাবে।
 state-cannot-use = { $interface } ব্যবহার করা যাচ্ছে না
 state-try-again = আবার চেষ্টা করুন
 

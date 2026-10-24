@@ -133,6 +133,7 @@ state-permission-needed = Engedély szükséges
 state-npcap-needed = Npcap szükséges
 state-get-npcap = Npcap letöltése
 state-copy-command = A parancs másolása
+state-permission-watch = A parancs lefutása után a triib magától folytatja.
 state-cannot-use = Nem használható: { $interface }
 state-try-again = Újra
 
