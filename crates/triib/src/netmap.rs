@@ -32,7 +32,7 @@ use crate::topology::{
     Apart, EntityReport, HostClock, HostReport, InterfaceReport, Kind as NodeKind, NodeId, Route,
     Topology, WirelessLink,
 };
-use crate::view::{TITLED, VIEW_MARGIN};
+use crate::view::VIEW_MARGIN;
 
 const PANEL_WIDTH: f32 = 360.0;
 const NARROW_PANEL_WIDTH: f32 = 300.0;
@@ -386,54 +386,49 @@ fn header<'a>(
         };
         fl!("netmap-showing", what = what)
     });
-    let mut header = line![].spacing(12).align_y(Center);
-    if width >= TITLED {
-        let title = fl!("toolbar-network");
-        used.push(scramble_ui::font::measure(&title, Type::TitleLarge).ceil());
-        header = header.push(styled(title, Type::TitleLarge));
-    }
-    header = header.push(choices);
-    // The summary as well, where the title is.
-    if width >= TITLED {
-        // AVB bridges, and the switches taking no part in AVB that devices
-        // fell back to AVB Lite behind.
-        let bridges = topology
-            .nodes
-            .iter()
-            .filter(|node| matches!(node.kind, NodeKind::Bridge | NodeKind::Switch { .. }))
-            .count();
-        let mut entities: Vec<EntityId> = topology
-            .nodes
-            .iter()
-            .filter_map(|node| match node.kind {
-                NodeKind::Entity { entity_id, .. } => Some(entity_id),
-                _ => None,
-            })
-            .collect();
-        entities.sort_by_key(|entity_id| entity_id.0);
-        entities.dedup();
-        let devices = entities.len();
-        let counts = crate::i18n::list(vec![
-            fl!("netmap-devices", count = devices),
-            fl!("netmap-bridges", count = bridges),
-        ]);
-        used.push(scramble_ui::font::measure(&counts, Type::BodyMedium).ceil());
-        header = header.push(styled(counts, Type::BodyMedium).style(style::on_surface_variant));
-    }
-    header = header.push(space::horizontal());
+    // The space before what ends the row, and the list's toggle, an icon
+    // button.
     used.push(0.0);
-    // The list's toggle, an icon button.
     if !wide {
         used.push(40.0);
     }
     let room = width - 2.0 * VIEW_MARGIN;
-    let fits = |label: &String| {
-        used.iter().sum::<f32>() + labelled(label) + 12.0 * used.len() as f32 <= room
+    // Whether the row has room for one more of `across` pixels, and the gap
+    // before it.
+    let fits = |used: &[f32], across: f32| {
+        used.iter().sum::<f32>() + across + 12.0 * used.len() as f32 <= room
     };
+    // The title first, so the row stays put as what is brought forward
+    // comes and goes; then what is brought forward, rather than below the
+    // map; then the summary, where the title is.
+    let title = fl!("toolbar-network");
+    let title_width = scramble_ui::font::measure(&title, Type::TitleLarge).ceil();
+    let title = fits(&used, title_width).then(|| {
+        used.push(title_width);
+        title
+    });
     let (beside, below) = match focused {
-        Some(label) if fits(&label) => (Some(label), None),
+        Some(label) if fits(&used, labelled(&label)) => {
+            used.push(labelled(&label));
+            (Some(label), None)
+        }
         label => (None, label),
     };
+    let summary = title.is_some().then(|| summary(topology)).filter(|counts| {
+        fits(
+            &used,
+            scramble_ui::font::measure(counts, Type::BodyMedium).ceil(),
+        )
+    });
+    let mut header = line![].spacing(12).align_y(Center);
+    if let Some(title) = title {
+        header = header.push(styled(title, Type::TitleLarge));
+    }
+    header = header.push(choices);
+    if let Some(counts) = summary {
+        header = header.push(styled(counts, Type::BodyMedium).style(style::on_surface_variant));
+    }
+    header = header.push(space::horizontal());
     let focused = |label: String| {
         button::with_icon(Kind::Outlined, Icon::Close, label)
             .size(Size::ExtraSmall)
@@ -455,6 +450,31 @@ fn header<'a>(
         ));
     }
     (header.into(), below.map(|label| focused(label).into()))
+}
+
+/// How many devices and bridges the map shows: AVB bridges, and the
+/// switches taking no part in AVB that devices fell back to AVB Lite behind.
+fn summary(topology: &Topology) -> String {
+    let bridges = topology
+        .nodes
+        .iter()
+        .filter(|node| matches!(node.kind, NodeKind::Bridge | NodeKind::Switch { .. }))
+        .count();
+    let mut entities: Vec<EntityId> = topology
+        .nodes
+        .iter()
+        .filter_map(|node| match node.kind {
+            NodeKind::Entity { entity_id, .. } => Some(entity_id),
+            _ => None,
+        })
+        .collect();
+    entities.sort_by_key(|entity_id| entity_id.0);
+    entities.dedup();
+    let devices = entities.len();
+    crate::i18n::list(vec![
+        fl!("netmap-devices", count = devices),
+        fl!("netmap-bridges", count = bridges),
+    ])
 }
 
 /// The entities the map shows: all but controllers, which take no part

@@ -25,7 +25,7 @@ use crate::fl;
 use crate::netmap::Domains;
 use crate::network::Action;
 use crate::settings::{MatrixFilter, Streams};
-use crate::view::{TITLED, VIEW_MARGIN};
+use crate::view::VIEW_MARGIN;
 
 const STATUS_HEIGHT: f32 = 48.0;
 
@@ -343,20 +343,22 @@ fn filters(triib: &Triib, hidden: Option<usize>, width: f32) -> Element<'_, Mess
         fl!("entity-media-clock"),
     ];
     let mut filters: Vec<Element<'_, Message>> = Vec::new();
-    // The view's title first, as the network view's, and the gap after it.
-    let mut used = 0.0;
-    if width >= TITLED {
-        let title = fl!("toolbar-connections");
-        used += font::measure(&title, Type::TitleLarge).ceil() + 12.0;
-        filters.push(styled(title, Type::TitleLarge).into());
-    }
     // The stream choices' width: each label and its padding, and the gaps
-    // between them.
-    used += labels
+    // between them; and the filters' tool and the gap before it.
+    let mut used = labels
         .iter()
         .map(|label| font::measure(label, Type::LabelLarge) + 2.0 * 12.0)
         .sum::<f32>()
-        + 2.0 * 2.0;
+        + 2.0 * 2.0
+        + 12.0
+        + 40.0;
+    // The view's title first, as the network view's, where the row has
+    // room for it; then the count where it still has.
+    let title = fl!("toolbar-connections");
+    if let Some(title) = crate::view::fitting_title(title, used, room) {
+        used += crate::view::title_width(&title);
+        filters.push(styled(title, Type::TitleLarge).into());
+    }
     let [all, audio, clock] = labels;
     filters.push(component::connected(vec![
         choice(all, Streams::All),
@@ -368,9 +370,8 @@ fn filters(triib: &Triib, hidden: Option<usize>, width: f32) -> Element<'_, Mess
         on: settings.hides_streams(filter),
         toggle: Some(Message::MatrixFilterToggled(filter)),
     };
-    // The tool and the gap before it, and the count with its own, or where
-    // the row has no room for the count, the tool's tooltip says it.
-    used += 12.0 + 40.0;
+    // The count with the gap before it, or where the row has no room for
+    // the count, the tool's tooltip says it.
     let count = hidden
         .filter(|&hidden| hidden > 0)
         .map(|hidden| fl!("matrix-hidden", count = hidden));

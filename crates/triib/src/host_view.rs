@@ -102,23 +102,26 @@ pub fn note(triib: &Triib) -> Option<String> {
 /// The button the Entities view's bar ends with: the one that adds an
 /// entity of this computer's own, or on a Mac where AVB is off on the
 /// interface, the one that opens Audio MIDI Setup, where it is turned on.
-pub fn action(triib: &Triib) -> Option<Element<'_, Message>> {
+/// With how wide it is.
+pub fn action(triib: &Triib) -> Option<(Element<'_, Message>, f32)> {
+    // Its label and padding, and an icon's room and the gap after it.
+    let across = |label: &str, icon: f32| {
+        (scramble_ui::font::measure(label, Type::LabelLarge) + 2.0 * 12.0 + icon).ceil()
+    };
     if triib.avb_enabled == Some(false) {
-        return triib
-            .settings
-            .interface
-            .is_some()
-            .then(open_audio_midi_setup);
+        triib.settings.interface.as_ref()?;
+        let width = across(&fl!("mac-open-audio-midi-setup"), 0.0);
+        return Some((open_audio_midi_setup(), width));
     }
     if !crate::host::SUPPORTED || triib.interface().is_none() {
         return None;
     }
-    Some(
-        button::with_icon(Kind::Tonal, Icon::Add, fl!("host-add-entity"))
-            .size(Size::ExtraSmall)
-            .on_press_maybe(triib.hosts_endpoints().then_some(Message::HostAdded))
-            .into(),
-    )
+    let label = fl!("host-add-entity");
+    let width = across(&label, 20.0 + 8.0);
+    let button = button::with_icon(Kind::Tonal, Icon::Add, label)
+        .size(Size::ExtraSmall)
+        .on_press_maybe(triib.hosts_endpoints().then_some(Message::HostAdded));
+    Some((button.into(), width))
 }
 
 fn open_audio_midi_setup<'a>() -> Element<'a, Message> {

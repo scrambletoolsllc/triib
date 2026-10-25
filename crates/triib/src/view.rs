@@ -34,9 +34,11 @@ const STATUS_BAR_HEIGHT: f32 = 28.0;
 /// Around each view, the matrix, the entity list and the network map: below
 /// the toolbar, above the status bar, and at the window's sides.
 pub(crate) const VIEW_MARGIN: f32 = 16.0;
-/// Below this width a view leaves out its title, at the start of the row
-/// above it.
-pub(crate) const TITLED: f32 = 1040.0;
+/// Between a view's title and the rest of the row above the view.
+const TITLE_GAP: f32 = 12.0;
+/// The least of the Entities view's note kept beside its title, the rest
+/// wrapping under it.
+const NOTE_ROOM: f32 = 320.0;
 const SEARCH_WIDTH: f32 = 280.0;
 const INTERFACE_PICKER_WIDTH: f32 = 320.0;
 /// Between the toolbar's ends and its first and last tools.
@@ -562,12 +564,26 @@ fn content(triib: &Triib) -> Element<'_, Message> {
 }
 
 /// The Entities view, `width` pixels wide: the table, or why there is none
-/// yet, under a bar with the view's title on wide windows, what this
-/// computer's own entities wait on, the list's filters and the button
-/// that adds an entity of this computer's own.
+/// yet, under a bar with the view's title where the bar has room for it,
+/// what this computer's own entities wait on, the list's filters and the
+/// button that adds an entity of this computer's own.
 fn entities(triib: &Triib, width: f32) -> Element<'_, Message> {
-    let title = (width >= TITLED).then(|| fl!("toolbar-entities"));
-    let note: Element<'_, Message> = match crate::host_view::note(triib) {
+    let note = crate::host_view::note(triib);
+    let (filters, mut used) = crate::entity_table::filters(triib);
+    let action = crate::host_view::action(triib);
+    // The gaps after the note and before the button, and as much of the
+    // note as stays beside the title.
+    used += 8.0;
+    if let Some((_, across)) = &action {
+        used += 8.0 + across;
+    }
+    if let Some(note) = &note {
+        used += scramble_ui::font::measure(note, Type::BodySmall)
+            .ceil()
+            .min(NOTE_ROOM);
+    }
+    let title = fitting_title(fl!("toolbar-entities"), used, width - 2.0 * VIEW_MARGIN);
+    let note: Element<'_, Message> = match note {
         Some(note) => styled(note, Type::BodySmall)
             .style(style::on_surface_variant)
             .width(Fill)
@@ -575,10 +591,8 @@ fn entities(triib: &Triib, width: f32) -> Element<'_, Message> {
             .into(),
         None => space().width(Fill).into(),
     };
-    let mut row = scramble_ui::line![note, crate::entity_table::filters(triib)]
-        .spacing(8)
-        .align_y(Center);
-    if let Some(action) = crate::host_view::action(triib) {
+    let mut row = scramble_ui::line![note, filters].spacing(8).align_y(Center);
+    if let Some((action, _)) = action {
         row = row.push(action);
     }
     // The buttons a view's margin from the toolbar and the table, as the
@@ -600,6 +614,18 @@ fn entities(triib: &Triib, width: f32) -> Element<'_, Message> {
     scramble_ui::column![bar, body].into()
 }
 
+/// A view's title, where the row above the view, `room` pixels wide, has
+/// room for it beside the rest of the row, `used` pixels wide.
+pub(crate) fn fitting_title(title: String, used: f32, room: f32) -> Option<String> {
+    (title_width(&title) + used <= room).then_some(title)
+}
+
+/// The room a view's title takes in the row above the view, with the gap
+/// after it.
+pub(crate) fn title_width(title: &str) -> f32 {
+    scramble_ui::font::measure(title, Type::TitleLarge).ceil() + TITLE_GAP
+}
+
 /// `row`, the row above a view, after the view's title where there is one.
 pub(crate) fn titled<'a>(
     title: Option<String>,
@@ -607,7 +633,7 @@ pub(crate) fn titled<'a>(
 ) -> Element<'a, Message> {
     match title {
         Some(title) => scramble_ui::row![styled(title, Type::TitleLarge), row.into()]
-            .spacing(12)
+            .spacing(TITLE_GAP)
             .align_y(Center)
             .into(),
         None => row.into(),
@@ -3844,22 +3870,26 @@ pub(crate) mod tests {
     /// windows, the Entities view the title alone where it has no bar, and
     /// none on narrow windows.
     #[test]
-    fn views_are_titled_on_wide_windows() {
-        for (view, title) in [
-            (View::Matrix, "Connections"),
-            (View::Entities, "Entities"),
-            (View::Network, "Network"),
+    fn views_are_titled_where_there_is_room() {
+        // With the width of a window too narrow for each, the Entities
+        // view's row holding only its filters here.
+        for (view, title, narrow) in [
+            (View::Matrix, "Connections", 400.0),
+            (View::Entities, "Entities", 160.0),
+            (View::Network, "Network", 400.0),
         ] {
             let mut triib = logging(view, false);
             triib.settings.log = false;
-            let wide = simulate(&triib, Size::new(1280.0, 800.0))
+            for width in [1280.0, 800.0] {
+                let titled = simulate(&triib, Size::new(width, 800.0))
+                    .find(title)
+                    .is_ok();
+                assert!(titled, "{title} on a window {width} wide");
+            }
+            let titled = simulate(&triib, Size::new(narrow, 800.0))
                 .find(title)
                 .is_ok();
-            assert!(wide, "{title} on a wide window");
-            let narrow = simulate(&triib, Size::new(800.0, 800.0))
-                .find(title)
-                .is_ok();
-            assert!(!narrow, "{title} on a narrow window");
+            assert!(!titled, "{title} on a window {narrow} wide");
         }
         // Where this computer adds no entities of its own.
         let mut triib = logging(View::Entities, false);

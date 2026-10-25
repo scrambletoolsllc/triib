@@ -54,6 +54,8 @@ const PICKER_INSET: f32 = 12.0;
 const ROW_HEIGHT: f32 = 32.0;
 /// A logo's side in its cell.
 const LOGO_SIZE: f32 = 24.0;
+/// The filters' tool, an icon button.
+const FILTER_TOOL: f32 = 40.0;
 /// Every heading's height: the heading menus'.
 const HEADING_HEIGHT: f32 = 32.0;
 const MEDIUM: iced::Font = iced::Font {
@@ -69,8 +71,8 @@ pub fn view(triib: &Triib) -> Element<'_, Message> {
 /// The list's filters: all but this computer's own entities, where it can
 /// have any; controllers; and entities outside this computer's clock
 /// domain, while it keeps time in one. How many they hide follows, as the
-/// matrix's filters say, while they hide any.
-pub fn filters(triib: &Triib) -> Element<'_, Message> {
+/// matrix's filters say, while they hide any. With how wide they are.
+pub fn filters(triib: &Triib) -> (Element<'_, Message>, f32) {
     use crate::settings::EntityFilter;
     use crate::view::Filter;
     let settings = &triib.settings;
@@ -123,16 +125,18 @@ pub fn filters(triib: &Triib) -> Element<'_, Message> {
         0
     };
     if count == 0 {
-        return tool;
+        return (tool, FILTER_TOOL);
     }
-    scramble_ui::line![
+    let count = fl!("entities-hidden", count = count);
+    let across = FILTER_TOOL + 12.0 + scramble_ui::font::measure(&count, Type::BodyMedium).ceil();
+    let filters = scramble_ui::line![
         tool,
-        styled(fl!("entities-hidden", count = count), Type::BodyMedium)
-            .style(style::on_surface_variant)
+        styled(count, Type::BodyMedium).style(style::on_surface_variant)
     ]
     .spacing(12)
     .align_y(Center)
-    .into()
+    .into();
+    (filters, across)
 }
 
 /// What the list's filters leave out, worked out once for the list.
