@@ -255,13 +255,13 @@
   "page": "index.html",
   "text": ".tar.gz: <a1>x86_64</a1> · <a2>ARM64</a2> · <a3>RISC-V</a3>"
  },
- "1049c7ccfa50": {
+ "4d443d73c9cb": {
   "page": "index.html",
-  "text": "<code>sudo tar -C / -xzf triib-{v}-*-linux.tar.gz</code>, then <code>sudo setcap cap_net_raw+ep</code> on <code>/usr/bin/triib</code>, <code>triib-cli</code> and <code>triib-endpointd</code>"
+  "text": "<code>sudo tar -C / -xzf triib-{v}-*-linux.tar.gz</code>, then <code>sudo setcap cap_net_raw+ep /usr/lib/triib/triib-netraw</code>"
  },
- "b30c64c168f4": {
+ "d98c851458dd": {
   "page": "index.html",
-  "text": "The Linux packages set <code>CAP_NET_RAW</code> on the three programs as they install, and bring in linuxptp and ethtool for host entities. The Windows installer and programs are signed by Scramble Tools LLC. See the <a1>install notes</a1> for what differs between packages, or build it from source with Rust: <code>cargo run -p triib</code> in a clone of the repository."
+  "text": "As they install, the Linux packages set <code>CAP_NET_RAW</code> on just one program, <code>triib-netraw</code>, which opens raw sockets for the others, and bring in linuxptp and ethtool for host entities. The Windows installer and programs are signed by Scramble Tools LLC. See the <a1>install notes</a1> for what differs between packages, or build it from source with Rust: <code>cargo run -p triib</code> in a clone of the repository."
  },
  "321062598d1b": {
   "page": "index.html",
@@ -759,9 +759,9 @@
   "page": "specs.html",
   "text": "Specifications"
  },
- "a3dc604697d8": {
+ "8eece026d299": {
   "page": "specs.html",
-  "text": "triib {v}, an ATDECC controller with Milan, AVB Lite and AVB Wireless support, released October 17, 2026. For what each feature does, see the <a1>tour</a1>."
+  "text": "triib {v}, an ATDECC controller with Milan, AVB Lite and AVB Wireless support, released October 24, 2026. For what each feature does, see the <a1>tour</a1>."
  },
  "77df58244ee6": {
   "page": "specs.html",
@@ -1199,13 +1199,13 @@
   "page": "specs.html",
   "text": "triib asks before letting a new agent in, and remembers Allow; one not allowed is turned away until triib quits. Settings lists the agents allowed and forgets them, and outside control can be turned off"
  },
- "60b4ed87aa89": {
+ "28499def4bad": {
   "page": "specs.html",
-  "text": "Tools (14)"
+  "text": "Tools (17)"
  },
- "f55c1506f47f": {
+ "76ceefdb9b26": {
   "page": "specs.html",
-  "text": "Six that read, <code>status</code>, <code>list_entities</code>, <code>describe_entity</code>, <code>list_connections</code>, <code>list_audio_devices</code> and <code>audio_monitor</code>; and eight that change, <code>connect</code>, <code>disconnect</code>, <code>set_stream_format</code>, <code>set_sampling_rate</code>, <code>set_clock_source</code>, <code>rename</code>, <code>identify</code> and <code>set_audio_monitor</code>; each marked for MCP clients as reading or changing"
+  "text": "Nine that read, <code>status</code>, <code>list_entities</code>, <code>describe_entity</code>, <code>list_connections</code>, <code>list_problems</code>, <code>stream_diagnostics</code>, <code>clock_tree</code>, <code>list_audio_devices</code> and <code>audio_monitor</code>; and eight that change, <code>connect</code>, <code>disconnect</code>, <code>set_stream_format</code>, <code>set_sampling_rate</code>, <code>set_clock_source</code>, <code>rename</code>, <code>identify</code> and <code>set_audio_monitor</code>; each marked for MCP clients as reading or changing"
  },
  "cffa2af0a3a6": {
   "page": "specs.html",
@@ -1218,6 +1218,14 @@
  "4e81baf5590f": {
   "page": "specs.html",
   "text": "What a click would do, sent to the devices at once: connecting and disconnecting streams, setting a stream's format, a sampling rate or a clock source, renaming, identifying, and the audio monitor. Each answers once the device has, with what it said; there is no undo"
+ },
+ "b653d4256c4a": {
+  "page": "specs.html",
+  "text": "Diagnosing"
+ },
+ "8e6c040d2dc5": {
+  "page": "specs.html",
+  "text": "For streams that do not play: what triib finds wrong across the network, errors first; how one stream stands, asked of its device afresh, with its reservation and its counters sampled over a few seconds to tell a problem now from an old one; and the gPTP tree as the network view shows it"
  },
  "33d30632848d": {
   "page": "specs.html",

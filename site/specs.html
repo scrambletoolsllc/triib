@@ -23,7 +23,7 @@
 
 <main class="guide specs">
   <h1>Specifications</h1>
-  <p class="lede-left">triib 1.1.1, an ATDECC controller with Milan, AVB Lite and AVB Wireless support, released October 17, 2026. For what each feature does, see the <a href="guide.html">tour</a>.</p>
+  <p class="lede-left">triib 1.2.0, an ATDECC controller with Milan, AVB Lite and AVB Wireless support, released October 24, 2026. For what each feature does, see the <a href="guide.html">tour</a>.</p>
   <nav class="contents" aria-label="Contents">
 <ul>
 <li><a href="#systems">Systems</a></li>
@@ -125,9 +125,10 @@
 <table class="spec"><tbody>
 <tr><th>MCP server</th><td><code>triib --mcp</code>, over standard input and output, for Claude Code (<code>claude mcp add triib -- triib --mcp</code>) or any MCP client. It drives the triib you are using, starting it if needed; nothing listens on the network</td></tr>
 <tr><th>Access</th><td>triib asks before letting a new agent in, and remembers Allow; one not allowed is turned away until triib quits. Settings lists the agents allowed and forgets them, and outside control can be turned off</td></tr>
-<tr><th>Tools (14)</th><td>Six that read, <code>status</code>, <code>list_entities</code>, <code>describe_entity</code>, <code>list_connections</code>, <code>list_audio_devices</code> and <code>audio_monitor</code>; and eight that change, <code>connect</code>, <code>disconnect</code>, <code>set_stream_format</code>, <code>set_sampling_rate</code>, <code>set_clock_source</code>, <code>rename</code>, <code>identify</code> and <code>set_audio_monitor</code>; each marked for MCP clients as reading or changing</td></tr>
+<tr><th>Tools (17)</th><td>Nine that read, <code>status</code>, <code>list_entities</code>, <code>describe_entity</code>, <code>list_connections</code>, <code>list_problems</code>, <code>stream_diagnostics</code>, <code>clock_tree</code>, <code>list_audio_devices</code> and <code>audio_monitor</code>; and eight that change, <code>connect</code>, <code>disconnect</code>, <code>set_stream_format</code>, <code>set_sampling_rate</code>, <code>set_clock_source</code>, <code>rename</code>, <code>identify</code> and <code>set_audio_monitor</code>; each marked for MCP clients as reading or changing</td></tr>
 <tr><th>Reading</th><td>What triib knows: the interface it controls and this computer's own entities, the entities it has found, each one's audio units, clock domains and streams with their formats from its model, and what each listener input is bound to</td></tr>
 <tr><th>Changes</th><td>What a click would do, sent to the devices at once: connecting and disconnecting streams, setting a stream's format, a sampling rate or a clock source, renaming, identifying, and the audio monitor. Each answers once the device has, with what it said; there is no undo</td></tr>
+<tr><th>Diagnosing</th><td>For streams that do not play: what triib finds wrong across the network, errors first; how one stream stands, asked of its device afresh, with its reservation and its counters sampled over a few seconds to tell a problem now from an old one; and the gPTP tree as the network view shows it</td></tr>
 <tr><th>Waiting</th><td>A call made while triib asks whether to let its agent in waits for the answer, and tells the agent so as an MCP progress notification</td></tr>
 </tbody></table>
 

@@ -54,7 +54,7 @@ receive raw Ethernet:
 | System | Package | What it sets up |
 |---|---|---|
 | Linux | .deb, .rpm, PKGBUILD | `CAP_NET_RAW` for `/usr/lib/triib/triib-netraw`, which opens raw sockets for `triib`, `triib-cli` and `triib-endpointd` |
-| Linux | .tar.gz | nothing: run `sudo setcap cap_net_raw+ep usr/lib/triib/triib-netraw` |
+| Linux | .tar.gz | nothing: once it is unpacked into / (`sudo tar -C / -xzf`), run `sudo setcap cap_net_raw+ep /usr/lib/triib/triib-netraw` |
 | macOS (Apple Silicon) | .pkg | access to `/dev/bpf*` for the user installing it, at every start, as Wireshark's ChmodBPF does; `triib-cli` in /usr/local/bin |
 | Windows | .msi, .zip | nothing itself: install [Npcap](https://npcap.com) first, which the installer and triib point to when it is missing |
 
