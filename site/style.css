@@ -103,8 +103,12 @@ code {
 
 .top nav { display: flex; gap: 20px; flex-wrap: wrap; }
 .top nav a { color: var(--on-surface-variant); text-decoration: none; font-weight: 500; }
-.top nav a:hover { color: var(--primary); }
-.top nav .repo { color: var(--primary); }
+.top nav a:hover,
+.top nav a:active { color: var(--primary); }
+/* The page shown, or on the front page the section last gone to. */
+.top nav a[aria-current="page"],
+body:has(#features:target) .top nav a[href$="#features"],
+body:has(#download:target) .top nav a[href$="#download"] { color: var(--primary); }
 
 /* The language menu: a list of links, which opens without script. */
 .top nav { align-items: center; }
