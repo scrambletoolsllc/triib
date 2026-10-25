@@ -213,6 +213,9 @@ pub enum Message {
     /// screen, where the title bar leaves or comes back.
     #[cfg(target_os = "macos")]
     WindowResized,
+    /// The window's pixels to each of its points, once it is open and as it
+    /// moves to another screen.
+    Rescaled(f32),
     /// A double-click on the strip under the transparent title bar.
     TitleBarDoubleClicked,
     /// Show the log panel under the view, or hide it.
@@ -555,6 +558,9 @@ impl Triib {
             system,
             Task::perform(desktop::animations_enabled(), Message::AnimationsEnabled),
             Task::perform(desktop::accent_color(), Message::SystemAccent),
+            iced::window::oldest()
+                .and_then(iced::window::scale_factor)
+                .map(Message::Rescaled),
         ]);
         // The window is open by the time this runs.
         #[cfg(target_os = "macos")]
@@ -923,6 +929,7 @@ impl Triib {
             Message::WindowResized => {
                 self.title_bar = crate::title_bar_macos::height(self.window_view.unwrap_or(0));
             }
+            Message::Rescaled(scale) => self.logos.rescaled(scale),
             Message::TitleBarDoubleClicked =>
             {
                 #[cfg(target_os = "macos")]
@@ -1441,6 +1448,9 @@ impl Triib {
                 }
                 iced::Event::Window(iced::window::Event::Unfocused) => {
                     Some(Message::ShiftHeld(false))
+                }
+                iced::Event::Window(iced::window::Event::Rescaled(scale)) => {
+                    Some(Message::Rescaled(scale))
                 }
                 #[cfg(target_os = "macos")]
                 iced::Event::Window(iced::window::Event::Resized(_)) => {

@@ -27,6 +27,9 @@ All notable changes to triib. Versions follow
   menu, as the entity list's, which also hides entities running AVB
   Lite, not those only able to, and wireless entities, with all their
   streams. How many streams the filters hide shows while they hide any.
+- Entity and vendor images in the entity list and the inspector are
+  smooth: each is shrunk once to the pixels it shows at, averaging what
+  each covers, rather than sampled jagged as it is drawn.
 
 ### Linux
 

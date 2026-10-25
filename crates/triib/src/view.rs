@@ -1353,7 +1353,7 @@ fn entity_sections<'a>(
             (fl!("column-entity-image"), Logo::Entity),
             (fl!("column-vendor-image"), Logo::Vendor),
         ] {
-            if let Some(image) = triib.logos.of(model, logo) {
+            if let Some(image) = triib.logos.of(model, logo, INSPECTOR_LOGO) {
                 items.push(labeled(
                     label,
                     iced::widget::image(image)
@@ -3328,6 +3328,8 @@ pub(crate) mod tests {
                 triib.interface_filters_open = true;
                 triib.settings.hide_wireless_interfaces = true;
             }
+            // The simulator's snapshots, at two pixels to a point.
+            triib.logos.rescaled(2.0);
             let iced_settings = iced::Settings {
                 fonts: scramble_ui::font::files().collect(),
                 default_font: scramble_ui::font::TEXT,

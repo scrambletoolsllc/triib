@@ -260,7 +260,7 @@ fn logo_cell<'a>(
     let image = triib
         .models
         .get(&entity.entity_id())
-        .and_then(|model| triib.logos.of(model, logo));
+        .and_then(|model| triib.logos.of(model, logo, LOGO_SIZE));
     let content: Element<'a, Message> = match image {
         Some(image) => iced::widget::image(image)
             .width(LOGO_SIZE)
