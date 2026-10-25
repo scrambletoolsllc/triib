@@ -734,6 +734,8 @@ mac-no-audio-device = 没有流连接时无
 mac-entity-note = 此实体由 macOS 运行。只要其中一个流已连接，macOS 就会创建供 App 播放和录音的音频设备，每个方向的声道数由配置决定。
 mac-open-audio-midi-setup = 打开“音频 MIDI 设置”
 mac-avb-off = { $interface } 上的 AVB 已关闭，因此这台 Mac 没有自己的 AVB 实体。请在“音频 MIDI 设置”的网络设备浏览器中打开它。
+mac-alarm-own-clock = 跟随 { $clock } 时会丢失接收到的音频
+mac-follow-clock = 跟随 { $source }
 
 listen-section = 监听
 listen-start = 监听

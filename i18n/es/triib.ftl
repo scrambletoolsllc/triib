@@ -886,6 +886,8 @@ mac-no-audio-device = Ninguno mientras no haya un flujo conectado
 mac-entity-note = macOS ejecuta esta entidad. Mientras alguno de sus flujos esté conectado, macOS crea el dispositivo de audio por el que las apps reproducen y graban, con tantos canales en cada sentido como fije la configuración.
 mac-open-audio-midi-setup = Abrir Configuración de Audio MIDI
 mac-avb-off = AVB está desactivado en { $interface }, así que este Mac no tiene una entidad AVB propia. Actívalo en el explorador de dispositivos de red de Configuración de Audio MIDI.
+mac-alarm-own-clock = Pierde audio recibido mientras sigue { $clock }
+mac-follow-clock = Seguir { $source }
 
 listen-section = Escucha
 listen-start = Escuchar

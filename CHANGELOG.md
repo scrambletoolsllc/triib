@@ -3,6 +3,15 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Controller
+
+- A Mac's AVB entity receiving a stream on its own clock, as macOS
+  starts it on Mac System Clock, drops audio from what it receives. It
+  now raises an alarm, with a button in its Diagnostics tab to follow
+  the stream's clock instead, and agents find it in `list_problems`.
+
 ## [1.2.0] - 2026-10-24
 
 The network map draws the traffic on each link and places every device

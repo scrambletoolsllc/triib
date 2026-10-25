@@ -833,6 +833,8 @@ mac-no-audio-device = جب تک کوئی اسٹریم جڑا نہ ہو، کوئ�
 mac-entity-note = اس اینٹیٹی کو macOS چلاتا ہے۔ جب تک اس کا کوئی اسٹریم جڑا رہے، macOS وہ آڈیو ڈیوائس بناتا ہے جس سے ایپس چلاتی اور ریکارڈ کرتی ہیں، ہر سمت میں اتنے چینلز کے ساتھ جتنے کنفیگریشن طے کرے۔
 mac-open-audio-midi-setup = Audio MIDI Setup کھولیں
 mac-avb-off = { $interface } پر AVB بند ہے، اس لیے اس Mac کی اپنی کوئی AVB اینٹیٹی نہیں۔ اسے Audio MIDI Setup کے Network Device Browser میں آن کریں۔
+mac-alarm-own-clock = { $clock } کی پیروی کرتے ہوئے موصولہ آڈیو ڈراپ کرتا ہے
+mac-follow-clock = { $source } کی پیروی کریں
 
 listen-section = سنیں
 listen-start = سنیں

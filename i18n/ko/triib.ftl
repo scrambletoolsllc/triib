@@ -734,6 +734,8 @@ mac-no-audio-device = 연결된 스트림이 없는 동안은 없음
 mac-entity-note = 이 엔티티는 macOS가 실행합니다. 스트림 중 하나가 연결되어 있는 동안 macOS는 앱이 재생하고 녹음하는 오디오 기기를 만들며, 방향별 채널 수는 구성에 따릅니다.
 mac-open-audio-midi-setup = Audio MIDI 설정 열기
 mac-avb-off = { $interface }에서 AVB가 꺼져 있어 이 Mac에는 자체 AVB 엔티티가 없습니다. Audio MIDI 설정의 네트워크 기기 브라우저에서 켜세요.
+mac-alarm-own-clock = { $clock }을(를) 따르는 동안 수신 오디오 끊김
+mac-follow-clock = { $source } 따르기
 
 listen-section = 모니터
 listen-start = 모니터

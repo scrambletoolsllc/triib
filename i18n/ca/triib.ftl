@@ -898,6 +898,8 @@ mac-no-audio-device = Cap mentre no hi hagi cap flux connectat
 mac-entity-note = El macOS executa aquesta entitat. Mentre algun dels seus fluxos està connectat, el macOS crea el dispositiu d’àudio per on les apps reprodueixen i graven, amb tants canals en cada sentit com fixi la configuració.
 mac-open-audio-midi-setup = Obre Audio MIDI Setup
 mac-avb-off = L’AVB està desactivat a { $interface }, de manera que aquest Mac no té cap entitat AVB pròpia. Activeu-lo al navegador de dispositius de xarxa d’Audio MIDI Setup.
+mac-alarm-own-clock = Perd àudio rebut mentre segueix { $clock }
+mac-follow-clock = Segueix { $source }
 
 listen-section = Escolta
 listen-start = Escolta

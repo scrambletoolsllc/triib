@@ -981,6 +981,8 @@ mac-no-audio-device = لا يوجد ما دام لا تدفق متصل
 mac-entity-note = يشغّل macOS هذا الكيان. ما دام أحد تدفقاته متصلًا، ينشئ macOS جهاز الصوت الذي تشغّل التطبيقات الصوت عبره وتسجّل منه، بعدد القنوات في كل اتجاه الذي يحدّده التكوين.
 mac-open-audio-midi-setup = فتح Audio MIDI Setup
 mac-avb-off = خاصية AVB متوقفة على { $interface }، لذا ليس لهذا الـ Mac كيان AVB خاص به. شغّلها في متصفح أجهزة الشبكة في Audio MIDI Setup.
+mac-alarm-own-clock = يُسقط من الصوت الذي يستقبله ما دام يتبع { $clock }
+mac-follow-clock = اتباع { $source }
 
 listen-section = الاستماع
 listen-start = استماع

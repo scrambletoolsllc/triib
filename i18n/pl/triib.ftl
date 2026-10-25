@@ -927,6 +927,8 @@ mac-no-audio-device = Brak, dopóki żaden strumień nie jest połączony
 mac-entity-note = Tę encję uruchamia macOS. Dopóki któryś z jej strumieni jest połączony, macOS tworzy urządzenie audio, przez które aplikacje odtwarzają i nagrywają, z taką liczbą kanałów w każdą stronę, jaką określa konfiguracja.
 mac-open-audio-midi-setup = Otwórz Ustawienia Audio MIDI
 mac-avb-off = AVB jest wyłączone na { $interface }, więc ten Mac nie ma własnej encji AVB. Włącz je w przeglądarce urządzeń sieciowych w Ustawieniach Audio MIDI.
+mac-alarm-own-clock = Gubi odbierane audio, gdy synchronizuje się z { $clock }
+mac-follow-clock = Synchronizuj z { $source }
 
 listen-section = Odsłuch
 listen-start = Odsłuchuj

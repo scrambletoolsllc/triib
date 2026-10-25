@@ -928,6 +928,8 @@ mac-no-audio-device = Žádné, dokud není připojen žádný stream
 mac-entity-note = Tuto entitu spouští macOS. Dokud je připojen některý z jejích streamů, macOS vytváří zvukové zařízení, do kterého aplikace přehrávají a ze kterého nahrávají, s tolika kanály v každém směru, kolik určuje konfigurace.
 mac-open-audio-midi-setup = Otevřít Nastavení Audio MIDI
 mac-avb-off = AVB je na rozhraní { $interface } vypnuté, takže tento Mac nemá vlastní entitu AVB. Zapněte ho v prohlížeči síťových zařízení v Nastavení Audio MIDI.
+mac-alarm-own-clock = Zahazuje přijímaný zvuk, dokud se řídí hodinami { $clock }
+mac-follow-clock = Řídit se zdrojem { $source }
 
 listen-section = Poslech
 listen-start = Poslouchat

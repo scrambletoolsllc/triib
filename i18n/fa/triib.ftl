@@ -833,6 +833,8 @@ mac-no-audio-device = تا وقتی هیچ جریانی متصل نیست، هی
 mac-entity-note = macOS این موجودیت را اجرا می‌کند. تا وقتی یکی از جریان‌هایش متصل است، macOS دستگاه صوتی‌ای را می‌سازد که برنامه‌ها از طریق آن پخش و ضبط می‌کنند، با همان تعداد کانال در هر جهت که پیکربندی تعیین می‌کند.
 mac-open-audio-midi-setup = باز کردن Audio MIDI Setup
 mac-avb-off = AVB روی { $interface } خاموش است، بنابراین این Mac موجودیت AVB خودش را ندارد. آن را در مرورگر دستگاه‌های شبکهٔ Audio MIDI Setup روشن کنید.
+mac-alarm-own-clock = تا وقتی از { $clock } پیروی می‌کند، صدای دریافتی را از دست می‌دهد
+mac-follow-clock = پیروی از { $source }
 
 listen-section = گوش دادن
 listen-start = گوش دادن

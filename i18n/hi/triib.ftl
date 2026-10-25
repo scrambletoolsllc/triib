@@ -833,6 +833,8 @@ mac-no-audio-device = कोई stream जुड़ा न होने तक �
 mac-entity-note = macOS इस Entity को चलाता है। जब तक इसका कोई stream जुड़ा रहता है, macOS वह ऑडियो डिवाइस बनाता है जिससे ऐप्स चलाते और रिकॉर्ड करते हैं, हर दिशा में उतने चैनल के साथ जितने कॉन्फ़िगरेशन तय करता है।
 mac-open-audio-midi-setup = Audio MIDI Setup खोलें
 mac-avb-off = { $interface } पर AVB बंद है, इसलिए इस Mac की अपनी कोई AVB Entity नहीं है। इसे Audio MIDI Setup के Network Device Browser में चालू करें।
+mac-alarm-own-clock = { $clock } का अनुसरण करते समय प्राप्त ऑडियो खो देता है
+mac-follow-clock = { $source } का अनुसरण करें
 
 listen-section = सुनें
 listen-start = सुनें

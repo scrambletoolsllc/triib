@@ -843,6 +843,8 @@ mac-no-audio-device = Geen zolang geen stream verbonden is
 mac-entity-note = macOS draait deze entiteit. Zolang een van de streams verbonden is, maakt macOS het audioapparaat waarmee apps afspelen en opnemen, met zoveel kanalen in elke richting als de configuratie bepaalt.
 mac-open-audio-midi-setup = Open Audio MIDI-configuratie
 mac-avb-off = AVB staat uit op { $interface }, dus deze Mac heeft geen eigen AVB-entiteit. Zet het aan in de netwerkapparatenbrowser van Audio MIDI-configuratie.
+mac-alarm-own-clock = Verliest audio die hij ontvangt terwijl hij { $clock } volgt
+mac-follow-clock = { $source } volgen
 
 listen-section = Meeluisteren
 listen-start = Meeluisteren

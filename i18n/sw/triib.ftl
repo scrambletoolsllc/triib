@@ -840,6 +840,8 @@ mac-no-audio-device = Hakuna wakati hakuna mtiririko uliounganishwa
 mac-entity-note = macOS huendesha huluki hii. Mradi mmoja wa mitiririko yake umeunganishwa, macOS huunda kifaa cha sauti ambacho programu hucheza na kurekodi kupitia, chenye chaneli kila upande kama usanidi unavyoweka.
 mac-open-audio-midi-setup = Fungua Audio MIDI Setup
 mac-avb-off = AVB imezimwa kwenye { $interface }, kwa hiyo Mac hii haina huluki yake ya AVB. Iwashe katika Network Device Browser ya Audio MIDI Setup.
+mac-alarm-own-clock = Inapoteza sauti inayopokea wakati inafuata { $clock }
+mac-follow-clock = Fuata { $source }
 
 listen-section = Sikiliza
 listen-start = Sikiliza

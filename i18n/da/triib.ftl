@@ -843,6 +843,8 @@ mac-no-audio-device = Ingen, så længe ingen stream er forbundet
 mac-entity-note = macOS kører denne entitet. Så længe en af dens streams er forbundet, laver macOS den lydenhed, apps afspiller til og optager fra, med så mange kanaler hver vej, som konfigurationen angiver.
 mac-open-audio-midi-setup = Åbn Lyd-MIDI-opsætning
 mac-avb-off = AVB er slået fra på { $interface }, så denne Mac har ingen egen AVB-entitet. Slå det til i netværksenhedsbrowseren i Lyd-MIDI-opsætning.
+mac-alarm-own-clock = Taber lyd, den modtager, mens den følger { $clock }
+mac-follow-clock = Følg { $source }
 
 listen-section = Lyt
 listen-start = Lyt

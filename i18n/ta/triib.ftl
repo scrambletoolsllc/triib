@@ -833,6 +833,8 @@ mac-no-audio-device = எந்த stream-உம் இணைக்கப்ப�
 mac-entity-note = இந்த Entity-ஐ macOS இயக்குகிறது. அதன் streams-இல் ஏதேனும் இணைக்கப்பட்டிருக்கும்வரை, ஆப்கள் இயக்கிப் பதிவுசெய்யும் ஆடியோ சாதனத்தை macOS உருவாக்குகிறது, ஒவ்வொரு திசையிலும் உள்ளமைவு நிர்ணயிக்கும் அளவு சேனல்களுடன்.
 mac-open-audio-midi-setup = Audio MIDI Setup-ஐத் திற
 mac-avb-off = { $interface }-இல் AVB அணைக்கப்பட்டுள்ளது, எனவே இந்த Mac-க்கு சொந்த AVB Entity இல்லை. Audio MIDI Setup-இன் Network Device Browser-இல் அதை இயக்கவும்.
+mac-alarm-own-clock = { $clock }-ஐப் பின்பற்றும்போது, பெறும் ஆடியோவை இழக்கிறது
+mac-follow-clock = { $source }-ஐப் பின்பற்று
 
 listen-section = கேள்
 listen-start = கேள்

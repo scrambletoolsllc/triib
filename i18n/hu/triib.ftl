@@ -835,6 +835,8 @@ mac-no-audio-device = Nincs, amíg egy stream sincs csatlakoztatva
 mac-entity-note = Ezt az entitást a macOS futtatja. Amíg valamelyik streamje csatlakoztatva van, a macOS létrehozza azt a hangeszközt, amelyen az alkalmazások lejátszanak és felvesznek, mindkét irányban annyi csatornával, amennyit a konfiguráció megad.
 mac-open-audio-midi-setup = Audio MIDI Setup megnyitása
 mac-avb-off = Az AVB ki van kapcsolva ezen: { $interface }, így ennek a Macnek nincs saját AVB-entitása. Kapcsolja be az Audio MIDI Setup hálózati eszközböngészőjében.
+mac-alarm-own-clock = Fogadott hangot dob el, amíg a(z) { $clock } órajelet követi
+mac-follow-clock = { $source } követése
 
 listen-section = Belehallgatás
 listen-start = Belehallgatás

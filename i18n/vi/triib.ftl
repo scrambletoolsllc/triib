@@ -734,6 +734,8 @@ mac-no-audio-device = Không có khi chưa luồng nào được kết nối
 mac-entity-note = macOS chạy thực thể này. Khi có luồng của nó được kết nối, macOS tạo thiết bị âm thanh mà ứng dụng dùng để phát và ghi, với số kênh mỗi chiều do cấu hình quy định.
 mac-open-audio-midi-setup = Mở Audio MIDI Setup
 mac-avb-off = AVB đang tắt trên { $interface }, nên máy Mac này không có thực thể AVB riêng. Hãy bật nó trong Network Device Browser của Audio MIDI Setup.
+mac-alarm-own-clock = Bị mất âm thanh nhận được khi đang đồng bộ theo { $clock }
+mac-follow-clock = Đồng bộ theo { $source }
 
 listen-section = Nghe
 listen-start = Nghe

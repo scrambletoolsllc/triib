@@ -835,6 +835,8 @@ mac-no-audio-device = Hiçbir akış bağlı değilken yok
 mac-entity-note = Bu varlığı macOS çalıştırır. Akışlarından biri bağlı olduğu sürece macOS, uygulamaların çalıp kaydettiği ses aygıtını oluşturur; her yöndeki kanal sayısını yapılandırma belirler.
 mac-open-audio-midi-setup = Audio MIDI Ayarı’nı aç
 mac-avb-off = { $interface } üzerinde AVB kapalı, bu yüzden bu Mac’in kendine ait bir AVB varlığı yok. Audio MIDI Ayarı’nın ağ aygıtı tarayıcısında açın.
+mac-alarm-own-clock = { $clock } kaynağını izlerken aldığı seste kayıp oluyor
+mac-follow-clock = { $source } kaynağını izle
 
 listen-section = Dinle
 listen-start = Dinle

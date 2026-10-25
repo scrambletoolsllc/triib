@@ -862,6 +862,8 @@ mac-no-audio-device = Ei mitään, kun mikään striimi ei ole yhdistetty
 mac-entity-note = macOS ajaa tätä entiteettiä. Kun jokin sen striimeistä on yhdistetty, macOS luo äänilaitteen, jonka kautta apit toistavat ja nauhoittavat, ja siinä on kumpaankin suuntaan niin monta kanavaa kuin kokoonpano määrää.
 mac-open-audio-midi-setup = Avaa Audio-MIDI-asetukset
 mac-avb-off = AVB on pois päältä liitännässä { $interface }, joten tällä Macilla ei ole omaa AVB-entiteettiä. Laita se päälle Audio-MIDI-asetusten verkkolaiteselaimessa.
+mac-alarm-own-clock = Pudottaa vastaanotettua ääntä seuratessaan kelloa { $clock }
+mac-follow-clock = Seuraa lähdettä { $source }
 
 listen-section = Kuuntelu
 listen-start = Kuuntele

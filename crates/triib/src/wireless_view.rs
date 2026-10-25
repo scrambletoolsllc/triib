@@ -301,6 +301,7 @@ pub fn alarms(triib: &Triib) -> Vec<Alarm> {
                     alarms.push(Alarm {
                         entity,
                         text: fl!("wireless-alarm-unserved", count = unserved),
+                        fix: None,
                     });
                 }
                 continue;
@@ -310,7 +311,11 @@ pub fn alarms(triib: &Triib) -> Vec<Alarm> {
                 Time::Holdover => fl!("wireless-alarm-holdover"),
                 Time::NotLocked => fl!("wireless-alarm-not-locked"),
             };
-            alarms.push(Alarm { entity, text });
+            alarms.push(Alarm {
+                entity,
+                text,
+                fix: None,
+            });
         }
     }
     alarms
@@ -368,6 +373,7 @@ mod tests {
             [Alarm {
                 entity: WIFI_ESP,
                 text: "Wi-Fi time holding over, lost from the access point".to_owned(),
+                fix: None,
             }]
         );
         // The status bar's alarms include it.

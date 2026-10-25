@@ -10,12 +10,14 @@ use atdecc::lite::{FallbackReason, LiteFlags, LiteStatus, PtpProfile};
 use atdecc::model::EntityModel;
 use iced::widget::container;
 use iced::{Element, Fill, Length, Theme};
+use scramble_ui::button::{self, Kind, Size};
 use scramble_ui::font::{Type, styled};
 use scramble_ui::{Scheme, component, shape, style};
 use scramble_ui::{column, dir, row};
 
 use crate::app::{Message, Triib};
 use crate::fl;
+use crate::network::Action;
 
 /// The PTP offset past which the profile calls for an alarm (9).
 pub(crate) const OFFSET_ALARM: i32 = 50_000;
@@ -335,6 +337,9 @@ fn meter<'a>(share: f32, over: bool) -> Element<'a, Message> {
 pub struct Alarm {
     pub entity: EntityId,
     pub text: String,
+    /// A button's label and what it does to set it right, where triib
+    /// can.
+    pub fix: Option<(String, Action)>,
 }
 
 /// Every entity's alarms: a PTP offset past 50 µs on an interface running
@@ -356,6 +361,7 @@ pub fn alarms(triib: &Triib) -> Vec<Alarm> {
                 alarms.push(Alarm {
                     entity,
                     text: fl!("lite-alarm-offset", offset = duration(offset)),
+                    fix: None,
                 });
             }
             if let Some(egress) = egress(model, interface).filter(Egress::over) {
@@ -369,12 +375,14 @@ pub fn alarms(triib: &Triib) -> Vec<Alarm> {
                         ),
                         limit = fl!("common-percent", value = "75")
                     ),
+                    fix: None,
                 });
             }
         }
     }
     alarms.extend(crate::wireless_view::alarms(triib));
     alarms.extend(foreign_mrp_alarm(triib));
+    alarms.extend(crate::diagnostics_view::alarms(triib));
     alarms
 }
 
@@ -396,18 +404,32 @@ fn foreign_mrp_alarm(triib: &Triib) -> Option<Alarm> {
             "host-alarm-foreign-mrp",
             interface = status.interface.clone()
         ),
+        fix: None,
     })
 }
 
-/// The alarms of one entity, for the top of its Diagnostics tab.
+/// The alarms of one entity, for the top of its Diagnostics tab, each
+/// with its button where triib can set it right.
 pub fn entity_alarms<'a>(triib: &Triib, entity: EntityId) -> Vec<Element<'a, Message>> {
     alarms(triib)
         .into_iter()
         .filter(|alarm| alarm.entity == entity)
         .map(|alarm| {
-            styled(alarm.text, Type::BodyMedium)
-                .style(style::error_text)
-                .into()
+            let text = styled(alarm.text, Type::BodyMedium).style(style::error_text);
+            match alarm.fix {
+                Some((label, action)) => {
+                    let pending = triib.changing(|pending| *pending == action).is_some();
+                    column![
+                        text,
+                        button::button(Kind::Tonal, label)
+                            .size(Size::ExtraSmall)
+                            .on_press_maybe((!pending).then_some(Message::Act(action))),
+                    ]
+                    .spacing(8)
+                    .into()
+                }
+                None => text.into(),
+            }
         })
         .collect()
 }
@@ -480,10 +502,12 @@ mod tests {
                 Alarm {
                     entity: WIRED_ESP,
                     text: "PTP offset -72 µs, past the 50 µs AVB Lite allows".to_owned(),
+                    fix: None,
                 },
                 Alarm {
                     entity: WIRED_ESP,
                     text: "Egress at 80% of the link, past the 75% streams may take".to_owned(),
+                    fix: None,
                 },
             ]
         );
@@ -531,6 +555,7 @@ mod tests {
             [Alarm {
                 entity: WIRED_ESP,
                 text: "Another program on this computer declares MSRP or MVRP on enp2s0".to_owned(),
+                fix: None,
             }]
         );
     }

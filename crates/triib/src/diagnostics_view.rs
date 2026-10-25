@@ -1,18 +1,128 @@
 //! The inspector's diagnostics: how each clock domain and stream has
 //! fared since the entity started, from the counters it keeps, with what
 //! went wrong marked, and how each bound stream input's reservation
-//! stands.
+//! stands; and a Mac receiving a stream on its own clock.
 
-use atdecc::descriptor::DescriptorType;
-use atdecc::model::EntityModel;
+use atdecc::EntityId;
+use atdecc::descriptor::{ClockSourceType, DescriptorType};
+use atdecc::media_clock::{DomainId, media_clocks};
+use atdecc::model::{Binding, EntityModel};
 use iced::Element;
 use scramble_ui::component;
 use scramble_ui::font::{Type, styled};
 use scramble_ui::style;
 
-use crate::app::Message;
+use crate::app::{Message, Triib};
 use crate::describe;
 use crate::fl;
+use crate::lite_view::Alarm;
+use crate::network::Action;
+
+/// The first three octets of the entity model IDs of Macs' AVB entities:
+/// Apple's OUI.
+const APPLE: u64 = 0x00_0d93;
+
+/// A Mac's AVB entity receiving a stream while it keeps its own clock,
+/// as macOS has it by default: what it receives then plays with runs of
+/// silence, which following the stream's clock ends.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OwnClock {
+    pub entity: EntityId,
+    pub domain: u16,
+    /// The clock source it follows, its own clock.
+    pub source: u16,
+    /// The clock source of the stream input to follow.
+    pub follow: u16,
+}
+
+impl OwnClock {
+    /// What goes wrong, as the status bar and the Diagnostics tab say it,
+    /// with the button that follows the stream.
+    pub fn alarm(&self, triib: &Triib) -> Option<Alarm> {
+        let model = triib.models.get(&self.entity)?;
+        let name = |index: u16| {
+            model
+                .name_of(DescriptorType::CLOCK_SOURCE, index)
+                .map_or_else(
+                    || fl!("clock-source-numbered", index = index),
+                    str::to_owned,
+                )
+        };
+        Some(Alarm {
+            entity: self.entity,
+            text: fl!("mac-alarm-own-clock", clock = name(self.source)),
+            fix: Some((
+                fl!("mac-follow-clock", source = name(self.follow)),
+                Action::SetClockSource {
+                    entity: self.entity,
+                    domain: self.domain,
+                    source: self.follow,
+                },
+            )),
+        })
+    }
+}
+
+/// Each Mac's AVB entity whose clock domain keeps its own clock while a
+/// stream input it could follow instead is bound to a talker, unless the
+/// talker's clock comes from the Mac.
+pub fn own_clocks(triib: &Triib) -> Vec<OwnClock> {
+    let online: Vec<(EntityId, &EntityModel)> = triib
+        .models
+        .iter()
+        .filter(|(entity, _)| triib.entities.contains_key(entity))
+        .map(|(&entity, model)| (entity, model))
+        .collect();
+    let clocks = media_clocks(online.iter().copied());
+    let mut found = Vec::new();
+    for &(entity, model) in &online {
+        if triib.entities[&entity].adp.entity_model_id.0 >> 40 != APPLE {
+            continue;
+        }
+        let source = |index: u16| model.clock_sources().find(|source| source.index == index);
+        for domain in model.clock_domains() {
+            let own = DomainId {
+                entity,
+                domain: domain.index,
+            };
+            if !source(domain.clock_source_index)
+                .is_some_and(|current| current.clock_source_type == ClockSourceType::INTERNAL)
+            {
+                continue;
+            }
+            let follows_mac = |talker: EntityId| {
+                clocks
+                    .iter()
+                    .any(|clock| clock.id.entity == talker && clock.reference == Ok(own))
+            };
+            let follow = domain.clock_sources().filter_map(source).find(|candidate| {
+                candidate.clock_source_type == ClockSourceType::INPUT_STREAM
+                    && candidate.location_type == DescriptorType::STREAM_INPUT
+                    && model
+                        .binding(candidate.location_index)
+                        .and_then(Binding::talker_stream)
+                        .is_some_and(|(talker, _)| !follows_mac(talker))
+            });
+            if let Some(follow) = follow {
+                found.push(OwnClock {
+                    entity,
+                    domain: domain.index,
+                    source: domain.clock_source_index,
+                    follow: follow.index,
+                });
+            }
+        }
+    }
+    found
+}
+
+/// The alarms of Macs receiving on their own clock.
+pub fn alarms(triib: &Triib) -> Vec<Alarm> {
+    own_clocks(triib)
+        .iter()
+        .filter_map(|own| own.alarm(triib))
+        .collect()
+}
 
 /// What a line says: what went fine, and what went wrong.
 #[derive(Debug, Default, PartialEq)]
@@ -256,8 +366,108 @@ fn capitalized(text: &str) -> String {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
+
+    use atdecc::{AcmpFlags, AcmpMessageType, AcmpStatus, Acmpdu, MacAddress, StreamId};
+
+    pub(crate) const MAC_MINI: EntityId = EntityId(0xd111_e597_f544_8000);
+
+    /// The response binding the Mac mini's first stream input to the
+    /// wired ESP's first output.
+    pub(crate) fn mac_listening_frames() -> Vec<Vec<u8>> {
+        let esp = crate::view::tests::WIRED_ESP;
+        let connect = Acmpdu {
+            message_type: AcmpMessageType::CONNECT_RX_RESPONSE,
+            status: AcmpStatus::SUCCESS,
+            stream_id: StreamId(esp.0),
+            controller_entity_id: EntityId(0x0011_2233_4455_6677),
+            talker_entity_id: esp,
+            listener_entity_id: MAC_MINI,
+            stream_dest_mac: MacAddress([0x91, 0xe0, 0xf0, 0x00, 0x6a, 0x20]),
+            connection_count: 1,
+            flags: AcmpFlags::empty(),
+            stream_vlan_id: 2,
+            ..Acmpdu::default()
+        };
+        let mut out = [0; 200];
+        let length = connect.encode(&mut out).unwrap();
+        vec![out[..length].to_vec()]
+    }
+
+    /// The bench, after the Mac mini's first stream input binds to the
+    /// wired ESP's first output.
+    pub(crate) fn mac_listening() -> Triib {
+        let (entities, models) = crate::view::tests::bench_then(&mac_listening_frames());
+        let interface = avb_net::Interface {
+            name: "enp6s0".to_owned(),
+            mac: avb_net::MacAddress([0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b]),
+            up: true,
+            speed: None,
+            physical: true,
+            wireless: false,
+            hardware_clock: None,
+        };
+        Triib::sample(
+            crate::settings::Settings::default(),
+            interface,
+            entities,
+            models,
+        )
+    }
+
+    /// A Mac receiving a stream on Mac System Clock, as macOS starts it,
+    /// is told to follow the stream.
+    #[test]
+    fn a_mac_receiving_on_its_own_clock_follows_the_stream() {
+        let triib = mac_listening();
+        let own = OwnClock {
+            entity: MAC_MINI,
+            domain: 0,
+            source: 2,
+            follow: 0,
+        };
+        assert_eq!(own_clocks(&triib), [own]);
+        let alarm = own.alarm(&triib).unwrap();
+        assert_eq!(
+            alarm.text,
+            "Drops audio it receives while it follows Mac System Clock"
+        );
+        assert_eq!(
+            alarm.fix,
+            Some((
+                "Follow Audio Input Stream 1".to_owned(),
+                Action::SetClockSource {
+                    entity: MAC_MINI,
+                    domain: 0,
+                    source: 0,
+                }
+            ))
+        );
+        assert!(crate::lite_view::alarms(&triib).contains(&alarm));
+    }
+
+    /// A Mac bound to nothing keeps its own clock without harm.
+    #[test]
+    fn a_mac_receiving_nothing_keeps_its_own_clock() {
+        let (entities, models) = crate::view::tests::bench();
+        assert!(entities.contains_key(&MAC_MINI));
+        let triib = Triib::sample(
+            crate::settings::Settings::default(),
+            avb_net::Interface {
+                name: "enp6s0".to_owned(),
+                mac: avb_net::MacAddress([0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b]),
+                up: true,
+                speed: None,
+                physical: true,
+                wireless: false,
+                hardware_clock: None,
+            },
+            entities,
+            models,
+        );
+        assert!(own_clocks(&triib).is_empty());
+    }
 
     #[test]
     fn counts_read_naturally() {

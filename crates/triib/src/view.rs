@@ -3000,6 +3000,8 @@ pub(crate) mod tests {
                 true,
                 Size::new(1280.0, 1400.0),
             ),
+            // The Mac mini receiving on its own clock.
+            ("inspector-mac-clock-alarms", View::Entities, true, desktop),
             (
                 "inspector-lite-alarms",
                 View::Entities,
@@ -3097,6 +3099,8 @@ pub(crate) mod tests {
                 bench_then(&lite_frames(-72_400, 800_000)).1
             } else if suffix.contains("wireless") {
                 bench_then(&wireless_frames(atdecc::wireless::WirelessFlags::HOLDOVER)).1
+            } else if suffix.contains("mac-clock") {
+                bench_then(&crate::diagnostics_view::tests::mac_listening_frames()).1
             } else {
                 models.clone()
             };
@@ -3142,7 +3146,7 @@ pub(crate) mod tests {
                 Some(WIFI_ESP)
             } else if suffix.contains("device") || suffix.contains("logos") {
                 host
-            } else if suffix.contains("listen") {
+            } else if suffix.contains("listen") || suffix.contains("mac-clock") {
                 Some(MAC_MINI)
             } else {
                 entities.keys().next().copied()

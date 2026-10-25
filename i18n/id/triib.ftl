@@ -739,6 +739,8 @@ mac-no-audio-device = Tidak ada selama tidak ada stream yang tersambung
 mac-entity-note = macOS menjalankan entitas ini. Selama salah satu stream-nya tersambung, macOS membuat perangkat audio tempat aplikasi memutar dan merekam, dengan jumlah kanal di tiap arah sesuai konfigurasi.
 mac-open-audio-midi-setup = Buka Audio MIDI Setup
 mac-avb-off = AVB mati di { $interface }, jadi Mac ini tidak punya entitas AVB sendiri. Nyalakan di Network Device Browser pada Audio MIDI Setup.
+mac-alarm-own-clock = Membuang audio yang diterima selama mengikuti { $clock }
+mac-follow-clock = Ikuti { $source }
 
 listen-section = Dengarkan
 listen-start = Dengarkan

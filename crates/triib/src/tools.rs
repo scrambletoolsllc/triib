@@ -398,9 +398,11 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
              it: the network not running, entities it could not read, bound streams whose \
              talker's reservation failed and where, whose formats differ, whose ends keep \
              time in different clock domains, that wait for their talker or whose talker is \
-             gone, devices out of gPTP or PTP sync and why, what this computer's own \
-             entities wait on, and what entities' counters say went wrong since they \
-             started. Start here, then look closer with stream_diagnostics and clock_tree.",
+             gone, devices out of gPTP or PTP sync and why, a Mac receiving on its own \
+             clock, which drops audio until set_clock_source has it follow the stream, \
+             what this computer's own entities wait on, and what entities' counters say \
+             went wrong since they started. Start here, then look closer with \
+             stream_diagnostics and clock_tree.",
             |app, _: Nothing, answer| {
                 reply(
                     &answer,
@@ -1197,6 +1199,20 @@ fn problems(app: &Triib) -> Vec<Value> {
             warnings.push(problem);
         }
     }
+    for own in crate::diagnostics_view::own_clocks(app) {
+        let Some(alarm) = own.alarm(app) else {
+            continue;
+        };
+        errors.push(json!({
+            "kind": "mac_own_clock",
+            "entity_id": own.entity.to_string(),
+            "entity": app.entity_name_of(own.entity),
+            "clock_domain": own.domain,
+            "clock_source": own.source,
+            "follow_clock_source": own.follow,
+            "says": alarm.text,
+        }));
+    }
     if let Some(note) = crate::host_view::note(app) {
         warnings.push(json!({ "kind": "this_computer", "says": note }));
     }
@@ -1834,6 +1850,26 @@ mod tests {
 
     /// The problems list a failed reservation and what the counters say,
     /// errors first, and what triib cannot tell as warnings.
+    /// A Mac receiving on its own clock is an error, with the clock
+    /// source that ends it.
+    #[test]
+    fn a_mac_on_its_own_clock_is_a_problem() {
+        let mut app = crate::diagnostics_view::tests::mac_listening();
+        let listed = call(&mut app, "list_problems", json!({})).unwrap();
+        let problems = listed["structuredContent"]["problems"].as_array().unwrap();
+        let own = problems
+            .iter()
+            .find(|problem| problem["kind"] == "mac_own_clock")
+            .unwrap();
+        assert_eq!(own["severity"], "error");
+        assert_eq!(
+            own["entity_id"],
+            crate::diagnostics_view::tests::MAC_MINI.to_string()
+        );
+        assert_eq!(own["clock_source"], 2);
+        assert_eq!(own["follow_clock_source"], 0);
+    }
+
     #[test]
     fn problems_name_what_is_wrong_errors_first() {
         let mut app = troubled();

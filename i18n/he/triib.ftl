@@ -872,6 +872,8 @@ mac-no-audio-device = אין, כל עוד אף זרם אינו מחובר
 mac-entity-note = macOS מפעיל את הישות הזו. כל עוד אחד הזרמים שלה מחובר, macOS יוצר את התקן השמע שדרכו אפליקציות מנגנות ומקליטות, עם מספר הערוצים בכל כיוון שהתצורה קובעת.
 mac-open-audio-midi-setup = פתיחת Audio MIDI Setup
 mac-avb-off = AVB כבוי ב-{ $interface }, ולכן ל-Mac הזה אין ישות AVB משלו. הפעילו אותו בדפדפן התקני הרשת של Audio MIDI Setup.
+mac-alarm-own-clock = השמע שמתקבל נקטע כל עוד מקור השעון הוא { $clock }
+mac-follow-clock = סנכרון ל-{ $source }
 
 listen-section = האזנה
 listen-start = האזנה

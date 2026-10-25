@@ -731,6 +731,8 @@ mac-no-audio-device = ไม่มีขณะที่ไม่มีสตร�
 mac-entity-note = macOS เป็นผู้รันเอนทิตีนี้ ขณะที่สตรีมใดสตรีมหนึ่งของมันเชื่อมต่ออยู่ macOS จะสร้างอุปกรณ์เสียงที่แอปใช้เล่นและบันทึก โดยมีจำนวนช่องในแต่ละทิศทางตามที่การกำหนดค่ากำหนด
 mac-open-audio-midi-setup = เปิด Audio MIDI Setup
 mac-avb-off = AVB ปิดอยู่บน { $interface } Mac เครื่องนี้จึงไม่มีเอนทิตี AVB ของตัวเอง เปิดได้ใน Network Device Browser ของ Audio MIDI Setup
+mac-alarm-own-clock = เสียงที่รับเข้ามาขาดหายขณะซิงค์ตาม { $clock }
+mac-follow-clock = ซิงค์ตาม { $source }
 
 listen-section = ฟัง
 listen-start = ฟัง

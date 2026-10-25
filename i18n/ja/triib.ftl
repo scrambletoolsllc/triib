@@ -734,6 +734,8 @@ mac-no-audio-device = ストリームが接続されていない間はなし
 mac-entity-note = このエンティティは macOS が実行しています。ストリームのいずれかが接続されている間、macOS はアプリが再生・録音するオーディオデバイスを作成し、各方向のチャンネル数は構成に従います。
 mac-open-audio-midi-setup = Audio MIDI設定を開く
 mac-avb-off = { $interface } で AVB がオフのため、この Mac には自身の AVB エンティティがありません。Audio MIDI設定のネットワークデバイスブラウザでオンにしてください。
+mac-alarm-own-clock = { $clock } に従っている間、受信オーディオが途切れる
+mac-follow-clock = { $source } に従う
 
 listen-section = モニター
 listen-start = モニター

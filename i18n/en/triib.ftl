@@ -1095,6 +1095,13 @@ mac-entity-note = macOS runs this entity. While one of its streams is connected,
 mac-open-audio-midi-setup = Open Audio MIDI Setup
 # $interface is a network interface, such as en0.
 mac-avb-off = AVB is off on { $interface }, so this Mac has no AVB entity of its own. Turn it on in Audio MIDI Setup's Network Device Browser.
+# A Mac's AVB entity receiving a stream while it keeps its own clock,
+# which leaves silent gaps in what it plays. $clock is a clock source's
+# name, such as Mac System Clock.
+mac-alarm-own-clock = Drops audio it receives while it follows { $clock }
+# A button making it follow the stream's clock instead. $source is a
+# clock source's name, such as Audio Input Stream 1.
+mac-follow-clock = Follow { $source }
 
 ## Listening on this computer to the Mac's own entity
 

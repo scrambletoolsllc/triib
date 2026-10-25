@@ -734,6 +734,8 @@ mac-no-audio-device = 沒有串流連線時無
 mac-entity-note = 此實體由 macOS 執行。只要其中一個串流已連線，macOS 就會建立供 App 播放和錄音的音訊裝置，每個方向的聲道數由組態決定。
 mac-open-audio-midi-setup = 打開「音訊 MIDI 設定」
 mac-avb-off = { $interface } 上的 AVB 已關閉，因此這部 Mac 沒有自己的 AVB 實體。請在「音訊 MIDI 設定」的網路裝置瀏覽器中開啟。
+mac-alarm-own-clock = 跟隨 { $clock } 時會遺失接收到的音訊
+mac-follow-clock = 跟隨 { $source }
 
 listen-section = 監聽
 listen-start = 監聽
