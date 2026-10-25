@@ -3,53 +3,7 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
-
-### Controller
-
-- The connection matrix and the entity list have their title at the
-  start of the row above them, as the network map has. Each view's title
-  shows wherever the row has room for it beside the rest, rather than
-  only on windows over 1040 points wide: with the inspector open, say.
-- Where raw Ethernet needs a permission a command grants, as `setcap`
-  on the helper on Linux, triib tries again every 2 s and carries on as
-  soon as the command has run, rather than waiting for a restart, and
-  says so under the command.
-- Opening Settings or Presets, or an agent's prompt, leaves the window
-  under it as it was: the inspector no longer slides in again, nor do
-  the lists scroll back.
-- The entity list has a filter menu, as the interface picker has, in
-  place of the button that showed only this computer's entities. It
-  hides entities on other devices, on Linux and on a Mac; controllers;
-  and entities outside this computer's clock domain, while this
-  computer is in sync in one. Beside it, as beside the matrix's
-  filters, is how many entities they hide.
-- The connection matrix's option to hide what cannot connect is a filter
-  menu, as the entity list's, which also hides entities running AVB
-  Lite, not those only able to, and wireless entities, with all their
-  streams. How many streams the filters hide shows while they hide any.
-- Agents can diagnose streams that do not play: `list_problems` lists
-  what triib finds wrong, errors first, from failed reservations and
-  formats that differ to devices out of sync and counters gone wrong;
-  `stream_diagnostics` asks a device afresh how one stream stands, and
-  with `sample_seconds` what its counters did over that time; and
-  `clock_tree` gives the gPTP tree as the network view shows it.
-- Entity and vendor images in the entity list and the inspector are
-  smooth: each is shrunk once to the pixels it shows at, averaging what
-  each covers, rather than sampled jagged as it is drawn.
-
-### Linux
-
-- An entity added to this computer is listed at once, greyed, its State
-  saying what it waits on: triib-endpointd starting, the interface being
-  set up for AVB, its link. The bar above the list says what the daemon
-  is doing until it is done, such as setting up the interface or starting
-  ptp4l, or that linuxptp is not installed.
-- This computer's entities advertise again as soon as their link comes
-  back up, as after triib-endpointd turns EEE and PAUSE off, rather than
-  10 s later: a new entity reached triib's list only after that wait.
-
-## [1.2.0] - 2026-10-23
+## [1.2.0] - 2026-10-24
 
 The network map draws the traffic on each link and places every device
 in its clock domain, those running AVB Lite behind the non-AVB switch in
@@ -60,6 +14,10 @@ has a menu bar. On Linux only a small helper holds `CAP_NET_RAW`, and
 triib-endpointd shares its MSRP participant with other programs such as
 plaa, hears other computers' AVB Lite declarations on the Intel I210 and
 offers the same stream formats as plaa. The app ID is now `run.triib`.
+
+The entity list and the connection matrix filter from menus and carry
+their titles, agents can diagnose streams that do not play, and triib
+carries on by itself once raw Ethernet is granted.
 
 ### Controller
 
@@ -107,6 +65,38 @@ offers the same stream formats as plaa. The app ID is now `run.triib`.
 - triib reads entities' logos, their own and their vendors', through
   Address Access: the entity list can show each in a column of its own,
   and the inspector's Entity tab shows both.
+- The connection matrix and the entity list have their title at the
+  start of the row above them, as the network map has. Each view's title
+  shows wherever the row has room for it beside the rest, rather than
+  only on windows over 1040 points wide: with the inspector open, say.
+- Where raw Ethernet needs a permission a command grants, as `setcap`
+  on the helper on Linux, triib tries again every 2 s and carries on as
+  soon as the command has run, rather than waiting for a restart, and
+  says so under the command.
+- Opening Settings or Presets, or an agent's prompt, leaves the window
+  under it as it was: the inspector no longer slides in again, nor do
+  the lists scroll back.
+- The entity list has a filter menu, as the interface picker has, in
+  place of the button that showed only this computer's entities. It
+  hides entities on other devices, on Linux and on a Mac; controllers;
+  and entities outside this computer's clock domain, while this
+  computer is in sync in one. Beside it, as beside the matrix's
+  filters, is how many entities they hide.
+- The connection matrix's option to hide what cannot connect is a filter
+  menu, as the entity list's, which also hides entities running AVB
+  Lite, not those only able to, and wireless entities, with all their
+  streams. How many streams the filters hide shows while they hide any.
+- Agents can diagnose streams that do not play: `list_problems` lists
+  what triib finds wrong, errors first, from failed reservations and
+  formats that differ to devices out of sync and counters gone wrong;
+  `stream_diagnostics` asks a device afresh how one stream stands, and
+  with `sample_seconds` what its counters did over that time; and
+  `clock_tree` gives the gPTP tree as the network view shows it.
+- Entity and vendor images in the entity list and the inspector are
+  smooth: each is shrunk once to the pixels it shows at, averaging what
+  each covers, rather than sampled jagged as it is drawn.
+- Sheets and floating bars slide by whole pixels, so their icons and
+  labels no longer hop against them as they settle.
 
 ### Linux
 
@@ -169,6 +159,14 @@ offers the same stream formats as plaa. The app ID is now `run.triib`.
   packing that fit. AM824 is declared as MOTU's 8D declares it, of its
   channels or fewer; a stream saved in the old AM824 comes back in the
   new one.
+- An entity added to this computer is listed at once, greyed, its State
+  saying what it waits on: triib-endpointd starting, the interface being
+  set up for AVB, its link. The bar above the list says what the daemon
+  is doing until it is done, such as setting up the interface or starting
+  ptp4l, or that linuxptp is not installed.
+- This computer's entities advertise again as soon as their link comes
+  back up, as after triib-endpointd turns EEE and PAUSE off, rather than
+  10 s later: a new entity reached triib's list only after that wait.
 
 ### Packages
 
