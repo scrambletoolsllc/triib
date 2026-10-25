@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>triib specifications</title>
-<meta name="description" content="triib's specifications: the systems it runs on, the standards and profiles it speaks, its own entities, its languages, the software it is built on, and where it keeps its settings.">
+<meta name="description" content="triib's specifications: the systems it runs on, the standards and profiles it speaks, its own entities, its languages, the agents that can use it, the software it is built on, and where it keeps its settings.">
 <link rel="icon" href="favicon.png" type="image/png">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -33,6 +33,7 @@
 <li><a href="#avb-lite">AVB Lite</a></li>
 <li><a href="#avb-wireless">AVB Wireless</a></li>
 <li><a href="#languages">Languages</a></li>
+<li><a href="#agents">Agents</a></li>
 <li><a href="#technology">Technology</a></li>
 <li><a href="#files">Settings and data</a></li>
 <li><a href="#license">License and privacy</a></li>
@@ -80,7 +81,6 @@
 <tr><th>Presets</th><td>Clock sources, sampling rates, stream formats, controls and connections, and host entities; recalling one changes only what differs</td></tr>
 <tr><th>Log</th><td>Every ATDECC frame sent and heard, decoded, with the frames that break the rules marked</td></tr>
 <tr><th>AVB Wireless</th><td>Each Wi-Fi station's role, time mode, link and access point, each access point's stations and the frames a second it delivers, stations under their access point on the map, and the profile's alarms</td></tr>
-<tr><th>AI agents</th><td><code>triib --mcp</code>, a Model Context Protocol server for agents such as Claude Code: status, entities, streams, formats, clocks and connections to read, and connecting, formats, sampling rates, clock sources, names, identifying and, on a Mac, Listen to change, once you let the agent in</td></tr>
 <tr><th>Command line</th><td><code>triib-cli</code>: discover, describe, connect and disconnect, name, configurations, formats, rates, clocks, channel maps, controls, maximum transit times, identify, the network and the stream state</td></tr>
 </tbody></table>
 
@@ -121,11 +121,22 @@
 <h2 id="languages">Languages</h2>
 <p>38, following the system's language or the one picked in Settings: Arabic, Bengali, Catalan, Chinese (Simplified and Traditional), Czech, Danish, Dutch, English (US and UK), Finnish, French, German, Greek, Hebrew, Hindi, Hungarian, Indonesian, Italian, Japanese, Korean, Malay, Norwegian Bokmål, Persian, Polish, Portuguese (Brazil and Portugal), Romanian, Russian, Spanish, Swahili, Swedish, Tamil, Thai, Turkish, Ukrainian, Urdu and Vietnamese. Arabic, Hebrew, Persian and Urdu are laid out right to left.</p>
 
+<h2 id="agents">Agents</h2>
+<table class="spec"><tbody>
+<tr><th>MCP server</th><td><code>triib --mcp</code>, over standard input and output, for Claude Code (<code>claude mcp add triib -- triib --mcp</code>) or any MCP client. It drives the triib you are using, starting it if needed; nothing listens on the network</td></tr>
+<tr><th>Access</th><td>triib asks before letting a new agent in, and remembers Allow; one not allowed is turned away until triib quits. Settings lists the agents allowed and forgets them, and outside control can be turned off</td></tr>
+<tr><th>Tools (14)</th><td>Six that read, <code>status</code>, <code>list_entities</code>, <code>describe_entity</code>, <code>list_connections</code>, <code>list_audio_devices</code> and <code>audio_monitor</code>; and eight that change, <code>connect</code>, <code>disconnect</code>, <code>set_stream_format</code>, <code>set_sampling_rate</code>, <code>set_clock_source</code>, <code>rename</code>, <code>identify</code> and <code>set_audio_monitor</code>; each marked for MCP clients as reading or changing</td></tr>
+<tr><th>Reading</th><td>What triib knows: the interface it controls and this computer's own entities, the entities it has found, each one's audio units, clock domains and streams with their formats from its model, and what each listener input is bound to</td></tr>
+<tr><th>Changes</th><td>What a click would do, sent to the devices at once: connecting and disconnecting streams, setting a stream's format, a sampling rate or a clock source, renaming, identifying, and the audio monitor. Each answers once the device has, with what it said; there is no undo</td></tr>
+<tr><th>Waiting</th><td>A call made while triib asks whether to let its agent in waits for the answer, and tells the agent so as an MCP progress notification</td></tr>
+</tbody></table>
+
 <h2 id="technology">Technology</h2>
 <table class="spec"><tbody>
 <tr><th>Language</th><td>Rust</td></tr>
 <tr><th>Interface</th><td><a href="https://iced.rs">iced</a>, with <a href="https://github.com/scrambletools/scramble-ui">scramble-ui</a>, the look it shares with <a href="https://prev.run">prev</a></td></tr>
 <tr><th>Translations</th><td>Fluent</td></tr>
+<tr><th>AI agents</th><td>An MCP server through rmcp, relaying to the running triib over a private local socket (a named pipe on Windows)</td></tr>
 <tr><th>Libraries</th><td><code>atdecc</code> (IEEE 1722.1 with Milan), <code>avb-mrp</code> (MRP, MSRP and MVRP) and <code>avb-net</code> (raw Ethernet, interfaces and hardware timestamps): no I/O of their own outside <code>avb-net</code>'s platform support, and no std needed, for microcontrollers</td></tr>
 </tbody></table>
 
@@ -142,6 +153,7 @@
 <tr><th>License</th><td><a href="https://github.com/scrambletoolsllc/triib/blob/main/LICENSE-MIT">MIT</a> or <a href="https://github.com/scrambletoolsllc/triib/blob/main/LICENSE-APACHE">Apache 2.0</a>, at your option</td></tr>
 <tr><th>Network</th><td>Only AVB frames, on the local interface you pick; triib never goes online</td></tr>
 <tr><th>Outside control</th><td>For <code>triib --mcp</code>, a local socket that only your user can open on Linux and macOS, and a named pipe on Windows; each agent acts only once you allow it, and Settings turns it off</td></tr>
+<tr><th>AI agents</th><td>Only those you allow, through <code>triib --mcp</code>; no bundled model. What an agent reads from triib goes to the model it uses</td></tr>
 <tr><th>Accounts and telemetry</th><td>None</td></tr>
 </tbody></table>
 <p class="small">See the <a href="./#privacy">privacy note</a> and the <a href="./#code-signing">code signing policy</a>.</p>

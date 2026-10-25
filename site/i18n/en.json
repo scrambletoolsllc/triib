@@ -779,6 +779,10 @@
   "page": "specs.html",
   "text": "<a1>Languages</a1>"
  },
+ "740bdb1f4ded": {
+  "page": "specs.html",
+  "text": "<a1>Agents</a1>"
+ },
  "0e3d994d9865": {
   "page": "specs.html",
   "text": "<a1>Technology</a1>"
@@ -1007,10 +1011,6 @@
   "page": "specs.html",
   "text": "Each Wi-Fi station's role, time mode, link and access point, each access point's stations and the frames a second it delivers, stations under their access point on the map, and the profile's alarms"
  },
- "9559cfa6207a": {
-  "page": "specs.html",
-  "text": "<code>triib --mcp</code>, a Model Context Protocol server for agents such as Claude Code: status, entities, streams, formats, clocks and connections to read, and connecting, formats, sampling rates, clock sources, names, identifying and, on a Mac, Listen to change, once you let the agent in"
- },
  "95e1546b695b": {
   "page": "specs.html",
   "text": "<code>triib-cli</code>: discover, describe, connect and disconnect, name, configurations, formats, rates, clocks, channel maps, controls, maximum transit times, identify, the network and the stream state"
@@ -1179,6 +1179,54 @@
   "page": "specs.html",
   "text": "38, following the system's language or the one picked in Settings: Arabic, Bengali, Catalan, Chinese (Simplified and Traditional), Czech, Danish, Dutch, English (US and UK), Finnish, French, German, Greek, Hebrew, Hindi, Hungarian, Indonesian, Italian, Japanese, Korean, Malay, Norwegian Bokmål, Persian, Polish, Portuguese (Brazil and Portugal), Romanian, Russian, Spanish, Swahili, Swedish, Tamil, Thai, Turkish, Ukrainian, Urdu and Vietnamese. Arabic, Hebrew, Persian and Urdu are laid out right to left."
  },
+ "64acf7e2a759": {
+  "page": "specs.html",
+  "text": "Agents"
+ },
+ "94cbffb24efc": {
+  "page": "specs.html",
+  "text": "MCP server"
+ },
+ "9b3e7f00f05f": {
+  "page": "specs.html",
+  "text": "<code>triib --mcp</code>, over standard input and output, for Claude Code (<code>claude mcp add triib -- triib --mcp</code>) or any MCP client. It drives the triib you are using, starting it if needed; nothing listens on the network"
+ },
+ "2f81a22de0af": {
+  "page": "specs.html",
+  "text": "Access"
+ },
+ "a65e25f05b20": {
+  "page": "specs.html",
+  "text": "triib asks before letting a new agent in, and remembers Allow; one not allowed is turned away until triib quits. Settings lists the agents allowed and forgets them, and outside control can be turned off"
+ },
+ "60b4ed87aa89": {
+  "page": "specs.html",
+  "text": "Tools (14)"
+ },
+ "f55c1506f47f": {
+  "page": "specs.html",
+  "text": "Six that read, <code>status</code>, <code>list_entities</code>, <code>describe_entity</code>, <code>list_connections</code>, <code>list_audio_devices</code> and <code>audio_monitor</code>; and eight that change, <code>connect</code>, <code>disconnect</code>, <code>set_stream_format</code>, <code>set_sampling_rate</code>, <code>set_clock_source</code>, <code>rename</code>, <code>identify</code> and <code>set_audio_monitor</code>; each marked for MCP clients as reading or changing"
+ },
+ "cffa2af0a3a6": {
+  "page": "specs.html",
+  "text": "Reading"
+ },
+ "e131a873bd73": {
+  "page": "specs.html",
+  "text": "What triib knows: the interface it controls and this computer's own entities, the entities it has found, each one's audio units, clock domains and streams with their formats from its model, and what each listener input is bound to"
+ },
+ "4e81baf5590f": {
+  "page": "specs.html",
+  "text": "What a click would do, sent to the devices at once: connecting and disconnecting streams, setting a stream's format, a sampling rate or a clock source, renaming, identifying, and the audio monitor. Each answers once the device has, with what it said; there is no undo"
+ },
+ "33d30632848d": {
+  "page": "specs.html",
+  "text": "Waiting"
+ },
+ "0ae261bd73c2": {
+  "page": "specs.html",
+  "text": "A call made while triib asks whether to let its agent in waits for the answer, and tells the agent so as an MCP progress notification"
+ },
  "d018b082e8a3": {
   "page": "specs.html",
   "text": "Technology"
@@ -1206,6 +1254,10 @@
  "96957def1188": {
   "page": "specs.html",
   "text": "Fluent"
+ },
+ "b018ec6ef566": {
+  "page": "specs.html",
+  "text": "An MCP server through rmcp, relaying to the running triib over a private local socket (a named pipe on Windows)"
  },
  "27c968e6692b": {
   "page": "specs.html",
@@ -1263,6 +1315,10 @@
   "page": "specs.html",
   "text": "For <code>triib --mcp</code>, a local socket that only your user can open on Linux and macOS, and a named pipe on Windows; each agent acts only once you allow it, and Settings turns it off"
  },
+ "8c1cfdcdb4f3": {
+  "page": "specs.html",
+  "text": "Only those you allow, through <code>triib --mcp</code>; no bundled model. What an agent reads from triib goes to the model it uses"
+ },
  "9c713e397d32": {
   "page": "specs.html",
   "text": "Accounts and telemetry"
@@ -1275,9 +1331,9 @@
   "page": "specs.html",
   "text": "See the <a1>privacy note</a1> and the <a2>code signing policy</a2>."
  },
- "d0e2f9844bfa": {
+ "6aaf39a732de": {
   "page": "specs.html",
-  "text": "triib's specifications: the systems it runs on, the standards and profiles it speaks, its own entities, its languages, the software it is built on, and where it keeps its settings.",
+  "text": "triib's specifications: the systems it runs on, the standards and profiles it speaks, its own entities, its languages, the agents that can use it, the software it is built on, and where it keeps its settings.",
   "attribute": true
  },
  "extra:policy-note": {
