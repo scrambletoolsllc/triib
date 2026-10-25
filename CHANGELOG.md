@@ -7,6 +7,9 @@ All notable changes to triib. Versions follow
 
 ### Controller
 
+- A stream that will not take a new format while it runs is stopped,
+  set and started again, instead of asking for it to be disconnected
+  first; `triib-cli format` does the same.
 - A Mac's AVB entity receiving a stream on its own clock, as macOS
   starts it on Mac System Clock, drops audio from what it receives. It
   now raises an alarm, with a button in its Diagnostics tab to follow

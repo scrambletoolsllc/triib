@@ -13,7 +13,7 @@ use std::time::{Duration, Instant};
 use atdecc::aem::{AudioMapping, AvbInfoFlags, MappingChange};
 use atdecc::blocking::Driver;
 use atdecc::control::{ControlDescriptor, Linear, Number, Selector, Shape, Unit, encode_values};
-use atdecc::controller::{Controller, Outcome, Refusal};
+use atdecc::controller::{CommandId, Controller, Outcome, Refusal};
 use atdecc::descriptor::{ClockSourceType, DescriptorType, LocalizedStringRef, SamplingRate};
 use atdecc::lite::LiteFlags;
 use atdecc::media_clock::{Broken, ClockFrom, DomainClock, DomainId, media_clocks};
@@ -22,8 +22,8 @@ use atdecc::neighbor::{NeighborListener, Peer, Plugged};
 use atdecc::stream_format::StreamFormat;
 use atdecc::wireless::{AsCapableReason, Band, StationFlags, TimeMode, WirelessFlags};
 use atdecc::{
-    ClockIdentity, ControllerCapabilities, DiscoveredEntity, EntityCapabilities, EntityId, Event,
-    ListenerCapabilities, OfflineReason, StreamId, TalkerCapabilities,
+    AemStatus, ClockIdentity, ControllerCapabilities, DiscoveredEntity, EntityCapabilities,
+    EntityId, Event, ListenerCapabilities, OfflineReason, StreamId, TalkerCapabilities,
 };
 
 const USAGE: &str = "\
@@ -1262,6 +1262,81 @@ fn harvest(interface: &str, entity: EntityId, repeat: u32) -> std::io::Result<()
     driver.close()
 }
 
+const RUNNING: Outcome = Outcome::Refused(Refusal::Aem(AemStatus::STREAM_IS_RUNNING));
+
+/// How `command` went, once it has, or `None` after `limit`.
+fn finish(
+    driver: &mut Driver,
+    command: CommandId,
+    limit: Duration,
+) -> std::io::Result<Option<Outcome>> {
+    let started = Instant::now();
+    loop {
+        driver.turn(Duration::from_millis(100))?;
+        let finished = std::iter::from_fn(|| driver.controller_mut().poll_event()).find_map(
+            |event| match event {
+                Event::CommandFinished(finished, outcome) if finished == command => Some(outcome),
+                _ => None,
+            },
+        );
+        if finished.is_some() {
+            return Ok(finished);
+        }
+        if started.elapsed() >= limit {
+            return Ok(None);
+        }
+    }
+}
+
+/// Stops a stream that would not take a format while it ran, sets the
+/// format and starts the stream again, giving how setting it went, or
+/// the refusal again when the stream would not stop.
+fn restart(
+    driver: &mut Driver,
+    entity: EntityId,
+    descriptor_type: DescriptorType,
+    index: u16,
+    format: StreamFormat,
+    limit: Duration,
+) -> std::io::Result<Option<Outcome>> {
+    println!("streaming: stopping it to set the format, then starting it again");
+    let now = driver.now();
+    let stop = driver
+        .controller_mut()
+        .stop_streaming(now, entity, descriptor_type, index);
+    let stopped = finish(driver, stop, limit)?;
+    if stopped != Some(Outcome::Done) {
+        println!("it would not stop: {}", outcome_text(stopped));
+        return Ok(Some(RUNNING));
+    }
+    let now = driver.now();
+    let set =
+        driver
+            .controller_mut()
+            .set_stream_format(now, entity, descriptor_type, index, format);
+    let outcome = finish(driver, set, limit)?;
+    let now = driver.now();
+    let start = driver
+        .controller_mut()
+        .start_streaming(now, entity, descriptor_type, index);
+    let started = finish(driver, start, limit)?;
+    if started != Some(Outcome::Done) {
+        println!("it did not start again: {}", outcome_text(started));
+    }
+    Ok(outcome)
+}
+
+fn outcome_text(outcome: Option<Outcome>) -> String {
+    match outcome {
+        Some(Outcome::Done) => "done".to_owned(),
+        Some(Outcome::Refused(Refusal::Aem(status))) => format!("refused: {status:?}"),
+        Some(Outcome::Refused(Refusal::Acmp(status))) => format!("refused: {status:?}"),
+        Some(Outcome::NoResponse) => "no response".to_owned(),
+        Some(Outcome::NotPossible) => "not possible".to_owned(),
+        None => "no answer".to_owned(),
+    }
+}
+
 fn descriptor(text: &str) -> Option<(DescriptorType, u16)> {
     let (name, index) = text.split_once(':')?;
     let wanted = name.replace('-', "_").to_uppercase();
@@ -1360,34 +1435,26 @@ fn set(interface: &str, entity: EntityId, change: Change) -> std::io::Result<()>
             controller.set_wireless_config(now, entity, *interface, *class_a)
         }
     };
-    let started = Instant::now();
-    let outcome = loop {
-        driver.turn(Duration::from_millis(100))?;
-        let finished = std::iter::from_fn(|| driver.controller_mut().poll_event()).find_map(
-            |event| match event {
-                Event::CommandFinished(finished, outcome) if finished == command => Some(outcome),
-                _ => None,
-            },
-        );
-        if let Some(outcome) = finished {
-            break Some(outcome);
-        }
-        if started.elapsed() >= LIMIT {
-            break None;
-        }
-    };
+    let mut started = Instant::now();
+    let mut outcome = finish(&mut driver, command, LIMIT)?;
+    if let Change::Format {
+        descriptor_type,
+        index,
+        format,
+    } = change
+        && outcome == Some(RUNNING)
+    {
+        outcome = restart(&mut driver, entity, descriptor_type, index, format, LIMIT)?;
+        started = Instant::now();
+    }
     // What the command reads again afterwards.
     while driver.controller().busy(entity) && started.elapsed() < LIMIT {
         driver.turn(Duration::from_millis(100))?;
         while driver.controller_mut().poll_event().is_some() {}
     }
     match outcome {
-        Some(Outcome::Done) => println!("done"),
-        Some(Outcome::Refused(Refusal::Aem(status))) => println!("refused: {status:?}"),
-        Some(Outcome::Refused(Refusal::Acmp(status))) => println!("refused: {status:?}"),
-        Some(Outcome::NoResponse) => println!("no response"),
-        Some(Outcome::NotPossible) => println!("not possible"),
         None => println!("no answer in {} seconds", LIMIT.as_secs()),
+        outcome => println!("{}", outcome_text(outcome)),
     }
     if let Change::WirelessConfig { interface, .. } = change {
         // The status the controller asks for after the change shows it.

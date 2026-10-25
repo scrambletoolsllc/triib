@@ -10,14 +10,17 @@ use std::time::Duration;
 
 use atdecc::aem::{AudioMapping, MappingChange, NAME_LENGTH, aem_name};
 use atdecc::blocking::{Driver, Frame};
-use atdecc::controller::{Advertise, CommandId, Outcome};
+use atdecc::controller::{Advertise, CommandId, Controller, Outcome, Refusal};
 use atdecc::descriptor::{DescriptorType, SamplingRate};
 use atdecc::model::EntityModel;
 use atdecc::neighbor::NeighborListener;
 pub use atdecc::neighbor::{Peer, Plugged};
 use atdecc::pdu::{self, Pdu};
 use atdecc::stream_format::StreamFormat;
-use atdecc::{AecpMessageType, DiscoveredEntity, EntityId, EntityModelId, Event, OfflineReason};
+use atdecc::time::Instant;
+use atdecc::{
+    AecpMessageType, AemStatus, DiscoveredEntity, EntityId, EntityModelId, Event, OfflineReason,
+};
 
 use crate::External;
 
@@ -490,7 +493,7 @@ fn run(
         driver.controller_mut().remember_model(model);
     }
     driver.controller_mut().discover(None);
-    let mut actions: HashMap<CommandId, Action> = HashMap::new();
+    let mut steps: HashMap<CommandId, Step> = HashMap::new();
     let mut watch = Watch::default();
     let mut asked = Asked::default();
     // The entities that sent this controller notifications, until they
@@ -522,73 +525,9 @@ fn run(
                 }
                 Command::Act(action) => {
                     let now = driver.now();
-                    let controller = driver.controller_mut();
-                    let command = match action {
-                        Action::Connect { talker, listener } => {
-                            controller.connect(now, talker, listener)
-                        }
-                        Action::Disconnect { listener } => controller.disconnect(now, listener),
-                        Action::DisconnectTalker { talker, listener } => {
-                            controller.disconnect_talker(now, talker, listener)
-                        }
-                        Action::Identify(entity_id) => {
-                            controller.identify(now, entity_id, IDENTIFY)
-                        }
-                        Action::SetConfiguration {
-                            entity,
-                            configuration,
-                        } => controller.set_configuration(now, entity, configuration),
-                        Action::Rename { target, name } => controller.set_name(
-                            now,
-                            target.entity,
-                            target.descriptor_type,
-                            target.index,
-                            target.name_index,
-                            name.as_str(),
-                        ),
-                        Action::SetStreamFormat {
-                            entity,
-                            descriptor_type,
-                            index,
-                            format,
-                        } => controller.set_stream_format(
-                            now,
-                            entity,
-                            descriptor_type,
-                            index,
-                            format,
-                        ),
-                        Action::SetSamplingRate { entity, unit, rate } => controller
-                            .set_sampling_rate(now, entity, DescriptorType::AUDIO_UNIT, unit, rate),
-                        Action::SetClockSource {
-                            entity,
-                            domain,
-                            source,
-                        } => controller.set_clock_source(now, entity, domain, source),
-                        Action::Map {
-                            entity,
-                            port,
-                            change: MappingChange::Add,
-                            mapping,
-                        } => controller.add_audio_mappings(now, entity, port, &[mapping]),
-                        Action::Map {
-                            entity,
-                            port,
-                            change: MappingChange::Remove,
-                            mapping,
-                        } => controller.remove_audio_mappings(now, entity, port, &[mapping]),
-                        Action::SetControl {
-                            entity,
-                            index,
-                            values,
-                        } => controller.set_control(now, entity, index, values.as_slice()),
-                        Action::SetMaxTransitTime {
-                            entity,
-                            output,
-                            nanoseconds,
-                        } => controller.set_max_transit_time(now, entity, output, nanoseconds),
-                    };
-                    actions.insert(command, action);
+                    let step = Step::Act(action);
+                    let command = send(driver.controller_mut(), now, step);
+                    steps.insert(command, step);
                 }
             }
         }
@@ -625,9 +564,20 @@ fn run(
                 Event::EntityOffline(entity_id, reason) => {
                     Some(ReportKind::Offline(entity_id, reason))
                 }
-                Event::CommandFinished(command, outcome) => actions
-                    .remove(&command)
-                    .map(|action| ReportKind::Finished(action, outcome)),
+                Event::CommandFinished(command, outcome) => {
+                    match steps.remove(&command).map(|step| after(step, outcome)) {
+                        Some(Then::Finished(action, outcome)) => {
+                            Some(ReportKind::Finished(action, outcome))
+                        }
+                        Some(Then::Send(step)) => {
+                            let now = driver.now();
+                            let command = send(driver.controller_mut(), now, step);
+                            steps.insert(command, step);
+                            None
+                        }
+                        None => None,
+                    }
+                }
                 Event::EntityEnumerated(entity_id) => {
                     // Read in full: kept, so entities of its model read
                     // faster from here on and next time.
@@ -649,6 +599,148 @@ fn run(
             if let Some(kind) = kind {
                 report(generation, kind);
             }
+        }
+    }
+}
+
+/// Sends what `action` asks.
+fn act(controller: &mut Controller, now: Instant, action: Action) -> CommandId {
+    match action {
+        Action::Connect { talker, listener } => controller.connect(now, talker, listener),
+        Action::Disconnect { listener } => controller.disconnect(now, listener),
+        Action::DisconnectTalker { talker, listener } => {
+            controller.disconnect_talker(now, talker, listener)
+        }
+        Action::Identify(entity_id) => controller.identify(now, entity_id, IDENTIFY),
+        Action::SetConfiguration {
+            entity,
+            configuration,
+        } => controller.set_configuration(now, entity, configuration),
+        Action::Rename { target, name } => controller.set_name(
+            now,
+            target.entity,
+            target.descriptor_type,
+            target.index,
+            target.name_index,
+            name.as_str(),
+        ),
+        Action::SetStreamFormat {
+            entity,
+            descriptor_type,
+            index,
+            format,
+        } => controller.set_stream_format(now, entity, descriptor_type, index, format),
+        Action::SetSamplingRate { entity, unit, rate } => {
+            controller.set_sampling_rate(now, entity, DescriptorType::AUDIO_UNIT, unit, rate)
+        }
+        Action::SetClockSource {
+            entity,
+            domain,
+            source,
+        } => controller.set_clock_source(now, entity, domain, source),
+        Action::Map {
+            entity,
+            port,
+            change: MappingChange::Add,
+            mapping,
+        } => controller.add_audio_mappings(now, entity, port, &[mapping]),
+        Action::Map {
+            entity,
+            port,
+            change: MappingChange::Remove,
+            mapping,
+        } => controller.remove_audio_mappings(now, entity, port, &[mapping]),
+        Action::SetControl {
+            entity,
+            index,
+            values,
+        } => controller.set_control(now, entity, index, values.as_slice()),
+        Action::SetMaxTransitTime {
+            entity,
+            output,
+            nanoseconds,
+        } => controller.set_max_transit_time(now, entity, output, nanoseconds),
+    }
+}
+
+/// A stream format set by stopping the stream, which would not take it
+/// while it ran, setting it and starting the stream again.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Restart {
+    entity: EntityId,
+    descriptor_type: DescriptorType,
+    index: u16,
+    format: StreamFormat,
+}
+
+impl Restart {
+    fn action(self) -> Action {
+        Action::SetStreamFormat {
+            entity: self.entity,
+            descriptor_type: self.descriptor_type,
+            index: self.index,
+            format: self.format,
+        }
+    }
+}
+
+/// What a command sent was for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Step {
+    /// An action.
+    Act(Action),
+    /// Stopping the stream.
+    Stop(Restart),
+    /// Setting the format while it is stopped.
+    Set(Restart),
+    /// Starting it again, with how setting the format went.
+    Start(Restart, Outcome),
+}
+
+/// What comes after a step.
+#[derive(Debug, PartialEq, Eq)]
+enum Then {
+    /// The action is done, as the outcome says.
+    Finished(Action, Outcome),
+    Send(Step),
+}
+
+const RUNNING: Outcome = Outcome::Refused(Refusal::Aem(AemStatus::STREAM_IS_RUNNING));
+
+/// What follows `step` finishing with `outcome`.
+fn after(step: Step, outcome: Outcome) -> Then {
+    match step {
+        Step::Act(Action::SetStreamFormat {
+            entity,
+            descriptor_type,
+            index,
+            format,
+        }) if outcome == RUNNING => Then::Send(Step::Stop(Restart {
+            entity,
+            descriptor_type,
+            index,
+            format,
+        })),
+        Step::Act(action) => Then::Finished(action, outcome),
+        Step::Stop(restart) if outcome == Outcome::Done => Then::Send(Step::Set(restart)),
+        // It goes on as it was, so the format is still refused.
+        Step::Stop(restart) => Then::Finished(restart.action(), RUNNING),
+        // Started again whether or not it took the format.
+        Step::Set(restart) => Then::Send(Step::Start(restart, outcome)),
+        Step::Start(restart, set) => Then::Finished(restart.action(), set),
+    }
+}
+
+/// Sends what `step` asks.
+fn send(controller: &mut Controller, now: Instant, step: Step) -> CommandId {
+    match step {
+        Step::Act(action) => act(controller, now, action),
+        Step::Stop(restart) => {
+            controller.stop_streaming(now, restart.entity, restart.descriptor_type, restart.index)
+        }
+        Step::Set(restart) => act(controller, now, restart.action()),
+        Step::Start(restart, _) => {
+            controller.start_streaming(now, restart.entity, restart.descriptor_type, restart.index)
         }
     }
 }
@@ -762,6 +854,82 @@ mod tests {
             peer: MacAddress([0; 6]),
             bytes: out[..length].to_vec(),
         }
+    }
+
+    /// A stream that will not take a format while it runs is stopped,
+    /// set and started again, and the action finishes as setting went.
+    #[test]
+    fn a_running_stream_is_stopped_for_its_format() {
+        let action = Action::SetStreamFormat {
+            entity: AMP,
+            descriptor_type: DescriptorType::STREAM_OUTPUT,
+            index: 0,
+            format: StreamFormat(0x0205_0220_0040_0800),
+        };
+        let restart = Restart {
+            entity: AMP,
+            descriptor_type: DescriptorType::STREAM_OUTPUT,
+            index: 0,
+            format: StreamFormat(0x0205_0220_0040_0800),
+        };
+        assert_eq!(restart.action(), action);
+        assert_eq!(
+            after(Step::Act(action), Outcome::Done),
+            Then::Finished(action, Outcome::Done)
+        );
+        assert_eq!(
+            after(Step::Act(action), RUNNING),
+            Then::Send(Step::Stop(restart))
+        );
+        assert_eq!(
+            after(Step::Stop(restart), Outcome::Done),
+            Then::Send(Step::Set(restart))
+        );
+        let bad = Outcome::Refused(Refusal::Aem(AemStatus::BAD_ARGUMENTS));
+        assert_eq!(
+            after(Step::Set(restart), bad),
+            Then::Send(Step::Start(restart, bad))
+        );
+        // However starting goes, the format went as setting it did.
+        assert_eq!(
+            after(Step::Start(restart, bad), Outcome::Done),
+            Then::Finished(action, bad)
+        );
+        assert_eq!(
+            after(Step::Start(restart, Outcome::Done), Outcome::NoResponse),
+            Then::Finished(action, Outcome::Done)
+        );
+    }
+
+    /// A stream that will not stop keeps refusing the format, and other
+    /// refusals finish as they are.
+    #[test]
+    fn a_stream_that_will_not_stop_keeps_its_format() {
+        let restart = Restart {
+            entity: AMP,
+            descriptor_type: DescriptorType::STREAM_INPUT,
+            index: 1,
+            format: StreamFormat(0x0205_0220_0040_0800),
+        };
+        let not_implemented = Outcome::Refused(Refusal::Aem(AemStatus::NOT_IMPLEMENTED));
+        assert_eq!(
+            after(Step::Stop(restart), not_implemented),
+            Then::Finished(restart.action(), RUNNING)
+        );
+        assert_eq!(
+            after(Step::Act(restart.action()), not_implemented),
+            Then::Finished(restart.action(), not_implemented)
+        );
+        // Only a format is worth stopping a stream for.
+        let rate = Action::SetSamplingRate {
+            entity: AMP,
+            unit: 0,
+            rate: SamplingRate(96_000),
+        };
+        assert_eq!(
+            after(Step::Act(rate), RUNNING),
+            Then::Finished(rate, RUNNING)
+        );
     }
 
     /// Only a notification an entity sends this controller shows that it

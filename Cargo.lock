@@ -310,9 +310,9 @@ dependencies = [
 
 [[package]]
 name = "atdecc"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "182d5f2cd1b7bb3d2dd5322d026c344d433c48ca17a41092eae901d982d3eeb9"
+checksum = "5b74d55c9c5f3c72552273268e2d20d614bac7a50bcdec7e04a219cdb2ed9936"
 dependencies = [
  "avb-mrp",
  "avb-net",

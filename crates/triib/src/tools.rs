@@ -487,9 +487,9 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
             "Set a stream's format",
             Kind::Change,
             "Sets a stream input's or output's format (SET_STREAM_FORMAT) to one it takes, \
-             as describe_entity lists them. An entity may refuse while the stream runs, and \
-             one may move its sampling rate and its other streams with it. Answers once the \
-             entity has.",
+             as describe_entity lists them. A stream that refuses while it runs is stopped, \
+             set and started again. An entity may move its sampling rate and its other \
+             streams with it. Answers once the entity has.",
             |app, input: SetFormat, answer| {
                 let entity = match entity_id(&input.entity_id) {
                     Ok(entity) => entity,
