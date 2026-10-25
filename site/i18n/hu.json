@@ -161,6 +161,7 @@
  "2b51b10f6585": "AI-ügynökök",
  "b84120edc0f0": "A <code>triib --mcp</code> lehetővé teszi, hogy egy AI-ügynök, például a Claude Code, az asztalán futó triib-en keresztül lássa és módosítsa a hálózatát, a Model Context Protocol segítségével; ha a triib nem fut, elindítja. A Claude Code-hoz így adhatja hozzá:",
  "677e6b058a4a": "Az ügynök kiolvashatja a triib állapotát, az entitásokat, mindegyik streamjeit, formátumait és órajeleit, valamint a kapcsolatokat, és módosíthatja mindazt, amit egy kattintás is: streameket csatlakoztathat és választhat le, beállíthatja egy stream formátumát, a mintavételi frekvenciát vagy az órajelforrást, átnevezhet és azonosíthat, Macen pedig beállíthatja, mit játsszon le a Belehallgatás. Egy módosítás akkor ad választ, amikor az eszköz már válaszolt, és azt adja vissza, amit az eszköz mondott. Amikor egy ügynök először csatlakozik, a triib megkérdezi Önt, hogy beengedje-e.",
+ "9a7bc53fd8f4": "Ha egy stream nem szól, az ügynök megkérdezheti a triib-től, mit talál rendellenesnek az egész hálózaton, milyen állapotban van az adott stream az eszközén, a foglalásával és néhány másodpercen át mintavételezett számlálóival együtt, és hogyan jut el a gPTP-idő az egyes eszközökhöz, hogy kiderítse az okát.",
  "f6fe35e20917": "Parancssor",
  "a8fc550187be": "A <code>triib-cli</code> terminálból vagy szkriptből végzi el ugyanazt, amit az alkalmazás. Néhány példa:",
  "acebe26b703c": "Argumentumok nélkül futtatva kiírja az összes parancsot; a <a1>README</a1> is felsorolja őket.",

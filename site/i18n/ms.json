@@ -161,6 +161,7 @@
  "2b51b10f6585": "Ejen AI",
  "b84120edc0f0": "<code>triib --mcp</code> membolehkan ejen AI seperti Claude Code melihat dan mengubah rangkaian anda melalui triib pada desktop anda, menggunakan Model Context Protocol; ia memulakan triib jika triib belum berjalan. Untuk menambahkannya pada Claude Code:",
  "677e6b058a4a": "Ejen boleh membaca status triib, entiti, strim, format dan jam setiap satunya, serta sambungan, dan mengubah apa yang boleh diubah dengan klik: menyambung dan memutuskan sambungan strim, menetapkan format strim, kadar pensampelan atau sumber jam, menamakan semula dan mengenal pasti, dan pada Mac, menetapkan apa yang dimainkan oleh Dengar. Perubahan dijawab sebaik sahaja peranti menjawab, berserta apa yang dikatakannya. Kali pertama ejen bersambung, triib bertanya kepada anda sama ada hendak membenarkannya masuk.",
+ "9a7bc53fd8f4": "Bagi strim yang tidak berbunyi, ejen boleh bertanya kepada triib tentang masalah yang ditemuinya di seluruh rangkaian, keadaan strim itu pada perantinya, berserta tempahan dan pembilangnya selama beberapa saat, dan cara masa gPTP sampai ke setiap peranti, untuk mengenal pasti puncanya.",
  "f6fe35e20917": "Baris arahan",
  "a8fc550187be": "<code>triib-cli</code> melakukan apa yang dilakukan aplikasi daripada terminal atau skrip. Beberapa contoh:",
  "acebe26b703c": "Jalankannya tanpa argumen untuk melihat setiap arahan; <a1>README</a1> juga menyenaraikannya.",

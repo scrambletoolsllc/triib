@@ -161,6 +161,7 @@
  "2b51b10f6585": "Tác nhân AI",
  "b84120edc0f0": "<code>triib --mcp</code> cho phép một tác nhân AI như Claude Code xem và thay đổi mạng của bạn thông qua triib trên máy tính của bạn, qua Model Context Protocol; lệnh này khởi động triib nếu triib chưa chạy. Để thêm vào Claude Code:",
  "677e6b058a4a": "Tác nhân có thể đọc trạng thái của triib, các thực thể, luồng, định dạng và đồng hồ của từng thực thể, và các kết nối, và thay đổi những gì một cú nhấp có thể thay đổi: kết nối và ngắt kết nối luồng, đặt định dạng luồng, tần số lấy mẫu hoặc nguồn đồng hồ, đổi tên và nhận dạng, và trên máy Mac, đặt những gì Nghe phát. Một thay đổi chỉ được trả lời khi thiết bị đã trả lời, kèm nội dung thiết bị trả lời. Lần đầu một tác nhân kết nối, triib sẽ hỏi bạn có cho phép nó hay không.",
+ "9a7bc53fd8f4": "Với một luồng không phát được, tác nhân có thể hỏi triib xem nó phát hiện những sự cố gì trên toàn mạng, luồng đó đang ở tình trạng nào trên thiết bị của mình, kèm đặt trước và các bộ đếm trong vài giây, và thời gian gPTP đến từng thiết bị như thế nào, để tìm ra nguyên nhân.",
  "f6fe35e20917": "Dòng lệnh",
  "a8fc550187be": "<code>triib-cli</code> làm những gì ứng dụng làm, từ terminal hoặc script. Một vài ví dụ:",
  "acebe26b703c": "Chạy không kèm đối số để xem mọi lệnh; <a1>README</a1> cũng liệt kê các lệnh này.",

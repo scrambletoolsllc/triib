@@ -161,6 +161,7 @@
  "2b51b10f6585": "Agenți AI",
  "b84120edc0f0": "<code>triib --mcp</code> permite unui agent AI precum Claude Code să vadă și să modifice rețeaua ta prin aplicația triib de pe desktopul tău, folosind Model Context Protocol; pornește triib dacă nu rulează. Pentru a-l adăuga în Claude Code:",
  "677e6b058a4a": "Agentul poate citi starea triib, entitățile, fluxurile, formatele și ceasurile fiecăreia și conexiunile, și poate schimba ce ar schimba un clic: să conecteze și să deconecteze fluxuri, să seteze formatul unui flux, o frecvență de eșantionare sau o sursă de ceas, să redenumească și să identifice, iar pe un Mac, să aleagă ce redă Ascultare. O modificare primește răspuns după ce a răspuns dispozitivul, cu ce a spus acesta. Prima dată când un agent se conectează, triib te întreabă dacă îi permiți accesul.",
+ "9a7bc53fd8f4": "Pentru un flux care nu se aude, agentul poate întreba triib ce probleme găsește în toată rețeaua, în ce stare se află acel flux pe dispozitivul său, cu rezervarea și contoarele urmărite timp de câteva secunde, și cum ajunge timpul gPTP la fiecare dispozitiv, ca să afle de ce.",
  "f6fe35e20917": "Linie de comandă",
  "a8fc550187be": "<code>triib-cli</code> face ce face aplicația, dintr-un terminal sau dintr-un script. Câteva exemple:",
  "acebe26b703c": "Rulează-l fără argumente pentru a vedea toate comenzile; <a1>README</a1> le listează și el.",

@@ -145,6 +145,7 @@
 <p><code>triib --mcp</code> lets an AI agent such as Claude Code see and change your network through the triib on your desktop, over the Model Context Protocol; it starts triib when it is not running. To add it to Claude Code:</p>
 <pre><code>claude mcp add triib -- triib --mcp</code></pre>
 <p>The agent can read triib's status, the entities, each one's streams, formats and clocks, and the connections, and change what a click would: connect and disconnect streams, set a stream's format, a sampling rate or a clock source, rename and identify, and on a Mac, set what Listen plays. A change answers once the device has, with what it said. The first time an agent connects, triib asks you whether to let it in.</p>
+<p>For a stream that does not play, the agent can ask triib what it finds wrong across the network, how that stream stands on its device, with its reservation and its counters over a few seconds, and how gPTP time reaches each device, to work out why.</p>
 
 <h2 id="command-line">Command line</h2>
 <p><code>triib-cli</code> does what the app does from a terminal or a script. A few examples:</p>

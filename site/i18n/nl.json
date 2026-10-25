@@ -161,6 +161,7 @@
  "2b51b10f6585": "AI-agents",
  "b84120edc0f0": "<code>triib --mcp</code> laat een AI-agent zoals Claude Code je netwerk zien en wijzigen via de triib op je desktop, over het Model Context Protocol; het start triib als dat niet draait. Zo voeg je het toe aan Claude Code:",
  "677e6b058a4a": "De agent kan de status van triib lezen, de entiteiten, de streams, formaten en klokken van elk ervan, en de verbindingen, en wijzigen wat een klik zou wijzigen: streams verbinden en loskoppelen, het formaat van een stream, een samplefrequentie of een klokbron instellen, hernoemen en identificeren, en op een Mac instellen wat Meeluisteren afspeelt. Een wijziging antwoordt zodra het apparaat heeft geantwoord, met wat het zei. De eerste keer dat een agent verbinding maakt, vraagt triib je of je hem toelaat.",
+ "9a7bc53fd8f4": "Voor een stream die niet speelt, kan de agent triib vragen welke problemen het in het hele netwerk vindt, hoe die stream ervoor staat op zijn apparaat, met zijn reservering en zijn tellers over een paar seconden, en hoe de gPTP-tijd elk apparaat bereikt, om uit te zoeken waarom.",
  "f6fe35e20917": "Opdrachtregel",
  "a8fc550187be": "<code>triib-cli</code> doet wat de app doet, vanuit een terminal of een script. Een paar voorbeelden:",
  "acebe26b703c": "Start het zonder argumenten voor alle opdrachten; de <a1>README</a1> somt ze ook op.",

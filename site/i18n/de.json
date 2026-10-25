@@ -161,6 +161,7 @@
  "2b51b10f6585": "KI-Agenten",
  "b84120edc0f0": "<code>triib --mcp</code> lässt einen KI-Agenten wie Claude Code Ihr Netzwerk sehen und ändern, und zwar mit dem triib auf Ihrem Desktop und über das Model Context Protocol; es startet triib, wenn es nicht läuft. Zum Hinzufügen in Claude Code:",
  "677e6b058a4a": "Der Agent kann den Status von triib lesen, die Entitäten, deren Streams, Formate und Clocks sowie die Verbindungen, und ändern, was auch ein Klick ändern würde: Streams verbinden und trennen, das Format eines Streams, eine Abtastrate oder eine Clock-Quelle einstellen, umbenennen und identifizieren und auf einem Mac einstellen, was Mithören wiedergibt. Eine Änderung antwortet, sobald das Gerät geantwortet hat, mit dem, was es gesagt hat. Wenn sich ein Agent zum ersten Mal verbindet, fragt triib Sie, ob Sie ihn zulassen.",
+ "9a7bc53fd8f4": "Läuft ein Stream nicht, kann der Agent triib nach den Problemen fragen, die es im ganzen Netzwerk findet, nach dem Zustand dieses Streams auf seinem Gerät, samt Reservierung und Zählern über einige Sekunden, und danach, wie die gPTP-Zeit zu jedem Gerät gelangt, um die Ursache herauszufinden.",
  "f6fe35e20917": "Kommandozeile",
  "a8fc550187be": "<code>triib-cli</code> erledigt, was die App tut, aus einem Terminal oder einem Skript heraus. Einige Beispiele:",
  "acebe26b703c": "Ohne Argumente aufgerufen, zeigt es alle Befehle; auch die <a1>README</a1> listet sie auf.",

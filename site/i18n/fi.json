@@ -161,6 +161,7 @@
  "2b51b10f6585": "Tekoälyagentit",
  "b84120edc0f0": "<code>triib --mcp</code> antaa tekoälyagentin, kuten Claude Code, nähdä ja muuttaa verkkoasi työpöydälläsi olevan triib-sovelluksen kautta Model Context Protocol -protokollalla; se käynnistää triib-sovelluksen, jos se ei ole käynnissä. Näin lisäät sen Claude Code -sovellukseen:",
  "677e6b058a4a": "Agentti voi lukea triib-sovelluksen tilan, entiteetit, kunkin entiteetin striimit, muodot ja kellot sekä yhteydet, ja muuttaa samoja asioita kuin napsautus: yhdistää striimejä ja katkaista niiden yhteyksiä, asettaa striimin muodon, näytteenottotaajuuden tai kellolähteen, nimetä uudelleen ja tunnistaa sekä Macissa asettaa, mitä Kuuntelu toistaa. Muutos vastaa vasta, kun laite on vastannut, ja kertoo, mitä laite sanoi. Kun agentti muodostaa yhteyden ensimmäistä kertaa, triib kysyy sinulta, päästetäänkö se sisään.",
+ "9a7bc53fd8f4": "Kun striimi ei soi, agentti voi kysyä triib-sovellukselta, mitä vikaa se löytää koko verkosta, missä tilassa striimi on laitteellaan varauksineen ja muutaman sekunnin ajalta kerättyine laskureineen sekä miten gPTP-aika kulkee kuhunkin laitteeseen, ja selvittää näin syyn.",
  "f6fe35e20917": "Komentorivi",
  "a8fc550187be": "<code>triib-cli</code> tekee saman kuin sovellus päätteestä tai skriptistä käsin. Muutama esimerkki:",
  "acebe26b703c": "Suorita se ilman argumentteja nähdäksesi kaikki komennot; myös <a1>README</a1> luettelee ne.",

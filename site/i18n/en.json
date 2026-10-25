@@ -655,6 +655,10 @@
   "page": "guide.html",
   "text": "The agent can read triib's status, the entities, each one's streams, formats and clocks, and the connections, and change what a click would: connect and disconnect streams, set a stream's format, a sampling rate or a clock source, rename and identify, and on a Mac, set what Listen plays. A change answers once the device has, with what it said. The first time an agent connects, triib asks you whether to let it in."
  },
+ "9a7bc53fd8f4": {
+  "page": "guide.html",
+  "text": "For a stream that does not play, the agent can ask triib what it finds wrong across the network, how that stream stands on its device, with its reservation and its counters over a few seconds, and how gPTP time reaches each device, to work out why."
+ },
  "f6fe35e20917": {
   "page": "guide.html",
   "text": "Command line"

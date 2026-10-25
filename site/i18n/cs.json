@@ -161,6 +161,7 @@
  "2b51b10f6585": "Agenti AI",
  "b84120edc0f0": "<code>triib --mcp</code> umožňuje agentovi AI, například Claude Code, vidět a měnit vaši síť přes triib na vašem počítači pomocí protokolu Model Context Protocol; pokud triib neběží, spustí ho. Přidání do Claude Code:",
  "677e6b058a4a": "Agent může číst stav triib, entity, streamy, formáty a hodiny každé z nich a připojení a měnit to, co by změnilo kliknutí: připojovat a odpojovat streamy, nastavovat formát streamu, vzorkovací frekvenci nebo zdroj hodin, přejmenovávat a identifikovat a na počítači Mac nastavovat, co přehrává „Poslech“. Změna dostane odpověď, až odpoví zařízení, spolu s tím, co zařízení sdělilo. Když se agent připojí poprvé, triib se vás zeptá, zda mu povolit přístup.",
+ "9a7bc53fd8f4": "Když stream nehraje, může se agent triib zeptat, co v celé síti najde v nepořádku, v jakém stavu je tento stream na svém zařízení, včetně jeho rezervace a čítačů sledovaných během několika sekund, a jak se čas gPTP dostává ke každému zařízení, aby zjistil příčinu.",
  "f6fe35e20917": "Příkazový řádek",
  "a8fc550187be": "<code>triib-cli</code> dělá totéž co aplikace, z terminálu nebo skriptu. Několik příkladů:",
  "acebe26b703c": "Spusťte ho bez argumentů a vypíše všechny příkazy; uvádí je také <a1>README</a1>.",
