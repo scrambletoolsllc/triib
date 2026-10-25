@@ -141,6 +141,14 @@ state-try-again = Opnieuw proberen
 
 entities-none-yet = Nog geen entiteiten
 entities-none-yet-note = Elke entiteit op het netwerk, met haar rollen, SR-klassen en klok.
+entities-filter = Entiteiten filteren
+entities-hide-others = Entiteiten op andere apparaten verbergen
+entities-hide-controllers = Controllers verbergen
+entities-hide-other-domains = Entiteiten buiten het klokdomein van deze computer verbergen
+entities-hidden = { $count ->
+    [one] { $count } entiteit verborgen
+   *[other] { $count } entiteiten verborgen
+}
 
 ## Inspector
 
@@ -792,8 +800,6 @@ common-decimal-separator = {","}
 ## This computer's own entities
 
 host-add-entity = Entiteit toevoegen
-host-show-mine = Alleen de eigen entiteiten van deze computer tonen
-host-show-all = Alle entiteiten tonen
 host-new-entity = Host-entiteit { $number }
 host-failed = Kon niet aan deze computer worden toegevoegd: { $reason }
 host-needs-clock = De eigen entiteiten van deze computer hebben een bekabelde interface met een PTP-hardwareklok nodig

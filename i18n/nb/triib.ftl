@@ -141,6 +141,14 @@ state-try-again = Prøv igjen
 
 entities-none-yet = Ingen entiteter ennå
 entities-none-yet-note = Alle entiteter på nettverket, med roller, SR-klasser og klokke.
+entities-filter = Filtrer entiteter
+entities-hide-others = Skjul entiteter på andre enheter
+entities-hide-controllers = Skjul controllere
+entities-hide-other-domains = Skjul entiteter utenfor denne datamaskinens klokkedomene
+entities-hidden = { $count ->
+    [one] { $count } entitet skjult
+   *[other] { $count } entiteter skjult
+}
 
 ## Inspector
 
@@ -792,8 +800,6 @@ common-decimal-separator = {","}
 ## This computer's own entities
 
 host-add-entity = Legg til entitet
-host-show-mine = Vis bare denne datamaskinens egne entiteter
-host-show-all = Vis alle entiteter
 host-new-entity = Vertsentitet { $number }
 host-failed = Kunne ikke legge den til på denne datamaskinen: { $reason }
 host-needs-clock = Denne datamaskinens egne entiteter trenger et kablet grensesnitt med en PTP-maskinvareklokke

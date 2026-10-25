@@ -6,8 +6,7 @@
 use std::fmt;
 
 use atdecc::EntityId;
-use iced::widget::{container, space};
-use iced::{Center, Element, Fill};
+use iced::{Element, Fill};
 use scramble_ui::button::{self, Kind, Size};
 use scramble_ui::dropdown::Entry;
 use scramble_ui::font::{Type, styled};
@@ -20,7 +19,7 @@ use triib_endpointd::status::{DaemonStatus, Setup};
 use crate::app::{Message, Triib};
 use crate::fl;
 use crate::host::StreamChange;
-use crate::view::{VIEW_MARGIN, Value, field, property};
+use crate::view::{Value, field, property};
 
 /// The daemon's status, where it runs on the interface shown.
 fn status_here(triib: &Triib) -> Option<&DaemonStatus> {
@@ -66,23 +65,22 @@ pub fn starting_step(triib: &Triib, entity_id: EntityId) -> String {
     }
 }
 
-/// The bar above the Entities view's table, after the view's `title`
-/// where there is one: why this computer cannot add entities of its own,
-/// or the button that adds one.
-pub fn bar(triib: &Triib, title: Option<String>) -> Option<Element<'_, Message>> {
+/// What the Entities view's bar says of this computer's own entities: why
+/// it cannot have any, or what they wait on.
+pub fn note(triib: &Triib) -> Option<String> {
     if triib.avb_enabled == Some(false) {
-        return mac_avb_off(triib, title);
+        let interface = triib.settings.interface.clone()?;
+        return Some(fl!("mac-avb-off", interface = interface));
     }
     if !crate::host::SUPPORTED || triib.interface().is_none() {
         return None;
     }
-    let able = triib.hosts_endpoints();
     let foreign = triib
         .endpoints
         .as_ref()
         .filter(|status| status.foreign_mrp)
         .map(|status| status.interface.clone());
-    let note = if !able {
+    if !triib.hosts_endpoints() {
         Some(fl!("host-needs-clock"))
     } else if let Some(interface) = &triib.endpoints_elsewhere {
         Some(fl!("host-elsewhere", interface = interface.clone()))
@@ -98,65 +96,28 @@ pub fn bar(triib: &Triib, title: Option<String>) -> Option<Element<'_, Message>>
         Some(fl!("host-no-ptp4l"))
     } else {
         None
-    };
-    let add = button::with_icon(Kind::Tonal, Icon::Add, fl!("host-add-entity"))
-        .size(Size::ExtraSmall)
-        .on_press_maybe(able.then_some(Message::HostAdded));
-    let text: Element<'_, Message> = match note {
-        Some(note) => styled(note, Type::BodySmall)
-            .style(style::on_surface_variant)
-            .width(Fill)
-            .align_x(dir::text_start())
-            .into(),
-        None => space().width(Fill).into(),
-    };
-    Some(
-        container(crate::view::titled(
-            title,
-            scramble_ui::row![
-                text,
-                component::toggle_tool(
-                    Icon::Computer,
-                    if triib.settings.host_entities_only {
-                        fl!("host-show-all")
-                    } else {
-                        fl!("host-show-mine")
-                    },
-                    triib.settings.host_entities_only,
-                    Message::HostEntitiesOnlyToggled,
-                ),
-                add,
-            ]
-            .spacing(8)
-            .align_y(Center),
-        ))
-        // The button a view's margin from the toolbar and the table, as the
-        // other views' filters are, in a row the toggle makes 8 taller.
-        .padding([VIEW_MARGIN - 4.0, VIEW_MARGIN])
-        .into(),
-    )
+    }
 }
 
-/// On a Mac where AVB is off on the interface, so the Mac has no entity
-/// of its own: where to turn it on, after the view's `title`.
-fn mac_avb_off(triib: &Triib, title: Option<String>) -> Option<Element<'_, Message>> {
-    let interface = triib.settings.interface.clone()?;
+/// The button the Entities view's bar ends with: the one that adds an
+/// entity of this computer's own, or on a Mac where AVB is off on the
+/// interface, the one that opens Audio MIDI Setup, where it is turned on.
+pub fn action(triib: &Triib) -> Option<Element<'_, Message>> {
+    if triib.avb_enabled == Some(false) {
+        return triib
+            .settings
+            .interface
+            .is_some()
+            .then(open_audio_midi_setup);
+    }
+    if !crate::host::SUPPORTED || triib.interface().is_none() {
+        return None;
+    }
     Some(
-        container(crate::view::titled(
-            title,
-            scramble_ui::row![
-                styled(fl!("mac-avb-off", interface = interface), Type::BodySmall)
-                    .style(style::on_surface_variant)
-                    .width(Fill)
-                    .align_x(dir::text_start()),
-                open_audio_midi_setup(),
-            ]
-            .spacing(8)
-            .align_y(Center),
-        ))
-        // As far from the toolbar and the table as the other views' filters.
-        .padding(VIEW_MARGIN)
-        .into(),
+        button::with_icon(Kind::Tonal, Icon::Add, fl!("host-add-entity"))
+            .size(Size::ExtraSmall)
+            .on_press_maybe(triib.hosts_endpoints().then_some(Message::HostAdded))
+            .into(),
     )
 }
 

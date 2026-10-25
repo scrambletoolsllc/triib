@@ -141,6 +141,14 @@ state-try-again = Erneut versuchen
 
 entities-none-yet = Noch keine Entitäten
 entities-none-yet-note = Jede Entität im Netzwerk, mit ihren Rollen, SR-Klassen und ihrer Clock.
+entities-filter = Entitäten filtern
+entities-hide-others = Entitäten anderer Geräte ausblenden
+entities-hide-controllers = Controller ausblenden
+entities-hide-other-domains = Entitäten außerhalb der Clock-Domäne dieses Computers ausblenden
+entities-hidden = { $count ->
+    [one] { $count } Entität ausgeblendet
+   *[other] { $count } Entitäten ausgeblendet
+}
 
 ## Inspector
 
@@ -792,8 +800,6 @@ common-decimal-separator = {","}
 ## This computer's own entities
 
 host-add-entity = Entität hinzufügen
-host-show-mine = Nur die eigenen Entitäten dieses Computers anzeigen
-host-show-all = Alle Entitäten anzeigen
 host-new-entity = Host-Entität { $number }
 host-failed = Konnte nicht zu diesem Computer hinzugefügt werden: { $reason }
 host-needs-clock = Die eigenen Entitäten dieses Computers brauchen eine kabelgebundene Schnittstelle mit PTP-Hardware-Clock

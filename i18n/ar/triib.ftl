@@ -139,6 +139,18 @@ state-try-again = إعادة المحاولة
 
 entities-none-yet = لا كيانات بعد
 entities-none-yet-note = كل كيان على الشبكة، مع أدواره وفئات SR وساعته.
+entities-filter = تصفية الكيانات
+entities-hide-others = إخفاء كيانات الأجهزة الأخرى
+entities-hide-controllers = إخفاء وحدات التحكم
+entities-hide-other-domains = إخفاء الكيانات خارج نطاق ساعة هذا الحاسوب
+entities-hidden = { $count ->
+    [zero] { $count } كيان مخفي
+    [one] كيان مخفي واحد
+    [two] كيانان مخفيان
+    [few] { $count } كيانات مخفية
+    [many] { $count } كيانًا مخفيًا
+   *[other] { $count } كيان مخفي
+}
 
 ## Inspector
 
@@ -926,8 +938,6 @@ common-decimal-separator = {"."}
 ## This computer's own entities
 
 host-add-entity = إضافة كيان
-host-show-mine = عرض كيانات هذا الحاسوب الخاصة فقط
-host-show-all = عرض كل الكيانات
 host-new-entity = كيان المضيف { $number }
 host-failed = تعذّرت إضافته إلى هذا الحاسوب: { $reason }
 host-needs-clock = تحتاج كيانات هذا الحاسوب الخاصة إلى واجهة سلكية بساعة PTP عتادية

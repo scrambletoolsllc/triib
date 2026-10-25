@@ -139,6 +139,14 @@ state-try-again = دوبارہ کوشش کریں
 
 entities-none-yet = ابھی کوئی اینٹیٹی نہیں
 entities-none-yet-note = نیٹ ورک کی ہر اینٹیٹی، اپنے کرداروں، SR کلاسز اور کلاک کے ساتھ۔
+entities-filter = اینٹیٹیز فلٹر کریں
+entities-hide-others = دوسرے آلات کی اینٹیٹیز چھپائیں
+entities-hide-controllers = کنٹرولرز چھپائیں
+entities-hide-other-domains = اس کمپیوٹر کے کلاک ڈومین سے باہر کی اینٹیٹیز چھپائیں
+entities-hidden = { $count ->
+    [one] { $count } اینٹیٹی چھپی ہوئی
+   *[other] { $count } اینٹیٹیز چھپی ہوئی
+}
 
 ## Inspector
 
@@ -782,8 +790,6 @@ common-decimal-separator = {"."}
 ## This computer's own entities
 
 host-add-entity = اینٹیٹی شامل کریں
-host-show-mine = صرف اس کمپیوٹر کی اپنی اینٹیٹیز دکھائیں
-host-show-all = تمام اینٹیٹیز دکھائیں
 host-new-entity = میزبان اینٹیٹی { $number }
 host-failed = اسے اس کمپیوٹر میں شامل نہیں کیا جا سکا: { $reason }
 host-needs-clock = اس کمپیوٹر کی اپنی اینٹیٹیز کو PTP ہارڈویئر کلاک والے تار دار انٹرفیس کی ضرورت ہے

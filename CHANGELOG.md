@@ -17,6 +17,12 @@ All notable changes to triib. Versions follow
 - Opening Settings or Presets, or an agent's prompt, leaves the window
   under it as it was: the inspector no longer slides in again, nor do
   the lists scroll back.
+- The entity list has a filter menu, as the interface picker has, in
+  place of the button that showed only this computer's entities. It
+  hides entities on other devices, on Linux and on a Mac; controllers;
+  and entities outside this computer's clock domain, while this
+  computer is in sync in one. Beside it, as beside the matrix's
+  filters, is how many entities they hide.
 
 ### Linux
 

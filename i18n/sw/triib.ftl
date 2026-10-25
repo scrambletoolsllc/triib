@@ -139,6 +139,14 @@ state-try-again = Jaribu tena
 
 entities-none-yet = Bado hakuna huluki
 entities-none-yet-note = Kila huluki kwenye mtandao, pamoja na majukumu yake, madaraja ya SR na saa yake.
+entities-filter = Chuja huluki
+entities-hide-others = Ficha huluki za vifaa vingine
+entities-hide-controllers = Ficha controller
+entities-hide-other-domains = Ficha huluki zilizo nje ya kikoa cha saa cha kompyuta hii
+entities-hidden = { $count ->
+    [one] huluki { $count } imefichwa
+   *[other] huluki { $count } zimefichwa
+}
 
 ## Inspector
 
@@ -789,8 +797,6 @@ matrix-stream-format-state = { $format }. { $state }.
 ## This computer's own entities
 
 host-add-entity = Ongeza huluki
-host-show-mine = Onyesha huluki za kompyuta hii pekee
-host-show-all = Onyesha huluki zote
 host-new-entity = Huluki ya mwenyeji { $number }
 host-failed = Haikuweza kuongezwa kwenye kompyuta hii: { $reason }
 host-needs-clock = Huluki za kompyuta hii zinahitaji kiolesura cha waya chenye saa ya maunzi ya PTP

@@ -139,6 +139,14 @@ state-try-again = تلاش دوباره
 
 entities-none-yet = هنوز موجودیتی نیست
 entities-none-yet-note = همه موجودیت‌های شبکه، با نقش‌ها، کلاس‌های SR و ساعتشان.
+entities-filter = پالایش موجودیت‌ها
+entities-hide-others = پنهان‌کردن موجودیت‌های دستگاه‌های دیگر
+entities-hide-controllers = پنهان‌کردن کنترلرها
+entities-hide-other-domains = پنهان‌کردن موجودیت‌های بیرون از دامنه ساعت این رایانه
+entities-hidden = { $count ->
+    [one] { $count } موجودیت پنهان
+   *[other] { $count } موجودیت پنهان
+}
 
 ## Inspector
 
@@ -782,8 +790,6 @@ common-decimal-separator = {"٫"}
 ## This computer's own entities
 
 host-add-entity = افزودن موجودیت
-host-show-mine = فقط موجودیت‌های خود این رایانه نمایش داده شود
-host-show-all = نمایش همه موجودیت‌ها
 host-new-entity = موجودیت میزبان { $number }
 host-failed = افزودن به این رایانه ممکن نشد: { $reason }
 host-needs-clock = موجودیت‌های خود این رایانه به یک واسط سیمی با ساعت سخت‌افزاری PTP نیاز دارند

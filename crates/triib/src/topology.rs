@@ -931,6 +931,25 @@ mod tests {
         Topology::build(&entities, host)
     }
 
+    /// This computer, in sync under the switch, keeps time in the switch's
+    /// domain: the wired entities are in it, the Wi-Fi one, its own
+    /// grandmaster, outside, and one whose domain is not known is not
+    /// counted outside. Out of sync, this computer keeps time in none.
+    #[test]
+    fn this_computer_keeps_time_in_its_bridges_domain() {
+        use crate::netmap::Domains;
+
+        let domains = Domains::in_topology(&bench(Some(HostReport::Heard(SWITCH, 6, true))));
+        assert!(domains.host_synced());
+        assert!(!domains.outside_host(WIRED));
+        assert!(!domains.outside_host(MAC));
+        assert!(domains.outside_host(WIFI));
+        assert!(!domains.outside_host(EntityId(1)));
+        let domains = Domains::in_topology(&bench(Some(HostReport::Heard(SWITCH, 6, false))));
+        assert!(!domains.host_synced());
+        assert!(!domains.outside_host(WIFI));
+    }
+
     /// The switch heads the bench's tree, and the Wi-Fi entity, its own
     /// grandmaster, is a domain of its own.
     #[test]

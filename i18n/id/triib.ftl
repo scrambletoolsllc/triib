@@ -139,6 +139,11 @@ state-try-again = Coba lagi
 
 entities-none-yet = Belum ada entitas
 entities-none-yet-note = Setiap entitas di jaringan, dengan peran, kelas SR, dan clock-nya.
+entities-filter = Saring entitas
+entities-hide-others = Sembunyikan entitas di perangkat lain
+entities-hide-controllers = Sembunyikan controller
+entities-hide-other-domains = Sembunyikan entitas di luar domain clock komputer ini
+entities-hidden = { $count } entitas disembunyikan
 
 ## Inspector
 
@@ -691,8 +696,6 @@ matrix-stream-format-state = { $format }. { $state }.
 ## This computer's own entities
 
 host-add-entity = Tambah entitas
-host-show-mine = Tampilkan hanya entitas milik komputer ini
-host-show-all = Tampilkan semua entitas
 host-new-entity = Entitas host { $number }
 host-failed = Tidak dapat menambahkannya ke komputer ini: { $reason }
 host-needs-clock = Entitas milik komputer ini memerlukan antarmuka kabel dengan clock hardware PTP

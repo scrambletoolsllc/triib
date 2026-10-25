@@ -139,6 +139,16 @@ state-try-again = Повторить
 
 entities-none-yet = Сущностей пока нет
 entities-none-yet-note = Все сущности в сети с их ролями, классами SR и синхронизацией.
+entities-filter = Фильтр сущностей
+entities-hide-others = Скрыть сущности других устройств
+entities-hide-controllers = Скрыть контроллеры
+entities-hide-other-domains = Скрыть сущности вне домена синхронизации этого компьютера
+entities-hidden = { $count ->
+    [one] { $count } сущность скрыта
+    [few] { $count } сущности скрыто
+    [many] { $count } сущностей скрыто
+   *[other] { $count } сущности скрыто
+}
 
 ## Inspector
 
@@ -873,8 +883,6 @@ common-decimal-separator = {","}
 ## This computer's own entities
 
 host-add-entity = Добавить сущность
-host-show-mine = Показывать только собственные сущности этого компьютера
-host-show-all = Показывать все сущности
 host-new-entity = Сущность хоста { $number }
 host-failed = Не удалось добавить на этот компьютер: { $reason }
 host-needs-clock = Собственным сущностям этого компьютера нужен проводной интерфейс с аппаратными часами PTP

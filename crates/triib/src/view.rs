@@ -380,36 +380,68 @@ fn toolbar_at(triib: &Triib, width: f32) -> Element<'_, Message> {
         .into()
 }
 
-/// The interface picker's filters: a tool, shown as in use while any
-/// leaves interfaces out, whose menu marks each kind it leaves out with a
-/// check, open while they are checked.
+/// The interface picker's filters, each a kind of interface it leaves
+/// out.
 fn interface_filters(triib: &Triib) -> Element<'_, Message> {
     use crate::settings::InterfaceFilter;
-    /// The check's room before each label, and the row's around them.
-    const MARK: f32 = 20.0;
-    const ROW_ROOM: f32 = 2.0 * 16.0 + 8.0 + MARK + 12.0;
-    let settings = &triib.settings;
-    let open = triib.interface_filters_open;
-    let filters = [
+    let filters: Vec<Filter> = [
         (InterfaceFilter::Virtual, fl!("toolbar-hide-virtual")),
         (InterfaceFilter::Wireless, fl!("toolbar-hide-wireless")),
         (InterfaceFilter::Unclocked, fl!("toolbar-hide-unclocked")),
-    ];
-    let menu = open.then(|| {
+    ]
+    .into_iter()
+    .map(|(filter, label)| Filter {
+        label,
+        on: triib.settings.hides(filter),
+        toggle: Some(Message::InterfaceFilterToggled(filter)),
+    })
+    .collect();
+    let in_use = filters.iter().any(|filter| filter.on);
+    filter_tool(
+        filters,
+        in_use,
+        triib.interface_filters_open,
+        fl!("toolbar-filter-interfaces"),
+        Message::InterfaceFiltersMenu,
+    )
+}
+
+/// A filter in a filter tool's menu: what it leaves out, whether it is on,
+/// and what turns it on or off, `None` where it cannot be now.
+pub(crate) struct Filter {
+    pub label: String,
+    pub on: bool,
+    pub toggle: Option<Message>,
+}
+
+/// A filter tool: an icon button, shown as in use while `in_use`, whose
+/// menu, open while `open`, marks each filter on with a check; `menu`
+/// opens and closes it.
+pub(crate) fn filter_tool<'a>(
+    filters: Vec<Filter>,
+    in_use: bool,
+    open: bool,
+    tip: String,
+    menu: fn(bool) -> Message,
+) -> Element<'a, Message> {
+    /// The check's room before each label, and the row's around them.
+    const MARK: f32 = 20.0;
+    const ROW_ROOM: f32 = 2.0 * 16.0 + 8.0 + MARK + 12.0;
+    let shown = open.then(|| {
         let _reading = dir::reading();
         let widest = filters
             .iter()
-            .map(|(_, label)| scramble_ui::font::measure(label, Type::LabelLarge))
+            .map(|filter| scramble_ui::font::measure(&filter.label, Type::LabelLarge))
             .fold(0.0, f32::max);
         // A check before each filter on, the room for one before the
         // others, so the labels line up.
-        let rows = filters.into_iter().map(|(filter, label)| {
-            let mark: Element<'_, Message> = if settings.hides(filter) {
+        let rows = filters.into_iter().map(|filter| {
+            let mark: Element<'_, Message> = if filter.on {
                 icon::icon(Icon::Check, MARK).into()
             } else {
                 space().width(MARK).into()
             };
-            let label = styled(label, Type::LabelLarge)
+            let label = styled(filter.label, Type::LabelLarge)
                 .wrapping(iced::widget::text::Wrapping::None)
                 .into();
             let row = dir::row([mark, label, space().width(Fill).into()])
@@ -419,28 +451,21 @@ fn interface_filters(triib: &Triib) -> Element<'_, Message> {
             button::custom(Kind::Row, row)
                 .height(40.0)
                 .width(Fill)
-                .on_press(Message::InterfaceFilterToggled(filter))
+                .on_press_maybe(filter.toggle)
                 .into()
         });
         let rows = iced::widget::Column::with_children(rows).width((widest + ROW_ROOM).ceil());
         scramble_ui::popover::surface(rows)
     });
-    let any = [
-        InterfaceFilter::Virtual,
-        InterfaceFilter::Wireless,
-        InterfaceFilter::Unclocked,
-    ]
-    .into_iter()
-    .any(|filter| settings.hides(filter));
     let tool = button::icon_button(Icon::FilterList)
-        .selected(any)
-        .on_press(Message::InterfaceFiltersMenu(!open));
+        .selected(in_use)
+        .on_press(menu(!open));
     let anchor = if open {
         tool.into()
     } else {
-        component::tip(tool, fl!("toolbar-filter-interfaces"))
+        component::tip(tool, tip)
     };
-    scramble_ui::popover::popover(anchor, menu, Message::InterfaceFiltersMenu(false)).into()
+    scramble_ui::popover::popover(anchor, shown, menu(false)).into()
 }
 
 /// What to show instead of entities: no interface, starting, a failure,
@@ -537,14 +562,31 @@ fn content(triib: &Triib) -> Element<'_, Message> {
 }
 
 /// The Entities view, `width` pixels wide: the table, or why there is none
-/// yet, under the bar that adds this computer's own entities, with the
-/// view's title at its start on wide windows, or under the title alone.
+/// yet, under a bar with the view's title on wide windows, what this
+/// computer's own entities wait on, the list's filters and the button
+/// that adds an entity of this computer's own.
 fn entities(triib: &Triib, width: f32) -> Element<'_, Message> {
     let title = (width >= TITLED).then(|| fl!("toolbar-entities"));
-    let bar = crate::host_view::bar(triib, title.clone()).or_else(|| title.map(title_bar));
+    let note: Element<'_, Message> = match crate::host_view::note(triib) {
+        Some(note) => styled(note, Type::BodySmall)
+            .style(style::on_surface_variant)
+            .width(Fill)
+            .align_x(dir::text_start())
+            .into(),
+        None => space().width(Fill).into(),
+    };
+    let mut row = scramble_ui::line![note, crate::entity_table::filters(triib)]
+        .spacing(8)
+        .align_y(Center);
+    if let Some(action) = crate::host_view::action(triib) {
+        row = row.push(action);
+    }
+    // The buttons a view's margin from the toolbar and the table, as the
+    // other views' filters are, in a row the filter tool makes 8 taller.
+    let bar = container(titled(title, row)).padding([VIEW_MARGIN - 4.0, VIEW_MARGIN]);
     // An entity this computer is starting is listed before any is heard.
     let body = if !triib.entities.is_empty() || triib.starting_entities().next().is_some() {
-        crate::entity_table::view(triib, bar.is_some())
+        crate::entity_table::view(triib)
     } else {
         match &triib.network_state {
             NetworkState::Running { .. } | NetworkState::Starting => component::empty_state(
@@ -555,10 +597,7 @@ fn entities(triib: &Triib, width: f32) -> Element<'_, Message> {
             state => return network_state_view(triib, state),
         }
     };
-    match bar {
-        Some(bar) => scramble_ui::column![bar, body].into(),
-        None => body,
-    }
+    scramble_ui::column![bar, body].into()
 }
 
 /// `row`, the row above a view, after the view's title where there is one.
@@ -573,19 +612,6 @@ pub(crate) fn titled<'a>(
             .into(),
         None => row.into(),
     }
-}
-
-/// The row above a view with nothing in it but the view's title: as far
-/// from the toolbar and what is below as the other views' rows, and as
-/// tall.
-fn title_bar<'a>(title: String) -> Element<'a, Message> {
-    container(styled(title, Type::TitleLarge))
-        .padding(VIEW_MARGIN)
-        .width(Fill)
-        .height(Size::ExtraSmall.height() + 2.0 * VIEW_MARGIN)
-        .align_x(dir::horizontal_start())
-        .align_y(Center)
-        .into()
 }
 
 /// What the inspector's header has beside its title: its padding, the
@@ -2844,6 +2870,8 @@ pub(crate) mod tests {
             ("matrix-hover-own", View::Matrix, false, desktop),
             ("matrix-formats", View::Matrix, false, desktop),
             ("entities-desktop", View::Entities, false, desktop),
+            // The entity list's filters' menu, open, one of them on.
+            ("entities-hiding", View::Entities, false, desktop),
             // With one of this computer's entities, wide enough for its
             // columns, the bench's empty groups and long IDs left out.
             (
@@ -2855,6 +2883,14 @@ pub(crate) mod tests {
             // Another of its entities just added, the link being set up.
             (
                 "entities-host-starting",
+                View::Entities,
+                false,
+                Size::new(1440.0, 540.0),
+            ),
+            // Only its entity, how many others are hidden beside the
+            // filters.
+            (
+                "entities-host-hiding",
                 View::Entities,
                 false,
                 Size::new(1440.0, 540.0),
@@ -3275,6 +3311,14 @@ pub(crate) mod tests {
                 };
                 triib.editing = Some((target, "Studio Mac".to_owned()));
             }
+            if suffix.contains("hiding") {
+                if suffix.starts_with("entities-host") {
+                    triib.settings.host_entities_only = true;
+                } else {
+                    triib.entity_filters_open = true;
+                    triib.settings.hide_controllers = true;
+                }
+            }
             if suffix.contains("filters") {
                 // The interface filters' menu, open, two of them on.
                 triib.interface_filters_open = true;
@@ -3694,7 +3738,9 @@ pub(crate) mod tests {
         assert!(simulate(&triib, size).find("Mac mini").is_ok());
         triib.settings.host_entities_only = true;
         assert!(simulate(&triib, size).find("Mac mini").is_err());
-        let _ = triib.update(Message::HostEntitiesOnlyToggled);
+        let _ = triib.update(Message::EntityFilterToggled(
+            crate::settings::EntityFilter::Others,
+        ));
         assert!(!triib.settings.host_entities_only);
         // Without a hardware clock, the bar says why instead.
         triib.interfaces[0].hardware_clock = None;
@@ -3735,6 +3781,57 @@ pub(crate) mod tests {
         triib.settings_open = false;
         triib.presets_open = true;
         assert!(shape(&triib) == closed, "under the presets");
+    }
+
+    /// The entity list's filter menu offers to hide all but this
+    /// computer's entities where it can have its own, controllers, and
+    /// entities outside its clock domain, that last only while it keeps
+    /// time in one, as the bench's computer does not.
+    #[test]
+    fn the_entity_list_filters_from_a_menu() {
+        use crate::settings::EntityFilter;
+
+        let mut triib = logging(View::Entities, false);
+        triib.settings.log = false;
+        triib.entity_filters_open = true;
+        let size = Size::new(1280.0, 800.0);
+        let mut simulator = simulate(&triib, size);
+        assert_eq!(
+            simulator.find("Hide entities on other devices").is_ok(),
+            triib.hosts_entities()
+        );
+        assert!(simulator.find("Hide controllers").is_ok());
+        let _ = simulator.click("Hide entities outside this computer's clock domain");
+        let _ = simulator.click("Hide controllers");
+        let messages: Vec<Message> = simulator.into_messages().collect();
+        assert!(
+            messages.iter().any(|message| matches!(
+                message,
+                Message::EntityFilterToggled(EntityFilter::Controllers)
+            )),
+            "{messages:?}"
+        );
+        assert!(
+            !messages.iter().any(|message| matches!(
+                message,
+                Message::EntityFilterToggled(EntityFilter::OtherDomains)
+            )),
+            "{messages:?}"
+        );
+        // One on while this computer keeps time in no domain hides nothing,
+        // and can be turned off.
+        triib.settings.hide_other_domains = true;
+        let mut simulator = simulate(&triib, size);
+        assert!(simulator.find("Mac mini").is_ok());
+        let _ = simulator.click("Hide entities outside this computer's clock domain");
+        let messages: Vec<Message> = simulator.into_messages().collect();
+        assert!(
+            messages.iter().any(|message| matches!(
+                message,
+                Message::EntityFilterToggled(EntityFilter::OtherDomains)
+            )),
+            "{messages:?}"
+        );
     }
 
     /// Each view has its title at the start of the row above it on wide

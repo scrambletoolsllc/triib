@@ -141,6 +141,14 @@ state-try-again = Försök igen
 
 entities-none-yet = Inga entiteter än
 entities-none-yet-note = Varje entitet i nätverket, med dess roller, SR-klasser och klocka.
+entities-filter = Filtrera entiteter
+entities-hide-others = Dölj entiteter på andra enheter
+entities-hide-controllers = Dölj controllers
+entities-hide-other-domains = Dölj entiteter utanför den här datorns klockdomän
+entities-hidden = { $count ->
+    [one] { $count } entitet dold
+   *[other] { $count } entiteter dolda
+}
 
 ## Inspector
 
@@ -801,8 +809,6 @@ common-decimal-separator = {","}
 ## This computer's own entities
 
 host-add-entity = Lägg till entitet
-host-show-mine = Visa bara den här datorns egna entiteter
-host-show-all = Visa alla entiteter
 host-new-entity = Värdentitet { $number }
 host-failed = Kunde inte lägga till den på den här datorn: { $reason }
 host-needs-clock = Den här datorns egna entiteter behöver ett trådbundet gränssnitt med en PTP-hårdvaruklocka

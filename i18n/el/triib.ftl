@@ -141,6 +141,14 @@ state-try-again = Νέα προσπάθεια
 
 entities-none-yet = Καμία οντότητα ακόμη
 entities-none-yet-note = Κάθε οντότητα του δικτύου, με τους ρόλους, τις κλάσεις SR και το ρολόι της.
+entities-filter = Φιλτράρισμα οντοτήτων
+entities-hide-others = Απόκρυψη οντοτήτων άλλων συσκευών
+entities-hide-controllers = Απόκρυψη ελεγκτών
+entities-hide-other-domains = Απόκρυψη οντοτήτων εκτός του τομέα ρολογιού αυτού του υπολογιστή
+entities-hidden = { $count ->
+    [one] { $count } κρυφή οντότητα
+   *[other] { $count } κρυφές οντότητες
+}
 
 ## Inspector
 
@@ -805,8 +813,6 @@ common-decimal-separator = {","}
 ## This computer's own entities
 
 host-add-entity = Προσθήκη οντότητας
-host-show-mine = Εμφάνιση μόνο των οντοτήτων αυτού του υπολογιστή
-host-show-all = Εμφάνιση όλων των οντοτήτων
 host-new-entity = Οντότητα κεντρικού υπολογιστή { $number }
 host-failed = Δεν ήταν δυνατή η προσθήκη σε αυτόν τον υπολογιστή: { $reason }
 host-needs-clock = Οι οντότητες αυτού του υπολογιστή χρειάζονται ενσύρματη διεπαφή με ρολόι υλικού PTP

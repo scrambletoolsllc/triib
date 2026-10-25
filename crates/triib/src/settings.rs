@@ -70,6 +70,37 @@ impl Settings {
         let hides = self.hides_mut(filter);
         *hides = !*hides;
     }
+
+    /// Whether the entity list leaves out the entities `filter` names.
+    pub fn hides_entities(&self, filter: EntityFilter) -> bool {
+        match filter {
+            EntityFilter::Others => self.host_entities_only,
+            EntityFilter::Controllers => self.hide_controllers,
+            EntityFilter::OtherDomains => self.hide_other_domains,
+        }
+    }
+
+    /// Leaves the entities `filter` names out of the entity list, or puts
+    /// them back.
+    pub fn toggle_entity_filter(&mut self, filter: EntityFilter) {
+        let hides = match filter {
+            EntityFilter::Others => &mut self.host_entities_only,
+            EntityFilter::Controllers => &mut self.hide_controllers,
+            EntityFilter::OtherDomains => &mut self.hide_other_domains,
+        };
+        *hides = !*hides;
+    }
+}
+
+/// Entities the entity list can leave out.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EntityFilter {
+    /// All but this computer's own.
+    Others,
+    /// Those that are only controllers, with no streams.
+    Controllers,
+    /// Those keeping time in none of the clock domains this computer does.
+    OtherDomains,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -101,9 +132,12 @@ pub struct Settings {
     pub entities_file: PathBuf,
     /// What this computer listens to, and through which output.
     pub listen: crate::monitor::Listen,
-    /// The Entities view lists only this computer's own talkers and
-    /// listeners.
+    /// The entity list leaves out all but this computer's own entities.
     pub host_entities_only: bool,
+    /// It leaves out entities that are only controllers.
+    pub hide_controllers: bool,
+    /// It leaves out entities in clock domains this computer is not in.
+    pub hide_other_domains: bool,
     pub view: View,
     pub inspector: bool,
     /// The log shows in a panel under the view.
@@ -148,6 +182,8 @@ impl Default for Settings {
             entities_file: triib_endpointd::config::path().unwrap_or_default(),
             listen: crate::monitor::Listen::default(),
             host_entities_only: false,
+            hide_controllers: false,
+            hide_other_domains: false,
             view: View::Matrix,
             inspector: false,
             log: false,

@@ -92,6 +92,14 @@ state-try-again = Try again
 
 entities-none-yet = No entities yet
 entities-none-yet-note = Every entity on the network, with its roles, SR classes and clock.
+entities-filter = Filter entities
+entities-hide-others = Hide entities on other devices
+entities-hide-controllers = Hide controllers
+entities-hide-other-domains = Hide entities outside this computer's clock domain
+entities-hidden = { $count ->
+    [one] { $count } entity hidden
+   *[other] { $count } entities hidden
+}
 
 ## Inspector
 
@@ -655,8 +663,6 @@ matrix-stream-format-state = { $format }. { $state }.
 
 ## This computer's own entities
 
-host-show-mine = Show only this computer's own entities
-host-show-all = Show every entity
 host-failed = Could not add it to this computer: { $reason }
 host-needs-clock = This computer's own entities need a wired interface with a PTP hardware clock
 host-no-ptp4l = ptp4l does not answer, so this computer's streams cannot keep gPTP time

@@ -142,6 +142,15 @@ state-try-again = Torna-ho a provar
 
 entities-none-yet = Encara no hi ha entitats
 entities-none-yet-note = Totes les entitats de la xarxa, amb els seus rols, classes SR i rellotge.
+entities-filter = Filtra les entitats
+entities-hide-others = Amaga les entitats d’altres dispositius
+entities-hide-controllers = Amaga els controladors
+entities-hide-other-domains = Amaga les entitats fora del domini de rellotge d’aquest ordinador
+entities-hidden = { $count ->
+    [one] { $count } entitat amagada
+    [many] { $count } entitats amagades
+   *[other] { $count } entitats amagades
+}
 
 ## Inspector
 
@@ -846,8 +855,6 @@ matrix-stream-format-state = { $format }. { $state }.
 ## This computer's own entities
 
 host-add-entity = Afegeix una entitat
-host-show-mine = Mostra només les entitats pròpies d’aquest ordinador
-host-show-all = Mostra totes les entitats
 host-new-entity = Entitat de l’amfitrió { $number }
 host-failed = No s’ha pogut afegir a aquest ordinador: { $reason }
 host-needs-clock = Les entitats pròpies d’aquest ordinador necessiten una interfície amb fil amb rellotge de maquinari PTP

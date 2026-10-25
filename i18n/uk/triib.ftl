@@ -139,6 +139,16 @@ state-try-again = Повторити
 
 entities-none-yet = Сутностей ще немає
 entities-none-yet-note = Усі сутності в мережі з їхніми ролями, класами SR і синхронізацією.
+entities-filter = Фільтр сутностей
+entities-hide-others = Приховати сутності інших пристроїв
+entities-hide-controllers = Приховати контролери
+entities-hide-other-domains = Приховати сутності поза доменом синхронізації цього комп'ютера
+entities-hidden = { $count ->
+    [one] { $count } сутність приховано
+    [few] { $count } сутності приховано
+    [many] { $count } сутностей приховано
+   *[other] { $count } сутності приховано
+}
 
 ## Inspector
 
@@ -873,8 +883,6 @@ common-decimal-separator = {","}
 ## This computer's own entities
 
 host-add-entity = Додати сутність
-host-show-mine = Показувати лише власні сутності цього комп'ютера
-host-show-all = Показувати всі сутності
 host-new-entity = Сутність хоста { $number }
 host-failed = Не вдалося додати на цей комп'ютер: { $reason }
 host-needs-clock = Власним сутностям цього комп'ютера потрібен дротовий інтерфейс з апаратним годинником PTP

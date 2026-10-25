@@ -139,6 +139,15 @@ state-try-again = ניסיון חוזר
 
 entities-none-yet = עדיין אין ישויות
 entities-none-yet-note = כל ישות ברשת, עם התפקידים, מחלקות ה-SR והשעון שלה.
+entities-filter = סינון ישויות
+entities-hide-others = הסתרת ישויות של התקנים אחרים
+entities-hide-controllers = הסתרת בקרים
+entities-hide-other-domains = הסתרת ישויות מחוץ לתחום השעון של המחשב הזה
+entities-hidden = { $count ->
+    [one] ישות אחת מוסתרת
+    [two] { $count } ישויות מוסתרות
+   *[other] { $count } ישויות מוסתרות
+}
 
 ## Inspector
 
@@ -820,8 +829,6 @@ common-decimal-separator = {"."}
 ## This computer's own entities
 
 host-add-entity = הוספת ישות
-host-show-mine = הצגת הישויות של המחשב הזה בלבד
-host-show-all = הצגת כל הישויות
 host-new-entity = ישות מארח { $number }
 host-failed = לא ניתן היה להוסיף למחשב הזה: { $reason }
 host-needs-clock = הישויות של המחשב הזה צריכות ממשק קווי עם שעון חומרה PTP

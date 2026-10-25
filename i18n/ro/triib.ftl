@@ -142,6 +142,15 @@ state-try-again = Încearcă din nou
 
 entities-none-yet = Încă nicio entitate
 entities-none-yet-note = Fiecare entitate din rețea, cu rolurile, clasele SR și ceasul ei.
+entities-filter = Filtrează entitățile
+entities-hide-others = Ascunde entitățile altor dispozitive
+entities-hide-controllers = Ascunde controlerele
+entities-hide-other-domains = Ascunde entitățile din afara domeniului de ceas al acestui computer
+entities-hidden = { $count ->
+    [one] { $count } entitate ascunsă
+    [few] { $count } entități ascunse
+   *[other] { $count } de entități ascunse
+}
 
 ## Inspector
 
@@ -862,8 +871,6 @@ matrix-stream-format-state = { $format }. { $state }.
 ## This computer's own entities
 
 host-add-entity = Adaugă entitate
-host-show-mine = Arată doar entitățile proprii ale acestui computer
-host-show-all = Arată toate entitățile
 host-new-entity = Entitate gazdă { $number }
 host-failed = Nu a putut fi adăugat pe acest computer: { $reason }
 host-needs-clock = Entitățile proprii ale acestui computer au nevoie de o interfață cu fir cu ceas hardware PTP

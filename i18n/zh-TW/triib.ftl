@@ -142,6 +142,11 @@ state-try-again = 重試
 
 entities-none-yet = 尚無實體
 entities-none-yet-note = 網路上的每個實體，及其角色、SR 類別與時鐘。
+entities-filter = 篩選實體
+entities-hide-others = 隱藏其他裝置上的實體
+entities-hide-controllers = 隱藏控制器
+entities-hide-other-domains = 隱藏本機時鐘域以外的實體
+entities-hidden = 已隱藏 { $count } 個實體
 
 ## Inspector
 
@@ -686,8 +691,6 @@ matrix-stream-format-state = { $format }。{ $state }。
 ## This computer's own entities
 
 host-add-entity = 新增實體
-host-show-mine = 只顯示本機自己的實體
-host-show-all = 顯示所有實體
 host-new-entity = 主機實體 { $number }
 host-failed = 無法新增到本機：{ $reason }
 host-needs-clock = 本機自己的實體需要具備 PTP 硬體時鐘的有線介面

@@ -139,6 +139,16 @@ state-try-again = Spróbuj ponownie
 
 entities-none-yet = Brak encji
 entities-none-yet-note = Każda encja w sieci wraz z rolami, klasami SR i zegarem.
+entities-filter = Filtruj encje
+entities-hide-others = Ukryj encje innych urządzeń
+entities-hide-controllers = Ukryj kontrolery
+entities-hide-other-domains = Ukryj encje spoza domeny zegara tego komputera
+entities-hidden = { $count ->
+    [one] { $count } encja ukryta
+    [few] { $count } encje ukryte
+    [many] { $count } encji ukrytych
+   *[other] { $count } encji ukrytej
+}
 
 ## Inspector
 
@@ -874,8 +884,6 @@ common-decimal-separator = {","}
 ## This computer's own entities
 
 host-add-entity = Dodaj encję
-host-show-mine = Pokaż tylko własne encje tego komputera
-host-show-all = Pokaż wszystkie encje
 host-new-entity = Encja hosta { $number }
 host-failed = Nie można dodać do tego komputera: { $reason }
 host-needs-clock = Własne encje tego komputera wymagają przewodowego interfejsu ze sprzętowym zegarem PTP

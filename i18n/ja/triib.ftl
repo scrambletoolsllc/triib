@@ -142,6 +142,11 @@ state-try-again = 再試行
 
 entities-none-yet = エンティティはまだありません
 entities-none-yet-note = ネットワーク上のすべてのエンティティを、ロール、SR クラス、クロックとともに表示します。
+entities-filter = エンティティを絞り込む
+entities-hide-others = ほかのデバイスのエンティティを隠す
+entities-hide-controllers = コントローラーを隠す
+entities-hide-other-domains = このコンピューターのクロックドメイン外のエンティティを隠す
+entities-hidden = { $count } 個のエンティティを非表示
 
 ## Inspector
 
@@ -686,8 +691,6 @@ matrix-stream-format-state = { $format }。{ $state }。
 ## This computer's own entities
 
 host-add-entity = エンティティを追加
-host-show-mine = このコンピューター自身のエンティティだけを表示
-host-show-all = すべてのエンティティを表示
 host-new-entity = ホストのエンティティ { $number }
 host-failed = このコンピューターに追加できませんでした：{ $reason }
 host-needs-clock = このコンピューター自身のエンティティには、PTP ハードウェアクロックを備えた有線インターフェイスが必要です

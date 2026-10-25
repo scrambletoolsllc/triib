@@ -142,6 +142,11 @@ state-try-again = 重试
 
 entities-none-yet = 尚无实体
 entities-none-yet-note = 网络上的每个实体，及其角色、SR 类和时钟。
+entities-filter = 筛选实体
+entities-hide-others = 隐藏其他设备上的实体
+entities-hide-controllers = 隐藏控制器
+entities-hide-other-domains = 隐藏本机时钟域以外的实体
+entities-hidden = 已隐藏 { $count } 个实体
 
 ## Inspector
 
@@ -686,8 +691,6 @@ matrix-stream-format-state = { $format }。{ $state }。
 ## This computer's own entities
 
 host-add-entity = 添加实体
-host-show-mine = 只显示本机自己的实体
-host-show-all = 显示所有实体
 host-new-entity = 主机实体 { $number }
 host-failed = 无法添加到本机：{ $reason }
 host-needs-clock = 本机自己的实体需要带 PTP 硬件时钟的有线接口

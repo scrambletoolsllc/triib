@@ -139,6 +139,16 @@ state-try-again = Zkusit znovu
 
 entities-none-yet = Zatím žádné entity
 entities-none-yet-note = Všechny entity v síti s jejich rolemi, třídami SR a hodinami.
+entities-filter = Filtrovat entity
+entities-hide-others = Skrýt entity na jiných zařízeních
+entities-hide-controllers = Skrýt kontroléry
+entities-hide-other-domains = Skrýt entity mimo doménu hodin tohoto počítače
+entities-hidden = { $count ->
+    [one] { $count } entita skrytá
+    [few] { $count } entity skryté
+    [many] { $count } entity skryto
+   *[other] { $count } entit skryto
+}
 
 ## Inspector
 
@@ -875,8 +885,6 @@ common-decimal-separator = {","}
 ## This computer's own entities
 
 host-add-entity = Přidat entitu
-host-show-mine = Zobrazit jen vlastní entity tohoto počítače
-host-show-all = Zobrazit všechny entity
 host-new-entity = Entita hostitele { $number }
 host-failed = Nepodařilo se přidat do tohoto počítače: { $reason }
 host-needs-clock = Vlastní entity tohoto počítače potřebují kabelové rozhraní s hardwarovými hodinami PTP

@@ -138,6 +138,8 @@ pub struct Triib {
     pub close_button: bool,
     /// The menu of the interface picker's filters is open.
     pub interface_filters_open: bool,
+    /// The entity list's filters' menu is open.
+    pub entity_filters_open: bool,
     /// Each storage place as typed in Settings, not yet applied, and why
     /// the one given could not be used.
     pub storage_drafts: [String; 2],
@@ -222,7 +224,8 @@ pub enum Message {
     /// Open or close the menu of the interface picker's filters.
     InterfaceFiltersMenu(bool),
     /// The Entities view lists only this computer's endpoints, or all.
-    HostEntitiesOnlyToggled,
+    EntityFilterToggled(crate::settings::EntityFilter),
+    EntityFiltersMenu(bool),
     /// Open macOS's Audio MIDI Setup, which turns AVB on and off.
     OpenAudioMidiSetup,
     /// Listen to an input through an output, or stop.
@@ -423,6 +426,7 @@ impl Triib {
             overflow_open: false,
             close_button: false,
             interface_filters_open: false,
+            entity_filters_open: false,
             storage_drafts: Default::default(),
             storage_errors: Default::default(),
             network_list: false,
@@ -500,6 +504,7 @@ impl Triib {
             overflow_open: false,
             close_button: !scramble_ui::desktop::draws_title_bars(),
             interface_filters_open: false,
+            entity_filters_open: false,
             storage_drafts: Default::default(),
             storage_errors: Default::default(),
             network_list: false,
@@ -661,16 +666,33 @@ impl Triib {
     /// The icon of one of this computer's entities, the computer's; `None`
     /// for others' entities.
     pub fn host_icon(&self, entity_id: EntityId) -> Option<scramble_ui::icon::Icon> {
+        self.is_this_computers(entity_id)
+            .then_some(scramble_ui::icon::Icon::Computer)
+    }
+
+    /// Whether `entity_id` is one of this computer's own entities: one
+    /// triib-endpointd runs, or on a Mac the Mac's own.
+    pub fn is_this_computers(&self, entity_id: EntityId) -> bool {
         // Until the daemon's status names it, as it does a moment after the
         // entity advertises: one of its models, from this computer's
         // address.
-        let ours = self.is_host(entity_id)
+        self.is_host(entity_id)
             || self.entities.get(&entity_id).is_some_and(|entity| {
                 self.interface()
                     .is_some_and(|interface| interface.mac == entity.mac)
                     && triib_endpointd::runtime::is_device_model(entity.adp.entity_model_id)
-            });
-        (ours || self.is_this_mac(entity_id)).then_some(scramble_ui::icon::Icon::Computer)
+            })
+            || self.is_this_mac(entity_id)
+    }
+
+    /// Whether this computer can have entities of its own on the interface
+    /// shown: on Linux one able to run them, on a Mac one macOS runs AVB on.
+    pub fn hosts_entities(&self) -> bool {
+        if cfg!(target_os = "macos") {
+            self.avb_enabled.is_some()
+        } else {
+            self.hosts_endpoints()
+        }
     }
 
     /// Goes on with a preset recalled while this computer's endpoints
@@ -873,10 +895,11 @@ impl Triib {
                 self.settings.view = view;
                 self.save_settings();
             }
-            Message::HostEntitiesOnlyToggled => {
-                self.settings.host_entities_only = !self.settings.host_entities_only;
+            Message::EntityFilterToggled(filter) => {
+                self.settings.toggle_entity_filter(filter);
                 self.save_settings();
             }
+            Message::EntityFiltersMenu(open) => self.entity_filters_open = open,
             Message::InterfaceFilterToggled(filter) => {
                 self.settings.toggle_filter(filter);
                 self.save_settings();

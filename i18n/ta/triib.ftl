@@ -139,6 +139,14 @@ state-try-again = மீண்டும் முயல்
 
 entities-none-yet = இன்னும் entities இல்லை
 entities-none-yet-note = நெட்வொர்க்கில் உள்ள ஒவ்வொரு entity-யும், அதன் பங்குகள், SR classes, clock ஆகியவற்றுடன்.
+entities-filter = Entity-களை வடிகட்டு
+entities-hide-others = பிற சாதனங்களின் Entity-களை மறை
+entities-hide-controllers = controller-களை மறை
+entities-hide-other-domains = இந்தக் கணினியின் clock domain-க்கு வெளியே உள்ள Entity-களை மறை
+entities-hidden = { $count ->
+    [one] { $count } Entity மறைக்கப்பட்டது
+   *[other] { $count } Entity-கள் மறைக்கப்பட்டன
+}
 
 ## Inspector
 
@@ -782,8 +790,6 @@ common-decimal-separator = {"."}
 ## This computer's own entities
 
 host-add-entity = Entity-ஐச் சேர்
-host-show-mine = இந்தக் கணினியின் சொந்த Entity-களை மட்டும் காட்டு
-host-show-all = எல்லா entity-களையும் காட்டு
 host-new-entity = ஹோஸ்ட் Entity { $number }
 host-failed = இந்தக் கணினியில் சேர்க்க முடியவில்லை: { $reason }
 host-needs-clock = இந்தக் கணினியின் சொந்த Entity-களுக்கு PTP hardware clock உள்ள கம்பி interface தேவை

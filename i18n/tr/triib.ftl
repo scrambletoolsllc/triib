@@ -141,6 +141,14 @@ state-try-again = Yeniden dene
 
 entities-none-yet = Henüz varlık yok
 entities-none-yet-note = Ağdaki her varlık; rolleri, SR sınıfları ve saatiyle birlikte.
+entities-filter = Varlıkları filtrele
+entities-hide-others = Diğer cihazların varlıklarını gizle
+entities-hide-controllers = Denetleyicileri gizle
+entities-hide-other-domains = Bu bilgisayarın saat alanı dışındaki varlıkları gizle
+entities-hidden = { $count ->
+    [one] { $count } varlık gizli
+   *[other] { $count } varlık gizli
+}
 
 ## Inspector
 
@@ -784,8 +792,6 @@ common-decimal-separator = {","}
 ## This computer's own entities
 
 host-add-entity = Varlık ekle
-host-show-mine = Yalnızca bu bilgisayarın kendi varlıklarını göster
-host-show-all = Tüm varlıkları göster
 host-new-entity = Ana bilgisayar varlığı { $number }
 host-failed = Bu bilgisayara eklenemedi: { $reason }
 host-needs-clock = Bu bilgisayarın kendi varlıkları PTP donanım saati olan kablolu bir arayüze ihtiyaç duyar

@@ -30,6 +30,11 @@ pub fn is_controller(adp: &Adpdu) -> bool {
         .contains(ControllerCapabilities::IMPLEMENTED)
 }
 
+/// A controller and nothing else: no talker, no listener.
+pub fn is_only_controller(adp: &Adpdu) -> bool {
+    is_controller(adp) && !is_talker(adp) && !is_listener(adp)
+}
+
 /// An icon for the entity's roles.
 pub fn glyph(adp: &Adpdu) -> Icon {
     match (is_talker(adp), is_listener(adp)) {

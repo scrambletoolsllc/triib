@@ -139,6 +139,14 @@ state-try-again = আবার চেষ্টা করুন
 
 entities-none-yet = এখনও কোনো entity নেই
 entities-none-yet-note = নেটওয়ার্কের প্রতিটি entity, তার ভূমিকা, SR classes ও clock সহ।
+entities-filter = Entity ফিল্টার করুন
+entities-hide-others = অন্য ডিভাইসের Entity লুকান
+entities-hide-controllers = controller লুকান
+entities-hide-other-domains = এই কম্পিউটারের clock domain-এর বাইরের Entity লুকান
+entities-hidden = { $count ->
+    [one] { $count }টি Entity লুকানো
+   *[other] { $count }টি Entity লুকানো
+}
 
 ## Inspector
 
@@ -782,8 +790,6 @@ common-decimal-separator = {"."}
 ## This computer's own entities
 
 host-add-entity = Entity যোগ করুন
-host-show-mine = শুধু এই কম্পিউটারের নিজস্ব Entity দেখান
-host-show-all = সব entity দেখান
 host-new-entity = হোস্ট Entity { $number }
 host-failed = এই কম্পিউটারে যোগ করা যায়নি: { $reason }
 host-needs-clock = এই কম্পিউটারের নিজস্ব Entity-এর জন্য PTP hardware clock-সহ তারযুক্ত interface দরকার

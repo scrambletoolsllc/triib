@@ -139,6 +139,11 @@ state-try-again = ลองอีกครั้ง
 
 entities-none-yet = ยังไม่มีเอนทิตี
 entities-none-yet-note = ทุกเอนทิตีบนเครือข่าย พร้อมบทบาท คลาส SR และคล็อก
+entities-filter = กรองเอนทิตี
+entities-hide-others = ซ่อนเอนทิตีของอุปกรณ์อื่น
+entities-hide-controllers = ซ่อนคอนโทรลเลอร์
+entities-hide-other-domains = ซ่อนเอนทิตีที่อยู่นอกโดเมนคล็อกของคอมพิวเตอร์เครื่องนี้
+entities-hidden = ซ่อนเอนทิตี { $count } รายการ
 
 ## Inspector
 
@@ -683,8 +688,6 @@ matrix-stream-format-state = { $format } { $state }
 ## This computer's own entities
 
 host-add-entity = เพิ่มเอนทิตี
-host-show-mine = แสดงเฉพาะเอนทิตีของคอมพิวเตอร์เครื่องนี้
-host-show-all = แสดงเอนทิตีทั้งหมด
 host-new-entity = เอนทิตีของโฮสต์ { $number }
 host-failed = ไม่สามารถเพิ่มลงในคอมพิวเตอร์เครื่องนี้: { $reason }
 host-needs-clock = เอนทิตีของคอมพิวเตอร์เครื่องนี้ต้องใช้อินเทอร์เฟซแบบมีสายที่มีคล็อกฮาร์ดแวร์ PTP

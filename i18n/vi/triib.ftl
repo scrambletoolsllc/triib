@@ -142,6 +142,11 @@ state-try-again = Thử lại
 
 entities-none-yet = Chưa có thực thể nào
 entities-none-yet-note = Mọi thực thể trên mạng, cùng vai trò, lớp SR và đồng hồ của chúng.
+entities-filter = Lọc thực thể
+entities-hide-others = Ẩn thực thể trên thiết bị khác
+entities-hide-controllers = Ẩn bộ điều khiển
+entities-hide-other-domains = Ẩn thực thể nằm ngoài miền đồng hồ của máy tính này
+entities-hidden = Đã ẩn { $count } thực thể
 
 ## Inspector
 
@@ -686,8 +691,6 @@ matrix-stream-format-state = { $format }. { $state }.
 ## This computer's own entities
 
 host-add-entity = Thêm thực thể
-host-show-mine = Chỉ hiện các thực thể của chính máy tính này
-host-show-all = Hiện mọi thực thể
 host-new-entity = Thực thể máy chủ { $number }
 host-failed = Không thể thêm vào máy tính này: { $reason }
 host-needs-clock = Các thực thể của chính máy tính này cần giao diện có dây với đồng hồ phần cứng PTP

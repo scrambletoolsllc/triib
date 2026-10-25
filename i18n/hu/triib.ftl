@@ -141,6 +141,14 @@ state-try-again = Újra
 
 entities-none-yet = Még nincsenek entitások
 entities-none-yet-note = A hálózat összes entitása a szerepköreivel, SR-osztályaival és órájával.
+entities-filter = Entitások szűrése
+entities-hide-others = Más eszközök entitásainak elrejtése
+entities-hide-controllers = Vezérlők elrejtése
+entities-hide-other-domains = A számítógép órajel-tartományán kívüli entitások elrejtése
+entities-hidden = { $count ->
+    [one] { $count } rejtett entitás
+   *[other] { $count } rejtett entitás
+}
 
 ## Inspector
 
@@ -784,8 +792,6 @@ common-decimal-separator = {","}
 ## This computer's own entities
 
 host-add-entity = Entitás hozzáadása
-host-show-mine = Csak a számítógép saját entitásainak megjelenítése
-host-show-all = Az összes entitás megjelenítése
 host-new-entity = Gazda entitás { $number }
 host-failed = Nem sikerült hozzáadni ehhez a számítógéphez: { $reason }
 host-needs-clock = A számítógép saját entitásainak PTP-hardverórával rendelkező vezetékes interfész kell

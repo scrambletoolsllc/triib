@@ -460,47 +460,82 @@ fn header<'a>(
 /// The entities the map shows: all but controllers, which take no part
 /// in the clock or the streams.
 fn mapped_entities(triib: &Triib) -> impl Iterator<Item = &DiscoveredEntity> {
-    triib.entities.values().filter(|entity| {
-        let adp = &entity.adp;
-        !crate::describe::is_controller(adp)
-            || crate::describe::is_talker(adp)
-            || crate::describe::is_listener(adp)
-    })
+    triib
+        .entities
+        .values()
+        .filter(|entity| !crate::describe::is_only_controller(&entity.adp))
 }
 
 /// The clock domains each entity on the map is in, by the node heading
 /// each: one with interfaces in several is in each, and one whose domain
-/// is not known in none.
-pub struct Domains(std::collections::HashMap<EntityId, Vec<NodeId>>);
+/// is not known in none; and those this computer keeps time in.
+pub struct Domains {
+    entities: std::collections::HashMap<EntityId, Vec<NodeId>>,
+    /// Where this computer, or one of its entities standing for it on the
+    /// map, is in sync.
+    host: Vec<NodeId>,
+}
 
 impl Domains {
     pub fn of(triib: &Triib) -> Self {
-        Self::in_topology(&topology_of(triib))
-    }
-
-    pub(crate) fn in_topology(topology: &Topology) -> Self {
-        let mut domains: std::collections::HashMap<EntityId, Vec<NodeId>> =
-            std::collections::HashMap::new();
+        let topology = topology_of(triib);
+        let mut domains = Self::in_topology(&topology);
         for (node, entry) in topology.nodes.iter().enumerate() {
             if let NodeKind::Entity { entity_id, .. } = entry.kind
                 && entry.apart.is_none()
+                && entry.link.synced
+                && triib.is_this_computers(entity_id)
             {
-                domains
-                    .entry(entity_id)
-                    .or_default()
-                    .push(topology.root_of(node));
+                domains.host.push(topology.root_of(node));
             }
         }
-        Self(domains)
+        domains
+    }
+
+    pub(crate) fn in_topology(topology: &Topology) -> Self {
+        let mut entities: std::collections::HashMap<EntityId, Vec<NodeId>> =
+            std::collections::HashMap::new();
+        let mut host = Vec::new();
+        for (node, entry) in topology.nodes.iter().enumerate() {
+            if entry.apart.is_some() {
+                continue;
+            }
+            match entry.kind {
+                NodeKind::Entity { entity_id, .. } => {
+                    entities
+                        .entry(entity_id)
+                        .or_default()
+                        .push(topology.root_of(node));
+                }
+                NodeKind::Host if entry.link.synced => host.push(topology.root_of(node)),
+                _ => {}
+            }
+        }
+        Self { entities, host }
     }
 
     /// Whether the two keep time in different domains, so no stream can
     /// pass between them, as far as their domains are known.
     pub fn apart(&self, one: EntityId, other: EntityId) -> bool {
-        match (self.0.get(&one), self.0.get(&other)) {
+        match (self.entities.get(&one), self.entities.get(&other)) {
             (Some(one), Some(other)) => !one.iter().any(|domain| other.contains(domain)),
             _ => false,
         }
+    }
+
+    /// Whether this computer keeps time in sync in a domain.
+    pub fn host_synced(&self) -> bool {
+        !self.host.is_empty()
+    }
+
+    /// Whether `entity_id` keeps time in none of the domains this computer
+    /// is in sync in, as far as its domain is known.
+    pub fn outside_host(&self, entity_id: EntityId) -> bool {
+        self.host_synced()
+            && self
+                .entities
+                .get(&entity_id)
+                .is_some_and(|domains| !domains.iter().any(|domain| self.host.contains(domain)))
     }
 }
 

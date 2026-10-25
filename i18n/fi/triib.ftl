@@ -141,6 +141,14 @@ state-try-again = Yritä uudelleen
 
 entities-none-yet = Ei vielä entiteettejä
 entities-none-yet-note = Kaikki verkon entiteetit rooleineen, SR-luokkineen ja kelloineen.
+entities-filter = Suodata entiteetit
+entities-hide-others = Piilota muiden laitteiden entiteetit
+entities-hide-controllers = Piilota ohjaimet
+entities-hide-other-domains = Piilota tämän tietokoneen kellotoimialueen ulkopuoliset entiteetit
+entities-hidden = { $count ->
+    [one] { $count } entiteetti piilotettu
+   *[other] { $count } entiteettiä piilotettu
+}
 
 ## Inspector
 
@@ -811,8 +819,6 @@ common-decimal-separator = {","}
 ## This computer's own entities
 
 host-add-entity = Lisää entiteetti
-host-show-mine = Näytä vain tämän tietokoneen omat entiteetit
-host-show-all = Näytä kaikki entiteetit
 host-new-entity = Isännän entiteetti { $number }
 host-failed = Lisääminen tähän tietokoneeseen ei onnistunut: { $reason }
 host-needs-clock = Tämän tietokoneen omat entiteetit tarvitsevat langallisen liitännän, jossa on PTP-laitteistokello

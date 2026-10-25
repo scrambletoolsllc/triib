@@ -142,6 +142,15 @@ state-try-again = Tentar novamente
 
 entities-none-yet = Ainda sem entidades
 entities-none-yet-note = Todas as entidades da rede, com as suas funções, classes SR e relógio.
+entities-filter = Filtrar entidades
+entities-hide-others = Ocultar entidades de outros dispositivos
+entities-hide-controllers = Ocultar controladores
+entities-hide-other-domains = Ocultar entidades fora do domínio de relógio deste computador
+entities-hidden = { $count ->
+    [one] { $count } entidade oculta
+    [many] { $count } entidades ocultas
+   *[other] { $count } entidades ocultas
+}
 
 ## Inspector
 
@@ -834,8 +843,6 @@ matrix-stream-format-state = { $format }. { $state }.
 ## This computer's own entities
 
 host-add-entity = Adicionar entidade
-host-show-mine = Mostrar apenas as entidades deste computador
-host-show-all = Mostrar todas as entidades
 host-new-entity = Entidade do anfitrião { $number }
 host-failed = Não foi possível adicionar a este computador: { $reason }
 host-needs-clock = As entidades deste computador precisam de uma interface com fios com relógio de hardware PTP

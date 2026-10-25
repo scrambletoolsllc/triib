@@ -20,6 +20,7 @@ use crate::describe;
 use crate::fl;
 use crate::header_band::header_band;
 use crate::logos::Logo;
+use crate::netmap::Domains;
 use crate::settings::EntityField;
 use crate::text::{fit, measure};
 use crate::view::{Rate, VIEW_MARGIN};
@@ -60,10 +61,119 @@ const MEDIUM: iced::Font = iced::Font {
     ..TEXT
 };
 
-/// The table, with no margin above it `under_bar`, as the bar over it has
-/// its own.
-pub fn view(triib: &Triib, under_bar: bool) -> Element<'_, Message> {
-    iced::widget::responsive(move |size| view_at(triib, size.width, under_bar)).into()
+/// The table, with no margin above it, as the bar over it has its own.
+pub fn view(triib: &Triib) -> Element<'_, Message> {
+    iced::widget::responsive(move |size| view_at(triib, size.width)).into()
+}
+
+/// The list's filters: all but this computer's own entities, where it can
+/// have any; controllers; and entities outside this computer's clock
+/// domain, while it keeps time in one. How many they hide follows, as the
+/// matrix's filters say, while they hide any.
+pub fn filters(triib: &Triib) -> Element<'_, Message> {
+    use crate::settings::EntityFilter;
+    use crate::view::Filter;
+    let settings = &triib.settings;
+    let open = triib.entity_filters_open;
+    let hidden = Hidden::of(triib);
+    // Whether this computer is in sync, asked only while the menu shows.
+    let synced = hidden.domains.is_some() || (open && Domains::of(triib).host_synced());
+    let filter = |filter: EntityFilter, label: String, can: bool| {
+        let on = settings.hides_entities(filter);
+        Filter {
+            label,
+            on,
+            // One on can always be turned off.
+            toggle: (can || on).then_some(Message::EntityFilterToggled(filter)),
+        }
+    };
+    let mut filters = Vec::new();
+    if triib.hosts_entities() {
+        filters.push(filter(
+            EntityFilter::Others,
+            fl!("entities-hide-others"),
+            true,
+        ));
+    }
+    filters.push(filter(
+        EntityFilter::Controllers,
+        fl!("entities-hide-controllers"),
+        true,
+    ));
+    filters.push(filter(
+        EntityFilter::OtherDomains,
+        fl!("entities-hide-other-domains"),
+        synced,
+    ));
+    let tool = crate::view::filter_tool(
+        filters,
+        hidden.any(),
+        open,
+        fl!("entities-filter"),
+        Message::EntityFiltersMenu,
+    );
+    // Of those the search finds.
+    let count = if hidden.any() {
+        triib
+            .listed_entities()
+            .into_iter()
+            .filter(|entity| hidden.hides(triib, entity))
+            .count()
+    } else {
+        0
+    };
+    if count == 0 {
+        return tool;
+    }
+    scramble_ui::line![
+        tool,
+        styled(fl!("entities-hidden", count = count), Type::BodyMedium)
+            .style(style::on_surface_variant)
+    ]
+    .spacing(12)
+    .align_y(Center)
+    .into()
+}
+
+/// What the list's filters leave out, worked out once for the list.
+struct Hidden {
+    others: bool,
+    controllers: bool,
+    /// The clock domains, where entities outside this computer's are left
+    /// out and it keeps time in one.
+    domains: Option<Domains>,
+}
+
+impl Hidden {
+    fn of(triib: &Triib) -> Self {
+        let settings = &triib.settings;
+        Self {
+            others: settings.host_entities_only && triib.hosts_entities(),
+            controllers: settings.hide_controllers,
+            domains: settings
+                .hide_other_domains
+                .then(|| Domains::of(triib))
+                .filter(Domains::host_synced),
+        }
+    }
+
+    fn any(&self) -> bool {
+        self.others || self.controllers || self.domains.is_some()
+    }
+
+    /// Whether the list leaves `entity` out. This computer's own entities
+    /// keep time where it does.
+    fn hides(&self, triib: &Triib, entity: &DiscoveredEntity) -> bool {
+        let entity_id = entity.entity_id();
+        let ours = triib.is_this_computers(entity_id);
+        (self.others && !ours)
+            || (self.controllers && describe::is_only_controller(&entity.adp))
+            || (!ours
+                && self
+                    .domains
+                    .as_ref()
+                    .is_some_and(|domains| domains.outside_host(entity_id)))
+    }
 }
 
 /// What a column's value is for an entity.
@@ -238,13 +348,13 @@ struct Row<'a> {
 /// The table for `width` pixels: across the whole width when its columns
 /// fit, each widened in proportion to its text, else at their own widths,
 /// scrolling sideways.
-fn view_at(triib: &Triib, width: f32, under_bar: bool) -> Element<'_, Message> {
+fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
     let columns: &[EntityField] = &triib.settings.entity_columns;
-    let only_host = triib.settings.host_entities_only && triib.hosts_endpoints();
+    let hidden = Hidden::of(triib);
     let mut rows: Vec<Row<'_>> = triib
         .listed_entities()
         .into_iter()
-        .filter(|entity| !only_host || triib.is_host(entity.entity_id()))
+        .filter(|entity| !hidden.hides(triib, entity))
         .map(|entity| {
             let model = triib.models.get(&entity.entity_id());
             Row {
@@ -554,7 +664,7 @@ fn view_at(triib: &Triib, width: f32, under_bar: bool) -> Element<'_, Message> {
     let rows_line = container(line(Length::Fixed(rows_height))).height(Fill);
     let bottom = scramble_ui::row![name_body, rows_line, rest_body];
     let margin = iced::Padding {
-        top: if under_bar { 0.0 } else { VIEW_MARGIN },
+        top: 0.0,
         ..iced::Padding::new(VIEW_MARGIN)
     };
     let view = container(scramble_ui::column![top, bottom].height(Fill)).padding(margin);
@@ -750,6 +860,55 @@ mod tests {
             crate::describe::glyph(&triib.entities[&alone].adp),
             Icon::Traffic
         );
+    }
+
+    /// The list can leave out controllers, as one heard in its commands,
+    /// but not entities that are controllers as well as talkers or
+    /// listeners.
+    #[test]
+    fn controllers_can_be_hidden() {
+        use atdecc::adp::{Adpdu, ControllerCapabilities};
+        use atdecc::{DiscoveredEntity, EntityId, Instant};
+
+        let mut triib = sample();
+        let mac_mini = *triib
+            .entities
+            .values()
+            .find(|entity| triib.entity_name(entity) == "Mac mini")
+            .expect("the bench's Mac mini");
+        let apple = EntityId(0xd111_e597_f544_0000);
+        triib.heard.insert(
+            apple,
+            crate::heard::Heard {
+                entity: DiscoveredEntity {
+                    adp: Adpdu {
+                        entity_id: apple,
+                        controller_capabilities: ControllerCapabilities::IMPLEMENTED,
+                        ..Adpdu::default()
+                    },
+                    mac: mac_mini.mac,
+                    first_seen: Instant::ZERO,
+                    last_seen: Instant::ZERO,
+                    expires: Instant::ZERO,
+                },
+                at: std::time::SystemTime::now(),
+            },
+        );
+        let size = iced::Size::new(1280.0, 800.0);
+        {
+            let mut simulator = crate::view::tests::simulate(&triib, size);
+            assert!(simulator.find("Controller on Mac mini").is_ok());
+            assert!(simulator.find("Mac mini").is_ok());
+        }
+        let _ = triib.update(Message::EntityFilterToggled(
+            crate::settings::EntityFilter::Controllers,
+        ));
+        assert!(triib.settings.hide_controllers);
+        let mut simulator = crate::view::tests::simulate(&triib, size);
+        assert!(simulator.find("Controller on Mac mini").is_err());
+        assert!(simulator.find("Mac mini").is_ok());
+        // Beside the filters, how many they hide.
+        assert!(simulator.find("1 entity hidden").is_ok());
     }
 
     /// A controller that does not advertise is listed once its command is

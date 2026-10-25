@@ -142,6 +142,11 @@ state-try-again = 다시 시도
 
 entities-none-yet = 아직 엔티티 없음
 entities-none-yet-note = 네트워크의 모든 엔티티를 역할, SR 클래스, 클럭과 함께 표시합니다.
+entities-filter = 엔티티 필터
+entities-hide-others = 다른 장치의 엔티티 숨기기
+entities-hide-controllers = 컨트롤러 숨기기
+entities-hide-other-domains = 이 컴퓨터의 클럭 도메인 밖의 엔티티 숨기기
+entities-hidden = 엔티티 { $count }개 숨김
 
 ## Inspector
 
@@ -686,8 +691,6 @@ matrix-stream-format-state = { $format }. { $state }.
 ## This computer's own entities
 
 host-add-entity = 엔티티 추가
-host-show-mine = 이 컴퓨터 자체의 엔티티만 표시
-host-show-all = 모든 엔티티 표시
 host-new-entity = 호스트 엔티티 { $number }
 host-failed = 이 컴퓨터에 추가할 수 없음: { $reason }
 host-needs-clock = 이 컴퓨터 자체의 엔티티에는 PTP 하드웨어 클럭이 있는 유선 인터페이스가 필요함
