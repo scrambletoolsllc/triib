@@ -17,8 +17,13 @@ cp -r "$root"/site/. "$out/"
 # The translations go into the pages rather than beside them.
 rm -rf "$out/i18n"
 python3 "$root/scripts/site-i18n.py" build "$out"
-# The icon as drawn, sharp at whatever size and pixel density it shows.
+# The icon as drawn, for the front page's large one, and the header's
+# small one rendered at each pixel density it shows at, as browsers
+# draw a vector or shrink a large image that small with jagged edges.
 cp "$root/data/icons/hicolor/scalable/apps/run.triib.svg" "$out/icon.svg"
+for size in 32 48 64 96 128; do
+  cp "$root/data/icons/hicolor/${size}x$size/apps/run.triib.png" "$out/icon-$size.png"
+done
 cp "$root/data/icons/hicolor/32x32/apps/run.triib.png" "$out/favicon.png"
 cp -r "$root/docs/screenshots/." "$out/screenshots/"
 echo "Built the site in $out"

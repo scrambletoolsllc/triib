@@ -408,6 +408,17 @@ def build_page(page, language, names, source_texts):
             lambda m: f'{m.group(1)}../{m.group(2)}"' if asset(m.group(2)) else m.group(0),
             out,
         )
+        # Each of a srcset's images, before its density.
+        out = re.sub(
+            r'(\ssrcset=")([^"]+)"',
+            lambda m: m.group(1)
+            + ", ".join(
+                f"../{item}" if asset(item.split()[0]) else item
+                for item in map(str.strip, m.group(2).split(","))
+            )
+            + '"',
+            out,
+        )
     alternates = "".join(
         f'<link rel="alternate" hreflang="{code}" href="{page_url(code, page)}">\n'
         for code in names
