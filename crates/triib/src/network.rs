@@ -298,6 +298,8 @@ enum Command {
     Discover,
     Act(Action),
     Watch(Watch),
+    /// Ask an entity again how one of its streams stands.
+    RefreshStream(EntityId, DescriptorType, u16),
 }
 
 /// What the window shows that entities can change unannounced: some, as
@@ -427,6 +429,14 @@ impl Network {
     pub fn watch(&self, watch: Watch) {
         let _ = self.commands.send(Command::Watch(watch));
     }
+
+    /// Asks an entity again how one of its streams stands: its stream info
+    /// and its counters, which reach the model as it answers.
+    pub fn refresh_stream(&self, entity: EntityId, descriptor_type: DescriptorType, index: u16) {
+        let _ = self
+            .commands
+            .send(Command::RefreshStream(entity, descriptor_type, index));
+    }
 }
 
 impl Drop for Network {
@@ -504,6 +514,12 @@ fn run(
             match command {
                 Command::Discover => driver.controller_mut().discover(None),
                 Command::Watch(watched) => watch = watched,
+                Command::RefreshStream(entity, descriptor_type, index) => {
+                    let now = driver.now();
+                    driver
+                        .controller_mut()
+                        .refresh_stream(now, entity, descriptor_type, index);
+                }
                 Command::Act(action) => {
                     let now = driver.now();
                     let controller = driver.controller_mut();

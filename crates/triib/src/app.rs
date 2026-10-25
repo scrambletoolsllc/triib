@@ -353,6 +353,9 @@ pub enum Message {
     AgentAnswered(bool),
     /// The agent's prompt takes answers now.
     AgentPromptReady,
+    /// The next step of an agent's look at how a stream fares, once the
+    /// entity has had time to answer.
+    StreamSampled(crate::tools::Sampling),
     OutsideControlToggled(bool),
     ForgetAgents,
     /// A storage place, as typed in Settings.
@@ -667,6 +670,14 @@ impl Triib {
         }
         #[cfg(not(target_os = "macos"))]
         let _ = entity_id;
+    }
+
+    /// Asks an entity again how one of its streams stands, while the
+    /// network runs.
+    pub fn refresh_stream(&self, entity: EntityId, descriptor_type: DescriptorType, index: u16) {
+        if let Some(network) = &self.network {
+            network.refresh_stream(entity, descriptor_type, index);
+        }
     }
 
     /// Whether `entity_id` is one of this computer's entities.
@@ -1361,6 +1372,7 @@ impl Triib {
             Message::External(External::Menu(item)) => return self.menu_item(item),
             Message::AgentAnswered(allow) => return self.agent_answered(allow),
             Message::AgentPromptReady => {}
+            Message::StreamSampled(sampling) => return crate::tools::sampled(self, sampling),
             Message::OutsideControlToggled(on) => {
                 self.settings.outside_control = on;
                 self.save_settings();

@@ -477,6 +477,149 @@ fn summary(topology: &Topology) -> String {
     ])
 }
 
+/// A bound stream input as the map traces it, for agents.
+pub struct Traced {
+    pub listener: (EntityId, u16),
+    pub talker: (EntityId, u16),
+    pub status: Status,
+    /// How it is going, as the map's details say it.
+    pub reason: String,
+    /// The bridges it crosses from the talker, as far as it gets.
+    pub via: Vec<String>,
+    /// Where it stops short of the listener, when it does.
+    pub stops_at: Option<String>,
+}
+
+/// Every bound stream input on the network, whatever the search, as the
+/// map traces it.
+pub fn traced(triib: &Triib) -> Vec<Traced> {
+    let topology = topology_of(triib);
+    let listeners: Vec<&DiscoveredEntity> = triib.entities.values().collect();
+    bound_streams(triib, &topology, &listeners)
+        .into_iter()
+        .filter_map(|stream| {
+            Some(Traced {
+                listener: stream.input?,
+                talker: (stream.talker, stream.output),
+                status: stream.status,
+                via: via(&topology, &stream.route)
+                    .into_iter()
+                    .map(|node| node_name(&topology, node))
+                    .collect(),
+                stops_at: stream.route.stops.map(|node| node_name(&topology, node)),
+                reason: stream.reason,
+            })
+        })
+        .collect()
+}
+
+/// A node of the clock tree as agents read it.
+pub struct ClockNode {
+    pub name: String,
+    pub entity_id: Option<EntityId>,
+    /// Where it hangs in the tree is known.
+    pub placed: bool,
+    pub synced: bool,
+    /// How it keeps time, or why it does not, as the map's details say it.
+    pub state: String,
+}
+
+/// The clock tree as agents read it: each domain's grandmaster, and every
+/// node with where it hangs, how its link up runs, and whether and how it
+/// keeps time; and this computer's ptp4l, where it runs one.
+pub fn clock_tree(triib: &Triib) -> (Vec<ClockNode>, serde_json::Value) {
+    use serde_json::json;
+
+    let topology = topology_of(triib);
+    let mut nodes = Vec::new();
+    let mut listed = Vec::new();
+    for (node, entry) in topology.nodes.iter().enumerate() {
+        let state = clock_details(triib, &topology, node).state;
+        let ok = synced(&topology, node);
+        let (kind, entity_id, interface) = match entry.kind {
+            NodeKind::Bridge => ("bridge", None, None),
+            NodeKind::Switch { .. } => ("switch taking no part in AVB", None, None),
+            NodeKind::Entity {
+                entity_id,
+                interface,
+            } => ("entity", Some(entity_id), Some(interface)),
+            NodeKind::Host => ("this computer", None, None),
+            NodeKind::Clock => ("PTP grandmaster", None, None),
+        };
+        let counters = entity_id.zip(interface).and_then(|(entity_id, interface)| {
+            triib
+                .models
+                .get(&entity_id)?
+                .counters(DescriptorType::AVB_INTERFACE, interface)?
+                .avb_interface()
+        });
+        let link = &entry.link;
+        listed.push(json!({
+            "id": node,
+            "name": node_name(&topology, node),
+            "kind": kind,
+            "entity_id": entity_id.map(|entity_id| entity_id.to_string()),
+            "interface": interface,
+            "clock_identity": entry.clock.map(|clock| clock.to_string()),
+            "parent": entry.parent,
+            "domain": entry.domain,
+            "synced": ok,
+            "state": state,
+            "avb_lite": entry.lite.map(|lite| match lite {
+                crate::topology::Lite::FellBack => "fell back, finding no AVB bridge",
+                crate::topology::Lite::Only => "runs only AVB Lite",
+                crate::topology::Lite::Set => "set to AVB Lite",
+            }),
+            "link_up": (entry.parent.is_some() || link != &Default::default()).then(|| json!({
+                "gptp": link.synced,
+                "peer_delay_ns": link.delay,
+                "bridge_port": link.port,
+                "offset_from_grandmaster_ns": link.offset,
+                "wifi": link.wireless.map(|hop| json!({
+                    "time_locked": hop.locked,
+                    "holdover": hop.holdover,
+                    "signal_dbm": hop.signal,
+                })),
+            })),
+            "link_drops": counters.and_then(|counters| counters.link_down),
+            "grandmaster_changes": counters.and_then(|counters| counters.gptp_gm_changed),
+        }));
+        nodes.push(ClockNode {
+            name: node_name(&topology, node),
+            entity_id,
+            placed: entry.apart.is_none(),
+            synced: ok,
+            state,
+        });
+    }
+    let grandmasters: Vec<String> = topology
+        .roots
+        .iter()
+        .map(|&root| match topology.nodes[root].kind {
+            NodeKind::Switch { grandmaster, .. } => clock_name(&topology, grandmaster),
+            _ => node_name(&topology, root),
+        })
+        .collect();
+    let ptp4l = triib
+        .endpoints
+        .as_ref()
+        .filter(|status| Some(status.interface.as_str()) == triib.settings.interface.as_deref())
+        .and_then(|status| status.clock.as_ref())
+        .map(|clock| {
+            json!({
+                "grandmaster": clock.grandmaster().map(|clock| clock.to_string()),
+                "offset_ns": clock.offset,
+                "end_to_end": clock.end_to_end,
+            })
+        });
+    let tree = json!({
+        "grandmasters": grandmasters,
+        "nodes": listed,
+        "this_computer_ptp4l": ptp4l,
+    });
+    (nodes, tree)
+}
+
 /// The entities the map shows: all but controllers, which take no part
 /// in the clock or the streams.
 fn mapped_entities(triib: &Triib) -> impl Iterator<Item = &DiscoveredEntity> {
@@ -788,7 +931,7 @@ fn multicast(info: Option<&StreamInfo>) -> Option<bool> {
 /// Every bound stream input, by listener, with how far its stream gets;
 /// then each stream output its talker sends that flows to none of them.
 fn streams(triib: &Triib, topology: &Topology) -> Vec<Stream> {
-    let mut streams = bound_streams(triib, topology);
+    let mut streams = bound_streams(triib, topology, &triib.shown_entities());
     for talker in triib.shown_entities() {
         let talker_id = talker.entity_id();
         let Some(model) = triib.models.get(&talker_id) else {
@@ -836,10 +979,15 @@ fn talker_leg(topology: &Topology, talker: EntityId) -> Route {
     }
 }
 
-/// Every bound stream input, by listener, with how far its stream gets.
-fn bound_streams(triib: &Triib, topology: &Topology) -> Vec<Stream> {
+/// Every bound stream input of `listeners`, by listener, with how far its
+/// stream gets.
+fn bound_streams(
+    triib: &Triib,
+    topology: &Topology,
+    listeners: &[&DiscoveredEntity],
+) -> Vec<Stream> {
     let mut streams = Vec::new();
-    for listener in triib.shown_entities() {
+    for &listener in listeners {
         let listener_id = listener.entity_id();
         let Some(model) = triib.models.get(&listener_id) else {
             continue;

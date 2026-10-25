@@ -239,7 +239,12 @@ would: connecting and disconnecting streams, setting a stream's format, a
 sampling rate or a clock source, renaming and identifying, and routing an
 audio input on this computer to an output with the audio monitor, as the
 Mac's own AVB entity's Listen controls do. A change
-answers once the device has, with what it said. The first time an agent
+answers once the device has, with what it said. For streams that do not
+play, `list_problems` gives what triib finds wrong across the network,
+`stream_diagnostics` asks a device afresh how one stream stands, its
+reservation and counters, sampling them over a few seconds to tell a
+problem now from an old one, and `clock_tree` gives the gPTP tree as the
+network view shows it. The first time an agent
 connects, triib asks whether to let it in; Settings lists the agents
 allowed and has a switch to turn outside control off.
 

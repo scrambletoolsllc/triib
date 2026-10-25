@@ -62,10 +62,60 @@ macro_rules! counted {
     }};
 }
 
+/// What the diagnostics say of one of an entity's clock domains or
+/// streams: what went fine, and what went wrong.
+pub struct Finding {
+    pub descriptor_type: DescriptorType,
+    pub index: u16,
+    pub name: String,
+    pub fine: Vec<String>,
+    pub wrong: Vec<String>,
+}
+
 /// The diagnostics section, or nothing when the entity reports no
 /// counters and no reservations.
 pub fn diagnostics<'a>(model: &EntityModel) -> Vec<Element<'a, Message>> {
+    let items: Vec<Element<'a, Message>> = findings(model)
+        .into_iter()
+        .filter_map(|finding| {
+            item(
+                &finding.name,
+                Facts {
+                    fine: finding.fine,
+                    wrong: finding.wrong,
+                },
+            )
+        })
+        .collect();
+    if items.is_empty() {
+        return items;
+    }
+    let mut section = vec![
+        component::section(fl!("inspector-diagnostics")),
+        styled(fl!("diag-since-start"), Type::BodySmall)
+            .style(style::on_surface_variant)
+            .into(),
+    ];
+    section.extend(items);
+    section
+}
+
+/// What the entity's counters and reservations say of each of its clock
+/// domains and streams, since it started, leaving out those it says
+/// nothing of.
+pub fn findings(model: &EntityModel) -> Vec<Finding> {
     let mut items = Vec::new();
+    let mut found = |descriptor_type, index, name: String, facts: Facts| {
+        if !facts.is_empty() {
+            items.push(Finding {
+                descriptor_type,
+                index,
+                name,
+                fine: facts.fine,
+                wrong: facts.wrong,
+            });
+        }
+    };
     for domain in model.clock_domains() {
         let Some(counters) = model.clock_domain_counters(domain.index) else {
             continue;
@@ -78,7 +128,7 @@ pub fn diagnostics<'a>(model: &EntityModel) -> Vec<Element<'a, Message>> {
         let name = model
             .name_of(DescriptorType::CLOCK_DOMAIN, domain.index)
             .map_or_else(|| fl!("entity-clock-domain"), str::to_owned);
-        items.extend(item(&name, facts));
+        found(DescriptorType::CLOCK_DOMAIN, domain.index, name, facts);
     }
     for stream in model.streams(true) {
         let mut facts = Facts::default();
@@ -135,7 +185,7 @@ pub fn diagnostics<'a>(model: &EntityModel) -> Vec<Element<'a, Message>> {
         let name = model
             .name_of(DescriptorType::STREAM_INPUT, stream.index)
             .map_or_else(|| fl!("diag-stream-input"), str::to_owned);
-        items.extend(item(&name, facts));
+        found(DescriptorType::STREAM_INPUT, stream.index, name, facts);
     }
     for stream in model.streams(false) {
         let Some(counters) = model.stream_output_counters(stream.index) else {
@@ -166,19 +216,9 @@ pub fn diagnostics<'a>(model: &EntityModel) -> Vec<Element<'a, Message>> {
         let name = model
             .name_of(DescriptorType::STREAM_OUTPUT, stream.index)
             .map_or_else(|| fl!("diag-stream-output"), str::to_owned);
-        items.extend(item(&name, facts));
+        found(DescriptorType::STREAM_OUTPUT, stream.index, name, facts);
     }
-    if items.is_empty() {
-        return items;
-    }
-    let mut section = vec![
-        component::section(fl!("inspector-diagnostics")),
-        styled(fl!("diag-since-start"), Type::BodySmall)
-            .style(style::on_surface_variant)
-            .into(),
-    ];
-    section.extend(items);
-    section
+    items
 }
 
 /// A name with what went fine under it, then what went wrong, marked.

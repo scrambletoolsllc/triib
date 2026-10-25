@@ -28,6 +28,12 @@ All notable changes to triib. Versions follow
   menu, as the entity list's, which also hides entities running AVB
   Lite, not those only able to, and wireless entities, with all their
   streams. How many streams the filters hide shows while they hide any.
+- Agents can diagnose streams that do not play: `list_problems` lists
+  what triib finds wrong, errors first, from failed reservations and
+  formats that differ to devices out of sync and counters gone wrong;
+  `stream_diagnostics` asks a device afresh how one stream stands, and
+  with `sample_seconds` what its counters did over that time; and
+  `clock_tree` gives the gPTP tree as the network view shows it.
 - Entity and vendor images in the entity list and the inspector are
   smooth: each is shrunk once to the pixels it shows at, averaging what
   each covers, rather than sampled jagged as it is drawn.
