@@ -17,7 +17,8 @@ cp -r "$root"/site/. "$out/"
 # The translations go into the pages rather than beside them.
 rm -rf "$out/i18n"
 python3 "$root/scripts/site-i18n.py" build "$out"
-cp "$root/data/icons/hicolor/256x256/apps/run.triib.png" "$out/icon.png"
+# The icon as drawn, sharp at whatever size and pixel density it shows.
+cp "$root/data/icons/hicolor/scalable/apps/run.triib.svg" "$out/icon.svg"
 cp "$root/data/icons/hicolor/32x32/apps/run.triib.png" "$out/favicon.png"
 cp -r "$root/docs/screenshots/." "$out/screenshots/"
 echo "Built the site in $out"
