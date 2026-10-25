@@ -483,8 +483,10 @@ matrix-nothing-shown-note = Daha fazla akış görmek için aramayı veya filtre
 matrix-empty = Bağlanacak akış yok
 matrix-empty-note = Talker ve listener akışları, bu akışlara sahip varlıklar okunduğunda burada buluşur.
 matrix-all-streams = Tüm akışlar
-matrix-connectable-only = Bağlanamayanları gizle
-matrix-none-hidden = Gösterilen her akış bağlanabilir
+matrix-filter = Akışları filtrele
+matrix-hide-unconnectable = Bağlanamayan akışları gizle
+matrix-hide-lite = AVB Lite çalıştıran varlıkları gizle
+matrix-hide-wireless = Kablosuz varlıkları gizle
 matrix-hidden = { $count ->
     [one] { $count } akış gizli
    *[other] { $count } akış gizli

@@ -499,8 +499,10 @@ matrix-nothing-shown-note = Zmień wyszukiwanie lub filtry, aby zobaczyć więce
 matrix-empty = Brak strumieni do połączenia
 matrix-empty-note = Strumienie talkerów i listenerów spotkają się tutaj, gdy encje, które je mają, zostaną odczytane.
 matrix-all-streams = Wszystkie strumienie
-matrix-connectable-only = Ukryj to, czego nie można połączyć
-matrix-none-hidden = Każdy pokazany strumień można połączyć
+matrix-filter = Filtruj strumienie
+matrix-hide-unconnectable = Ukryj strumienie, których nie można połączyć
+matrix-hide-lite = Ukryj encje działające w AVB Lite
+matrix-hide-wireless = Ukryj encje bezprzewodowe
 matrix-hidden = { $count ->
     [one] { $count } strumień ukryty
     [few] { $count } strumienie ukryte

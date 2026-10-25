@@ -24,7 +24,7 @@ use crate::app::{self, Message, Triib};
 use crate::fl;
 use crate::netmap::Domains;
 use crate::network::Action;
-use crate::settings::Streams;
+use crate::settings::{MatrixFilter, Streams};
 use crate::view::{TITLED, VIEW_MARGIN};
 
 const STATUS_HEIGHT: f32 = 48.0;
@@ -244,17 +244,37 @@ fn view_at(triib: &Triib, size: iced::Size) -> Element<'_, Message> {
             .map(|group| group.streams.len())
             .sum::<usize>()
     };
-    // How many streams leaving out what cannot connect hides, when it is on.
-    let hidden = triib.settings.matrix_connectable_only.then(|| {
+    // How many streams the filters hide, while any is on: entities running
+    // AVB Lite or on Wi-Fi with all their streams, then the streams nothing
+    // left can connect to.
+    let settings = &triib.settings;
+    let filtering = [
+        MatrixFilter::Unconnectable,
+        MatrixFilter::Lite,
+        MatrixFilter::Wireless,
+    ]
+    .into_iter()
+    .any(|filter| settings.hides_streams(filter));
+    let hidden = filtering.then(|| {
         let before = count(&talkers) + count(&listeners);
-        let domains = crate::netmap::Domains::of(triib);
-        connectable_only(&domains, &mut talkers, &mut listeners);
+        let left_out = |group: &Group<'_>| {
+            triib.models.get(&group.entity_id).is_some_and(|model| {
+                (settings.matrix_hide_lite && crate::lite_view::runs_lite(model))
+                    || (settings.matrix_hide_wireless && crate::wireless_view::on_wifi(model))
+            })
+        };
+        talkers.retain(|group| !left_out(group));
+        listeners.retain(|group| !left_out(group));
+        if settings.matrix_connectable_only {
+            let domains = crate::netmap::Domains::of(triib);
+            connectable_only(&domains, &mut talkers, &mut listeners);
+        }
         before - count(&talkers) - count(&listeners)
     });
     let body: Element<'_, Message> = if talkers.is_empty() || listeners.is_empty() {
         let filtered = !triib.search.trim().is_empty()
             || triib.settings.matrix_streams != Streams::All
-            || triib.settings.matrix_connectable_only;
+            || filtering;
         if filtered {
             component::empty_state(
                 Icon::FilterAlt,
@@ -286,9 +306,14 @@ fn view_at(triib: &Triib, size: iced::Size) -> Element<'_, Message> {
         .spacing(12)
         .into()
     };
+    // The chips a view's margin from the toolbar and 16 from the grid, as
+    // the other views' are, in a row the filter tool makes 8 taller.
     let view = column![filters(triib, hidden, size.width), body]
-        .spacing(16)
-        .padding(VIEW_MARGIN)
+        .spacing(12)
+        .padding(iced::Padding {
+            top: VIEW_MARGIN - 4.0,
+            ..iced::Padding::new(VIEW_MARGIN)
+        })
         .width(Fill);
     if cramped {
         component::scroll(view).height(Fill).into()
@@ -297,15 +322,15 @@ fn view_at(triib: &Triib, size: iced::Size) -> Element<'_, Message> {
     }
 }
 
-/// The view's title, the streams shown, and whether only connectable ones
-/// are, with how many that hides, in a view `width` pixels wide. Where the
-/// row has no room
-/// for the option's label or the count, the option shows its icon alone
-/// and its tooltip says them, so the row stays one line and the grid where
-/// it is.
+/// The view's title, the streams shown, and the filters, with how many
+/// streams they hide while they hide any, in a view `width` pixels wide:
+/// where the row has no room for the count, the filters' tooltip says it,
+/// so the row stays one line.
 fn filters(triib: &Triib, hidden: Option<usize>, width: f32) -> Element<'_, Message> {
+    use crate::view::Filter;
     let room = width - 2.0 * VIEW_MARGIN;
-    let streams = triib.settings.matrix_streams;
+    let settings = &triib.settings;
+    let streams = settings.matrix_streams;
     let choice = |label: String, value: Streams| {
         button::button(Kind::Filled, label)
             .size(Size::ExtraSmall)
@@ -338,43 +363,38 @@ fn filters(triib: &Triib, hidden: Option<usize>, width: f32) -> Element<'_, Mess
         choice(audio, Streams::Audio),
         choice(clock, Streams::Clock),
     ]));
-    let label = fl!("matrix-connectable-only");
-    let count = hidden.map(|hidden| match hidden {
-        0 => fl!("matrix-none-hidden"),
-        hidden => fl!("matrix-hidden", count = hidden),
-    });
-    // The option's label with its padding, icon and gap, and the count
-    // after it.
-    let labelled = font::measure(&label, Type::LabelLarge) + 2.0 * 12.0 + 20.0 + 8.0;
-    let counted = count
-        .as_ref()
-        .map_or(0.0, |count| 12.0 + font::measure(count, Type::BodyMedium));
-    used += 12.0;
-    let whole = (used + labelled + counted).ceil() <= room;
-    let count_shown = whole || (used + Size::ExtraSmall.height() + counted).ceil() <= room;
-    // A secondary option, so a quiet tonal fill when on rather than the
-    // stream choices' strong one.
-    let option = if whole {
-        button::with_icon(Kind::Filled, Icon::FilterAlt, label.clone())
-    } else {
-        button::icon_button(Icon::FilterAlt).kind(Kind::Filled)
+    let filter = |filter: MatrixFilter, label: String| Filter {
+        label,
+        on: settings.hides_streams(filter),
+        toggle: Some(Message::MatrixFilterToggled(filter)),
     };
-    let option = if hidden.is_some() {
-        option.kind(Kind::Tonal)
-    } else {
-        option.selected(false)
-    }
-    .size(Size::ExtraSmall)
-    .on_press(Message::MatrixConnectableOnlyToggled);
-    filters.push(if whole {
-        option.into()
-    } else if count_shown {
-        component::tip(option, label)
-    } else {
-        let tip = crate::i18n::list([label].into_iter().chain(count.clone()));
-        component::tip(option, tip)
-    });
-    if let Some(count) = count.filter(|_| count_shown) {
+    // The tool and the gap before it, and the count with its own, or where
+    // the row has no room for the count, the tool's tooltip says it.
+    used += 12.0 + 40.0;
+    let count = hidden
+        .filter(|&hidden| hidden > 0)
+        .map(|hidden| fl!("matrix-hidden", count = hidden));
+    let (count, tip) = match count {
+        Some(count) if (used + 12.0 + font::measure(&count, Type::BodyMedium)).ceil() > room => {
+            (None, crate::i18n::list([fl!("matrix-filter"), count]))
+        }
+        count => (count, fl!("matrix-filter")),
+    };
+    filters.push(crate::view::filter_tool(
+        vec![
+            filter(
+                MatrixFilter::Unconnectable,
+                fl!("matrix-hide-unconnectable"),
+            ),
+            filter(MatrixFilter::Lite, fl!("matrix-hide-lite")),
+            filter(MatrixFilter::Wireless, fl!("matrix-hide-wireless")),
+        ],
+        hidden.is_some(),
+        triib.matrix_filters_open,
+        tip,
+        Message::MatrixFiltersMenu,
+    ));
+    if let Some(count) = count {
         filters.push(
             styled(count, Type::BodyMedium)
                 .style(style::on_surface_variant)
@@ -1090,6 +1110,62 @@ fn legend<'a>() -> Element<'a, Message> {
 mod tests {
     use super::*;
     use crate::settings::Settings;
+
+    /// The matrix can leave out entities running AVB Lite, but not one
+    /// only able to, and entities on Wi-Fi, with all their streams, saying
+    /// beside its filters how many streams that hides.
+    #[test]
+    fn entities_running_avb_lite_or_on_wifi_can_be_hidden() {
+        use crate::view::tests::{
+            WIFI_ESP, WIRED_ESP, bench_then, lite_frames_in, simulate, wireless_frames,
+        };
+        use atdecc::wireless::WirelessFlags;
+
+        let (_, models) = bench_then(&lite_frames_in(true, 0, 0));
+        assert!(crate::lite_view::runs_lite(&models[&WIRED_ESP]));
+        let (_, models) = bench_then(&lite_frames_in(false, 0, 0));
+        assert!(!crate::lite_view::runs_lite(&models[&WIRED_ESP]));
+        let (entities, models) = bench_then(&wireless_frames(WirelessFlags::LOCKED));
+        assert!(crate::wireless_view::on_wifi(&models[&WIFI_ESP]));
+        assert!(!crate::wireless_view::on_wifi(&models[&WIRED_ESP]));
+        let interface = avb_net::Interface {
+            name: "enp6s0".to_owned(),
+            mac: avb_net::MacAddress([0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b]),
+            up: true,
+            speed: None,
+            physical: true,
+            wireless: false,
+            hardware_clock: None,
+        };
+        let mut triib = Triib::sample(Settings::default(), interface, entities, models);
+        let model = &triib.models[&WIFI_ESP];
+        let streams = model.streams(true).count() + model.streams(false).count();
+        assert!(streams > 0);
+        let _ = triib.update(Message::MatrixFilterToggled(MatrixFilter::Wireless));
+        assert!(triib.settings.matrix_hide_wireless);
+        let size = iced::Size::new(1280.0, 800.0);
+        let hidden = match streams {
+            1 => "1 stream hidden".to_owned(),
+            streams => format!("{streams} streams hidden"),
+        };
+        assert!(
+            simulate(&triib, size).find(hidden.as_str()).is_ok(),
+            "{hidden}"
+        );
+        // The menu offers all three.
+        triib.matrix_filters_open = true;
+        let mut simulator = simulate(&triib, size);
+        assert!(simulator.find("Hide streams that cannot connect").is_ok());
+        assert!(simulator.find("Hide wireless entities").is_ok());
+        let _ = simulator.click("Hide entities running AVB Lite");
+        let messages: Vec<Message> = simulator.into_messages().collect();
+        assert!(
+            messages
+                .iter()
+                .any(|message| matches!(message, Message::MatrixFilterToggled(MatrixFilter::Lite))),
+            "{messages:?}"
+        );
+    }
 
     /// One of this computer's entities connects to itself, as it takes
     /// the binding; any other's own cells stay blank.

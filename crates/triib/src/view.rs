@@ -2754,7 +2754,7 @@ pub(crate) mod tests {
 
     const MAC_MINI: EntityId = EntityId(0xd111_e597_f544_8000);
     pub(crate) const WIRED_ESP: EntityId = EntityId(0xe8f6_0ae0_9220_0000);
-    const WIFI_ESP: EntityId = EntityId(0xfc01_2cfd_fe80_0000);
+    pub(crate) const WIFI_ESP: EntityId = EntityId(0xfc01_2cfd_fe80_0000);
 
     /// The bench's Mac mini as if its stream port input took dynamic
     /// mappings, with its first two stream channels crossed and the fifth
@@ -2942,6 +2942,8 @@ pub(crate) mod tests {
                 Size::new(1280.0, 3200.0),
             ),
             ("matrix-filtered", View::Matrix, false, desktop),
+            // Its filters' menu open.
+            ("matrix-filtered-hiding", View::Matrix, false, desktop),
             // Too narrow for the option's label and its count: its icon
             // alone.
             ("matrix-filtered-phone", View::Matrix, false, phone),
@@ -3312,7 +3314,9 @@ pub(crate) mod tests {
                 triib.editing = Some((target, "Studio Mac".to_owned()));
             }
             if suffix.contains("hiding") {
-                if suffix.starts_with("entities-host") {
+                if suffix.starts_with("matrix") {
+                    triib.matrix_filters_open = true;
+                } else if suffix.starts_with("entities-host") {
                     triib.settings.host_entities_only = true;
                 } else {
                     triib.entity_filters_open = true;

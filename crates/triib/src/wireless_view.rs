@@ -90,6 +90,14 @@ pub fn signal_text(rssi: i8) -> String {
     format!("{rssi} dBm")
 }
 
+/// Whether an entity reaches the network over Wi-Fi: a station on one of
+/// its interfaces, not an access point, which is a bridge for the others.
+pub fn on_wifi(model: &EntityModel) -> bool {
+    model
+        .wireless_interfaces()
+        .any(|(_, wireless)| !wireless.status.access_point())
+}
+
 /// How an entity's wireless interface runs, for the entity list: its role,
 /// and a station's time or an access point's station count.
 pub fn role(model: &EntityModel) -> String {

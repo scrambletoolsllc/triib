@@ -490,8 +490,10 @@ matrix-nothing-shown-note = שנו את החיפוש או את המסננים כ
 matrix-empty = אין זרמים לחיבור
 matrix-empty-note = זרמי Talker וזרמי Listener נפגשים כאן לאחר שהישויות שלהם נקראו.
 matrix-all-streams = כל הזרמים
-matrix-connectable-only = הסתרת מה שלא ניתן לחבר
-matrix-none-hidden = כל זרם מוצג ניתן לחיבור
+matrix-filter = סינון זרמים
+matrix-hide-unconnectable = הסתרת זרמים שלא ניתן לחבר
+matrix-hide-lite = הסתרת ישויות שפועלות ב-AVB Lite
+matrix-hide-wireless = הסתרת ישויות אלחוטיות
 matrix-hidden = { $count ->
     [one] זרם אחד מוסתר
     [two] { $count } זרמים מוסתרים

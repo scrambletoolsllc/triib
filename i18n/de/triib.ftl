@@ -483,8 +483,10 @@ matrix-nothing-shown-note = Suche oder Filter ändern, um mehr Streams zu sehen.
 matrix-empty = Keine Streams zum Verbinden
 matrix-empty-note = Talker-Streams und Listener-Streams treffen hier aufeinander, sobald Entitäten mit Streams gelesen wurden.
 matrix-all-streams = Alle Streams
-matrix-connectable-only = Nicht Verbindbares ausblenden
-matrix-none-hidden = Jeder angezeigte Stream ist verbindbar
+matrix-filter = Streams filtern
+matrix-hide-unconnectable = Nicht verbindbare Streams ausblenden
+matrix-hide-lite = Entitäten ausblenden, die AVB Lite ausführen
+matrix-hide-wireless = Drahtlose Entitäten ausblenden
 matrix-hidden = { $count ->
     [one] { $count } Stream ausgeblendet
    *[other] { $count } Streams ausgeblendet

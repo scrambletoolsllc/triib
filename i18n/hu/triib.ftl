@@ -483,8 +483,10 @@ matrix-nothing-shown-note = Módosítsa a keresést vagy a szűrőket, hogy töb
 matrix-empty = Nincs csatlakoztatható stream
 matrix-empty-note = A talker- és listener-streamek itt találkoznak, amint a hozzájuk tartozó entitások be vannak olvasva.
 matrix-all-streams = Összes stream
-matrix-connectable-only = A nem csatlakoztathatók elrejtése
-matrix-none-hidden = Minden látható stream csatlakoztatható
+matrix-filter = Streamek szűrése
+matrix-hide-unconnectable = A nem csatlakoztatható streamek elrejtése
+matrix-hide-lite = Az AVB Lite módban futó entitások elrejtése
+matrix-hide-wireless = Vezeték nélküli entitások elrejtése
 matrix-hidden = { $count ->
     [one] { $count } rejtett stream
    *[other] { $count } rejtett stream

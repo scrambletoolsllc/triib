@@ -481,8 +481,10 @@ matrix-nothing-shown-note = مزید اسٹریمز دیکھنے کے لیے ت�
 matrix-empty = منسلک کرنے کو کوئی اسٹریم نہیں
 matrix-empty-note = جن اینٹیٹیز میں Talker اور Listener اسٹریمز ہیں، ان کے پڑھے جانے کے بعد وہ اسٹریمز یہاں ملتی ہیں۔
 matrix-all-streams = تمام اسٹریمز
-matrix-connectable-only = جو منسلک نہ ہو سکیں انہیں چھپائیں
-matrix-none-hidden = دکھائی گئی ہر اسٹریم منسلک ہو سکتی ہے
+matrix-filter = اسٹریمز فلٹر کریں
+matrix-hide-unconnectable = جو اسٹریمز منسلک نہ ہو سکیں انہیں چھپائیں
+matrix-hide-lite = AVB Lite پر چلنے والی اینٹیٹیز چھپائیں
+matrix-hide-wireless = وائرلیس اینٹیٹیز چھپائیں
 matrix-hidden = { $count ->
     [one] { $count } اسٹریم چھپی ہوئی
    *[other] { $count } اسٹریمز چھپی ہوئی

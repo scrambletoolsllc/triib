@@ -481,8 +481,10 @@ matrix-nothing-shown-note = और streams देखने के लिए ख�
 matrix-empty = कनेक्ट करने के लिए कोई stream नहीं
 matrix-empty-note = Talker streams और Listener streams वाली entities पढ़ी जाने के बाद ये streams यहाँ आमने-सामने आती हैं।
 matrix-all-streams = सभी streams
-matrix-connectable-only = जो कनेक्ट नहीं हो सकतीं, उन्हें छिपाएँ
-matrix-none-hidden = दिखाई गई हर stream कनेक्ट हो सकती है
+matrix-filter = streams फ़िल्टर करें
+matrix-hide-unconnectable = जो streams कनेक्ट नहीं हो सकतीं, उन्हें छिपाएँ
+matrix-hide-lite = AVB Lite पर चल रहे Entity छिपाएँ
+matrix-hide-wireless = वायरलेस Entity छिपाएँ
 matrix-hidden = { $count ->
     [one] { $count } stream छिपी है
    *[other] { $count } streams छिपी हैं

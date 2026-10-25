@@ -481,8 +481,10 @@ matrix-nothing-shown-note = برای دیدن جریان‌های بیشتر، �
 matrix-empty = جریانی برای اتصال نیست
 matrix-empty-note = جریان‌های Talker و Listener پس از خوانده شدن موجودیت‌هایشان اینجا به هم می‌رسند.
 matrix-all-streams = همه جریان‌ها
-matrix-connectable-only = پنهان‌کردن موارد غیرقابل اتصال
-matrix-none-hidden = همه جریان‌های نمایش‌داده‌شده قابل اتصال‌اند
+matrix-filter = پالایش جریان‌ها
+matrix-hide-unconnectable = پنهان‌کردن جریان‌هایی که قابل اتصال نیستند
+matrix-hide-lite = پنهان‌کردن موجودیت‌هایی که با AVB Lite کار می‌کنند
+matrix-hide-wireless = پنهان‌کردن موجودیت‌های بی‌سیم
 matrix-hidden = { $count ->
     [one] { $count } جریان پنهان
    *[other] { $count } جریان پنهان

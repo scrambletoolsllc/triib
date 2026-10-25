@@ -23,6 +23,10 @@ All notable changes to triib. Versions follow
   and entities outside this computer's clock domain, while this
   computer is in sync in one. Beside it, as beside the matrix's
   filters, is how many entities they hide.
+- The connection matrix's option to hide what cannot connect is a filter
+  menu, as the entity list's, which also hides entities running AVB
+  Lite, not those only able to, and wireless entities, with all their
+  streams. How many streams the filters hide shows while they hide any.
 
 ### Linux
 

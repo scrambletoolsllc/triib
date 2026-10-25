@@ -504,8 +504,10 @@ matrix-nothing-shown-note = Muuta hakua tai suodattimia nähdäksesi lisää str
 matrix-empty = Ei yhdistettäviä striimejä
 matrix-empty-note = Talker- ja listener-striimit kohtaavat tässä, kun niitä sisältävät entiteetit on luettu.
 matrix-all-streams = Kaikki striimit
-matrix-connectable-only = Piilota ne, joita ei voi yhdistää
-matrix-none-hidden = Kaikki näytetyt striimit voi yhdistää
+matrix-filter = Suodata striimit
+matrix-hide-unconnectable = Piilota striimit, joita ei voi yhdistää
+matrix-hide-lite = Piilota entiteetit, joissa AVB Lite on käytössä
+matrix-hide-wireless = Piilota langattomat entiteetit
 matrix-hidden = { $count ->
     [one] { $count } striimi piilotettu
    *[other] { $count } striimiä piilotettu

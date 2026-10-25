@@ -511,8 +511,10 @@ matrix-nothing-shown-note = Altere a pesquisa ou os filtros para ver mais fluxos
 matrix-empty = Nenhum fluxo para conectar
 matrix-empty-note = Os fluxos de talker e de listener se encontram aqui depois que as entidades que os têm forem lidas.
 matrix-all-streams = Todos os fluxos
-matrix-connectable-only = Ocultar o que não pode ser conectado
-matrix-none-hidden = Todos os fluxos mostrados podem ser conectados
+matrix-filter = Filtrar fluxos
+matrix-hide-unconnectable = Ocultar fluxos que não podem ser conectados
+matrix-hide-lite = Ocultar entidades executando AVB Lite
+matrix-hide-wireless = Ocultar entidades sem fio
 matrix-hidden = { $count ->
     [0] { $count } fluxos ocultos
     [one] { $count } fluxo oculto

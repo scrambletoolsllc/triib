@@ -517,8 +517,10 @@ matrix-nothing-shown-note = غيّر البحث أو عوامل التصفية �
 matrix-empty = لا تدفقات لتوصيلها
 matrix-empty-note = تلتقي هنا تدفقات Talker وتدفقات Listener بعد قراءة الكيانات التي تملكها.
 matrix-all-streams = كل التدفقات
-matrix-connectable-only = إخفاء ما لا يمكن توصيله
-matrix-none-hidden = كل التدفقات المعروضة قابلة للتوصيل
+matrix-filter = تصفية التدفقات
+matrix-hide-unconnectable = إخفاء التدفقات التي لا يمكن توصيلها
+matrix-hide-lite = إخفاء الكيانات التي تعمل بـ AVB Lite
+matrix-hide-wireless = إخفاء الكيانات اللاسلكية
 matrix-hidden = { $count ->
     [zero] { $count } تدفق مخفي
     [one] تدفق مخفي واحد

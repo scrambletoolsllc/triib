@@ -483,8 +483,10 @@ matrix-nothing-shown-note = Ændr søgningen eller filtrene for at se flere stre
 matrix-empty = Ingen streams at forbinde
 matrix-empty-note = Talker-streams og listener-streams mødes her, når entiteter med streams er læst.
 matrix-all-streams = Alle streams
-matrix-connectable-only = Skjul det, der ikke kan forbindes
-matrix-none-hidden = Alle viste streams kan forbindes
+matrix-filter = Filtrér streams
+matrix-hide-unconnectable = Skjul streams, der ikke kan forbindes
+matrix-hide-lite = Skjul entiteter, der kører AVB Lite
+matrix-hide-wireless = Skjul trådløse entiteter
 matrix-hidden = { $count ->
     [one] { $count } stream skjult
    *[other] { $count } streams skjult

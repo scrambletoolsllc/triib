@@ -509,8 +509,10 @@ matrix-nothing-shown-note = Schimbă căutarea sau filtrele pentru a vedea mai m
 matrix-empty = Niciun flux de conectat
 matrix-empty-note = Fluxurile de talker și de listener se întâlnesc aici după ce entitățile care le au au fost citite.
 matrix-all-streams = Toate fluxurile
-matrix-connectable-only = Ascunde ce nu se poate conecta
-matrix-none-hidden = Toate fluxurile afișate se pot conecta
+matrix-filter = Filtrează fluxurile
+matrix-hide-unconnectable = Ascunde fluxurile care nu se pot conecta
+matrix-hide-lite = Ascunde entitățile care rulează AVB Lite
+matrix-hide-wireless = Ascunde entitățile wireless
 matrix-hidden = { $count ->
     [one] { $count } flux ascuns
     [few] { $count } fluxuri ascunse

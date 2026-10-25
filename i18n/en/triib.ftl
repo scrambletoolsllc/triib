@@ -630,8 +630,10 @@ matrix-nothing-shown-note = Change the search or the filters to see more streams
 matrix-empty = No streams to connect
 matrix-empty-note = Talker streams and listener streams meet here once entities with them have been read.
 matrix-all-streams = All streams
-matrix-connectable-only = Hide what cannot connect
-matrix-none-hidden = Every stream shown can connect
+matrix-filter = Filter streams
+matrix-hide-unconnectable = Hide streams that cannot connect
+matrix-hide-lite = Hide entities running AVB Lite
+matrix-hide-wireless = Hide wireless entities
 matrix-hidden = { $count ->
     [one] { $count } stream hidden
    *[other] { $count } streams hidden

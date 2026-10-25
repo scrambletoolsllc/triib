@@ -140,6 +140,8 @@ pub struct Triib {
     pub interface_filters_open: bool,
     /// The entity list's filters' menu is open.
     pub entity_filters_open: bool,
+    /// The connection matrix's filters' menu is open.
+    pub matrix_filters_open: bool,
     /// Each storage place as typed in Settings, not yet applied, and why
     /// the one given could not be used.
     pub storage_drafts: [String; 2],
@@ -288,7 +290,8 @@ pub enum Message {
     EntityColumnResizeEnded,
     /// Fit a column to its text again.
     EntityColumnWidthReset(Column),
-    MatrixConnectableOnlyToggled,
+    MatrixFilterToggled(crate::settings::MatrixFilter),
+    MatrixFiltersMenu(bool),
     MatrixCollapseToggled(Side, EntityId),
     MatrixHovered(Hover),
     /// A part of the entity list scrolled, which the others follow.
@@ -427,6 +430,7 @@ impl Triib {
             close_button: false,
             interface_filters_open: false,
             entity_filters_open: false,
+            matrix_filters_open: false,
             storage_drafts: Default::default(),
             storage_errors: Default::default(),
             network_list: false,
@@ -505,6 +509,7 @@ impl Triib {
             close_button: !scramble_ui::desktop::draws_title_bars(),
             interface_filters_open: false,
             entity_filters_open: false,
+            matrix_filters_open: false,
             storage_drafts: Default::default(),
             storage_errors: Default::default(),
             network_list: false,
@@ -1072,8 +1077,9 @@ impl Triib {
                 self.settings.matrix_streams = streams;
                 self.save_settings();
             }
-            Message::MatrixConnectableOnlyToggled => {
-                self.settings.matrix_connectable_only = !self.settings.matrix_connectable_only;
+            Message::MatrixFiltersMenu(open) => self.matrix_filters_open = open,
+            Message::MatrixFilterToggled(filter) => {
+                self.settings.toggle_matrix_filter(filter);
                 self.save_settings();
             }
             Message::MatrixCollapseToggled(side, entity_id) => {

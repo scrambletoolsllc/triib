@@ -509,8 +509,10 @@ matrix-nothing-shown-note = Canvieu la cerca o els filtres per veure més fluxos
 matrix-empty = No hi ha fluxos per connectar
 matrix-empty-note = Els fluxos dels talkers i dels listeners es troben aquí un cop llegides les entitats que els tenen.
 matrix-all-streams = Tots els fluxos
-matrix-connectable-only = Amaga el que no es pot connectar
-matrix-none-hidden = Tots els fluxos que es mostren es poden connectar
+matrix-filter = Filtra els fluxos
+matrix-hide-unconnectable = Amaga els fluxos que no es poden connectar
+matrix-hide-lite = Amaga les entitats que funcionen amb AVB Lite
+matrix-hide-wireless = Amaga les entitats sense fil
 matrix-hidden = { $count ->
     [one] { $count } flux amagat
     [many] { $count } fluxos amagats

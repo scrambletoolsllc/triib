@@ -481,8 +481,10 @@ matrix-nothing-shown-note = Badilisha utafutaji au vichujio ili kuona mitiririko
 matrix-empty = Hakuna mitiririko ya kuunganisha
 matrix-empty-note = Mitiririko ya talker na ya listener hukutana hapa baada ya huluki zilizo nayo kusomwa.
 matrix-all-streams = Mitiririko yote
-matrix-connectable-only = Ficha isiyoweza kuunganishwa
-matrix-none-hidden = Kila mtiririko unaoonyeshwa unaweza kuunganishwa
+matrix-filter = Chuja mitiririko
+matrix-hide-unconnectable = Ficha mitiririko isiyoweza kuunganishwa
+matrix-hide-lite = Ficha huluki zinazoendesha AVB Lite
+matrix-hide-wireless = Ficha huluki zisizotumia waya
 matrix-hidden = { $count ->
     [one] mtiririko { $count } umefichwa
    *[other] mitiririko { $count } imefichwa

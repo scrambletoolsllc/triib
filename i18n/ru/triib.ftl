@@ -499,8 +499,10 @@ matrix-nothing-shown-note = Измените поиск или фильтры, �
 matrix-empty = Нет потоков для подключения
 matrix-empty-note = Потоки Talker и Listener встретятся здесь, когда будут прочитаны сущности, у которых они есть.
 matrix-all-streams = Все потоки
-matrix-connectable-only = Скрыть то, что нельзя подключить
-matrix-none-hidden = Все показанные потоки можно подключить
+matrix-filter = Фильтр потоков
+matrix-hide-unconnectable = Скрыть потоки, которые нельзя подключить
+matrix-hide-lite = Скрыть сущности, работающие в AVB Lite
+matrix-hide-wireless = Скрыть беспроводные сущности
 matrix-hidden = { $count ->
     [one] { $count } поток скрыт
     [few] { $count } потока скрыто

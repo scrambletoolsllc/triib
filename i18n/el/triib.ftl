@@ -501,8 +501,10 @@ matrix-nothing-shown-note = Αλλάξτε την αναζήτηση ή τα φ�
 matrix-empty = Καμία ροή για σύνδεση
 matrix-empty-note = Οι ροές των Talker και των Listener συναντώνται εδώ μόλις διαβαστούν οντότητες που τις διαθέτουν.
 matrix-all-streams = Όλες οι ροές
-matrix-connectable-only = Απόκρυψη όσων δεν συνδέονται
-matrix-none-hidden = Κάθε ροή που εμφανίζεται μπορεί να συνδεθεί
+matrix-filter = Φιλτράρισμα ροών
+matrix-hide-unconnectable = Απόκρυψη ροών που δεν συνδέονται
+matrix-hide-lite = Απόκρυψη οντοτήτων που τρέχουν AVB Lite
+matrix-hide-wireless = Απόκρυψη ασύρματων οντοτήτων
 matrix-hidden = { $count ->
     [one] { $count } κρυφή ροή
    *[other] { $count } κρυφές ροές

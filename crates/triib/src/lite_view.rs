@@ -97,6 +97,16 @@ pub(crate) fn duration(nanoseconds: i32) -> String {
     }
 }
 
+/// Whether an entity runs AVB Lite, as it reports it on an interface or as
+/// its CVU SRP declarations show, rather than only being able to.
+pub fn runs_lite(model: &EntityModel) -> bool {
+    model
+        .descriptors(DescriptorType::AVB_INTERFACE)
+        .filter_map(|(interface, _)| model.lite_status(interface))
+        .any(|status| status.flags.contains(LiteFlags::ACTIVE))
+        || model.cvu_talkers().next().is_some()
+}
+
 /// How an entity runs, for the entity list: AVB Lite or not, as it reports
 /// it or as its CVU SRP declarations show.
 pub fn mode(model: &EntityModel) -> String {

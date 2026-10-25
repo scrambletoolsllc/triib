@@ -71,6 +71,26 @@ impl Settings {
         *hides = !*hides;
     }
 
+    /// Whether the connection matrix leaves out what `filter` names.
+    pub fn hides_streams(&self, filter: MatrixFilter) -> bool {
+        match filter {
+            MatrixFilter::Unconnectable => self.matrix_connectable_only,
+            MatrixFilter::Lite => self.matrix_hide_lite,
+            MatrixFilter::Wireless => self.matrix_hide_wireless,
+        }
+    }
+
+    /// Leaves what `filter` names out of the connection matrix, or puts it
+    /// back.
+    pub fn toggle_matrix_filter(&mut self, filter: MatrixFilter) {
+        let hides = match filter {
+            MatrixFilter::Unconnectable => &mut self.matrix_connectable_only,
+            MatrixFilter::Lite => &mut self.matrix_hide_lite,
+            MatrixFilter::Wireless => &mut self.matrix_hide_wireless,
+        };
+        *hides = !*hides;
+    }
+
     /// Whether the entity list leaves out the entities `filter` names.
     pub fn hides_entities(&self, filter: EntityFilter) -> bool {
         match filter {
@@ -90,6 +110,17 @@ impl Settings {
         };
         *hides = !*hides;
     }
+}
+
+/// What the connection matrix can leave out.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MatrixFilter {
+    /// Streams nothing shown can connect to.
+    Unconnectable,
+    /// Entities running AVB Lite, with their streams.
+    Lite,
+    /// Entities on Wi-Fi, with their streams.
+    Wireless,
 }
 
 /// Entities the entity list can leave out.
@@ -148,6 +179,10 @@ pub struct Settings {
     pub matrix_streams: Streams,
     /// Leave out of the matrix the streams nothing shown can connect to.
     pub matrix_connectable_only: bool,
+    /// Leave out of it the entities running AVB Lite.
+    pub matrix_hide_lite: bool,
+    /// Leave out of it the entities on Wi-Fi.
+    pub matrix_hide_wireless: bool,
     /// What the network view shows flowing along its wires.
     pub network_shows: NetworkShows,
     /// The entity list's columns after the name, in order.
@@ -190,6 +225,8 @@ impl Default for Settings {
             log_height: 240.0,
             matrix_streams: Streams::All,
             matrix_connectable_only: false,
+            matrix_hide_lite: false,
+            matrix_hide_wireless: false,
             network_shows: NetworkShows::Audio,
             entity_columns: EntityField::DEFAULT_COLUMNS.to_vec(),
             entity_column_widths: BTreeMap::new(),

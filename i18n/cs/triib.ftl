@@ -499,8 +499,10 @@ matrix-nothing-shown-note = Změňte hledání nebo filtry, abyste viděli více
 matrix-empty = Žádné streamy k připojení
 matrix-empty-note = Streamy talkerů a listenerů se zde setkají, jakmile budou načteny entity, které je mají.
 matrix-all-streams = Všechny streamy
-matrix-connectable-only = Skrýt, co nelze připojit
-matrix-none-hidden = Každý zobrazený stream lze připojit
+matrix-filter = Filtrovat streamy
+matrix-hide-unconnectable = Skrýt streamy, které nelze připojit
+matrix-hide-lite = Skrýt entity běžící v AVB Lite
+matrix-hide-wireless = Skrýt bezdrátové entity
 matrix-hidden = { $count ->
     [one] { $count } stream skrytý
     [few] { $count } streamy skryté
