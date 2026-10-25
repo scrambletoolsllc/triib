@@ -940,7 +940,12 @@ impl Triib {
             Message::WindowResized => {
                 self.title_bar = crate::title_bar_macos::height(self.window_view.unwrap_or(0));
             }
-            Message::Rescaled(scale) => self.logos.rescaled(scale),
+            Message::Rescaled(scale) => {
+                self.logos.rescaled(scale);
+                // So slides step by whole pixels from the start, not only
+                // once the scale changes.
+                scramble_ui::motion::set_scale_factor(scale);
+            }
             Message::TitleBarDoubleClicked =>
             {
                 #[cfg(target_os = "macos")]
