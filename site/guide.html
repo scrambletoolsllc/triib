@@ -23,7 +23,7 @@
 
 <main class="guide">
   <h1>A tour of triib</h1>
-  <p class="lede-left">What each part of triib does and how to use it. The pictures show a test network of three entities, with a host entity beside them, and a show's network of twenty devices.</p>
+  <p class="lede-left">What each part of triib does and how to use it. The pictures show a small network of three entities, a lectern, a Wi-Fi speaker and a Mac mini, with a host entity beside them, and the networks of a show and of a venue.</p>
   <nav class="contents" aria-label="Contents">
 <ul>
 <li><a href="#interface">Picking an interface</a></li>
@@ -46,10 +46,10 @@
 <h2 id="interface">Picking an interface</h2>
 <p>triib works on one network interface at a time: pick it from the menu at the left of the toolbar, which shows each wired interface with its speed and whether it has a PTP hardware clock. The filter beside it hides virtual interfaces unless you ask for them, and can hide wireless interfaces and those without a PTP hardware clock too. The status bar says how the interface is doing and the entity ID triib discovers as.</p>
 <p>triib asks every entity to announce itself when it starts, and again whenever you press the refresh button. Each entity it finds has its entity model read once and kept, so a device you have seen before shows in full at once the next time.</p>
-<p>On Linux triib needs <code>CAP_NET_RAW</code>, on macOS access to <code>/dev/bpf*</code>, and on Windows <a href="https://npcap.com">Npcap</a>. The packages set the first two up; when something is missing, triib says what and how to fix it. On a Mac, triib reaches the Mac's own AVB entity through Apple's AudioVideoBridging framework, as macOS never hands that entity what a program writes to BPF.</p>
+<p>On Linux triib needs <code>CAP_NET_RAW</code>, on macOS access to <code>/dev/bpf*</code>, and on Windows <a href="https://npcap.com">Npcap</a>. The packages set the first two up; when something is missing, triib says what and how to fix it, and where a command grants it, carries on as soon as the command has run. On a Mac, triib reaches the Mac's own AVB entity through Apple's AudioVideoBridging framework, as macOS never hands that entity what a program writes to BPF.</p>
 
 <h2 id="connections">Connections</h2>
-<figure><img class="shot" src="screenshots/matrix.png" alt="The connection matrix: talker outputs of three entities written diagonally across the top, listener inputs down the right, a link in each cell whose streams are connected, and circles in the cells where a connection can be made" width="1360" height="850" loading="lazy"></figure>
+<figure><img class="shot" src="screenshots/matrix.png" alt="The connection matrix: talker outputs of a Wi-Fi speaker, a lectern and a Mac mini written diagonally across the top, listener inputs down the right, a link in each cell whose streams are connected, and circles in the cells where a connection can be made" width="1360" height="914" loading="lazy"></figure>
 <p>The matrix has every talker output across the top and every listener input down the side, grouped by entity. Point at a cell to see its talker and listener and whether their formats meet; click it to connect or disconnect. An entity's row folds into one line, where a cell says how many of its streams are connected, and opens to connect them one by one; triib remembers which are folded.</p>
 <div class="table"><table>
 <thead><tr><th>A cell shows</th><th>Meaning</th></tr></thead>
@@ -60,51 +60,56 @@
 <tr><td>Can connect</td><td>The formats match: click to connect</td></tr>
 <tr><td>Input format must change first</td><td>The input takes the stream but is set to another format, so it may not play until its format changes</td></tr>
 <tr><td>Formats cannot meet</td><td>The talker and listener have no format in common</td></tr>
+<tr><td>Other clock domain</td><td>The talker and listener are in different clock domains, as the network map shows them, so they cannot connect</td></tr>
 </tbody>
 </table></div>
 <p>Click a cell marked <em>Input format must change first</em> for a menu of the formats both ends take: pick one and triib changes the input, or both ends, and connects.</p>
-<figure><img class="shot" src="screenshots/matrix-formats.png" alt="The connection matrix with a menu open over a cell: change the input to AAF 48 kHz, 8 ch, 32-bit, or change both to AM824 48 kHz, 8 ch or AAF 48 kHz, 8 ch, 32-bit (24 used), or connect without changing formats" width="1360" height="850" loading="lazy"></figure>
-<p>The chips above the matrix show all streams, only audio or only media clock streams, and <em>Hide what cannot connect</em> leaves out the rows and columns with nothing to connect. The search field in the toolbar finds entities and streams by name.</p>
+<figure><img class="shot" src="screenshots/matrix-formats.png" alt="The connection matrix with a menu open over a cell: change the input to AAF 48 kHz, 8 ch, 32-bit, or change both to AM824 48 kHz, 8 ch or AAF 48 kHz, 8 ch, 32-bit (24 used), or connect without changing formats" width="1360" height="956" loading="lazy"></figure>
+<p>The chips above the matrix show all streams, only audio or only media clock streams. The filter menu beside them hides the streams that cannot connect, the entities running AVB Lite and the wireless entities, and says how many streams it hides. The search field in the toolbar finds entities and streams by name.</p>
 
 <h2 id="entities">Entities</h2>
-<figure><img class="shot" src="screenshots/entities.png" alt="The entity list: two AVB Example Entities, the host entity Host entity 1, and a Mac mini, with their product, firmware, Milan version, roles, media clock, grandmaster and state" width="1360" height="510" loading="lazy"></figure>
-<p>The entity list has a row for each entity: its name and group, product and firmware, Milan version, roles, media clock and more. The media clock's menu changes an entity's clock source right in the list. Each column header has a menu to move or remove its column or add another, such as vendor, model, state, AVB Lite or egress.</p>
+<figure><img class="shot" src="screenshots/entities.png" alt="The entity list: Foyer speaker, the host entity Host entity 1, Lectern and a Mac mini, with their product, firmware, Milan version, roles, media clock, grandmaster and state" width="1360" height="378" loading="lazy"></figure>
+<p>The entity list has a row for each entity: its name and group, product and firmware, Milan version, roles, media clock and more. The media clock's menu changes an entity's clock source right in the list. Each column header has a menu to move or remove its column or add another, such as vendor, model, state, AVB Lite, egress, or the entity's logo and its vendor's. The filter menu above the list shows only this computer's entities, hides controllers, or hides entities outside this computer's clock domain, and says how many it hides.</p>
 <p>On Linux, <em>Add entity</em> adds a host entity; see <a href="#own-endpoints">below</a>. Controllers that do not advertise, as the Mac's own does not, are listed from the commands triib hears them send, each named for the computer it runs on, until five minutes after their last.</p>
 
 <h2 id="inspector">Inspector</h2>
-<figure><img class="shot" src="screenshots/inspector.png" alt="The inspector beside the entity list, showing an entity's name, group, product, firmware and Milan version, its clock domain and sampling rate, and its AVB Lite section with mode, the reason it fell back, PTP profile, offset, media VLAN, unicast and link speed" width="1360" height="1116" loading="lazy"></figure>
+<div class="gallery three">
+<figure><img class="shot" src="screenshots/inspector.png" alt="The inspector's Entity tab for Lectern: an Identify button, its name and group, product, firmware, serial number, configuration and Milan version, its clock domain and sampling rate, its identity and its roles" width="640" height="1500" loading="lazy"></figure>
+<figure><img class="shot" src="screenshots/streams.png" alt="The Streams tab for a Mac mini: its streams, each with its format, the picked output's name, format and state, and its channel mappings, the first two input channels crossed" width="640" height="1500" loading="lazy"></figure>
+<figure><img class="shot" src="screenshots/diagnostics.png" alt="The Diagnostics tab for Lectern: its Ethernet interface, its egress against its link, and its counters since it started, a clock domain that lost lock once and inputs that lost media lock twice marked in red" width="640" height="1500" loading="lazy"></figure>
+</div>
 <p>Select an entity, in the matrix, the entity list or the network, and the inspector, titled by its name, shows all there is to know about it, in five tabs. A short value sits beside its label, a longer one under it.</p>
 <ul>
-<li><strong>Entity:</strong> its name and group, which you can rename, its product and firmware, its configuration, picked by name where it has several, its media clock with the clock source and sampling rate to change, its AVB Lite and AVB Wireless state, its identity and roles. <em>Identify</em> makes the device show itself, as by a blinking light.</li>
+<li><strong>Entity:</strong> its name and group, which you can rename, its product and firmware, its logo and its vendor's where it has them, its configuration, picked by name where it has several, its media clock with the clock source and sampling rate to change, its AVB Lite and AVB Wireless state, its identity and roles. <em>Identify</em> makes the device show itself, as by a blinking light.</li>
 <li><strong>Streams:</strong> its streams, outputs then inputs, each this computer carries with a peak meter, and the picked one's details: its name, its format, which you can change, its state, stream ID, destination and VLAN, an output's maximum transit time, which you can pick, and its listeners where its talker keeps them, each with a button that disconnects it; then how the streams' channels map to the entity's audio.</li>
 <li><strong>Controls:</strong> the entity's controls, such as gain, volume and mute, to set.</li>
-<li><strong>Diagnostics:</strong> how each clock domain and stream has fared since the entity started, from the counters it keeps, with what went wrong marked, and how each bound input's reservation stands.</li>
+<li><strong>Diagnostics:</strong> its AVB interfaces and what its streams take of each link, how each clock domain and stream has fared since the entity started, from the counters it keeps, with what went wrong marked, and how each bound input's reservation stands.</li>
 <li><strong>Descriptors:</strong> the entity model itself, descriptor by descriptor.</li>
 </ul>
-<figure><img class="shot" src="screenshots/controls.png" alt="The Controls tab of the inspector with sliders for Speaker Volume at 0.0 dB and Mic Gain at 36.0 dB" width="1360" height="850" loading="lazy"></figure>
+<figure class="panel"><img class="shot" src="screenshots/controls.png" alt="The Controls tab for Lectern, with sliders for Speaker Volume at 0.0 dB and Mic Gain at 36.0 dB" width="640" height="530" loading="lazy"></figure>
 
 <h2 id="network">Network</h2>
-<figure><img class="shot" src="screenshots/network.png" alt="The network map of a show: a core bridge, a stage bridge and a front of house bridge, twenty devices below them, and each audio stream as its own colored wire" width="1360" height="932" loading="lazy"></figure>
-<p>The network view draws the network from each entity's gPTP path: bridges at the top, the devices behind each of them below, and those connected straight to the grandmaster's bridge in the middle. A panel beside the map counts what it shows and lists what needs attention. The chips switch what is drawn on the map:</p>
+<figure><img class="shot" src="screenshots/network.gif" alt="The network map of a show, its audio moving along the wires: a core bridge, a stage bridge and a front of house bridge, eighteen devices below them, and each audio stream as its own colored wire, with two failed reservations marked" width="1360" height="981" loading="lazy"></figure>
+<p>The network view draws the network from each entity's gPTP path, each clock domain in an area of its own: bridges at the top, the devices behind each of them below, and those connected straight to the grandmaster's bridge in the middle. A panel beside the map counts what it shows and lists what needs attention. The chips switch what is drawn on the map:</p>
 <ul>
-<li><strong>Audio:</strong> each stream as its own wire, entering and leaving every bridge it crosses. Each talker has a hue and its streams are shades of it. Moving dots mean audio is flowing; a still red line is a failed reservation and a still gray line is advertised with no listener ready, both stopping where the reservation stops.</li>
+<li><strong>Sync:</strong> the clock tree from the grandmaster, with each device in sync or not.</li>
+<li><strong>Audio:</strong> each stream on the links it crosses, entering and leaving every bridge on its way: a multicast stream takes one wire as far as its listeners' paths run together and branches where they part, and a unicast stream has a wire to each listener. Each talker has a hue and its streams are shades of it. Moving dots mean audio is flowing; a still red line is a failed reservation and a still gray line is advertised with no listener ready, both stopping where the reservation stops.</li>
 <li><strong>CRF:</strong> the media clock streams, the same way.</li>
-<li><strong>gPTP:</strong> the clock tree from the grandmaster, with each device in sync or not.</li>
 </ul>
-<figure><img class="shot" src="screenshots/network-clock.png" alt="The same show's network as a clock tree, with the core bridge as grandmaster and every device marked Sync except one monitor amp marked No sync" width="1360" height="1038" loading="lazy"></figure>
-<p>Click a wire to inspect its stream, or a device to see its streams alone, until you clear it with the button above the map or click the background. Controllers are left out, as they take no part in the clock or the streams, and the local host shows as its host entities. On a narrow window the map and the panel take turns.</p>
+<figure><img class="shot" src="screenshots/network-clock.gif" alt="The same show's network as a clock tree, the time moving along its wires, with the core bridge as grandmaster and every device marked Sync except one monitor amp marked No sync" width="1360" height="1038" loading="lazy"></figure>
+<p>Click a wire to inspect its stream, or a device to see its streams alone, until you clear it with the button above the map or click the background. Controllers are left out, as they take no part in the clock or the streams, and the local host shows as its host entities. Where this computer runs none of its own, the map shows what it is plugged into: an AVB bridge's port, or a switch that takes no part in AVB. On a narrow window the map and the panel take turns.</p>
 
 <h2 id="avb-lite">AVB Lite</h2>
-<figure><img class="shot" src="screenshots/avb-lite.png" alt="The network view in AVB Lite, its first chip reading PTP: the PTP tree from the grandmaster clock to one device in sync, two devices not on the PTP tree, and a panel listing them as needing attention" width="1360" height="765" loading="lazy"></figure>
+<figure><img class="shot" src="screenshots/avb-lite.gif" alt="The network map of a venue, its audio moving along the wires: the stage's devices under an AVB bridge in gPTP domain 0, and beside them in PTP domain 0 the house's, running AVB Lite under a dashed card for a switch that takes no part in AVB, a paging mic sending to three of them unicast" width="1200" height="916" loading="lazy"></figure>
 <p><a href="https://github.com/avbcommunity/profiles/blob/main/avb_lite.md">AVB Lite</a> gives AVB devices a working if degraded path over switches that are not AVB bridges: plain PTP end to end, and streams unicast to each listener. triib shows how each entity runs it:</p>
 <ul>
 <li>The inspector's AVB Lite section gives the entity's mode and why it fell back, its PTP profile and offset from the grandmaster, its media VLAN, how many listeners it serves unicast, and its link speed.</li>
-<li>When no AVB bridge is heard and entities run AVB Lite, the network view's clock chip reads PTP and draws the PTP tree. A device is in sync while it follows the grandmaster within 50&nbsp;µs.</li>
+<li>The network view puts the devices running AVB Lite in their PTP domain, under a dashed card for the switch in front of them that takes no part in AVB, with a wire for each listener of a unicast stream. With the Sync chip, a device is in sync while it follows its grandmaster within 50&nbsp;µs.</li>
 <li>The alarms the profile calls for, such as a PTP offset past what AVB Lite allows, show in the status bar and the inspector.</li>
 </ul>
 
 <h2 id="avb-wireless">AVB Wireless</h2>
-<figure><img class="shot" src="screenshots/wireless.png" alt="The inspector's Wireless section for a Wi-Fi station: role Station, Mode A over FTM, time holding over, a 5 GHz link on channel 36 at 80 MHz, signal, rate, its access point and FTM" width="1360" height="1116" loading="lazy"></figure>
+<figure class="panel"><img class="shot" src="screenshots/wireless.png" alt="The inspector's Wireless section for Foyer speaker, a Wi-Fi station: role Station, Mode A over FTM, time holding over, a 5 GHz link on channel 36 at 80 MHz, signal, rate, its access point and FTM" width="640" height="810" loading="lazy"></figure>
 <p>The <a href="https://github.com/avbcommunity/profiles">AVB Wireless</a> profile carries AVB over one Wi-Fi hop: an access point that is a bridge on its wired port, and Wi-Fi stations as talkers and listeners. triib asks each entity's AVB interfaces for their wireless status and shows it:</p>
 <ul>
 <li>The inspector's Wireless section gives a station's role, time mode and whether its time holds, its link, signal and rate, and the access point it follows; on an access point, its stations, the listeners it cannot serve and the frames a second it can deliver.</li>

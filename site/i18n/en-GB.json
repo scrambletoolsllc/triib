@@ -1,15 +1,16 @@
 {
+ "7ac541abf466": "Light or dark, in the accent colour of your system or its Omarchy theme, or one you pick, and in 38 languages, right to left among them. On a Mac, the menu bar has triib's menus.",
  "840981ec0887": "<strong>Committers and reviewers:</strong> the members of the <a1>scrambletoolsllc</a1> GitHub organisation, who review every outside contribution before it is merged.",
  "6263ca064f9a": "<strong>Approvers:</strong> the owner of the <a1>scrambletoolsllc</a1> GitHub organisation, who alone can publish a release, and with it a signing.",
  "4694aa253436": "triib is free software under the <a1>MIT</a1> or <a2>Apache 2.0</a2> licence. Made by <a3>Scramble Tools</a3>. Milan is a trademark of Avnu Alliance; triib is not certified by Avnu Alliance. <a4>Code signing policy</a4> · <a5>Privacy</a5>",
- "66f203cac1de": "The network map of a show: a core bridge, a stage bridge and a front of house bridge, twenty devices from stage boxes to amps, and each audio stream as its own coloured wire, with two failed reservations marked",
- "7174fbf83271": "<strong>Audio:</strong> each stream as its own wire, entering and leaving every bridge it crosses. Each talker has a hue and its streams are shades of it. Moving dots mean audio is flowing; a still red line is a failed reservation and a still grey line is advertised with no listener ready, both stopping where the reservation stops.",
+ "67af506e2c9f": "The network map of a show, its audio moving along the wires: a core bridge, a stage bridge and a front of house bridge, eighteen devices from stage boxes to amps, and each audio stream as its own coloured wire, with two failed reservations marked",
+ "d6d846fda271": "<strong>Audio:</strong> each stream on the links it crosses, entering and leaving every bridge on its way: a multicast stream takes one wire as far as its listeners' paths run together and branches where they part, and a unicast stream has a wire to each listener. Each talker has a hue and its streams are shades of it. Moving dots mean audio is flowing; a still red line is a failed reservation and a still grey line is advertised with no listener ready, both stopping where the reservation stops.",
  "6827a26450fd": "Settings has the language, any of 38 or the system's, and the appearance: light, dark or the system's, the colours, and whether triib animates. triib takes its colours from the system's accent colour, or from the Omarchy theme, unless you pick one. Settings also has outside control: whether AI agents may control triib, and the agents you have allowed, which <em>Forget</em> clears; and storage: the folder presets are kept in and, where host entities can run, the file they are listed in.",
  "04d41817751d": "triib is free software under the <a1>MIT</a1> or <a2>Apache 2.0</a2> licence. Made by <a3>Scramble Tools</a3>. <a4>Code signing policy</a4> · <a5>Privacy</a5>",
- "1383e82fbf3b": "The network map of a show: a core bridge, a stage bridge and a front of house bridge, twenty devices below them, and each audio stream as its own coloured wire",
+ "67d8a25e059d": "The network map of a show, its audio moving along the wires: a core bridge, a stage bridge and a front of house bridge, eighteen devices below them, and each audio stream as its own coloured wire, with two failed reservations marked",
  "ca9f059b4152": "<a1>Licence and privacy</a1>",
  "28fd51d4bba2": "Installer package (.pkg), signed and notarised",
- "c9283a58313e": "Material Design 3, light or dark and the accent colour from the system",
+ "dc4ad973d264": "Material Design 3, light or dark, in the accent colour of the system or its Omarchy theme, or one picked; on a Mac, a menu bar with triib's menus",
  "bef020fa479b": "Licence and privacy",
  "3229609e1543": "Licence"
 }

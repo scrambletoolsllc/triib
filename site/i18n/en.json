@@ -51,25 +51,33 @@
   "page": "index.html",
   "text": "Finds every device"
  },
- "9e8b1ba9f47f": {
+ "e0bdd0e9b6e5": {
   "page": "index.html",
-  "text": "triib discovers the ATDECC entities on the interface you pick, reads each entity model, its names, streams, clocks and Milan support, and keeps it, so a device you have seen before shows in full at once."
+  "text": "triib discovers the ATDECC entities on the interface you pick, reads each entity model, its names, logos, streams, clocks and Milan support, and keeps it, so a device you have seen before shows in full at once. It keeps up with the changes other controllers make, even to entities that send no notifications."
  },
  "aca52c18ede1": {
   "page": "index.html",
   "text": "A connection matrix"
  },
- "8aa87a7530a6": {
+ "46a915ba5284": {
   "page": "index.html",
-  "text": "Talker outputs across, listener inputs down: click a cell to connect or disconnect. Each cell shows whether the stream flows, waits or has failed, and whether the two formats can meet at all."
+  "text": "Talker outputs across, listener inputs down: click a cell to connect or disconnect. Each cell shows whether the stream flows, waits or has failed, whether the two formats can meet, and whether the two ends share a clock domain."
  },
  "fb352cac30d9": {
   "page": "index.html",
   "text": "A map of the network"
  },
- "6785f2acc8db": {
+ "eb09539811f5": {
   "page": "index.html",
-  "text": "Bridges and devices from each entity's gPTP path, every stream as its own wire, and the clock tree from the grandmaster, with each device in sync or not. A failed reservation shows in red where it stops."
+  "text": "Bridges and devices in their clock domains, from each entity's gPTP path, every stream's traffic on each link as its own wire, and the clock tree from the grandmaster, with each device in sync or not. A failed reservation shows in red where it stops."
+ },
+ "b45973b30e73": {
+  "page": "index.html",
+  "text": "A list of every entity"
+ },
+ "f7f61ce1dd1e": {
+  "page": "index.html",
+  "text": "A row for each entity, with the columns you pick, from product and firmware to media clock, grandmaster and logos. Change a clock source right in the list, and filter it to this computer's entities, without controllers, or to this computer's clock domain."
  },
  "b3e12f1c2db6": {
   "page": "index.html",
@@ -86,6 +94,14 @@
  "27d13ede9772": {
   "page": "index.html",
   "text": "Save each entity's clock sources, sampling rates, stream formats, controls and connections, and recall them later: triib changes only what differs."
+ },
+ "772ce8a1f220": {
+  "page": "index.html",
+  "text": "What went wrong"
+ },
+ "3dd09d64ea53": {
+  "page": "index.html",
+  "text": "Each entity's counters since it started, its reservations, and what its streams take of each link, with what went wrong marked, and in the status bar the alarms triib finds across the network."
  },
  "b0a72ef8c766": {
   "page": "index.html",
@@ -131,9 +147,9 @@
   "page": "index.html",
   "text": "Help from AI agents"
  },
- "f2aa0aeca274": {
+ "78354c0fd886": {
   "page": "index.html",
-  "text": "Agents such as Claude Code can read the network and make changes through <code>triib --mcp</code>, the same way a click does, once you let each one in."
+  "text": "Agents such as Claude Code can read the network, make changes through <code>triib --mcp</code> the same way a click does, and work out why a stream does not play, once you let each one in."
  },
  "fb5125ed59fa": {
   "page": "index.html",
@@ -143,13 +159,21 @@
   "page": "index.html",
   "text": "<code>triib-cli</code> does the same from scripts. The protocols are Rust crates of their own, <code>atdecc</code>, <code>avb-mrp</code> and <code>avb-net</code>, for other apps and for microcontrollers."
  },
+ "154d8b27ed18": {
+  "page": "index.html",
+  "text": "At home on your desktop"
+ },
+ "7ac541abf466": {
+  "page": "index.html",
+  "text": "Light or dark, in the accent color of your system or its Omarchy theme, or one you pick, and in 38 languages, right to left among them. On a Mac, the menu bar has triib's menus."
+ },
  "2387d8edc47d": {
   "page": "index.html",
   "text": "The gPTP clock tree, device by device"
  },
- "0ab299b9eae5": {
+ "892ba367aa8d": {
   "page": "index.html",
-  "text": "The PTP tree when devices run AVB Lite"
+  "text": "Devices running AVB Lite, behind a switch that takes no part in AVB"
  },
  "2d30ccce799c": {
   "page": "index.html",
@@ -159,9 +183,9 @@
   "page": "index.html",
   "text": "Presets, recalled in one click"
  },
- "a3942f9b612c": {
+ "f66eccd49798": {
   "page": "index.html",
-  "text": "A show's network: three bridges, twenty devices and every audio stream as its own wire"
+  "text": "A show's network: three bridges, eighteen devices and every audio stream as its own wire"
  },
  "50c39ea39a1c": {
   "page": "index.html",
@@ -309,19 +333,19 @@
   "text": "The triib icon",
   "attribute": true
  },
- "3c4b8c510eca": {
+ "5518b33a0150": {
   "page": "index.html",
-  "text": "triib in dark mode with the connection matrix of three entities, talker outputs across the top and listener inputs down the side, an audio stream and two media clock streams connected, and the inspector on the right showing the selected Mac mini's name, product, firmware, configuration, media clock and sampling rate",
+  "text": "triib in dark mode with the connection matrix of three entities, a Wi-Fi speaker, a lectern and a Mac mini, talker outputs across the top and listener inputs down the side, an audio stream and two media clock streams connected, and the inspector on the right showing the selected Mac mini's name, product, firmware, configuration, media clock and sampling rate",
   "attribute": true
  },
- "744b44c965b9": {
+ "db16a8fd0138": {
   "page": "index.html",
-  "text": "The network map's clock tree: a core bridge as grandmaster, two more bridges below it and twenty devices, each marked Sync except one monitor amp marked No sync",
+  "text": "The network map's clock tree, the time moving along its wires: a core bridge as grandmaster, two more bridges below it and eighteen devices, each marked Sync except one monitor amp marked No sync",
   "attribute": true
  },
- "c672066f5161": {
+ "eef90a7f5e75": {
   "page": "index.html",
-  "text": "The network view in AVB Lite: the PTP tree from the grandmaster clock to a device in sync, two devices not on the PTP tree, and a panel counting two in sync and two not",
+  "text": "The network map of a venue, its audio moving along the wires: the stage's devices under an AVB bridge in gPTP domain 0, and beside them in PTP domain 0 the house's, running AVB Lite under a dashed card for a switch that takes no part in AVB, a paging mic sending to three of them unicast",
   "attribute": true
  },
  "07ebe8ce3b3c": {
@@ -334,18 +358,18 @@
   "text": "The Presets dialog with a preset named Matinee about to be saved, and Rehearsal and Sunday service ready to recall",
   "attribute": true
  },
- "66f203cac1de": {
+ "67af506e2c9f": {
   "page": "index.html",
-  "text": "The network map of a show: a core bridge, a stage bridge and a front of house bridge, twenty devices from stage boxes to amps, and each audio stream as its own colored wire, with two failed reservations marked",
+  "text": "The network map of a show, its audio moving along the wires: a core bridge, a stage bridge and a front of house bridge, eighteen devices from stage boxes to amps, and each audio stream as its own colored wire, with two failed reservations marked",
   "attribute": true
  },
  "64d5808da8e6": {
   "page": "guide.html",
   "text": "A tour of triib"
  },
- "8752c2d4bfd1": {
+ "e30c07146e41": {
   "page": "guide.html",
-  "text": "What each part of triib does and how to use it. The pictures show a test network of three entities, with a host entity beside them, and a show's network of twenty devices."
+  "text": "What each part of triib does and how to use it. The pictures show a small network of three entities, a lectern, a Wi-Fi speaker and a Mac mini, with a host entity beside them, and the networks of a show and of a venue."
  },
  "f1b320f71673": {
   "page": "guide.html",
@@ -415,9 +439,9 @@
   "page": "guide.html",
   "text": "triib asks every entity to announce itself when it starts, and again whenever you press the refresh button. Each entity it finds has its entity model read once and kept, so a device you have seen before shows in full at once the next time."
  },
- "24bd84ecd553": {
+ "80c86573f9d5": {
   "page": "guide.html",
-  "text": "On Linux triib needs <code>CAP_NET_RAW</code>, on macOS access to <code>/dev/bpf*</code>, and on Windows <a1>Npcap</a1>. The packages set the first two up; when something is missing, triib says what and how to fix it. On a Mac, triib reaches the Mac's own AVB entity through Apple's AudioVideoBridging framework, as macOS never hands that entity what a program writes to BPF."
+  "text": "On Linux triib needs <code>CAP_NET_RAW</code>, on macOS access to <code>/dev/bpf*</code>, and on Windows <a1>Npcap</a1>. The packages set the first two up; when something is missing, triib says what and how to fix it, and where a command grants it, carries on as soon as the command has run. On a Mac, triib reaches the Mac's own AVB entity through Apple's AudioVideoBridging framework, as macOS never hands that entity what a program writes to BPF."
  },
  "8f3509b64e0e": {
   "page": "guide.html",
@@ -483,21 +507,29 @@
   "page": "guide.html",
   "text": "The talker and listener have no format in common"
  },
+ "7572aa28b2d6": {
+  "page": "guide.html",
+  "text": "Other clock domain"
+ },
+ "4e01d80aead5": {
+  "page": "guide.html",
+  "text": "The talker and listener are in different clock domains, as the network map shows them, so they cannot connect"
+ },
  "eb11981e7c15": {
   "page": "guide.html",
   "text": "Click a cell marked <em>Input format must change first</em> for a menu of the formats both ends take: pick one and triib changes the input, or both ends, and connects."
  },
- "b022e750d40a": {
+ "58241ec7ba70": {
   "page": "guide.html",
-  "text": "The chips above the matrix show all streams, only audio or only media clock streams, and <em>Hide what cannot connect</em> leaves out the rows and columns with nothing to connect. The search field in the toolbar finds entities and streams by name."
+  "text": "The chips above the matrix show all streams, only audio or only media clock streams. The filter menu beside them hides the streams that cannot connect, the entities running AVB Lite and the wireless entities, and says how many streams it hides. The search field in the toolbar finds entities and streams by name."
  },
  "f7638a26e808": {
   "page": "guide.html",
   "text": "Entities"
  },
- "51cbd921bf09": {
+ "c40b251526f3": {
   "page": "guide.html",
-  "text": "The entity list has a row for each entity: its name and group, product and firmware, Milan version, roles, media clock and more. The media clock's menu changes an entity's clock source right in the list. Each column header has a menu to move or remove its column or add another, such as vendor, model, state, AVB Lite or egress."
+  "text": "The entity list has a row for each entity: its name and group, product and firmware, Milan version, roles, media clock and more. The media clock's menu changes an entity's clock source right in the list. Each column header has a menu to move or remove its column or add another, such as vendor, model, state, AVB Lite, egress, or the entity's logo and its vendor's. The filter menu above the list shows only this computer's entities, hides controllers, or hides entities outside this computer's clock domain, and says how many it hides."
  },
  "a0b7e772fd8c": {
   "page": "guide.html",
@@ -511,9 +543,9 @@
   "page": "guide.html",
   "text": "Select an entity, in the matrix, the entity list or the network, and the inspector, titled by its name, shows all there is to know about it, in five tabs. A short value sits beside its label, a longer one under it."
  },
- "6bb31d04c9fb": {
+ "a49d18d37eb2": {
   "page": "guide.html",
-  "text": "<strong>Entity:</strong> its name and group, which you can rename, its product and firmware, its configuration, picked by name where it has several, its media clock with the clock source and sampling rate to change, its AVB Lite and AVB Wireless state, its identity and roles. <em>Identify</em> makes the device show itself, as by a blinking light."
+  "text": "<strong>Entity:</strong> its name and group, which you can rename, its product and firmware, its logo and its vendor's where it has them, its configuration, picked by name where it has several, its media clock with the clock source and sampling rate to change, its AVB Lite and AVB Wireless state, its identity and roles. <em>Identify</em> makes the device show itself, as by a blinking light."
  },
  "d578970588ae": {
   "page": "guide.html",
@@ -523,9 +555,9 @@
   "page": "guide.html",
   "text": "<strong>Controls:</strong> the entity's controls, such as gain, volume and mute, to set."
  },
- "ba2b8b304ff3": {
+ "72c0da263a84": {
   "page": "guide.html",
-  "text": "<strong>Diagnostics:</strong> how each clock domain and stream has fared since the entity started, from the counters it keeps, with what went wrong marked, and how each bound input's reservation stands."
+  "text": "<strong>Diagnostics:</strong> its AVB interfaces and what its streams take of each link, how each clock domain and stream has fared since the entity started, from the counters it keeps, with what went wrong marked, and how each bound input's reservation stands."
  },
  "ad14e487e9fd": {
   "page": "guide.html",
@@ -535,25 +567,25 @@
   "page": "guide.html",
   "text": "Network"
  },
- "57d4c4633b61": {
+ "2fd9a09e53b4": {
   "page": "guide.html",
-  "text": "The network view draws the network from each entity's gPTP path: bridges at the top, the devices behind each of them below, and those connected straight to the grandmaster's bridge in the middle. A panel beside the map counts what it shows and lists what needs attention. The chips switch what is drawn on the map:"
+  "text": "The network view draws the network from each entity's gPTP path, each clock domain in an area of its own: bridges at the top, the devices behind each of them below, and those connected straight to the grandmaster's bridge in the middle. A panel beside the map counts what it shows and lists what needs attention. The chips switch what is drawn on the map:"
  },
- "7174fbf83271": {
+ "278059221828": {
   "page": "guide.html",
-  "text": "<strong>Audio:</strong> each stream as its own wire, entering and leaving every bridge it crosses. Each talker has a hue and its streams are shades of it. Moving dots mean audio is flowing; a still red line is a failed reservation and a still gray line is advertised with no listener ready, both stopping where the reservation stops."
+  "text": "<strong>Sync:</strong> the clock tree from the grandmaster, with each device in sync or not."
+ },
+ "d6d846fda271": {
+  "page": "guide.html",
+  "text": "<strong>Audio:</strong> each stream on the links it crosses, entering and leaving every bridge on its way: a multicast stream takes one wire as far as its listeners' paths run together and branches where they part, and a unicast stream has a wire to each listener. Each talker has a hue and its streams are shades of it. Moving dots mean audio is flowing; a still red line is a failed reservation and a still gray line is advertised with no listener ready, both stopping where the reservation stops."
  },
  "b279c95db0cf": {
   "page": "guide.html",
   "text": "<strong>CRF:</strong> the media clock streams, the same way."
  },
- "3a41d056503d": {
+ "d06312a1d272": {
   "page": "guide.html",
-  "text": "<strong>gPTP:</strong> the clock tree from the grandmaster, with each device in sync or not."
- },
- "efd86ec875f2": {
-  "page": "guide.html",
-  "text": "Click a wire to inspect its stream, or a device to see its streams alone, until you clear it with the button above the map or click the background. Controllers are left out, as they take no part in the clock or the streams, and the local host shows as its host entities. On a narrow window the map and the panel take turns."
+  "text": "Click a wire to inspect its stream, or a device to see its streams alone, until you clear it with the button above the map or click the background. Controllers are left out, as they take no part in the clock or the streams, and the local host shows as its host entities. Where this computer runs none of its own, the map shows what it is plugged into: an AVB bridge's port, or a switch that takes no part in AVB. On a narrow window the map and the panel take turns."
  },
  "d5354bee5ff8": {
   "page": "guide.html",
@@ -563,9 +595,9 @@
   "page": "guide.html",
   "text": "The inspector's AVB Lite section gives the entity's mode and why it fell back, its PTP profile and offset from the grandmaster, its media VLAN, how many listeners it serves unicast, and its link speed."
  },
- "1026742966af": {
+ "a32bd7b8fc21": {
   "page": "guide.html",
-  "text": "When no AVB bridge is heard and entities run AVB Lite, the network view's clock chip reads PTP and draws the PTP tree. A device is in sync while it follows the grandmaster within 50&nbsp;µs."
+  "text": "The network view puts the devices running AVB Lite in their PTP domain, under a dashed card for the switch in front of them that takes no part in AVB, with a wire for each listener of a unicast stream. With the Sync chip, a device is in sync while it follows its grandmaster within 50&nbsp;µs."
  },
  "8a8eb7155462": {
   "page": "guide.html",
@@ -685,9 +717,9 @@
   "text": "Contents",
   "attribute": true
  },
- "409a24f4a9bc": {
+ "84cb9c1deb60": {
   "page": "guide.html",
-  "text": "The connection matrix: talker outputs of three entities written diagonally across the top, listener inputs down the right, a link in each cell whose streams are connected, and circles in the cells where a connection can be made",
+  "text": "The connection matrix: talker outputs of a Wi-Fi speaker, a lectern and a Mac mini written diagonally across the top, listener inputs down the right, a link in each cell whose streams are connected, and circles in the cells where a connection can be made",
   "attribute": true
  },
  "141be4a57b66": {
@@ -695,39 +727,44 @@
   "text": "The connection matrix with a menu open over a cell: change the input to AAF 48 kHz, 8 ch, 32-bit, or change both to AM824 48 kHz, 8 ch or AAF 48 kHz, 8 ch, 32-bit (24 used), or connect without changing formats",
   "attribute": true
  },
- "8ae2a0f6fe3d": {
+ "83a44ffbd0ca": {
   "page": "guide.html",
-  "text": "The entity list: two AVB Example Entities, the host entity Host entity 1, and a Mac mini, with their product, firmware, Milan version, roles, media clock, grandmaster and state",
+  "text": "The entity list: Foyer speaker, the host entity Host entity 1, Lectern and a Mac mini, with their product, firmware, Milan version, roles, media clock, grandmaster and state",
   "attribute": true
  },
- "62da388857c6": {
+ "e24a0544d08e": {
   "page": "guide.html",
-  "text": "The inspector beside the entity list, showing an entity's name, group, product, firmware and Milan version, its clock domain and sampling rate, and its AVB Lite section with mode, the reason it fell back, PTP profile, offset, media VLAN, unicast and link speed",
+  "text": "The inspector's Entity tab for Lectern: an Identify button, its name and group, product, firmware, serial number, configuration and Milan version, its clock domain and sampling rate, its identity and its roles",
   "attribute": true
  },
- "4deae411c723": {
+ "9d9c1ac0cb29": {
   "page": "guide.html",
-  "text": "The Controls tab of the inspector with sliders for Speaker Volume at 0.0 dB and Mic Gain at 36.0 dB",
+  "text": "The Streams tab for a Mac mini: its streams, each with its format, the picked output's name, format and state, and its channel mappings, the first two input channels crossed",
   "attribute": true
  },
- "1383e82fbf3b": {
+ "21895e1da293": {
   "page": "guide.html",
-  "text": "The network map of a show: a core bridge, a stage bridge and a front of house bridge, twenty devices below them, and each audio stream as its own colored wire",
+  "text": "The Diagnostics tab for Lectern: its Ethernet interface, its egress against its link, and its counters since it started, a clock domain that lost lock once and inputs that lost media lock twice marked in red",
   "attribute": true
  },
- "143a212d65f3": {
+ "dab5e87edefa": {
   "page": "guide.html",
-  "text": "The same show's network as a clock tree, with the core bridge as grandmaster and every device marked Sync except one monitor amp marked No sync",
+  "text": "The Controls tab for Lectern, with sliders for Speaker Volume at 0.0 dB and Mic Gain at 36.0 dB",
   "attribute": true
  },
- "c08dda99add5": {
+ "67d8a25e059d": {
   "page": "guide.html",
-  "text": "The network view in AVB Lite, its first chip reading PTP: the PTP tree from the grandmaster clock to one device in sync, two devices not on the PTP tree, and a panel listing them as needing attention",
+  "text": "The network map of a show, its audio moving along the wires: a core bridge, a stage bridge and a front of house bridge, eighteen devices below them, and each audio stream as its own colored wire, with two failed reservations marked",
   "attribute": true
  },
- "a7b0046002ee": {
+ "fed686e5b000": {
   "page": "guide.html",
-  "text": "The inspector's Wireless section for a Wi-Fi station: role Station, Mode A over FTM, time holding over, a 5 GHz link on channel 36 at 80 MHz, signal, rate, its access point and FTM",
+  "text": "The same show's network as a clock tree, the time moving along its wires, with the core bridge as grandmaster and every device marked Sync except one monitor amp marked No sync",
+  "attribute": true
+ },
+ "cb5728c10335": {
+  "page": "guide.html",
+  "text": "The inspector's Wireless section for Foyer speaker, a Wi-Fi station: role Station, Mode A over FTM, time holding over, a 5 GHz link on channel 36 at 80 MHz, signal, rate, its access point and FTM",
   "attribute": true
  },
  "2a87832933e1": {
@@ -863,9 +900,9 @@
   "page": "specs.html",
   "text": "Installer package (.pkg), signed and notarized"
  },
- "23eba0ef6037": {
+ "b550a2c6178e": {
   "page": "specs.html",
-  "text": "A wired Ethernet interface, through raw sockets on Linux (<code>CAP_NET_RAW</code>), BPF on macOS and Npcap on Windows"
+  "text": "A wired Ethernet interface, through raw sockets on Linux, opened by one small helper holding <code>CAP_NET_RAW</code>, BPF on macOS and Npcap on Windows"
  },
  "ab255c27aec8": {
   "page": "specs.html",
@@ -879,9 +916,9 @@
   "page": "specs.html",
   "text": "Look"
  },
- "c9283a58313e": {
+ "dc4ad973d264": {
   "page": "specs.html",
-  "text": "Material Design 3, light or dark and the accent color from the system"
+  "text": "Material Design 3, light or dark, in the accent color of the system or its Omarchy theme, or one picked; on a Mac, a menu bar with triib's menus"
  },
  "23c687921e9b": {
   "page": "specs.html",
@@ -967,17 +1004,21 @@
   "page": "specs.html",
   "text": "Discovery"
  },
- "188137ffae4e": {
+ "16ac2dce9445": {
   "page": "specs.html",
-  "text": "Every entity on the interface, with its entity model read and kept for next time, and offline entities shown as such; controllers that do not advertise, from the commands they send"
+  "text": "Every entity on the interface, with its entity model read and kept for next time, its logo and its vendor's read through Address Access, and offline entities shown as such; entities that send no notifications read again in turn; controllers that do not advertise, from the commands they send"
  },
- "8ba1e809fd70": {
+ "1255b6a3fc87": {
   "page": "specs.html",
-  "text": "A matrix of talker outputs and listener inputs for audio and media clock streams, with each connection's state and whether the formats meet; connections by group or one by one, and a menu of the formats both ends take where the input must change first"
+  "text": "A list with the columns picked, from product, firmware and Milan version to media clock, grandmaster, AVB Lite and logos, each entity's clock source changed in place; filtered to this computer's entities, without controllers, or to this computer's clock domain"
  },
- "6ef2c8493fa1": {
+ "5ed22ee87239": {
   "page": "specs.html",
-  "text": "A map of bridges and devices from each entity's gPTP path, with audio streams, CRF streams or the clock tree drawn on it"
+  "text": "A matrix of talker outputs and listener inputs for audio and media clock streams, with each connection's state and whether the formats meet; connections by group or one by one, and a menu of the formats both ends take where the input must change first; talkers and listeners in different clock domains kept from connecting; filters for what cannot connect, entities running AVB Lite and wireless entities"
+ },
+ "f1a4bb08036a": {
+  "page": "specs.html",
+  "text": "A map of bridges and devices in their clock domains, from each entity's gPTP path, those running AVB Lite behind the switch in front of them, with the clock tree or the traffic of audio or CRF streams on each link drawn on it"
  },
  "8aa57de6dce6": {
   "page": "specs.html",
@@ -999,9 +1040,9 @@
   "page": "specs.html",
   "text": "Diagnostics"
  },
- "8fa3cf0eaa9e": {
+ "d43f6f4849e1": {
   "page": "specs.html",
-  "text": "How each clock domain and stream has fared, from the entity's counters, with what went wrong marked; each bound input's reservation; a talker's listeners, where it keeps them; and the descriptors themselves"
+  "text": "What each AVB interface's streams take of its link; how each clock domain and stream has fared, from the entity's counters, with what went wrong marked; each bound input's reservation; a talker's listeners, where it keeps them; and the descriptors themselves"
  },
  "36fc2ed1417b": {
   "page": "specs.html",
@@ -1043,9 +1084,9 @@
   "page": "specs.html",
   "text": "Formats"
  },
- "f46233570bdf": {
+ "f7d4b6a4e970": {
   "page": "specs.html",
-  "text": "Audio: AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless another count is picked, and 2 and 8 channels too; in SR class B in class B's own formats, else class A. Media clock: CRF, 48 kHz with a timestamp every 96 samples"
+  "text": "Audio: AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless another count is picked, and 2 and 8 channels too, each size at every rate where it fits a frame; in SR class B in class B's own formats, else class A. Media clock: CRF, 48 kHz with a timestamp every 96 samples"
  },
  "acdac205f5e2": {
   "page": "specs.html",
@@ -1083,9 +1124,9 @@
   "page": "specs.html",
   "text": "Program"
  },
- "f30716cd3e68": {
+ "6c3c9ef95e08": {
   "page": "specs.html",
-  "text": "<code>triib-endpointd</code>, which reads <code>entities.toml</code> again whenever it changes"
+  "text": "<code>triib-endpointd</code>, which reads <code>entities.toml</code> again whenever it changes, and shares its MSRP participant with other programs on this computer, such as plaa"
  },
  "96d9e027ee25": {
   "page": "specs.html",
@@ -1103,9 +1144,9 @@
   "page": "specs.html",
   "text": "Host entities fall back when no AVB bridge answers on the interface, and come back to AVB when the link comes up again"
  },
- "176c1fe73710": {
+ "91408480f0a8": {
   "page": "specs.html",
-  "text": "Unicast to each listener, to 2 a talker unless set otherwise, and multicast beyond that only where allowed"
+  "text": "Unicast to each listener, to 5 a talker unless set otherwise, and multicast beyond that only where allowed"
  },
  "bcd9f68b4298": {
   "page": "specs.html",

@@ -50,9 +50,9 @@
 </tbody>
 </table></div>
 <table class="spec"><tbody>
-<tr><th>Network</th><td>A wired Ethernet interface, through raw sockets on Linux (<code>CAP_NET_RAW</code>), BPF on macOS and Npcap on Windows</td></tr>
+<tr><th>Network</th><td>A wired Ethernet interface, through raw sockets on Linux, opened by one small helper holding <code>CAP_NET_RAW</code>, BPF on macOS and Npcap on Windows</td></tr>
 <tr><th>Graphics</th><td>The GPU through Vulkan on Linux, DirectX 12 or Vulkan on Windows, and Metal on macOS; the CPU when no GPU backend starts</td></tr>
-<tr><th>Look</th><td>Material Design 3, light or dark and the accent color from the system</td></tr>
+<tr><th>Look</th><td>Material Design 3, light or dark, in the accent color of the system or its Omarchy theme, or one picked; on a Mac, a menu bar with triib's menus</td></tr>
 <tr><th>The Mac's own entity</th><td>Read and controlled through Apple's AudioVideoBridging framework, as macOS never hands it what a program writes to BPF; shown as a host entity, with its audio device, its streams' peak meters, and Listen, which plays what it receives, or from macOS 14.2 what apps send through it</td></tr>
 <tr><th>Not here yet</th><td>Entities running on the local host on Windows, and on macOS beside the Mac's own</td></tr>
 </tbody></table>
@@ -72,12 +72,13 @@
 
 <h2 id="controller">Controller</h2>
 <table class="spec"><tbody>
-<tr><th>Discovery</th><td>Every entity on the interface, with its entity model read and kept for next time, and offline entities shown as such; controllers that do not advertise, from the commands they send</td></tr>
-<tr><th>Connections</th><td>A matrix of talker outputs and listener inputs for audio and media clock streams, with each connection's state and whether the formats meet; connections by group or one by one, and a menu of the formats both ends take where the input must change first</td></tr>
-<tr><th>Network</th><td>A map of bridges and devices from each entity's gPTP path, with audio streams, CRF streams or the clock tree drawn on it</td></tr>
+<tr><th>Discovery</th><td>Every entity on the interface, with its entity model read and kept for next time, its logo and its vendor's read through Address Access, and offline entities shown as such; entities that send no notifications read again in turn; controllers that do not advertise, from the commands they send</td></tr>
+<tr><th>Entities</th><td>A list with the columns picked, from product, firmware and Milan version to media clock, grandmaster, AVB Lite and logos, each entity's clock source changed in place; filtered to this computer's entities, without controllers, or to this computer's clock domain</td></tr>
+<tr><th>Connections</th><td>A matrix of talker outputs and listener inputs for audio and media clock streams, with each connection's state and whether the formats meet; connections by group or one by one, and a menu of the formats both ends take where the input must change first; talkers and listeners in different clock domains kept from connecting; filters for what cannot connect, entities running AVB Lite and wireless entities</td></tr>
+<tr><th>Network</th><td>A map of bridges and devices in their clock domains, from each entity's gPTP path, those running AVB Lite behind the switch in front of them, with the clock tree or the traffic of audio or CRF streams on each link drawn on it</td></tr>
 <tr><th>Changes</th><td>Names and groups, configurations, stream formats, sampling rates, clock sources, outputs' maximum transit times, channel maps, controls such as gain and mute, and identifying</td></tr>
 <tr><th>Meters</th><td>A peak meter of each audio stream's first two channels wherever this computer carries its audio: host entities' streams, the Mac's own entity's, and other entities' streams connected to them</td></tr>
-<tr><th>Diagnostics</th><td>How each clock domain and stream has fared, from the entity's counters, with what went wrong marked; each bound input's reservation; a talker's listeners, where it keeps them; and the descriptors themselves</td></tr>
+<tr><th>Diagnostics</th><td>What each AVB interface's streams take of its link; how each clock domain and stream has fared, from the entity's counters, with what went wrong marked; each bound input's reservation; a talker's listeners, where it keeps them; and the descriptors themselves</td></tr>
 <tr><th>Presets</th><td>Clock sources, sampling rates, stream formats, controls and connections, and host entities; recalling one changes only what differs</td></tr>
 <tr><th>Log</th><td>Every ATDECC frame sent and heard, decoded, with the frames that break the rules marked</td></tr>
 <tr><th>AVB Wireless</th><td>Each Wi-Fi station's role, time mode, link and access point, each access point's stations and the frames a second it delivers, stations under their access point on the map, and the profile's alarms</td></tr>
@@ -89,19 +90,19 @@
 <tr><th>Systems</th><td>Linux, on a wired interface with a PTP hardware clock (<code>ethtool -T</code> shows one)</td></tr>
 <tr><th>Time</th><td>ptp4l running gPTP on that interface, started through triib's own systemd unit where none runs, and read through its read-only socket; an entity more than a millisecond off the grandmaster reports itself out of sync, and triib's ptp4l starts again after 10 s</td></tr>
 <tr><th>Entities</th><td>Milan entities with any number of streams each way; any controller binds them</td></tr>
-<tr><th>Formats</th><td>Audio: AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless another count is picked, and 2 and 8 channels too; in SR class B in class B's own formats, else class A. Media clock: CRF, 48 kHz with a timestamp every 96 samples</td></tr>
+<tr><th>Formats</th><td>Audio: AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless another count is picked, and 2 and 8 channels too, each size at every rate where it fits a frame; in SR class B in class B's own formats, else class A. Media clock: CRF, 48 kHz with a timestamp every 96 samples</td></tr>
 <tr><th>Audio</th><td>To and from the computer's audio devices; each audio stream with a virtual audio device of its own in PipeWire unless it uses a sound card; an output can send a tone or silence instead, and an input can discard what it receives; each stream measured for the app's peak meters while it shows them</td></tr>
 <tr><th>Clock</th><td>The internal clock, or any input: the clock recovered from a media clock's timestamps or an audio stream's presentation times</td></tr>
 <tr><th>Mappings</th><td>Dynamic on inputs, as Milan has them; fixed on outputs</td></tr>
 <tr><th>Scheduling</th><td>Real-time threads through RealtimeKit, as PipeWire asks for</td></tr>
-<tr><th>Program</th><td><code>triib-endpointd</code>, which reads <code>entities.toml</code> again whenever it changes</td></tr>
+<tr><th>Program</th><td><code>triib-endpointd</code>, which reads <code>entities.toml</code> again whenever it changes, and shares its MSRP participant with other programs on this computer, such as plaa</td></tr>
 </tbody></table>
 
 <h2 id="avb-lite">AVB Lite</h2>
 <table class="spec"><tbody>
 <tr><th>Watching</th><td>Each entity's mode and why it fell back, its PTP profile and offset, its media VLAN and what its streams take of each link, and the profile's alarms</td></tr>
 <tr><th>Falling back</th><td>Host entities fall back when no AVB bridge answers on the interface, and come back to AVB when the link comes up again</td></tr>
-<tr><th>Streams</th><td>Unicast to each listener, to 2 a talker unless set otherwise, and multicast beyond that only where allowed</td></tr>
+<tr><th>Streams</th><td>Unicast to each listener, to 5 a talker unless set otherwise, and multicast beyond that only where allowed</td></tr>
 <tr><th>ptp4l</th><td>Started where none runs, and moved between gPTP and the AVB Lite PTP profile, through triib's systemd units and polkit rule</td></tr>
 <tr><th>Link</th><td>Energy-Efficient Ethernet and PAUSE kept off, as the profile asks, by a systemd unit</td></tr>
 </tbody></table>

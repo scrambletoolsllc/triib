@@ -1639,6 +1639,10 @@ impl Widget<Message, Theme, iced::Renderer> for NetMap {
                 .now
                 .saturating_duration_since(state.started)
                 .as_secs_f32();
+            #[cfg(test)]
+            let seconds = tests::PICTURE_SECONDS
+                .with(std::cell::Cell::get)
+                .unwrap_or(seconds);
             let phase = (seconds / BEAT).fract();
             (phase, 0.5 - 0.5 * (TAU * phase).cos())
         };
@@ -1790,6 +1794,13 @@ mod tests {
     use super::*;
     use crate::topology::{EntityReport, HostReport, InterfaceReport, Route};
 
+    thread_local! {
+        /// The seconds into the wires' animation a picture is drawn at, in
+        /// place of the time since the map first drew.
+        pub(super) static PICTURE_SECONDS: std::cell::Cell<Option<f32>> =
+            const { std::cell::Cell::new(None) };
+    }
+
     fn info(grandmaster: ClockIdentity, delay: u32) -> AvbInfo {
         let mut payload = [0u8; 20];
         payload[4..12].copy_from_slice(&grandmaster.0.to_be_bytes());
@@ -1803,17 +1814,18 @@ mod tests {
     /// The map of a topology with these streams, as the view builds it,
     /// each talker sending one multicast stream.
     fn draw(topology: Topology, streams: &[Bound], clock: bool, focus: Option<Focus>) -> Map {
-        draw_as(topology, streams, clock, focus, true)
+        draw_as(topology, streams, clock, focus, |_| true)
     }
 
     /// The map of a topology with these streams, each talker sending one
-    /// stream, to a multicast address or to each listener's own.
+    /// stream, to a multicast address where `multicast` says so, else to
+    /// each listener's own.
     fn draw_as(
         topology: Topology,
         streams: &[Bound],
         clock: bool,
         focus: Option<Focus>,
-        multicast: bool,
+        multicast: impl Fn(EntityId) -> bool,
     ) -> Map {
         let paints = paints(
             &streams
@@ -1870,15 +1882,33 @@ mod tests {
                         related: focus.is_none() || picked,
                         picked,
                         focus: Focus::Stream(listener, index as u16),
-                        stream: multicast.then_some((talker, 0)),
+                        stream: multicast(talker).then_some((talker, 0)),
                     }
                 })
                 .collect()
         };
+        // The streams through each bridge or switch, a multicast stream
+        // once however many listeners it has, as the app counts them.
+        let through = |place: NodeId| {
+            let mut seen = Vec::new();
+            for (index, line) in lines.iter().enumerate() {
+                let frames = line.stream.ok_or(index);
+                if line
+                    .hops
+                    .iter()
+                    .any(|&(hop, _)| topology.nodes[hop].parent == Some(place))
+                    && !seen.contains(&frames)
+                {
+                    seen.push(frames);
+                }
+            }
+            seen.len()
+        };
         let cards = topology
             .nodes
             .iter()
-            .map(|node| {
+            .enumerate()
+            .map(|(place, node)| {
                 let entity = match node.kind {
                     Kind::Entity { entity_id, .. } => Some(entity_id),
                     _ => None,
@@ -1897,7 +1927,7 @@ mod tests {
                     .iter()
                     .filter(|bound| Some(bound.0) == entity)
                     .count();
-                if multicast {
+                if entity.is_some_and(&multicast) {
                     sending = sending.min(1);
                 }
                 let receiving = streams
@@ -1939,7 +1969,10 @@ mod tests {
                             (text, Paint::Muted)
                         }
                     }
-                    _ => ("Bridge".to_owned(), Paint::Muted),
+                    _ => (
+                        crate::fl!("netmap-through-count", count = through(place)),
+                        Paint::Muted,
+                    ),
                 };
                 Card {
                     icon: icon.codepoint(),
@@ -2256,8 +2289,83 @@ mod tests {
             ],
             clock,
             None,
-            false,
+            |_| false,
         )
+    }
+
+    /// A venue: the stage's devices under an AVB bridge, and the house's,
+    /// which fell back to AVB Lite behind a switch taking no part in AVB,
+    /// the paging mic sending to each of the others unicast.
+    fn venue(clock: bool) -> Map {
+        use atdecc::lite::{FallbackReason, LiteFlags, LiteStatus, PtpProfile};
+        let bridge = ClockIdentity(0x00aa_bbff_fe00_0001);
+        let own = |place: usize| ClockIdentity(0x0011_22ff_fe00_0000 | place as u64);
+        let stage = [
+            "FOH console",
+            "Stage box",
+            "Playback Mac",
+            "Main amp L",
+            "Main amp R",
+        ];
+        let house = ["Paging mic", "Lobby amp", "Bar speaker", "Green room"];
+        let lite = LiteStatus {
+            interface: 0,
+            flags: LiteFlags::CAPABLE | LiteFlags::ACTIVE | LiteFlags::OFFSET_VALID,
+            fallback_reason: FallbackReason::PDELAY_UNANSWERED,
+            ptp_profile: PtpProfile::AVB_LITE_PTP,
+            ptp_domain: 0,
+            media_vlan_id: 2,
+            unicast_fanout_limit: 5,
+            link_speed: 1000,
+            committed_egress: 0,
+            grandmaster: own(stage.len()),
+            offset_from_grandmaster: 120,
+        };
+        let paths: Vec<[ClockIdentity; 2]> =
+            (0..stage.len()).map(|place| [bridge, own(place)]).collect();
+        let on_bridge = info(bridge, 400);
+        let names: Vec<&str> = stage.iter().chain(&house).copied().collect();
+        let reports: Vec<EntityReport<'_>> = names
+            .iter()
+            .enumerate()
+            .map(|(place, &name)| EntityReport {
+                entity_id: EntityId(place as u64 + 1),
+                name,
+                interfaces: vec![InterfaceReport {
+                    index: 0,
+                    clock: own(place),
+                    path: paths.get(place).map(|path| &path[..]),
+                    info: (place < stage.len()).then_some(&on_bridge),
+                    wireless: None,
+                    lite: (place >= stage.len()).then_some(&lite),
+                    gptp: true,
+                }],
+            })
+            .collect();
+        let mut topology = Topology::build(&reports, None);
+        for node in &mut topology.nodes {
+            if node.clock == Some(bridge) {
+                node.name = "Main bridge".to_owned();
+            }
+        }
+        let id = |name: &str| {
+            EntityId(names.iter().position(|named| *named == name).unwrap() as u64 + 1)
+        };
+        let streams: Vec<Bound> = [
+            ("Stage box", "FOH console"),
+            ("Playback Mac", "FOH console"),
+            ("FOH console", "Main amp L"),
+            ("FOH console", "Main amp R"),
+            ("Paging mic", "Lobby amp"),
+            ("Paging mic", "Bar speaker"),
+            ("Paging mic", "Green room"),
+        ]
+        .iter()
+        .map(|&(talker, listener)| (id(talker), id(listener), Status::Flowing))
+        .collect();
+        // The paging mic sends in AVB Lite, a stream to each listener.
+        let paging = id("Paging mic");
+        draw_as(topology, &streams, clock, None, |talker| talker != paging)
     }
 
     /// A larger show: a core bridge as grandmaster with a stage bridge and
@@ -2361,7 +2469,7 @@ mod tests {
         .iter()
         .map(|&(talker, listener, status)| (id(talker), id(listener), status))
         .collect();
-        draw_as(topology, &streams, clock, focus, multicast)
+        draw_as(topology, &streams, clock, focus, |_| multicast)
     }
 
     /// A multicast stream takes one wire on each link however many of its
@@ -2505,13 +2613,24 @@ mod tests {
 
     /// Writes pictures of the bench and of a larger show to the PNG files
     /// the variable `NETWORK_PICTURE` names, with what each shows added.
+    /// `NETWORK_ONLY` picks some by name, such as "show,show-clock", and
+    /// `NETWORK_FRAMES` draws each as that many frames of one beat of the
+    /// wires' animation, numbered from 00.
     #[test]
     #[ignore = "writes pictures to look at"]
     fn pictures() {
         let Ok(path) = std::env::var("NETWORK_PICTURE") else {
             return;
         };
-        let theme = scramble_ui::scheme::theme("triib".to_owned(), crate::app::TRIIB_SEED, true);
+        let only = std::env::var("NETWORK_ONLY").ok();
+        let frames: usize = std::env::var("NETWORK_FRAMES")
+            .ok()
+            .and_then(|frames| frames.parse().ok())
+            .unwrap_or(0);
+        if frames > 0 {
+            scramble_ui::motion::set_reduced(false);
+        }
+        let theme = crate::view::tests::picture_theme();
         let natural = Size::new(f32::INFINITY, f32::INFINITY);
         let phone = Size::new(390.0, 760.0);
         let picked = Some(Focus::Stream(EntityId(14), 3));
@@ -2536,11 +2655,14 @@ mod tests {
             ("mixed-clock", mixed(true), natural),
             ("mixed-medium", mixed(false), Size::new(700.0, 760.0)),
             ("mixed-phone", mixed(true), phone),
+            ("venue", venue(false), natural),
+            ("venue-clock", venue(true), natural),
         ] {
-            let file = format!("{path}-{suffix}.png");
-            // The simulator adds its renderer's name to the file name.
-            for renderer in ["tiny-skia", "wgpu"] {
-                let _ = std::fs::remove_file(format!("{path}-{suffix}-{renderer}.png"));
+            if only
+                .as_ref()
+                .is_some_and(|only| !only.split(',').any(|name| name == suffix))
+            {
+                continue;
             }
             let settings = iced::Settings {
                 fonts: scramble_ui::font::files().collect(),
@@ -2556,8 +2678,30 @@ mod tests {
             };
             let mut simulator =
                 iced_test::Simulator::with_size(settings, window, Element::from(drawn));
-            let snapshot = simulator.snapshot(&theme).expect("draws");
-            assert!(snapshot.matches_image(&file).expect("writes"));
+            let names: Vec<String> = if frames == 0 {
+                vec![suffix.to_owned()]
+            } else {
+                (0..frames)
+                    .map(|frame| format!("{suffix}-{frame:02}"))
+                    .collect()
+            };
+            for (frame, name) in names.iter().enumerate() {
+                if frames > 0 {
+                    let seconds = BEAT * frame as f32 / frames as f32;
+                    PICTURE_SECONDS.with(|picture| picture.set(Some(seconds)));
+                }
+                // The simulator adds its renderer's name to the file name.
+                for renderer in ["tiny-skia", "wgpu"] {
+                    let _ = std::fs::remove_file(format!("{path}-{name}-{renderer}.png"));
+                }
+                let snapshot = simulator.snapshot(&theme).expect("draws");
+                assert!(
+                    snapshot
+                        .matches_image(format!("{path}-{name}.png"))
+                        .expect("writes")
+                );
+            }
+            PICTURE_SECONDS.with(|picture| picture.set(None));
         }
     }
 }

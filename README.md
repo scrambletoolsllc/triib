@@ -40,9 +40,9 @@ Website: **[triib.run](https://triib.run)**, with
 > following the system's or the one picked in Settings. See the
 > [plan](docs/PLAN.md).
 
-![triib in dark mode with the connection matrix of three entities, talker outputs across the top and listener inputs down the side, an audio stream and two media clock streams connected, and the inspector on the right showing the selected Mac mini's name, product, firmware, configuration, media clock and sampling rate](docs/screenshots/matrix.png)
+![triib in dark mode with the connection matrix of three entities, a Wi-Fi speaker, a lectern and a Mac mini, talker outputs across the top and listener inputs down the side, an audio stream and two media clock streams connected, and the inspector on the right showing the selected Mac mini's name, product, firmware, configuration, media clock and sampling rate](docs/screenshots/matrix.png)
 
-![The network map of a show: a core bridge, a stage bridge and a front of house bridge, twenty devices from stage boxes to amps, and each audio stream as its own colored wire, with two failed reservations marked](docs/screenshots/network.png)
+![The network map of a show, its audio moving along the wires: a core bridge, a stage bridge and a front of house bridge, eighteen devices from stage boxes to amps, and each audio stream as its own colored wire, with two failed reservations marked](docs/screenshots/network.gif)
 
 ## Installing
 

@@ -23,6 +23,10 @@ All notable changes to triib. Versions follow
   interface sends nothing, where it was drawn full, and would have been
   drawn empty at a full link.
 
+### Packages
+
+- The AppStream data dates 1.2.0 October 24, the day it was released.
+
 ## [1.2.0] - 2026-10-24
 
 The network map draws the traffic on each link and places every device

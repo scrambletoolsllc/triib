@@ -2471,7 +2471,7 @@ mod tests {
         let Ok(path) = std::env::var("NETWORK_PANEL_PICTURE") else {
             return;
         };
-        let theme = scramble_ui::scheme::theme("triib".to_owned(), crate::app::TRIIB_SEED, true);
+        let theme = crate::view::tests::picture_theme();
         let (topology, streams) = bench();
         let paints = paints(
             &streams
@@ -2844,7 +2844,7 @@ mod tests {
         let Ok(path) = std::env::var("NETWORK_LITE_PICTURE") else {
             return;
         };
-        let theme = scramble_ui::scheme::theme("triib".to_owned(), crate::app::TRIIB_SEED, true);
+        let theme = crate::view::tests::picture_theme();
         let mut triib = lite_triib(-180);
         let esp = EntityId(0xe8f6_0ae0_9220_0000);
         let device = Some(Focus::Node(NodeKey::Entity(esp)));

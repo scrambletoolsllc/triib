@@ -1405,7 +1405,7 @@ mod tests {
                 let _ = std::fs::remove_file(format!("{stem}-{renderer}.png"));
             }
         }
-        let theme = scramble_ui::scheme::theme("triib".to_owned(), crate::app::TRIIB_SEED, true);
+        let theme = crate::view::tests::picture_theme();
         let settings = iced::Settings {
             fonts: scramble_ui::font::files().collect(),
             default_font: TEXT,

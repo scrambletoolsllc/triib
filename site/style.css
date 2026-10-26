@@ -284,4 +284,8 @@ footer { padding: 32px 16px 48px; border-top: 1px solid var(--outline-variant); 
   td code { white-space: normal; word-break: break-all; }
   .lede { font-size: 18px; }
   .top nav { gap: 14px; font-size: 15px; }
+  /* The inspector's tabs side by side, swiped through, the next one
+     showing at the edge, rather than three screens of them. */
+  .guide .gallery.three { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; }
+  .guide .gallery.three figure { flex: 0 0 78%; margin: 0; scroll-snap-align: start; }
 }

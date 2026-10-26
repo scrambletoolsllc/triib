@@ -2273,6 +2273,16 @@ pub(crate) mod tests {
 
     use crate::settings::Settings;
 
+    /// The theme pictures are drawn in: dark, with triib's accent unless
+    /// the variable `PICTURE_ACCENT` gives another, such as #757575.
+    pub(crate) fn picture_theme() -> iced::Theme {
+        let accent = std::env::var("PICTURE_ACCENT")
+            .ok()
+            .and_then(|hex| scramble_ui::appearance::hex_to_color(&hex))
+            .unwrap_or(crate::app::TRIIB_SEED);
+        scramble_ui::scheme::theme("triib".to_owned(), accent, true)
+    }
+
     /// The entities and models a controller reads from the bench, replaying
     /// the capture of a live run.
     pub(crate) fn bench() -> (
@@ -2290,6 +2300,26 @@ pub(crate) mod tests {
         BTreeMap<EntityId, DiscoveredEntity>,
         BTreeMap<EntityId, EntityModel>,
     ) {
+        bench_named_then(&[], after)
+    }
+
+    /// The bench as pictures show it: its ESP boards named as a venue
+    /// might name them, rather than both as their firmware's example,
+    /// their product the firmware's own name.
+    const PICTURE_NAMES: [(EntityId, &str); 2] =
+        [(WIRED_ESP, "Lectern"), (WIFI_ESP, "Foyer speaker")];
+
+    /// The bench, each entity in `names` read with that name, then
+    /// `after`.
+    fn bench_named_then(
+        names: &[(EntityId, &str)],
+        after: &[Vec<u8>],
+    ) -> (
+        BTreeMap<EntityId, DiscoveredEntity>,
+        BTreeMap<EntityId, EntityModel>,
+    ) {
+        use atdecc::AemCommandType;
+
         const CAPTURE: &[u8] = include_bytes!("../tests/captures/bench-enumeration.pcap");
         const HOST: [u8; 6] = [0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b];
         // Classic pcap, in microseconds or nanoseconds.
@@ -2344,7 +2374,24 @@ pub(crate) mod tests {
             if ours(frame) || u16::from_be_bytes([frame[12], frame[13]]) != 0x22f0 {
                 continue;
             }
-            let _ = controller.handle_frame(now, source, &frame[14..]);
+            let mut pdu = frame[14..].to_vec();
+            if let Ok(aem) = AemPdu::decode(&frame[14..])
+                && aem.header.message_type.is_response()
+                && aem.command_type == AemCommandType::READ_DESCRIPTOR
+                && aem.payload.get(4..6) == Some(&DescriptorType::ENTITY.0.to_be_bytes()[..])
+                && let Some((_, name)) = names
+                    .iter()
+                    .find(|(entity_id, _)| *entity_id == aem.header.target_entity_id)
+            {
+                // The descriptor follows the configuration index: its name
+                // at 48, its vendor's and model's at 112 and 114, pointed
+                // at the strings' "ESP-AVB".
+                let descriptor = &mut pdu[28..];
+                descriptor[48..112].fill(0);
+                descriptor[48..48 + name.len()].copy_from_slice(name.as_bytes());
+                descriptor[112..116].copy_from_slice(&[0, 1, 0, 1]);
+            }
+            let _ = controller.handle_frame(now, source, &pdu);
             controller.handle_timeout(now);
         }
         let end = Instant::from_nanos(records[records.len() - 1].0 - start);
@@ -2870,10 +2917,10 @@ pub(crate) mod tests {
         crate::i18n::set_language(language.as_deref());
         // Only the pictures whose names hold WINDOW_ONLY, such as "log".
         let only = std::env::var("WINDOW_ONLY").ok();
-        let theme = scramble_ui::scheme::theme("triib".to_owned(), crate::app::TRIIB_SEED, true);
+        let theme = crate::view::tests::picture_theme();
         // The inspector in place, not sliding in.
         scramble_ui::motion::set_reduced(true);
-        let (entities, models) = bench();
+        let (entities, models) = bench_named_then(&PICTURE_NAMES, &[]);
         assert_eq!(models.len(), 3, "the bench's models");
         assert_eq!(entities.len(), 3, "the bench's entities");
         let interface = Interface {
@@ -2892,9 +2939,19 @@ pub(crate) mod tests {
             ("entities-phone", View::Entities, false, phone),
             ("network-phone", View::Network, false, phone),
             ("inspector-phone", View::Matrix, true, phone),
-            ("matrix-desktop", View::Matrix, true, desktop),
+            (
+                "matrix-desktop",
+                View::Matrix,
+                true,
+                Size::new(1280.0, 860.0),
+            ),
             ("matrix-hover-own", View::Matrix, false, desktop),
-            ("matrix-formats", View::Matrix, false, desktop),
+            (
+                "matrix-formats",
+                View::Matrix,
+                false,
+                Size::new(1280.0, 900.0),
+            ),
             ("entities-desktop", View::Entities, false, desktop),
             // The entity list's filters' menu, open, one of them on.
             ("entities-hiding", View::Entities, false, desktop),
@@ -2904,7 +2961,7 @@ pub(crate) mod tests {
                 "entities-host",
                 View::Entities,
                 false,
-                Size::new(1440.0, 540.0),
+                Size::new(1440.0, 400.0),
             ),
             // Another of its entities just added, the link being set up.
             (
@@ -3066,6 +3123,20 @@ pub(crate) mod tests {
                 true,
                 Size::new(1280.0, 1000.0),
             ),
+            // The lectern's Entity tab, and the Wi-Fi speaker's inspector
+            // scrolled to its Wireless section.
+            (
+                "inspector-lectern",
+                View::Entities,
+                true,
+                Size::new(1280.0, 1400.0),
+            ),
+            (
+                "inspector-wireless-section",
+                View::Entities,
+                true,
+                Size::new(1280.0, 1000.0),
+            ),
         ] {
             if only
                 .as_ref()
@@ -3096,11 +3167,19 @@ pub(crate) mod tests {
                 ..Settings::default()
             };
             let mut models = if suffix.contains("lite") {
-                bench_then(&lite_frames(-72_400, 800_000)).1
+                bench_named_then(&PICTURE_NAMES, &lite_frames(-72_400, 800_000)).1
             } else if suffix.contains("wireless") {
-                bench_then(&wireless_frames(atdecc::wireless::WirelessFlags::HOLDOVER)).1
+                bench_named_then(
+                    &PICTURE_NAMES,
+                    &wireless_frames(atdecc::wireless::WirelessFlags::HOLDOVER),
+                )
+                .1
             } else if suffix.contains("mac-clock") {
-                bench_then(&crate::diagnostics_view::tests::mac_listening_frames()).1
+                bench_named_then(
+                    &PICTURE_NAMES,
+                    &crate::diagnostics_view::tests::mac_listening_frames(),
+                )
+                .1
             } else {
                 models.clone()
             };
@@ -3137,7 +3216,7 @@ pub(crate) mod tests {
                     host.entity_id()
                 });
             let mut triib = Triib::sample(settings, interface, shown, models);
-            triib.selected = if ["diagnostics", "controls", "lite"]
+            triib.selected = if ["diagnostics", "controls", "lite", "lectern"]
                 .iter()
                 .any(|kind| suffix.contains(kind))
             {
@@ -3373,6 +3452,17 @@ pub(crate) mod tests {
                 simulator
                     .click(crate::fl!("entity-group").as_str())
                     .expect("the Group heading");
+            }
+            if suffix.contains("section") {
+                // The inspector scrolled down to the section shown, just
+                // past the sampling rate's menu: the software renderer
+                // draws the text of a menu the scrolled edge cuts over the
+                // tabs above it.
+                simulator.point_at(iced::Point::new(size.width - 160.0, size.height / 2.0));
+                let _ =
+                    simulator.simulate([iced::Event::Mouse(iced::mouse::Event::WheelScrolled {
+                        delta: iced::mouse::ScrollDelta::Pixels { x: 0.0, y: -448.0 },
+                    })]);
             }
             let snapshot = simulator.snapshot(&theme).expect("draws");
             assert!(snapshot.matches_image(&file).expect("writes"));

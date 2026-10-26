@@ -32,7 +32,7 @@
       <a class="button tonal" href="https://github.com/scrambletoolsllc/triib">Source on GitHub</a>
     </p>
     <p class="small">Free and open source under MIT or Apache 2.0, on Linux, Windows and macOS. In 38 languages, including right-to-left.</p>
-    <img class="shot hero-shot" src="screenshots/matrix.png" alt="triib in dark mode with the connection matrix of three entities, talker outputs across the top and listener inputs down the side, an audio stream and two media clock streams connected, and the inspector on the right showing the selected Mac mini's name, product, firmware, configuration, media clock and sampling rate" width="1360" height="850">
+    <img class="shot hero-shot" src="screenshots/matrix.png" alt="triib in dark mode with the connection matrix of three entities, a Wi-Fi speaker, a lectern and a Mac mini, talker outputs across the top and listener inputs down the side, an audio stream and two media clock streams connected, and the inspector on the right showing the selected Mac mini's name, product, firmware, configuration, media clock and sampling rate" width="1360" height="914">
   </section>
 
   <section id="features" class="features">
@@ -40,15 +40,19 @@
     <div class="grid">
       <article>
         <h3>Finds every device</h3>
-        <p>triib discovers the ATDECC entities on the interface you pick, reads each entity model, its names, streams, clocks and Milan support, and keeps it, so a device you have seen before shows in full at once.</p>
+        <p>triib discovers the ATDECC entities on the interface you pick, reads each entity model, its names, logos, streams, clocks and Milan support, and keeps it, so a device you have seen before shows in full at once. It keeps up with the changes other controllers make, even to entities that send no notifications.</p>
       </article>
       <article>
         <h3>A connection matrix</h3>
-        <p>Talker outputs across, listener inputs down: click a cell to connect or disconnect. Each cell shows whether the stream flows, waits or has failed, and whether the two formats can meet at all.</p>
+        <p>Talker outputs across, listener inputs down: click a cell to connect or disconnect. Each cell shows whether the stream flows, waits or has failed, whether the two formats can meet, and whether the two ends share a clock domain.</p>
       </article>
       <article>
         <h3>A map of the network</h3>
-        <p>Bridges and devices from each entity's gPTP path, every stream as its own wire, and the clock tree from the grandmaster, with each device in sync or not. A failed reservation shows in red where it stops.</p>
+        <p>Bridges and devices in their clock domains, from each entity's gPTP path, every stream's traffic on each link as its own wire, and the clock tree from the grandmaster, with each device in sync or not. A failed reservation shows in red where it stops.</p>
+      </article>
+      <article>
+        <h3>A list of every entity</h3>
+        <p>A row for each entity, with the columns you pick, from product and firmware to media clock, grandmaster and logos. Change a clock source right in the list, and filter it to this computer's entities, without controllers, or to this computer's clock domain.</p>
       </article>
       <article>
         <h3>Changes that matter</h3>
@@ -57,6 +61,10 @@
       <article>
         <h3>Presets</h3>
         <p>Save each entity's clock sources, sampling rates, stream formats, controls and connections, and recall them later: triib changes only what differs.</p>
+      </article>
+      <article>
+        <h3>What went wrong</h3>
+        <p>Each entity's counters since it started, its reservations, and what its streams take of each link, with what went wrong marked, and in the status bar the alarms triib finds across the network.</p>
       </article>
       <article>
         <h3>Every frame in the log</h3>
@@ -80,22 +88,26 @@
       </article>
       <article>
         <h3>Help from AI agents</h3>
-        <p>Agents such as Claude Code can read the network and make changes through <code>triib --mcp</code>, the same way a click does, once you let each one in.</p>
+        <p>Agents such as Claude Code can read the network, make changes through <code>triib --mcp</code> the same way a click does, and work out why a stream does not play, once you let each one in.</p>
       </article>
       <article>
         <h3>A command line and libraries</h3>
         <p><code>triib-cli</code> does the same from scripts. The protocols are Rust crates of their own, <code>atdecc</code>, <code>avb-mrp</code> and <code>avb-net</code>, for other apps and for microcontrollers.</p>
       </article>
+      <article>
+        <h3>At home on your desktop</h3>
+        <p>Light or dark, in the accent color of your system or its Omarchy theme, or one you pick, and in 38 languages, right to left among them. On a Mac, the menu bar has triib's menus.</p>
+      </article>
     </div>
     <div class="gallery">
-      <figure><img class="shot" src="screenshots/network-clock.png" alt="The network map's clock tree: a core bridge as grandmaster, two more bridges below it and twenty devices, each marked Sync except one monitor amp marked No sync" width="1360" height="1038" loading="lazy"><figcaption>The gPTP clock tree, device by device</figcaption></figure>
-      <figure><img class="shot" src="screenshots/avb-lite.png" alt="The network view in AVB Lite: the PTP tree from the grandmaster clock to a device in sync, two devices not on the PTP tree, and a panel counting two in sync and two not" width="1360" height="765" loading="lazy"><figcaption>The PTP tree when devices run AVB Lite</figcaption></figure>
+      <figure><img class="shot" src="screenshots/network-clock.gif" alt="The network map's clock tree, the time moving along its wires: a core bridge as grandmaster, two more bridges below it and eighteen devices, each marked Sync except one monitor amp marked No sync" width="1360" height="1038" loading="lazy"><figcaption>The gPTP clock tree, device by device</figcaption></figure>
+      <figure><img class="shot" src="screenshots/avb-lite.gif" alt="The network map of a venue, its audio moving along the wires: the stage's devices under an AVB bridge in gPTP domain 0, and beside them in PTP domain 0 the house's, running AVB Lite under a dashed card for a switch that takes no part in AVB, a paging mic sending to three of them unicast" width="1200" height="916" loading="lazy"><figcaption>Devices running AVB Lite, behind a switch that takes no part in AVB</figcaption></figure>
       <figure><img class="shot" src="screenshots/log.png" alt="The log below the entity list, listing a Connect RX command, a Get counters response with a warning that its control data length claims eight octets past the end of the frame, and a response marked Not implemented" width="1360" height="850" loading="lazy"><figcaption>Frames decoded, and the broken ones marked</figcaption></figure>
       <figure><img class="shot" src="screenshots/presets.png" alt="The Presets dialog with a preset named Matinee about to be saved, and Rehearsal and Sunday service ready to recall" width="1360" height="850" loading="lazy"><figcaption>Presets, recalled in one click</figcaption></figure>
     </div>
     <figure class="wide">
-      <img class="shot" src="screenshots/network.png" alt="The network map of a show: a core bridge, a stage bridge and a front of house bridge, twenty devices from stage boxes to amps, and each audio stream as its own colored wire, with two failed reservations marked" width="1360" height="932" loading="lazy">
-      <figcaption>A show's network: three bridges, twenty devices and every audio stream as its own wire</figcaption>
+      <img class="shot" src="screenshots/network.gif" alt="The network map of a show, its audio moving along the wires: a core bridge, a stage bridge and a front of house bridge, eighteen devices from stage boxes to amps, and each audio stream as its own colored wire, with two failed reservations marked" width="1360" height="981" loading="lazy">
+      <figcaption>A show's network: three bridges, eighteen devices and every audio stream as its own wire</figcaption>
     </figure>
   </section>
 

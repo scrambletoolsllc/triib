@@ -67,7 +67,7 @@
   <content_rating type="oars-1.1" />
 
   <releases>
-    <release version="1.2.0" date="2026-10-23">
+    <release version="1.2.0" date="2026-10-24">
       <description>
         <p>The network map draws the traffic on each link and places every device in its clock domain, those running AVB Lite behind the non-AVB switch in front of them, and the connection matrix keeps talkers and listeners in different domains from connecting. triib follows entities that send no notifications, shows entities' logos and their vendors', and on a Mac has a menu bar. On Linux only a small helper holds CAP_NET_RAW, and this computer's entities share their stream reservations with other programs such as plaa and hear other computers' AVB Lite declarations on the Intel I210.</p>
       </description>
