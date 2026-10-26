@@ -17,6 +17,12 @@ All notable changes to triib. Versions follow
   now raises an alarm, with a button in its Diagnostics tab to follow
   the stream's clock instead, and agents find it in `list_problems`.
 
+### Fixed
+
+- The Diagnostics tab's egress bar shows its empty track when an
+  interface sends nothing, where it was drawn full, and would have been
+  drawn empty at a full link.
+
 ## [1.2.0] - 2026-10-24
 
 The network map draws the traffic on each link and places every device

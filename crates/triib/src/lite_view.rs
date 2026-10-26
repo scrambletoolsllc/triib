@@ -310,7 +310,7 @@ pub fn bandwidth<'a>(model: &EntityModel) -> Vec<Element<'a, Message>> {
 /// A bar filled to `share`, in the error color when `over`.
 fn meter<'a>(share: f32, over: bool) -> Element<'a, Message> {
     let filled = container(iced::widget::space())
-        .width(Length::FillPortion((share * 1000.0).round() as u16))
+        .width(portion(share))
         .height(6)
         .style(move |theme: &Theme| {
             let scheme = Scheme::of(theme);
@@ -320,16 +320,25 @@ fn meter<'a>(share: f32, over: bool) -> Element<'a, Message> {
                 ..container::Style::default()
             }
         });
-    let rest =
-        iced::widget::space().width(Length::FillPortion(((1.0 - share) * 1000.0).round() as u16));
+    let rest = iced::widget::space().width(portion(1.0 - share));
     container(row![filled, rest])
         .width(Fill)
+        .height(6)
         .style(|theme: &Theme| container::Style {
             background: Some(Scheme::of(theme).secondary_container.into()),
             border: iced::border::rounded(shape::EXTRA_SMALL),
             ..container::Style::default()
         })
         .into()
+}
+
+/// The width of `share` of a bar: none for nothing, as a row lays out a
+/// part of no portion across all of it.
+fn portion(share: f32) -> Length {
+    match (share * 1000.0).round() as u16 {
+        0 => Length::Fixed(0.0),
+        thousandths => Length::FillPortion(thousandths),
+    }
 }
 
 /// An alarm the profile calls for, on an entity.
@@ -442,6 +451,16 @@ mod tests {
     const MAC_MINI: EntityId = EntityId(0xd111_e597_f544_8000);
     const WIRED_ESP: EntityId = EntityId(0xe8f6_0ae0_9220_0000);
     const WIFI_ESP: EntityId = EntityId(0xfc01_2cfd_fe80_0000);
+
+    /// An empty bar has no filled part, and a full one no rest, rather
+    /// than a part of no portion taking the whole bar.
+    #[test]
+    fn bars_empty_and_full_are_drawn_so() {
+        assert_eq!(portion(0.0), Length::Fixed(0.0));
+        assert_eq!(portion(0.0004), Length::Fixed(0.0));
+        assert_eq!(portion(0.25), Length::FillPortion(250));
+        assert_eq!(portion(1.0), Length::FillPortion(1000));
+    }
 
     /// The bench, after the wired ESP reports AVB Lite with `offset` and
     /// `egress` and the Mac mini declares a stream over CVU SRP.
