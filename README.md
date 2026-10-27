@@ -129,13 +129,20 @@ channels = 8          # audio "virtual" when left out: its own virtual device
 [[endpoint.stream]]
 direction = "in"
 channels = 2
-audio = "default"     # or "discard", or an output's name
+audio = "default"     # or "discard", "analyze", or an output's name
 
 [[endpoint.stream]]
 direction = "in"
 clock = true          # a media clock stream
 clock_source = true   # which the entity follows
 ```
+
+For testing streams with other devices, an output's `audio = "tones"`
+sends a tone of its own on each channel, 500 Hz and 125 Hz more for each
+channel after, and an input's `audio = "analyze"` checks what it
+receives against the tones it carries, logging for each time it listens
+its samples and each channel's clicks, gaps, tone and peak, the clock it
+recovered and its stream's counters.
 
 triib 1.0's `endpoints.toml` moves to `entities.toml`, and its talkers
 and listeners, `kind = "talker"` and `kind = "listener"` entries, read

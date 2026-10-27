@@ -97,8 +97,10 @@ pub struct StreamConfig {
     #[serde(default = "eight")]
     pub channels: u16,
     /// Where its audio comes from or goes: "virtual", its own virtual
-    /// audio device, when left out; "silence" or "tone" for an output,
-    /// "discard" for an input; "default"; or a device's name.
+    /// audio device, when left out; "silence" or "tone" for an output, or
+    /// "tones", a tone of its own on each channel; "discard" for an input,
+    /// or "analyze", checked against the tones it carries; "default"; or
+    /// a device's name.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub audio: Option<String>,
     /// The device channel its first channel comes from or goes to, where
@@ -207,6 +209,16 @@ impl StreamConfig {
         !self.clock && self.audio.as_deref().is_none_or(|audio| audio == VIRTUAL)
     }
 
+    /// Whether an output sends a tone of its own on each channel.
+    pub fn has_tones(&self) -> bool {
+        !self.clock && self.audio.as_deref() == Some(TONES)
+    }
+
+    /// Whether an input's audio is checked against the tones it carries.
+    pub fn is_analyzed(&self) -> bool {
+        !self.clock && self.audio.as_deref() == Some(ANALYZE)
+    }
+
     /// Where an output's audio comes from, but for a virtual device.
     pub fn source(&self) -> Source {
         source_of(self.audio.as_deref(), self.first_channel)
@@ -220,6 +232,10 @@ impl StreamConfig {
 
 /// The audio of a stream's own virtual device.
 pub const VIRTUAL: &str = "virtual";
+
+/// An output's tones, one on each channel, and an input's analysis.
+pub const TONES: &str = "tones";
+pub const ANALYZE: &str = "analyze";
 
 /// This computer as an entity, with any number of stream outputs and
 /// inputs, as hardware presents itself, each set up on its own.
@@ -376,7 +392,7 @@ impl EndpointConfig {
 /// A source as entities.toml names it.
 fn source_of(audio: Option<&str>, first_channel: u16) -> Source {
     match audio {
-        None | Some("silence" | VIRTUAL) => Source::Silence,
+        None | Some("silence" | VIRTUAL | TONES) => Source::Silence,
         Some("tone") => Source::Tone {
             hertz: 1000.0,
             level: 0.1,
@@ -395,7 +411,7 @@ fn source_of(audio: Option<&str>, first_channel: u16) -> Source {
 /// A sink as entities.toml names it.
 fn sink_of(audio: Option<&str>, first_channel: u16) -> Sink {
     match audio {
-        None | Some("discard" | VIRTUAL) => Sink::Discard,
+        None | Some("discard" | VIRTUAL | ANALYZE) => Sink::Discard,
         Some("default") => Sink::Device {
             name: None,
             first_channel,
@@ -533,6 +549,23 @@ mod tests {
         })
         .expect("writes");
         assert_eq!(entry(&text), device);
+    }
+
+    /// Test tones and analysis are neither virtual nor a device, and send
+    /// silence or play nowhere where their threads can't start.
+    #[test]
+    fn tones_and_analysis_are_their_own() {
+        let device = entry(
+            "[[endpoint]]\nkind = \"device\"\nname = \"Test\"\n\
+             [[endpoint.stream]]\ndirection = \"out\"\naudio = \"tones\"\n\
+             [[endpoint.stream]]\ndirection = \"in\"\naudio = \"analyze\"\n",
+        );
+        let streams = device.stream_configs();
+        assert!(streams[0].has_tones() && !streams[0].is_virtual());
+        assert!(streams[1].is_analyzed() && !streams[1].is_virtual());
+        assert_eq!(streams[0].source(), Source::Silence);
+        assert_eq!(streams[1].sink(), Sink::Discard);
+        assert!(!streams[1].has_tones() && !streams[0].is_analyzed());
     }
 
     /// triib 1.0's endpoints.toml moves to entities.toml, where that is

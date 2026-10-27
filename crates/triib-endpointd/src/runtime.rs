@@ -31,7 +31,7 @@ use avb_stream::audio::{Sink, Source};
 use avb_stream::formats;
 use avb_stream::{
     GroupConfig, GroupListener, GroupStream, GroupTalker, ListenerConfig, ListenerGroup,
-    MediaClock, RecoveredClock, TalkerGroup,
+    MediaClock, RecoveredClock, TalkerGroup, TalkerStats,
 };
 
 use triib_pipewire::{DeviceSpec, VirtualAudio, VirtualDevice};
@@ -46,6 +46,7 @@ use crate::meters::{self, Meters, StreamMeter};
 use crate::port::{Port, VLAN};
 use crate::profile::{self, Profile};
 use crate::sharing::{self, Server, Sharers};
+use crate::signal;
 use crate::status::{ClockStatus, DaemonStatus, EndpointStatus, Setup, StreamStatus, status_path};
 
 /// The entity models of devices, under Scramble Tools' MA-S
@@ -69,8 +70,13 @@ const CLASS_B_PRIORITY: u8 = 2;
 const FOREIGN_MRP_QUIET: Duration = Duration::from_secs(30);
 /// The latency a talker declares for itself, in nanoseconds.
 const TALKER_LATENCY: u32 = 125_000;
-/// How often the streams' counters are logged.
+/// How often the streams' counters are logged, and an analyzed input's
+/// findings so far.
 const REPORT: Duration = Duration::from_secs(30);
+const RUN_SAID: Duration = Duration::from_secs(10);
+/// How long an analyzed input's run goes on once its listener stopped,
+/// for its last frames to be analyzed.
+const RUN_TAIL: Duration = Duration::from_millis(50);
 /// How long a talker whose stream changed waits with its declaration
 /// withdrawn before declaring the new one: long enough for the bridge to
 /// let the old go, as a bridge can keep the old frame size when a
@@ -221,6 +227,8 @@ struct OutputState {
     talker: Option<GroupTalker>,
     /// The virtual audio device apps play into for it, where it has one.
     device: Option<VirtualDevice>,
+    /// Its test tones, where it sends them.
+    tones: Option<signal::Tones>,
     /// Its place in the MAAP block, kept while it runs, so endpoints
     /// coming and going leave its stream's address as it is.
     slot: u16,
@@ -293,6 +301,8 @@ struct InputState {
     listener: Option<GroupListener>,
     /// The virtual audio device apps record it from, where it has one.
     device: Option<VirtualDevice>,
+    /// Its listening while its audio is analyzed.
+    run: Option<signal::Run>,
     /// The stream it was last counted among the listeners of.
     counted: Option<u64>,
     /// The stream its listener's thread takes.
@@ -936,6 +946,14 @@ fn log(message: impl AsRef<str>) {
     println!("{}", message.as_ref());
 }
 
+/// What a talker sent, for the log.
+fn sent(stats: &TalkerStats) -> String {
+    format!(
+        "sent {} frames, {} media resets, {} send errors, device {:+} ppm, {} short",
+        stats.frames_sent, stats.media_resets, stats.send_errors, stats.drift_ppm, stats.underruns
+    )
+}
+
 /// Hands every frame `socket` receives to the runtime as `wrap` makes it.
 fn read_into(
     socket: Arc<Socket>,
@@ -1203,6 +1221,7 @@ impl Runtime {
                 Err(RecvTimeoutError::Disconnected) => break,
             }
             self.turn();
+            self.update_runs();
             self.write_meters();
             if self.last_look.elapsed() >= Duration::from_secs(2) {
                 self.last_look = Clock::now();
@@ -2669,9 +2688,11 @@ impl Runtime {
         if ready && output.talker.is_none() && output.redeclare_at.is_none() && addressed {
             log(format!("{name}: a listener is ready, streaming"));
             self.start_talker(out);
-        } else if !ready && output.talker.is_some() {
-            log(format!("{name}: no listener ready, stopping"));
-            output.talker = None;
+        } else if !ready && let Some(talker) = output.talker.take() {
+            log(format!(
+                "{name}: no listener ready, stopping, {}",
+                sent(&talker.stats())
+            ));
         }
     }
 
@@ -2707,6 +2728,21 @@ impl Runtime {
             endpoint.entity.model().current_sampling_rate
         } else {
             media.sample_rate()
+        };
+        let mut tones = None;
+        let source = if endpoint.out_config(out.1).has_tones() && !media.is_clock() {
+            match signal::Tones::start(stream.channels, rate) {
+                Ok((made, buffer)) => {
+                    tones = Some(made);
+                    Source::Shared(buffer)
+                }
+                Err(error) => {
+                    log(format!("{name}: no tones: {error}, sending silence"));
+                    source
+                }
+            }
+        } else {
+            source
         };
         let wanted = GroupStream {
             stream_id: stream_id.0,
@@ -2757,7 +2793,11 @@ impl Runtime {
             })
         });
         match started {
-            Ok(talker) => self.output_mut(out).talker = Some(talker),
+            Ok(talker) => {
+                let output = self.output_mut(out);
+                output.talker = Some(talker);
+                output.tones = tones;
+            }
             Err(error) => log(format!("{name}: could not start the stream: {error}")),
         }
     }
@@ -2928,12 +2968,13 @@ impl Runtime {
     ) {
         // What it took before stops first, as for a talker.
         self.input_mut(input).listener = None;
+        self.end_run(input);
         let endpoint = &self.endpoints[input.0];
         let Some(model) = endpoint.entity.model().inputs.get(usize::from(input.1)) else {
             return;
         };
         let name = self.in_name(input);
-        let config = ListenerConfig {
+        let mut config = ListenerConfig {
             interface: self.interface.clone(),
             stream_id: stream.stream_id.0,
             destinations,
@@ -2968,6 +3009,26 @@ impl Runtime {
                         .then(|| (0..model.channels).map(Some).collect())
                 }),
         };
+        // An analyzed input's audio goes to its analysis, of the channels
+        // the listener gives: its map's, where it has one.
+        let format = model.current_format;
+        let mut analysis = None;
+        if endpoint.in_config(input.1).is_analyzed()
+            && let Some(media) = avb_stream::media::Media::of(format)
+            && !media.is_clock()
+        {
+            let channels = config
+                .channel_map
+                .as_ref()
+                .map_or(media.channels(), |map| map.len() as u16);
+            match signal::Analysis::start(channels, media.sample_rate()) {
+                Ok((started, buffer)) => {
+                    analysis = Some(started);
+                    config.sink = Sink::Shared(buffer);
+                }
+                Err(error) => log(format!("{name}: no analysis: {error}")),
+            }
+        }
         // Every input takes its stream on the endpoint's one listening
         // thread, which the first to listen starts, with room for as many
         // as an entity may have, so streams added go on it too.
@@ -2998,6 +3059,7 @@ impl Runtime {
                 let state = self.input_mut(input);
                 state.listener = Some(listener);
                 state.listening_to = Some(stream);
+                state.run = analysis.map(|analysis| signal::Run::new(analysis, format));
             }
             Err(error) => log(format!("{name}: could not listen: {error}")),
         }
@@ -3240,6 +3302,47 @@ impl Runtime {
         }
     }
 
+    /// Each analyzed input's run: its stream's counters and clock noted
+    /// each turn, so they are as near as can be to its last frames once
+    /// it stops; what it found said every so often, and all of it once it
+    /// stopped listening.
+    fn update_runs(&mut self) {
+        let running = |endpoint: &Endpoint| endpoint.inputs.iter().any(|input| input.run.is_some());
+        if !self.endpoints.iter().any(running) {
+            return;
+        }
+        for input in self.ins() {
+            let state = self.input_mut(input);
+            let Some(run) = &mut state.run else {
+                continue;
+            };
+            let Some(listener) = &state.listener else {
+                // Its last frames analyzed first.
+                let stopped = *run.stopped.get_or_insert_with(Clock::now);
+                if stopped.elapsed() >= RUN_TAIL {
+                    self.end_run(input);
+                }
+                continue;
+            };
+            run.stats = listener.stats();
+            run.clock_ppm = state.recovered.fit().map(|fit| fit.ppm());
+            if run.said_at.elapsed() >= RUN_SAID {
+                run.said_at = Clock::now();
+                let name = self.in_name(input);
+                if let Some(run) = &self.input(input).run {
+                    log(run.line(&name, false));
+                }
+            }
+        }
+    }
+
+    /// Says all an input's run found, and ends it.
+    fn end_run(&mut self, input: In) {
+        if let Some(run) = self.input_mut(input).run.take() {
+            log(run.line(&self.in_name(input), true));
+        }
+    }
+
     fn report(&self) {
         for endpoint in &self.endpoints {
             for (at, output) in endpoint.outputs.iter().enumerate() {
@@ -3248,13 +3351,9 @@ impl Runtime {
                 };
                 let stats = talker.stats();
                 log(format!(
-                    "{}: sent {} frames, {} media resets, {} send errors, device {:+} ppm, {} short{}",
+                    "{}: {}{}",
                     endpoint.stream_name(false, at as u16),
-                    stats.frames_sent,
-                    stats.media_resets,
-                    stats.send_errors,
-                    stats.drift_ppm,
-                    stats.underruns,
+                    sent(&stats),
                     if stats.realtime { ", real time" } else { "" }
                 ));
             }
@@ -4385,8 +4484,11 @@ impl Runtime {
         let addressed = self.addressed();
         let output = self.output_mut(out);
         if copies.is_empty() {
-            if output.talker.take().is_some() {
-                log(format!("{name}: no listener ready, stopping"));
+            if let Some(talker) = output.talker.take() {
+                log(format!(
+                    "{name}: no listener ready, stopping, {}",
+                    sent(&talker.stats())
+                ));
             }
         } else if let Some(talker) = &output.talker {
             talker.set_destinations(copies);

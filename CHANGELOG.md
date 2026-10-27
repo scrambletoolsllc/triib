@@ -17,6 +17,17 @@ All notable changes to triib. Versions follow
   now raises an alarm, with a button in its Diagnostics tab to follow
   the stream's clock instead, and agents find it in `list_problems`.
 
+### Host entities (Linux)
+
+- For testing streams with other devices, an output with
+  `audio = "tones"` sends a tone of its own on each channel, 500 Hz and
+  125 Hz more for each channel after, and an input with
+  `audio = "analyze"` checks what it receives against the tones it
+  carries: the log says, for each time it listens, its samples and
+  each channel's clicks, gaps, tone and peak, when the first clicks
+  and gaps came, the clock it recovered and its stream's counters.
+- A talker that stops for want of listeners logs what it sent.
+
 ### Fixed
 
 - `triib-link@` sends all of the AVB interface's frames on its first
