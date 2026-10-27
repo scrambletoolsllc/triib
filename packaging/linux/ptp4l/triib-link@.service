@@ -1,5 +1,5 @@
 [Unit]
-Description=EEE and PAUSE off on %i for triib
+Description=EEE and PAUSE off, and one transmit queue, on %i for triib
 Documentation=man:ethtool(8)
 After=sys-subsystem-net-devices-%i.device
 Before=triib-ptp4l-gptp@%i.service triib-ptp4l-lite@%i.service
@@ -12,11 +12,20 @@ Before=triib-ptp4l-gptp@%i.service triib-ptp4l-lite@%i.service
 # after which some drivers (atlantic) leave their hardware timestamps on
 # received PTP frames, so where they changed on an interface that is up,
 # the interface goes down and up again to start its driver afresh.
+#
+# Every CPU's frames go out on the interface's first transmit queue. A
+# card with several, as the Intel I210 has four, otherwise spreads frames
+# over them by a hash of their first octets, a stream's own sequence
+# number among them, and they leave out of order as the queues drain.
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/bin/sh -c '\
     state() { ethtool --show-eee "$$1"; ethtool --show-pause "$$1"; } 2>/dev/null; \
+    for queue in /sys/class/net/"$$1"/queues/tx-*; do \
+        echo 0 >"$$queue/xps_cpus"; done 2>/dev/null; \
+    cat /proc/irq/default_smp_affinity \
+        >"/sys/class/net/$$1/queues/tx-0/xps_cpus" 2>/dev/null; \
     before=$$(state "$$1"); \
     ethtool --set-eee "$$1" eee off 2>/dev/null; \
     ethtool --pause "$$1" autoneg off rx off tx off 2>/dev/null \

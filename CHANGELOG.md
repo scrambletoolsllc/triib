@@ -19,6 +19,9 @@ All notable changes to triib. Versions follow
 
 ### Fixed
 
+- `triib-link@` sends all of the AVB interface's frames on its first
+  transmit queue: a card with several, such as the Intel I210, spread a
+  stream's frames over them, and some left out of order.
 - The Diagnostics tab's egress bar shows its empty track when an
   interface sends nothing, where it was drawn full, and would have been
   drawn empty at a full link.
