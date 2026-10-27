@@ -10,8 +10,9 @@ All notable changes to triib. Versions follow
 - A stream input that will not take a new format while it runs, or a
   stream output whose entity can stop it, is stopped, set and started
   again, instead of asking for it to be disconnected first;
-  `triib-cli format` does the same. Milan talkers keep their outputs
-  running while listeners take them, so those still ask.
+  `triib-cli format` does the same. Milan entities, triib's own host
+  entities among them, take no new format on an input while it is bound
+  or on an output while it streams, stopped or not, so those still ask.
 - A Mac's AVB entity receiving a stream on its own clock, as macOS
   starts it on Mac System Clock, drops audio from what it receives. It
   now raises an alarm, with a button in its Diagnostics tab to follow
@@ -27,12 +28,34 @@ All notable changes to triib. Versions follow
   each channel's clicks, gaps, tone and peak, when the first clicks
   and gaps came, the clock it recovered and its stream's counters.
 - A talker that stops for want of listeners logs what it sent.
+- A host entity refuses a new stream format on an input while it is
+  bound, and a new format or max transit time on an output while it
+  streams, as Milan 1.3 asks (5.4.2.7, 5.4.2.30), where it took them and
+  started the stream again.
 
 ### Fixed
 
+- A host entity takes a stream format a controller adapts from one it
+  offers as up to so many channels, such as AM824 at its exact
+  channels, as Hive does on connecting; it refused all but the formats
+  it lists.
+- A host entity's stream at four times its audio device's rate, such
+  as 192 kHz into a 48 kHz virtual device, no longer stops its listener
+  after a few seconds.
+- A host entity's output given a format that takes more bandwidth goes
+  on as another of four stream IDs, which a bridge holds nothing of,
+  where a MOTU switch went on policing the stream to its old frame size
+  and dropped a third of its frames; listeners take the new ID as they
+  connect. Where that ID was given up within 32 s, and for a talker of a
+  program sharing the port such as plaa, the new format is declared
+  once the bridge has let the old reservation go, two of its LeaveAlls
+  later.
 - `triib-link@` sends all of the AVB interface's frames on its first
   transmit queue: a card with several, such as the Intel I210, spread a
   stream's frames over them, and some left out of order.
+- A host entity withdrawing a declaration moments after making it sends
+  its Leave, so a quick connect and disconnect no longer leaves a talker
+  counting a listener that has gone.
 - The Diagnostics tab's egress bar shows its empty track when an
   interface sends nothing, where it was drawn full, and would have been
   drawn empty at a full link.

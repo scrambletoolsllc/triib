@@ -82,6 +82,23 @@ const RUN_TAIL: Duration = Duration::from_millis(50);
 /// let the old go, as a bridge can keep the old frame size when a
 /// declaration changes in place, and drop what no longer fits.
 const REDECLARE: Duration = Duration::from_secs(2);
+/// A talker whose stream grew waits longer: a bridge keeps the old
+/// value, its frame size, while any registration of the stream lasts,
+/// such as the listeners' it let go only moments ago, and polices the new
+/// stream to it. It declares the new once the bridge has sent two
+/// LeaveAlls since, and the longest LeaveTime a bridge takes more, or
+/// after the longest this takes where the bridge sends none.
+const GROWN_LEAVE_ALLS: u32 = 2;
+/// The stream IDs each output takes turns with as it grows, a bridge
+/// holding nothing of a stream new to it; one given up within
+/// [`GROWN_MOST`] is taken again only after the wait.
+const GENERATIONS: u8 = 4;
+const GROWN_AFTER: Duration = Duration::from_secs(1);
+const GROWN_MOST: Duration = Duration::from_secs(32);
+/// The octets each frame takes on the wire beyond its AVTPDU, as MSRP
+/// counts a stream's bandwidth: preamble, MAC header, VLAN tag, frame
+/// check and the gap after.
+const FRAME_OVERHEAD: u64 = 42;
 
 /// The fewest stream addresses MAAP claims, so talkers added while the
 /// daemon runs take theirs from the same block.
@@ -212,6 +229,12 @@ fn output_stream(mac: MacAddress, instance: u8, index: u16) -> StreamId {
     StreamId::new(mac, (u16::from(instance) << 8) | index)
 }
 
+/// A stream an output that grew goes on as: its ID in another of four
+/// generations, in the two bits its index, under 64, leaves.
+fn stream_generation(stream: StreamId, generation: u8) -> StreamId {
+    StreamId((stream.0 & !0xc0) | (u64::from(generation % GENERATIONS) << 6))
+}
+
 /// A talker output: its endpoint, and its index there.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Out(usize, u16);
@@ -236,6 +259,14 @@ struct OutputState {
     redeclare_at: Option<Duration>,
     /// When it last withdrew its declaration.
     withdrawn_at: Option<Duration>,
+    /// The bandwidth it last declared, as a bridge may still keep it; and
+    /// while a stream grown past it waits, the bridge's Talker LeaveAlls
+    /// heard by when it withdrew.
+    declared_bandwidth: Option<u64>,
+    grown_from: Option<u32>,
+    /// Which of its stream IDs it sends, and when it last gave up each.
+    generation: u8,
+    given_up: [Option<Duration>; GENERATIONS as usize],
     /// In AVB Lite, where its copies go and whom it refuses.
     lite: LiteTalker,
 }
@@ -466,12 +497,14 @@ impl Endpoint {
             let channels = stream.channels.clamp(1, 60);
             let class_b = output && stream.class == SrClass::B;
             let formats = formats::offered(channels, class_b);
-            // The format chosen last, or, where the stream's channels
-            // changed since, its packing at the channels it has now.
+            // The format chosen last, as offered or adapted from an up-to
+            // format offered, or, where the stream's channels changed
+            // since, its packing at the channels it has now.
             let current_format = stream
                 .stream_format()
                 .and_then(|wanted| {
-                    formats.contains(&wanted).then_some(wanted).or_else(|| {
+                    let admitted = formats.iter().any(|entry| entry.admits(wanted));
+                    admitted.then_some(wanted).or_else(|| {
                         formats
                             .iter()
                             .copied()
@@ -847,6 +880,14 @@ pub struct Runtime {
     inputs: Receiver<Input>,
     last_report: Clock,
     last_counters: Clock,
+    /// The LeaveAlls the bridge sent for Talker Advertises.
+    talker_leave_alls: u32,
+    /// The bandwidth last declared for each program's talker, and those
+    /// grown past it that wait for the bridge as an output's do: the
+    /// Talker LeaveAlls heard by when each was held, and when it is
+    /// declared at the latest.
+    shared_bandwidth: HashMap<u64, u64>,
+    shared_held: HashMap<u64, (u32, Duration)>,
     /// The interface's counters, as every endpoint on it reports them for
     /// its AVB_INTERFACE: how often the link came up and went down, and
     /// the grandmaster changed; and the grandmaster ptp4l last named.
@@ -944,6 +985,19 @@ fn modified(path: Option<&PathBuf>) -> Option<SystemTime> {
 
 fn log(message: impl AsRef<str>) {
     println!("{}", message.as_ref());
+}
+
+/// The bandwidth a Talker Advertise asks for, in octets a second: its
+/// frames on the wire each interval of its class.
+fn bandwidth(declaration: &TalkerDeclaration) -> u64 {
+    let intervals = if declaration.priority == CLASS_B_PRIORITY {
+        4000
+    } else {
+        8000
+    };
+    (u64::from(declaration.max_frame_size) + FRAME_OVERHEAD)
+        * u64::from(declaration.max_interval_frames)
+        * intervals
 }
 
 /// What a talker sent, for the log.
@@ -1172,6 +1226,9 @@ impl Runtime {
             inputs,
             last_report: Clock::now(),
             last_counters: Clock::now(),
+            talker_leave_alls: 0,
+            shared_bandwidth: HashMap::new(),
+            shared_held: HashMap::new(),
             interface_counters: [0; 32],
             grandmaster: None,
             modified: modified(path.as_ref()),
@@ -1871,7 +1928,16 @@ impl Runtime {
             Input::Msrp(source, _) | Input::Mvrp(source, _) if source == self.mac => {
                 self.foreign_participant();
             }
-            Input::Msrp(_, bytes) => self.port.msrp.handle_pdu(since, &bytes),
+            Input::Msrp(_, bytes) => {
+                let decoded = avb_mrp::mrpdu::decode(&bytes, &msrp::FORMAT);
+                if decoded
+                    .leave_all
+                    .contains(&msrp::attribute::TALKER_ADVERTISE)
+                {
+                    self.talker_leave_all(since);
+                }
+                self.port.msrp.handle_pdu(since, &bytes);
+            }
             Input::Mvrp(_, bytes) => self.port.mvrp.handle_pdu(since, &bytes),
             Input::Gptp(status) => {
                 // ptp4l on another interface says nothing of this one: its
@@ -2046,10 +2112,13 @@ impl Runtime {
         while let Some(event) = self.maap.as_mut().and_then(Maap::poll_event) {
             self.maap_event(event);
         }
+        self.release_shared(since);
         let addressed = self.addressed();
         for out in self.outs() {
             if addressed && self.output(out).redeclare_at.is_some_and(|at| at <= since) {
-                self.output_mut(out).redeclare_at = None;
+                let output = self.output_mut(out);
+                output.redeclare_at = None;
+                output.grown_from = None;
                 self.declare_talker(out);
                 self.update_talker(out);
             }
@@ -2245,6 +2314,7 @@ impl Runtime {
             return;
         }
         let since = self.elapsed();
+        self.output_mut(out).declared_bandwidth = Some(bandwidth(&declaration));
         self.port.msrp.declare(
             since,
             msrp::attribute::TALKER_ADVERTISE,
@@ -2308,6 +2378,107 @@ impl Runtime {
                     output.redeclare_at = None;
                     self.withdraw_talker(out);
                 }
+            }
+        }
+    }
+
+    /// When a talker whose format changed declares again: soon, unless its
+    /// stream grew past what it declared before, through a bridge.
+    fn redeclare_changed(&mut self, out: Out) {
+        let since = self.elapsed();
+        let grown = self.lite.is_none()
+            && self.declaration(out).is_some_and(|declaration| {
+                self.output(out)
+                    .declared_bandwidth
+                    .is_some_and(|before| bandwidth(&declaration) > before)
+            });
+        let leave_alls = self.talker_leave_alls;
+        let name = self.out_name(out);
+        if grown && self.next_generation(out, since) {
+            return;
+        }
+        let output = self.output_mut(out);
+        if !grown {
+            output.redeclare_at = Some(since + REDECLARE);
+            output.grown_from = None;
+        } else if output.grown_from.is_none() {
+            output.grown_from = Some(leave_alls);
+            output.redeclare_at = Some(since + GROWN_MOST);
+            log(format!(
+                "{name}: the stream grew, so it waits for the bridge to let the old reservation go"
+            ));
+        }
+    }
+
+    /// Moves a grown output to its next stream ID, which a bridge holds
+    /// nothing of, to declare it at once; not where that ID was given up
+    /// too lately, which waits for the bridge instead. Our inputs of it find
+    /// where it went.
+    fn next_generation(&mut self, out: Out, since: Duration) -> bool {
+        let Some((stream_id, _)) = self.endpoints[out.0].entity.output_stream(out.1) else {
+            return false;
+        };
+        let output = self.output_mut(out);
+        let next = (output.generation + 1) % GENERATIONS;
+        if output.given_up[usize::from(next)].is_some_and(|at| since < at + GROWN_MOST) {
+            return false;
+        }
+        output.given_up[usize::from(output.generation)] = Some(since);
+        output.generation = next;
+        // A stream new to the bridge has no old value to wait out.
+        output.redeclare_at = Some(since);
+        output.grown_from = None;
+        let moved = stream_generation(stream_id, next);
+        self.endpoints[out.0]
+            .entity
+            .set_output_stream_id(out.1, moved);
+        log(format!(
+            "{}: the stream grew, so it goes on as stream {moved}",
+            self.out_name(out)
+        ));
+        let now = self.now();
+        for input in self.ins() {
+            self.endpoints[input.0].entity.probe_again(now, input.1);
+        }
+        true
+    }
+
+    /// The bridge sent a LeaveAll for Talker Advertises: a grown stream
+    /// that heard enough since it withdrew declares a LeaveTime later.
+    fn talker_leave_all(&mut self, since: Duration) {
+        self.talker_leave_alls += 1;
+        let heard = self.talker_leave_alls;
+        for (from, until) in self.shared_held.values_mut() {
+            if heard - *from >= GROWN_LEAVE_ALLS {
+                *until = (*until).min(since + GROWN_AFTER);
+            }
+        }
+        for out in self.outs() {
+            let output = self.output_mut(out);
+            if let Some(from) = output.grown_from
+                && heard - from >= GROWN_LEAVE_ALLS
+            {
+                output.grown_from = None;
+                output.redeclare_at = output.redeclare_at.map(|at| at.min(since + GROWN_AFTER));
+            }
+        }
+    }
+
+    /// Declares the programs' grown talkers whose wait for the bridge is
+    /// over, as they declare them still.
+    fn release_shared(&mut self, since: Duration) {
+        let due: Vec<u64> = self
+            .shared_held
+            .iter()
+            .filter(|(_, (_, until))| *until <= since)
+            .map(|(stream_id, _)| *stream_id)
+            .collect();
+        for stream_id in due {
+            self.shared_held.remove(&stream_id);
+            if let Some(declaration) = self.sharers.declaration(stream_id) {
+                self.shared_bandwidth
+                    .insert(stream_id, bandwidth(&declaration));
+                self.declare_shared(stream_id);
             }
         }
     }
@@ -2560,6 +2731,22 @@ impl Runtime {
         };
         let since = self.elapsed();
         let Some(lite) = &self.lite else {
+            let wanted = bandwidth(&declaration);
+            let grown = self
+                .shared_bandwidth
+                .get(&stream_id)
+                .is_some_and(|before| wanted > *before);
+            if grown {
+                if !self.shared_held.contains_key(&stream_id) {
+                    log(format!(
+                        "stream {stream_id:#018x} of a program sharing the port grew, so it waits for the bridge to let the old reservation go"
+                    ));
+                    self.shared_held
+                        .insert(stream_id, (self.talker_leave_alls, since + GROWN_MOST));
+                }
+                return;
+            }
+            self.shared_bandwidth.insert(stream_id, wanted);
             self.port.msrp.declare(
                 since,
                 msrp::attribute::TALKER_ADVERTISE,
@@ -2590,6 +2777,7 @@ impl Runtime {
         let since = self.elapsed();
         let stream_id = declaration.stream_id;
         let Some(lite) = &mut self.lite else {
+            self.shared_held.remove(&stream_id);
             self.port.msrp.withdraw(
                 since,
                 msrp::attribute::TALKER_ADVERTISE,
@@ -3145,7 +3333,7 @@ impl Runtime {
                     let out = Out(index, at);
                     self.output_mut(out).talker = None;
                     self.withdraw_talker(out);
-                    self.output_mut(out).redeclare_at = Some(self.elapsed() + REDECLARE);
+                    self.redeclare_changed(out);
                 }
             }
             EntityEvent::MaxTransitTimeChanged {
@@ -4884,9 +5072,9 @@ mod tests {
     }
 
     /// A stream keeps the format a controller chose of the profile's other
-    /// sizes, and one chosen at other channels than its own, as when they
-    /// changed, comes back as its packing at its own; AM824 chosen as
-    /// triib offered it before comes back as offered now.
+    /// sizes, or adapted from an up-to format, as AM824 at its exact
+    /// channels; one chosen at other channels than its own, as when they
+    /// changed, comes back as its packing at its own.
     #[test]
     fn a_chosen_format_comes_back() {
         let milan = |channels, bits| formats::aaf(48_000, channels, bits, formats::CLASS_A_FRAMES);
@@ -4901,7 +5089,40 @@ mod tests {
         assert_eq!(chosen(2, milan(8, 32)), milan(8, 32));
         assert_eq!(chosen(6, milan(4, 24)), milan(6, 24));
         let exact_am824 = StreamFormat(0x00a0_0208_4000_0800);
-        assert_eq!(chosen(8, exact_am824), formats::am824(48_000, 8));
+        assert_eq!(chosen(8, exact_am824), exact_am824);
+        let exact_two = StreamFormat(0x00a0_0202_4000_0200);
+        assert_eq!(chosen(8, exact_two), exact_two);
+    }
+
+    /// A stream's bandwidth is its frames on the wire each interval of its
+    /// class: cell 7 of the ESP bench, 96 kHz 2 ch in class B, needs more
+    /// than the 48 kHz stream before it, so it waits for the bridge; the
+    /// same frames in class B take half class A's.
+    #[test]
+    fn a_streams_bandwidth_follows_its_frames_and_class() {
+        let declared = |format: StreamFormat, priority| {
+            let media = avb_stream::media::Media::of(format).unwrap();
+            bandwidth(&TalkerDeclaration {
+                stream_id: 1,
+                destination: MacAddress([0x91, 0xe0, 0xf0, 0, 0x77, 0x40]),
+                vlan_id: VLAN,
+                max_frame_size: media.pdu_length() as u16,
+                max_interval_frames: 1,
+                priority,
+                rank: true,
+                accumulated_latency: TALKER_LATENCY,
+                failure: None,
+                event: avb_mrp::Event::New,
+            })
+        };
+        let cell_6 = declared(StreamFormat(0x0205_0220_0080_c000), CLASS_B_PRIORITY);
+        let cell_7 = declared(StreamFormat(0x0207_0220_0081_8000), CLASS_B_PRIORITY);
+        assert_eq!(cell_6, (120 + 42) * 4000);
+        assert_eq!(cell_7, (216 + 42) * 4000);
+        assert!(cell_7 > cell_6);
+        let class_a = declared(StreamFormat(0x0205_0220_0200_6000), PRIORITY);
+        let as_class_b = declared(StreamFormat(0x0205_0220_0200_6000), CLASS_B_PRIORITY);
+        assert_eq!(class_a, 2 * as_class_b);
     }
 
     /// A class B talker offers class B's formats first, so a frame each
@@ -5005,6 +5226,22 @@ mod tests {
         let mac = MacAddress([0xf0, 0xa7, 0x31, 0xf4, 0x0f, 0x14]);
         assert_eq!(entity_id(mac, 0), EntityId(0xf0a7_31ff_00f4_0f14));
         assert_eq!(output_stream(mac, 2, 0), StreamId(0xf0a7_31f4_0f14_0200));
+    }
+
+    /// An output that grew goes on in another generation of its stream
+    /// ID, keeping its entity's instance and its own index, the first
+    /// generation the ID it always had.
+    #[test]
+    fn a_grown_stream_takes_another_generation() {
+        let mac = MacAddress([0xf0, 0xa7, 0x31, 0xf4, 0x0f, 0x14]);
+        let first = output_stream(mac, 2, 0);
+        assert_eq!(stream_generation(first, 0), first);
+        assert_eq!(stream_generation(first, 1), StreamId(0xf0a7_31f4_0f14_0240));
+        let last = output_stream(mac, 2, 63);
+        assert_eq!(stream_generation(last, 3), StreamId(0xf0a7_31f4_0f14_02ff));
+        assert_eq!(stream_generation(stream_generation(last, 3), 0), last);
+        // Four generations, round again.
+        assert_eq!(stream_generation(first, 4), first);
     }
 
     fn endpoint(streams: Vec<StreamConfig>) -> Endpoint {
