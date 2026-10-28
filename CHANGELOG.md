@@ -78,6 +78,9 @@ All notable changes to triib. Versions follow
 ### Packages
 
 - The AppStream data dates 1.2.0 October 24, the day it was released.
+- The Windows installer's last page says this computer cannot be an AVB
+  endpoint on Windows, no longer "yet": Windows gives no hardware time
+  stamps for gPTP frames sent from user space, on the Intel I210 too.
 
 ## [1.2.0] - 2026-10-24
 

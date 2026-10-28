@@ -72,7 +72,7 @@ triib sends and receives raw Ethernet, which each system guards:
   triib explains. The MSI installs for the current user, with no
   administrator prompt, and puts triib's folder on the user's PATH for
   triib-cli. Its last page says that this computer cannot be an AVB
-  endpoint on Windows yet.
+  endpoint on Windows.
 
 ## Steps
 

@@ -10,7 +10,7 @@
   through Npcap, which its license keeps out of other installers: when it
   is missing, the last page offers its download page instead of opening
   triib. The last page also says that this computer cannot be an AVB
-  endpoint on Windows yet.
+  endpoint on Windows.
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
@@ -80,7 +80,7 @@
     <ui:WixUI Id="WixUI_Minimal" />
     <WixVariable Id="WixUILicenseRtf" Value="$(sys.SOURCEFILEDIR)license.rtf" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT"
-              Value="Using this computer as an AVB endpoint is not supported on Windows yet. triib discovers, connects and sets up the AVB and Milan devices on the network." />
+              Value="Using this computer as an AVB endpoint is not supported on Windows. triib discovers, connects and sets up the AVB and Milan devices on the network." />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
     <SetProperty Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Action="OfferNpcapText" Sequence="ui" Before="CostFinalize"
                  Value="Open the Npcap download page; triib needs Npcap to reach the network" Condition="NOT NPCAP" />

@@ -38,9 +38,9 @@ prev's look, widgets and window layout through scramble-ui.
   transparent title bar; the macOS app and installer signed with
   Scramble Tools' Developer ID and notarized, and the installers saying
   when this computer cannot be an AVB endpoint.
-- Next: P4's rest, whether Windows and then macOS can run talkers and
-  listeners of their own, starting with the I210 card for the Windows
-  PC.
+- Next: P4's rest, whether macOS can run talkers and listeners of its
+  own. Windows will not: on the I210 card too, it stamps no gPTP frame
+  sent from user space (P4).
 - Waiting on others: the linuxptp organization TLV tables, the atlantic
   driver's time stamps, native speakers' review of the translations, and
   Apple moving the developer account to the organization, for Developer
@@ -161,8 +161,8 @@ crates/
 | Capability | Linux | macOS | Windows |
 |---|---|---|---|
 | Controller frames (`0x22F0`) and listening to gPTP | `AF_PACKET`, bound to every protocol with a BPF filter, so it hears other programs' frames | BPF, one device per socket | Npcap |
-| Hardware timestamps, PTP | ptp4l on the PHC (`/dev/ptpN`) | The system's own gPTP; open (P4) | Not available to us yet; open (P4) |
-| Paced transmit | User space pacing on the PHC's time | Open (P4) | Open (P4) |
+| Hardware timestamps, PTP | ptp4l on the PHC (`/dev/ptpN`) | The system's own gPTP; open (P4) | None for frames sent from user space, so no host entities (P4) |
+| Paced transmit | User space pacing on the PHC's time | Open (P4) | None needed: no host entities |
 | Audio | cpal (PipeWire, ALSA, JACK) | cpal (Core Audio) | cpal (WASAPI) |
 | What an interface can do | `ETHTOOL_GET_TS_INFO`, the PHC index, link speed | `getifaddrs`, `SIOCGIFMEDIA` | `GetAdaptersAddresses` |
 
@@ -420,7 +420,7 @@ in the access point's beacons, and streamed unicast on the air.
 - Not in P3.1: this computer as a wireless station, which needs its Wi-Fi
   card's own PTP clock and timing support; a later phase.
 
-### P4: virtual endpoints on Windows, then macOS (next), and entities with several streams (done)
+### P4: virtual endpoints on macOS (next), not Windows, and entities with several streams (done)
 
 - **Windows.** Windows reports no time stamps on the Intel I226-V and the
   Realtek RTL8111 here (`GetInterfaceSupportedTimestampCapabilities`
@@ -430,10 +430,16 @@ in the access point's beacons, and streamed unicast on the air.
   I210 driver (e1r 14.1.24.0) keeps the time sync interface Avnu's gPTP
   daemon used: the hidden `TimeSync` setting beside
   `*PtpHardwareTimestamp`, and the private OIDs for the transmit and
-  receive stamps and the clock. An M.2 I210 card, ordered for the
-  Windows PC, is the next step; gPTP, SRP and paced transmit on it decide
-  whether Windows gets `triib-endpointd`, and whether it needs our own
-  PTP engine.
+  receive stamps and the clock.
+- **Windows, as decided:** no `triib-endpointd`, as its hardware support
+  is too weak (2026-10-28). On an I210 in a Windows 11 PC, with Intel's
+  driver 31.3 (e1r 14.1.28.0) and with Windows' own 12.19.1.32, the
+  private OIDs answer once `TimeSync` is on, but no gPTP frame sent from
+  user space through Npcap gets a transmit stamp: Windows offers tagged
+  transmit only, for sends a protocol driver tags, so gPTP would lack
+  its Pdelay_Req and Pdelay_Resp times. The clock the OIDs read is the
+  sample of the last cross time stamp, which itself lags a call. Only a
+  signed NDIS filter driver tagging gPTP's sends could go further.
 - **macOS.** Whether user space can read the system's gPTP time and its
   relation to the card, or get hardware time stamps at all; if not, the
   system's own AVB audio device, controlled by triib like any entity.
