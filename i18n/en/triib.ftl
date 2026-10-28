@@ -67,6 +67,9 @@ settings-storage-choose = Choose…
 settings-storage-note = Presets already kept at an old place stay there; move them over to keep using them. triib's settings are saved in { $file }.
 # Under the storage note where this computer runs entities of its own.
 settings-storage-entities-note = An entities file not there yet starts as a copy of the one in use, and triib-endpointd starts again on it.
+# Under the entities file while it is changed and a program sharing
+# triib-endpointd cannot take its reservations over. plaa is another app.
+settings-storage-entities-cut-off = Applying starts triib-endpointd again, and an older plaa or another program sharing it would lose its streams for about 15 seconds.
 dialog-choose-presets = Choose the presets folder
 dialog-choose-entities = Choose the folder for the entities file
 settings-full-path = Use a full path, such as ~/Documents/triib.
@@ -1061,6 +1064,9 @@ host-elsewhere = triib-endpointd runs on { $interface } for another user or as r
 # written. Another program on this computer runs them on the same port.
 host-foreign-mrp = Another program declares MSRP or MVRP on { $interface } from this computer's address, which can withdraw what this computer's streams need
 host-alarm-foreign-mrp = Another program on this computer declares MSRP or MVRP on { $interface }
+# Adding or changing an entity on another interface than the one
+# triib-endpointd runs on moves it there. plaa is another app; keep its name.
+host-sharers-cut-off = Adding or changing this computer's entities here moves them off { $interface }, where an older plaa or another program sharing triib-endpointd would lose its streams for about 15 seconds
 host-state = State
 host-streaming = Streaming
 host-waiting = Waiting for a listener

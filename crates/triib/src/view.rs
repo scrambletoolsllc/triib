@@ -3700,6 +3700,63 @@ pub(crate) mod tests {
         }
     }
 
+    /// A program sharing triib-endpointd that cannot take its streams over
+    /// is warned of where a change starts the daemon again: this
+    /// computer's entities changed on another interface than its own, and
+    /// the entities file moved.
+    #[test]
+    #[cfg(target_os = "linux")]
+    fn programs_that_cannot_take_their_streams_over_are_warned_of() {
+        use crate::storage::Storage;
+        use triib_endpointd::status::{DaemonStatus, SharerStatus};
+
+        let status = |interface: &str, hands_over| DaemonStatus {
+            pid: 1,
+            started: 0,
+            interface: interface.into(),
+            gptp: "grandmaster 0x0001f2fffeff3b14, asCapable".into(),
+            foreign_mrp: false,
+            config: None,
+            clock: None,
+            setup: None,
+            sharers: vec![SharerStatus {
+                talkers: 1,
+                listening: 1,
+                hands_over,
+            }],
+            endpoints: Vec::new(),
+        };
+        let moving = "Adding or changing this computer's entities here moves them off \
+                      enp2s0, where an older plaa or another program sharing \
+                      triib-endpointd would lose its streams for about 15 seconds";
+        let mut triib = logging(View::Entities, true);
+        triib.settings.log = false;
+        triib.endpoints = Some(status("enp2s0", false));
+        assert_eq!(crate::host_view::note(&triib).as_deref(), Some(moving));
+        // One that takes them over, or changes on the daemon's own
+        // interface, which it makes in place.
+        triib.endpoints = Some(status("enp2s0", true));
+        assert_ne!(crate::host_view::note(&triib).as_deref(), Some(moving));
+        triib.endpoints = Some(status("enp6s0", false));
+        assert_ne!(crate::host_view::note(&triib).as_deref(), Some(moving));
+
+        let applying = "Applying starts triib-endpointd again, and an older plaa or \
+                        another program sharing it would lose its streams for about 15 \
+                        seconds.";
+        triib.settings_open = true;
+        let _ = triib.update(Message::SettingsOpened);
+        triib.settings_tab = crate::settings_view::SettingsTab::Storage;
+        let size = Size::new(1280.0, 1400.0);
+        assert!(simulate(&triib, size).find(applying).is_err());
+        let _ = triib.update(Message::StorageDraft(
+            Storage::Entities,
+            "/elsewhere/entities.toml".into(),
+        ));
+        assert!(simulate(&triib, size).find(applying).is_ok());
+        triib.endpoints = Some(status("enp6s0", true));
+        assert!(simulate(&triib, size).find(applying).is_err());
+    }
+
     #[test]
     #[cfg(target_os = "linux")]
     fn this_computers_endpoints_are_added_and_shown_as_its_own() {

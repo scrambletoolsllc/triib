@@ -80,12 +80,22 @@ pub fn note(triib: &Triib) -> Option<String> {
         .as_ref()
         .filter(|status| status.foreign_mrp)
         .map(|status| status.interface.clone());
+    // Entities changed here move off the interface the daemon runs on,
+    // and it starts again on this one.
+    let moving = triib
+        .endpoints
+        .as_ref()
+        .zip(triib.interface())
+        .filter(|(status, interface)| status.interface != interface.name && status.cut_off() > 0)
+        .map(|(status, _)| status.interface.clone());
     if !triib.hosts_endpoints() {
         Some(fl!("host-needs-clock"))
     } else if let Some(interface) = &triib.endpoints_elsewhere {
         Some(fl!("host-elsewhere", interface = interface.clone()))
     } else if let Some(interface) = foreign {
         Some(fl!("host-foreign-mrp", interface = interface))
+    } else if let Some(interface) = moving {
+        Some(fl!("host-sharers-cut-off", interface = interface))
     } else if let Some(note) = setup_note(triib) {
         Some(note)
     } else if triib

@@ -207,7 +207,9 @@ on a changed file, it tells them it leaves and keeps what they declared
 registered on the bridge, so that those that can take it over run
 their own participant at once and their streams go on; as it starts,
 they hand it back, and a LeaveAll has the bridge declare its streams
-again at once.
+again at once. triib warns where a change would start it again while a
+program that cannot take its streams over, such as an older plaa,
+shares it.
 
 ## The Mac's own entity
 

@@ -232,6 +232,17 @@ fn storage(triib: &Triib) -> iced::widget::Column<'_, Message> {
                 .on_press(Message::StorageChoose(storage)),
         ));
         rows = rows.push(entry);
+        // Applying starts the daemon again on the new file.
+        let cut_off = triib
+            .endpoints
+            .as_ref()
+            .is_some_and(|status| status.cut_off() > 0);
+        if storage == Storage::Entities && changed && cut_off {
+            rows = rows.push(aligned(
+                styled(fl!("settings-storage-entities-cut-off"), Type::BodySmall)
+                    .style(style::error_text),
+            ));
+        }
         if let Some(problem) = &triib.storage_errors[storage.index()] {
             rows = rows.push(aligned(
                 styled(problem.as_str(), Type::BodySmall).style(style::error_text),

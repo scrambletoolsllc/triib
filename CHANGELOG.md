@@ -37,6 +37,10 @@ All notable changes to triib. Versions follow
   they declared registered on the bridge for them to take over at once,
   where they lost their streams for 15 s; as it starts, they hand it
   back.
+- triib warns of a program sharing triib-endpointd that cannot take its
+  streams over, such as an older plaa, in the Entities view and under
+  Settings' entities file, where a change would start triib-endpointd
+  again.
 - Starting, triib-endpointd has the bridge declare its streams again at
   once, rather than hearing of them at the bridge's next LeaveAll, up to
   10 s later.
