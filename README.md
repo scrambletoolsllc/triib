@@ -202,7 +202,12 @@ Other programs on this computer share the daemon's participant instead
 of running their own, such as plaa sending what it plays: on a socket in
 the user's runtime folder, `avb-mrp-<interface>.sock`, they ask it to
 declare and withdraw their talkers, and it tells them as their listeners
-come and go (`avb_mrp::sharing`).
+come and go (`avb_mrp::sharing`). As the daemon stops, or starts again
+on a changed file, it tells them it leaves and keeps what they declared
+registered on the bridge, so that those that can take it over run
+their own participant at once and their streams go on; as it starts,
+they hand it back, and a LeaveAll has the bridge declare its streams
+again at once.
 
 ## The Mac's own entity
 

@@ -32,6 +32,14 @@ All notable changes to triib. Versions follow
   bound, and a new format or max transit time on an output while it
   streams, as Milan 1.3 asks (5.4.2.7, 5.4.2.30), where it took them and
   started the stream again.
+- triib-endpointd tells the programs sharing its MSRP participant, such
+  as plaa, that it leaves as it stops or starts again, and keeps what
+  they declared registered on the bridge for them to take over at once,
+  where they lost their streams for 15 s; as it starts, they hand it
+  back.
+- Starting, triib-endpointd has the bridge declare its streams again at
+  once, rather than hearing of them at the bridge's next LeaveAll, up to
+  10 s later.
 
 ### Fixed
 
@@ -50,6 +58,9 @@ All notable changes to triib. Versions follow
   program sharing the port such as plaa, the new format is declared
   once the bridge has let the old reservation go, two of its LeaveAlls
   later.
+- triib-endpointd's LeaveAll goes for every MSRP attribute type, as a
+  switch's does, where it went only for those it declared, so that a
+  switch declared its talkers again only at its own LeaveAll.
 - `triib-link@` sends all of the AVB interface's frames on its first
   transmit queue: a card with several, such as the Intel I210, spread a
   stream's frames over them, and some left out of order.

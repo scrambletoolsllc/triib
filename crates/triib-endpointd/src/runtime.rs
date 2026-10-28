@@ -47,7 +47,9 @@ use crate::port::{Port, VLAN};
 use crate::profile::{self, Profile};
 use crate::sharing::{self, Server, Sharers};
 use crate::signal;
-use crate::status::{ClockStatus, DaemonStatus, EndpointStatus, Setup, StreamStatus, status_path};
+use crate::status::{
+    ClockStatus, DaemonStatus, EndpointStatus, Setup, SharerStatus, StreamStatus, status_path,
+};
 
 /// The entity models of devices, under Scramble Tools' MA-S
 /// `8C-1F-64-36-C`: this, and a hash of their streams. triib 1.0's
@@ -68,6 +70,17 @@ const CLASS_B_PRIORITY: u8 = 2;
 /// How long after the last MRP from another participant on the port it
 /// is still reported.
 const FOREIGN_MRP_QUIET: Duration = Duration::from_secs(30);
+/// How long after starting the participant sends LeaveAll: by then a
+/// program that ran its own participant on the port has handed its
+/// declarations back, which go out with it, and the bridge declares its
+/// own again within a JoinTime, where this participant would otherwise
+/// hear of no talker until the bridge's next LeaveAll, up to 10 s later.
+const TAKE_OVER: Duration = Duration::from_millis(2500);
+/// How long after starting, and after a program that takes its
+/// declarations over says hello, MRP from this computer's address is
+/// taken for that program's own participant, which stops as it hands the
+/// port back, rather than warned of as another's.
+const HANDING_BACK: Duration = Duration::from_secs(3);
 /// The latency a talker declares for itself, in nanoseconds.
 const TALKER_LATENCY: u32 = 125_000;
 /// How often the streams' counters are logged, and an analyzed input's
@@ -813,6 +826,8 @@ pub struct Runtime {
     /// When MRP from this computer's address that this daemon did not send
     /// was last heard: another participant on the port.
     foreign_mrp: Option<Clock>,
+    /// When a program that takes its declarations over last said hello.
+    handed_back: Option<Clock>,
     /// The claim on the talkers' destination addresses, one each.
     maap: Option<Maap>,
     /// Peer delay messages, which tell AVB from AVB Lite.
@@ -1193,6 +1208,7 @@ impl Runtime {
             audio,
             port: Port::new(seed),
             foreign_mrp: None,
+            handed_back: None,
             maap,
             tagged: FrameSender::open(&interface)?,
             ptp,
@@ -1267,6 +1283,9 @@ impl Runtime {
         // the port; talkers declare their streams once MAAP gives them
         // addresses.
         self.port.join(since);
+        if self.lite.is_none() {
+            self.port.msrp.leave_all_at(since + TAKE_OVER);
+        }
         if let Some(maap) = &mut self.maap {
             maap.start(now);
         }
@@ -1730,6 +1749,7 @@ impl Runtime {
                 as_capable: status.gptp.as_capable && !status.faulty,
             }),
             setup: self.setup(),
+            sharers: self.sharers.statuses(),
             endpoints,
         };
         let _ = triib_store::save(&path, &status);
@@ -2002,7 +2022,8 @@ impl Runtime {
                         version: sharing_protocol::VERSION,
                         features: sharing_protocol::feature::LOCAL_LISTENERS
                             | sharing_protocol::feature::LISTENERS
-                            | sharing_protocol::feature::AVB_LITE,
+                            | sharing_protocol::feature::AVB_LITE
+                            | sharing_protocol::feature::HANDOFF,
                     }),
                 );
                 // Whether it runs AVB Lite with the port comes after, with
@@ -2607,6 +2628,9 @@ impl Runtime {
         let unable = self.lite.is_some() && !self.sharers.lite(id);
         match request {
             Request::Hello(hello) => {
+                if hello.has(sharing_protocol::feature::HANDOFF) {
+                    self.handed_back = Some(Clock::now());
+                }
                 let was = self.sharers.lite(id);
                 self.sharers.said_hello(id, hello);
                 self.sharer_runs_lite(id, was);
@@ -3589,6 +3613,13 @@ impl Runtime {
     /// Notes another MRP participant on the port, and says so when it is
     /// first heard after a quiet spell.
     fn foreign_participant(&mut self) {
+        let handing_back = self.elapsed() < HANDING_BACK
+            || self
+                .handed_back
+                .is_some_and(|at| at.elapsed() < HANDING_BACK);
+        if handing_back {
+            return;
+        }
         if !self.foreign_mrp_heard() {
             log(format!(
                 "another program declares MSRP or MVRP on {} from this computer's address; \
@@ -3631,10 +3662,45 @@ impl Runtime {
             .filter_map(|out| self.endpoints[out.0].entity.output_stream(out.1))
             .map(|(stream_id, _)| stream_id)
             .collect();
-        // The programs sharing the port go too, their streams with them.
-        streams.extend(self.sharers.streams().into_iter().map(StreamId));
-        self.sharers.close_all();
+        // No program connects from now on, and those that just did are
+        // told with the others.
         self.sharing = None;
+        while let Ok(input) = self.inputs.try_recv() {
+            if let Input::SharerOpened(id, writer) = input {
+                self.sharers.open(id, writer);
+            }
+        }
+        // The programs sharing the port hear first. While it runs AVB,
+        // those that take their declarations over keep them: the bridge's
+        // registrations stand until their own participants declare them
+        // again, so nothing of theirs leaves, nor the port's SR classes
+        // and VLAN, which this participant never withdraws. The others'
+        // streams go, as in AVB Lite everyone's do.
+        self.sharers.tell_all(&Notice::Leaving);
+        let stranded = if self.lite.is_none() {
+            let handing_over = self.sharers.handing_over();
+            if handing_over > 0 {
+                log(format!(
+                    "programs sharing the port that take its declarations over: {handing_over}"
+                ));
+            }
+            let cut_off: usize = self
+                .sharers
+                .statuses()
+                .iter()
+                .map(SharerStatus::cut_off)
+                .sum();
+            if cut_off > 0 {
+                log(format!(
+                    "streams of programs sharing the port that cannot take them over, which go until they run their own participant: {cut_off}"
+                ));
+            }
+            self.sharers.stranded()
+        } else {
+            self.sharers.streams()
+        };
+        streams.extend(stranded.into_iter().map(StreamId));
+        self.sharers.close_all();
         self.port.withdraw_streams(since, streams);
         // Long enough for the withdrawals to go out.
         let until = since + Duration::from_millis(400);

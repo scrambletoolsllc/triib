@@ -870,6 +870,7 @@ mod tests {
             config: None,
             clock: None,
             setup: None,
+            sharers: Vec::new(),
             endpoints: Vec::new(),
         });
         assert!(!host_ready(&triib, &preset, 2_000));

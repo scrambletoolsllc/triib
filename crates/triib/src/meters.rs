@@ -392,6 +392,7 @@ mod tests {
             config: None,
             clock: None,
             setup: None,
+            sharers: Vec::new(),
             endpoints: vec![EndpointStatus {
                 entity_id: host.to_string(),
                 name: "Host entity 1".into(),

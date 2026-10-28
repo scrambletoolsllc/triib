@@ -9,6 +9,8 @@
 
 use avb_mrp::msrp::TalkerDeclaration;
 
+use crate::status::SharerStatus;
+
 #[cfg(unix)]
 pub use unix::*;
 
@@ -38,7 +40,7 @@ mod unix {
     use avb_mrp::msrp::{ListenerState, TalkerDeclaration};
     use avb_mrp::sharing::{self, Hello, Mode, Notice, Request, feature};
 
-    use super::Closed;
+    use super::{Closed, SharerStatus};
 
     /// Where a program sharing the participant is told.
     pub type Writer = UnixStream;
@@ -109,11 +111,12 @@ mod unix {
 
     impl Drop for Server {
         fn drop(&mut self) {
+            // Gone first, so that no program connects while it stops.
+            let _ = std::fs::remove_file(&self.path);
             self.stop.store(true, Ordering::Relaxed);
             if let Some(thread) = self.thread.take() {
                 let _ = thread.join();
             }
-            let _ = std::fs::remove_file(&self.path);
         }
     }
 
@@ -168,6 +171,12 @@ mod unix {
         /// so and it named its entity, which AVB Lite's declarations name.
         fn lite(&self) -> bool {
             self.entity.is_some() && self.hello.is_some_and(|hello| hello.has(feature::AVB_LITE))
+        }
+
+        /// Whether it takes its declarations over as the participant
+        /// stops, its hello saying HANDOFF.
+        fn hands_over(&self) -> bool {
+            self.hello.is_some_and(|hello| hello.has(feature::HANDOFF))
         }
     }
 
@@ -295,6 +304,41 @@ mod unix {
                 listens.extend(sharer.listens.drain().map(|(stream_id, _)| stream_id));
             }
             (streams, listens)
+        }
+
+        /// The streams that programs which cannot take them over declared,
+        /// which go as the participant stops; those of the others stay
+        /// registered for them to declare again.
+        pub fn stranded(&self) -> Vec<u64> {
+            self.sharers
+                .values()
+                .filter(|sharer| !sharer.hands_over())
+                .flat_map(|sharer| sharer.streams.keys().copied())
+                .collect()
+        }
+
+        /// How many programs take their declarations over as the
+        /// participant stops.
+        pub fn handing_over(&self) -> usize {
+            self.sharers
+                .values()
+                .filter(|sharer| sharer.hands_over())
+                .count()
+        }
+
+        /// What each program declares and listens to, for the status.
+        pub fn statuses(&self) -> Vec<SharerStatus> {
+            let mut statuses: Vec<SharerStatus> = self
+                .sharers
+                .values()
+                .map(|sharer| SharerStatus {
+                    talkers: sharer.streams.len(),
+                    listening: sharer.listens.len(),
+                    hands_over: sharer.hands_over(),
+                })
+                .collect();
+            statuses.sort_by_key(|status| (status.talkers, status.listening, status.hands_over));
+            statuses
         }
 
         /// Every stream the programs declared.
@@ -474,6 +518,14 @@ mod unix {
             }
         }
 
+        /// Tells every program `notice`.
+        pub fn tell_all(&mut self, notice: &Notice) {
+            let ids: Vec<u64> = self.sharers.keys().copied().collect();
+            for id in ids {
+                self.tell(id, notice.clone());
+            }
+        }
+
         /// Every program goes: their connections close.
         pub fn close_all(&mut self) {
             for sharer in self.sharers.values() {
@@ -511,6 +563,46 @@ mod unix {
                 told.push(notice);
             }
             told
+        }
+
+        /// As the participant stops, every program hears it leaves, and
+        /// only the streams of those that cannot take them over go.
+        #[test]
+        fn a_program_saying_handoff_keeps_its_streams_as_the_participant_stops() {
+            let (ours, mut new) = UnixStream::pair().unwrap();
+            let (ours_old, mut old) = UnixStream::pair().unwrap();
+            let mut sharers = Sharers::default();
+            sharers.open(1, ours);
+            sharers.open(2, ours_old);
+            sharers.said_hello(
+                1,
+                Hello {
+                    version: sharing::VERSION,
+                    features: feature::LISTENERS | feature::HANDOFF,
+                },
+            );
+            sharers.said_hello(
+                2,
+                Hello {
+                    version: sharing::VERSION,
+                    features: feature::LISTENERS,
+                },
+            );
+            sharers.declared(1, talker(0x77));
+            sharers.listen(1, 0x80);
+            sharers.declared(2, talker(0x78));
+            sharers.listen(2, 0x81);
+            assert_eq!(sharers.handing_over(), 1);
+            assert_eq!(sharers.stranded(), [0x78]);
+            let statuses = sharers.statuses();
+            assert_eq!(statuses.len(), 2);
+            assert_eq!(statuses.iter().map(SharerStatus::cut_off).sum::<usize>(), 2);
+            assert!(statuses.iter().any(|status| status.hands_over));
+            sharers.tell_all(&Notice::Leaving);
+            sharers.close_all();
+            assert_eq!(told(sharers, &mut new), [Notice::Leaving]);
+            // Kind 16 is new to it, but it reads it as any other.
+            assert_eq!(sharing::read_notice(&mut old).unwrap(), Notice::Leaving);
         }
 
         #[test]
@@ -683,7 +775,7 @@ mod elsewhere {
     use avb_mrp::msrp::{ListenerState, TalkerDeclaration};
     use avb_mrp::sharing::{Hello, Mode, Notice, Request};
 
-    use super::Closed;
+    use super::{Closed, SharerStatus};
 
     /// No program to tell.
     pub enum Writer {}
@@ -736,6 +828,15 @@ mod elsewhere {
         pub fn forget_unable(&mut self) -> (Vec<u64>, Vec<u64>) {
             (Vec::new(), Vec::new())
         }
+        pub fn stranded(&self) -> Vec<u64> {
+            Vec::new()
+        }
+        pub fn handing_over(&self) -> usize {
+            0
+        }
+        pub fn statuses(&self) -> Vec<SharerStatus> {
+            Vec::new()
+        }
         pub fn streams(&self) -> Vec<u64> {
             Vec::new()
         }
@@ -763,6 +864,7 @@ mod elsewhere {
         pub fn tell_mode(&mut self, _mode: Mode) {}
         pub fn tell(&mut self, _id: u64, _notice: Notice) {}
         pub fn tell_unable(&mut self, _notice: &Notice) {}
+        pub fn tell_all(&mut self, _notice: &Notice) {}
         pub fn close_all(&mut self) {}
     }
 }

@@ -335,9 +335,9 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
 name = "avb-mrp"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b8fbe98edce2e04d36eda09d300d8885772d0b732ebed1dc473e8c9d1feede4"
+checksum = "7a986375d967360aa3301d2afe3d989642813f24e44c691ea29b715a3d996f45"
 dependencies = [
  "avb-net",
 ]

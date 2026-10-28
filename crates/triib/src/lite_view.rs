@@ -563,6 +563,7 @@ mod tests {
             config: None,
             clock: None,
             setup: None,
+            sharers: Vec::new(),
             endpoints: vec![endpoint(EntityId(0x1234)), endpoint(WIRED_ESP)],
         };
         triib.endpoints = Some(status.clone());

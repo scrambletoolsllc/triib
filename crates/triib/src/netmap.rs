@@ -2584,6 +2584,7 @@ mod tests {
             config: None,
             clock: None,
             setup: None,
+            sharers: Vec::new(),
             endpoints: vec![EndpointStatus {
                 entity_id: crate::view::tests::WIRED_ESP.to_string(),
                 name: "Host entity 1".into(),

@@ -14,7 +14,7 @@ repository = "https://github.com/scrambletoolsllc/triib"
 # .cargo/avb-local.toml can point them at a local checkout while changing
 # both (see the README).
 atdecc = { version = "0.1.3", default-features = false }
-avb-mrp = { version = "0.1.1", default-features = false }
+avb-mrp = { version = "0.1.2", default-features = false }
 avb-net = { version = "0.1.0", default-features = false }
 avb-stream = "0.1.1"
 triib-store = { path = "crates/triib-store", version = "1.2.0" }

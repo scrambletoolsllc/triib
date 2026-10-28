@@ -32,8 +32,47 @@ pub struct DaemonStatus {
     /// What it is setting up, or misses, that the entities wait on.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub setup: Option<Setup>,
+    /// The programs sharing its MRP participant, such as plaa.
+    #[serde(rename = "sharer", default, skip_serializing_if = "Vec::is_empty")]
+    pub sharers: Vec<SharerStatus>,
     #[serde(rename = "endpoint", default)]
     pub endpoints: Vec<EndpointStatus>,
+}
+
+impl DaemonStatus {
+    /// The streams the programs sharing its participant lose for a while
+    /// as it stops or starts again: those of programs that cannot take
+    /// them over.
+    pub fn cut_off(&self) -> usize {
+        self.sharers.iter().map(SharerStatus::cut_off).sum()
+    }
+}
+
+/// A program sharing the daemon's MRP participant: what it declares and
+/// listens to through it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SharerStatus {
+    /// Its talkers' streams.
+    pub talkers: usize,
+    /// The streams it listens to.
+    pub listening: usize,
+    /// As the daemon stops, it declares them with a participant of its
+    /// own at once, the bridge keeping them meanwhile; else they go until
+    /// it runs its own, after a while.
+    #[serde(default)]
+    pub hands_over: bool,
+}
+
+impl SharerStatus {
+    /// The streams it loses for a while as the daemon stops or starts
+    /// again: all of them, unless it takes them over.
+    pub fn cut_off(&self) -> usize {
+        if self.hands_over {
+            0
+        } else {
+            self.talkers + self.listening
+        }
+    }
 }
 
 /// What the daemon is setting up, or misses, that its entities wait on
@@ -212,7 +251,8 @@ mod tests {
     use super::*;
 
     /// The clock's table goes between the daemon's values and its entities,
-    /// and names its grandmaster as it reads back.
+    /// and names its grandmaster as it reads back; the programs sharing
+    /// its participant come back too.
     #[test]
     fn the_status_carries_this_computers_clock() {
         let grandmaster = atdecc::ClockIdentity(0xe8f6_0aff_fee0_9220);
@@ -230,6 +270,18 @@ mod tests {
                 as_capable: true,
             }),
             setup: Some(Setup::Ptp4l),
+            sharers: vec![
+                SharerStatus {
+                    talkers: 1,
+                    listening: 1,
+                    hands_over: false,
+                },
+                SharerStatus {
+                    talkers: 1,
+                    listening: 0,
+                    hands_over: true,
+                },
+            ],
             endpoints: vec![EndpointStatus {
                 entity_id: "0xa010a3ff00a51726".into(),
                 name: "Host entity 1".into(),
@@ -240,6 +292,8 @@ mod tests {
         let text = toml::to_string(&status).unwrap();
         let read: DaemonStatus = toml::from_str(&text).unwrap();
         assert_eq!(read, status);
+        // Only the program that cannot take its streams over loses them.
+        assert_eq!(read.cut_off(), 2);
         assert_eq!(read.clock.unwrap().grandmaster(), Some(grandmaster));
         assert!(text.contains("setup = \"ptp4l\""), "{text}");
         // A step a later daemon names is one this app does not know,

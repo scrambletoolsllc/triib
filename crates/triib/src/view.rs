@@ -3337,6 +3337,7 @@ pub(crate) mod tests {
                     config: None,
                     clock: None,
                     setup: None,
+                    sharers: Vec::new(),
                     endpoints: vec![EndpointStatus {
                         entity_id: host.map(|id| id.to_string()).unwrap_or_default(),
                         name: "Host entity 1".into(),
@@ -3733,6 +3734,7 @@ pub(crate) mod tests {
             config: None,
             clock: None,
             setup: None,
+            sharers: Vec::new(),
             endpoints: vec![EndpointStatus {
                 entity_id: WIRED_ESP.to_string(),
                 name: "Host device 1".into(),
@@ -4056,6 +4058,7 @@ pub(crate) mod tests {
             config: None,
             clock: None,
             setup: Some(Setup::Link),
+            sharers: Vec::new(),
             endpoints: vec![EndpointStatus {
                 entity_id: entity_id.to_string(),
                 name: "Host entity 1".into(),
