@@ -7,7 +7,14 @@ Wants=triib-link@%i.service
 After=triib-link@%i.service
 
 [Service]
-ExecStart=ptp4l -f /etc/triib/ptp4l-gptp.cfg -i %i
+# linuxptp 4.x marks its messages PTP 2.1, and some bridges ignore its
+# peer delay requests for it, as PreSonus AVB switches do. From 4.2,
+# ptp4l can send 2.0, as 802.1AS-2011 devices do; earlier releases refuse
+# the option and would not start, so ptp4l is asked whether it knows it.
+ExecStart=/bin/sh -c '\
+    minor=; ptp4l --ptp_minor_version 0 -v >/dev/null 2>&1 && \
+        minor="--ptp_minor_version 0"; \
+    exec ptp4l -f /etc/triib/ptp4l-gptp.cfg -i "$$1" $$minor' sh %i
 Restart=on-failure
 RestartSec=2
 

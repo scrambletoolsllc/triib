@@ -77,6 +77,11 @@ All notable changes to triib. Versions follow
 
 ### Packages
 
+- `triib-ptp4l-gptp@` has ptp4l mark its messages PTP 2.0, as
+  802.1AS-2011 devices do, where it can, from linuxptp 4.2: a PreSonus
+  AVB switch ignored the peer delay requests linuxptp 4.x marks 2.1, so
+  ptp4l behind one never took the network's time. ptp4l before 4.2,
+  which would refuse the option, runs as it did.
 - The AppStream data dates 1.2.0 October 24, the day it was released.
 - The Windows installer's last page says this computer cannot be an AVB
   endpoint on Windows, no longer "yet": Windows gives no hardware time

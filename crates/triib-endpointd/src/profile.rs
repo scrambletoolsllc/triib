@@ -273,6 +273,9 @@ mod tests {
     fn a_ptp4l_on_the_interface_is_told_from_others() {
         let on = |line: &str| runs_ptp4l_on(line.replace(' ', "\0").as_bytes(), "enp2s0");
         assert!(on("ptp4l -f /etc/triib/ptp4l-gptp.cfg -i enp2s0"));
+        assert!(on(
+            "ptp4l -f /etc/triib/ptp4l-gptp.cfg -i enp2s0 --ptp_minor_version 0"
+        ));
         assert!(on("/usr/sbin/ptp4l -i enp2s0 -m"));
         assert!(!on("ptp4l -i enp6s0"));
         assert!(!on("phc2sys -s enp2s0 -w"));

@@ -173,6 +173,10 @@ no ptp4l runs, moves ptp4l to the AVB Lite profile when its entities
 fall back, and back when the link comes up again. Both configurations
 step the clock when it is a second or more off, as after a driver resets
 the card's clock: igb does on an I210 when its link goes down and up.
+The gPTP unit has ptp4l mark its messages PTP 2.0, as 802.1AS-2011
+devices do, where ptp4l can, from linuxptp 4.2: a PreSonus AVB switch
+ignores peer delay requests marked 2.1, which linuxptp 4.0 and 4.1,
+Ubuntu 24.04's among them, always send; 3.x sends 2.0.
 To have ptp4l run from boot rather than from the daemon's start,
 `systemctl enable --now triib-ptp4l-gptp@enp2s0`.
 
