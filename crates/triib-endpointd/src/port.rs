@@ -16,6 +16,8 @@ use avb_mrp::{Participant, mvrp};
 pub const VLAN: u16 = 2;
 
 pub struct Port {
+    /// A stream's Talker Advertise and Talker Failed displace each other
+    /// in it, as a bridge turns a talker failed and back with Joins alone.
     pub msrp: Participant,
     pub mvrp: Participant,
     /// The SR classes the endpoints take part in: both, since a listener
@@ -28,7 +30,7 @@ pub struct Port {
 impl Port {
     pub fn new(seed: u64) -> Self {
         Self {
-            msrp: Participant::new(msrp::FORMAT, Duration::ZERO, seed),
+            msrp: Participant::new(msrp::FORMAT, Duration::ZERO, seed).with_twins(msrp::twin),
             mvrp: Participant::new(mvrp::FORMAT, Duration::ZERO, seed ^ 0x5555),
             domains: [Domain::CLASS_A, Domain::CLASS_B],
         }

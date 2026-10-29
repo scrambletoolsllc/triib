@@ -2575,7 +2575,7 @@ impl Runtime {
                 value,
             } if is_talker(attribute_type) => {
                 let stream_id = stream_of(&value);
-                if self.talkers.remove(&stream_id).is_some() {
+                if talker_left(&mut self.talkers, attribute_type, stream_id) {
                     self.talker_heard(stream_id);
                 }
             }
@@ -5067,6 +5067,25 @@ fn is_talker(attribute_type: u8) -> bool {
     )
 }
 
+/// Takes `stream_id`'s talker off as its registration of `attribute_type`
+/// leaves, saying whether it did. A stream's Talker Advertise and Talker
+/// Failed displace each other, the old type's Left after the new type's
+/// Joined, so a Left takes off only a talker of its own type.
+fn talker_left(
+    talkers: &mut HashMap<u64, TalkerDeclaration>,
+    attribute_type: u8,
+    stream_id: u64,
+) -> bool {
+    let failed = attribute_type == msrp::attribute::TALKER_FAILED;
+    let its_own = talkers
+        .get(&stream_id)
+        .is_some_and(|talker| talker.failure.is_some() == failed);
+    if its_own {
+        talkers.remove(&stream_id);
+    }
+    its_own
+}
+
 /// The stream ID a talker or listener value starts with.
 fn stream_of(value: &[u8]) -> u64 {
     let mut octets = [0; 8];
@@ -5285,6 +5304,108 @@ mod tests {
         let other = lite::listener_message(8, ListenerState::Ready, avb_mrp::Event::New);
         assert!(same_declaration(&ready, &gone));
         assert!(!same_declaration(&ready, &other));
+    }
+
+    /// A bridge turning a talker failed and back with Joins alone, its
+    /// Talker Advertise never withdrawn, leaves the talker registered
+    /// throughout: failed for a while, then advertised again.
+    #[test]
+    fn a_talker_turning_failed_and_back_stays_registered() {
+        fn run(
+            bridge: &mut avb_mrp::Participant,
+            port: &mut Port,
+            talkers: &mut HashMap<u64, TalkerDeclaration>,
+            from: u64,
+            to: u64,
+        ) {
+            for now in (from..=to).step_by(10).map(Duration::from_millis) {
+                bridge.handle_timeout(now);
+                port.msrp.handle_timeout(now);
+                while let Some(pdu) = bridge.poll_transmit() {
+                    port.msrp.handle_pdu(now, &pdu);
+                }
+                while let Some(pdu) = port.msrp.poll_transmit() {
+                    bridge.handle_pdu(now, &pdu);
+                }
+                while let Some(registration) = port.msrp.poll_event() {
+                    match registration {
+                        Registration::Joined {
+                            attribute_type,
+                            value,
+                            ..
+                        } if is_talker(attribute_type) => {
+                            let declaration =
+                                msrp::decode_talker(attribute_type, &value, avb_mrp::Event::JoinIn)
+                                    .unwrap();
+                            talkers.insert(declaration.stream_id, declaration);
+                        }
+                        Registration::Left {
+                            attribute_type,
+                            value,
+                        } if is_talker(attribute_type) => {
+                            talker_left(talkers, attribute_type, stream_of(&value));
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+        let advertised = TalkerDeclaration {
+            stream_id: 0x0001_f201_62e5_0000,
+            destination: MacAddress([0x91, 0xe0, 0xf0, 0x00, 0xfe, 0x01]),
+            vlan_id: VLAN,
+            max_frame_size: 224,
+            max_interval_frames: 1,
+            priority: 3,
+            rank: true,
+            accumulated_latency: 0,
+            failure: None,
+            event: avb_mrp::Event::New,
+        };
+        let failure = TalkerFailure {
+            bridge_id: 0x8000_0001_f2ff_fe01,
+            code: 8,
+        };
+        let failed = TalkerDeclaration {
+            failure: Some(failure),
+            ..advertised
+        };
+        let stream_id = advertised.stream_id;
+        let mut bridge = avb_mrp::Participant::new(msrp::FORMAT, Duration::ZERO, 2);
+        let mut port = Port::new(1);
+        let mut talkers = HashMap::new();
+        bridge.declare(
+            Duration::ZERO,
+            msrp::attribute::TALKER_ADVERTISE,
+            msrp::talker_value(&advertised),
+            None,
+        );
+        run(&mut bridge, &mut port, &mut talkers, 0, 500);
+        assert_eq!(
+            talkers.get(&stream_id).map(|talker| talker.failure),
+            Some(None)
+        );
+        bridge.declare(
+            Duration::from_millis(500),
+            msrp::attribute::TALKER_FAILED,
+            msrp::talker_value(&failed),
+            None,
+        );
+        run(&mut bridge, &mut port, &mut talkers, 500, 1000);
+        assert_eq!(
+            talkers.get(&stream_id).map(|talker| talker.failure),
+            Some(Some(failure))
+        );
+        bridge.withdraw(
+            Duration::from_millis(1000),
+            msrp::attribute::TALKER_FAILED,
+            &stream_id.to_be_bytes(),
+        );
+        run(&mut bridge, &mut port, &mut talkers, 1000, 3000);
+        assert_eq!(
+            talkers.get(&stream_id).map(|talker| talker.failure),
+            Some(None)
+        );
     }
 
     #[test]

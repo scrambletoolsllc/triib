@@ -71,6 +71,14 @@ All notable changes to triib. Versions follow
 - A host entity withdrawing a declaration moments after making it sends
   its Leave, so a quick connect and disconnect no longer leaves a talker
   counting a listener that has gone.
+- A host entity's input keeps its talker when a bridge declares the
+  talker failed and then advertised again without withdrawing the
+  advertisement, as a PreSonus switch does while the talker's port comes
+  up, where the input lost the talker for good once the failure cleared.
+- triib-endpointd answers a bridge's LeaveAll that carries the bridge's
+  own declaration of VLAN 2 or an SR class domain with its own at once,
+  where the bridge's registration of triib-endpointd's lapsed at each of
+  those LeaveAlls until triib-endpointd's next one.
 - The Diagnostics tab's egress bar shows its empty track when an
   interface sends nothing, where it was drawn full, and would have been
   drawn empty at a full link.
