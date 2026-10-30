@@ -1,47 +1,38 @@
-//! Vendor names for the first three octets of a MAC address, from the
-//! IEEE list a Linux system keeps, when it has one.
+//! Vendor names for MAC addresses, from the IEEE's MA-L, MA-M, MA-S and
+//! IAB registries as scripts/make-vendors.py writes them.
 
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
-use std::sync::{Mutex, OnceLock};
+use std::sync::OnceLock;
 
-/// Where distributions keep the list.
-const LISTS: [&str; 3] = [
-    "/usr/share/hwdata/oui.txt",
-    "/usr/share/ieee-data/oui.txt",
-    "/usr/share/misc/oui.txt",
-];
+/// An assignment a line: its prefix in hex, 6, 7 or 9 digits for 24, 28
+/// or 36 bits, a tab, and its organization.
+const LIST: &str = include_str!("vendors.tsv");
 
-static NAMES: OnceLock<Mutex<HashMap<[u8; 3], Option<String>>>> = OnceLock::new();
+/// The organizations by prefix length in digits and prefix.
+static NAMES: OnceLock<HashMap<(usize, u64), &'static str>> = OnceLock::new();
 
-/// The company the IEEE assigned `oui` to, without its legal form, read
-/// once and remembered.
-pub fn name(oui: [u8; 3]) -> Option<String> {
-    let names = NAMES.get_or_init(Mutex::default);
-    if let Some(found) = names.lock().ok()?.get(&oui) {
-        return found.clone();
-    }
-    let found = look_up(oui);
-    names.lock().ok()?.insert(oui, found.clone());
-    found
+/// The company the IEEE assigned the block holding `mac` to, without its
+/// legal form.
+pub fn name(mac: [u8; 6]) -> Option<String> {
+    let names = NAMES.get_or_init(read);
+    let [a, b, c, d, e, f] = mac;
+    let address = u64::from_be_bytes([0, 0, a, b, c, d, e, f]);
+    // The IEEE hands out an MA-L whole or in smaller blocks, never both,
+    // so at most one length matches.
+    [9, 7, 6]
+        .into_iter()
+        .find_map(|digits| names.get(&(digits, address >> (48 - 4 * digits))))
+        .map(|name| short(name))
 }
 
-fn look_up(oui: [u8; 3]) -> Option<String> {
-    let prefix = format!("{:02X}-{:02X}-{:02X}", oui[0], oui[1], oui[2]);
-    LISTS.iter().find_map(|path| {
-        let file = File::open(path).ok()?;
-        BufReader::new(file)
-            .lines()
-            .map_while(Result::ok)
-            .find_map(|line| {
-                let name = line
-                    .strip_prefix(&prefix)?
-                    .trim_start()
-                    .strip_prefix("(hex)")?;
-                Some(short(name))
-            })
-    })
+fn read() -> HashMap<(usize, u64), &'static str> {
+    LIST.lines()
+        .filter(|line| !line.starts_with('#'))
+        .filter_map(|line| {
+            let (prefix, name) = line.split_once('\t')?;
+            Some(((prefix.len(), u64::from_str_radix(prefix, 16).ok()?), name))
+        })
+        .collect()
 }
 
 /// A company name without its legal form, as "Mark of the Unicorn, Inc."
@@ -80,6 +71,45 @@ fn short(name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn each_block_size_is_named() {
+        assert_eq!(
+            name([0x00, 0x01, 0xf2, 0x01, 0x62, 0xe5]).as_deref(),
+            Some("Mark of the Unicorn")
+        );
+        assert_eq!(
+            name([0x8c, 0x1f, 0x64, 0x36, 0xc1, 0x00]).as_deref(),
+            Some("Scramble Tools")
+        );
+        let (prefix, organization) = LIST
+            .lines()
+            .find_map(|line| {
+                line.split_once('\t')
+                    .filter(|(prefix, _)| prefix.len() == 7)
+            })
+            .unwrap();
+        let address = (u64::from_str_radix(prefix, 16).unwrap() << 20) | 0xabcde;
+        let [_, _, mac @ ..] = address.to_be_bytes();
+        assert_eq!(name(mac), Some(short(organization)));
+    }
+
+    #[test]
+    fn the_ieee_names_no_block_it_hands_out() {
+        let names = read();
+        assert!(names.len() > 50_000);
+        assert!(
+            !names.iter().any(|(&(digits, _), &organization)| digits == 6
+                && organization == "IEEE Registration Authority")
+        );
+        // 8C-1F-64 is an MA-L the IEEE hands out as MA-S blocks.
+        let blocks = 0x8c1f64_u64 << 12;
+        let unassigned = (blocks..blocks + 0x1000)
+            .find(|prefix| !names.contains_key(&(9, *prefix)))
+            .unwrap();
+        let [_, _, mac @ ..] = (unassigned << 12).to_be_bytes();
+        assert_eq!(name(mac), None);
+    }
 
     #[test]
     fn legal_forms_go() {

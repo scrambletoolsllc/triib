@@ -82,6 +82,11 @@ All notable changes to triib. Versions follow
 - The Diagnostics tab's egress bar shows its empty track when an
   interface sends nothing, where it was drawn full, and would have been
   drawn empty at a full link.
+- The network map names a bridge's maker on macOS and Windows too, from
+  the IEEE's registries built into triib, where it read the list a
+  Linux system keeps. A bridge whose MAC address is in an MA-M, MA-S or
+  IAB block is named by the company that block went to, where it showed
+  as "IEEE Registration Authority".
 
 ### Packages
 

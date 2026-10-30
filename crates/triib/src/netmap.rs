@@ -829,7 +829,7 @@ fn node_name(topology: &Topology, node: NodeId) -> String {
         NodeKind::Bridge => entry
             .clock
             .and_then(crate::topology::mac_of)
-            .and_then(|mac| crate::vendor::name([mac[0], mac[1], mac[2]]))
+            .and_then(crate::vendor::name)
             .unwrap_or_else(|| {
                 if entry.access_point {
                     fl!("netmap-access-point")
