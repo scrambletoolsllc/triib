@@ -63,7 +63,7 @@
 <tr><th>Milan</th><td>Milan 1.3: its connection management, GET_MILAN_INFO and the Milan view of stream state</td></tr>
 <tr><th>Streams</th><td>IEEE 1722 AVTP: AAF and AM824 audio, CRF media clock streams, and MAAP for stream addresses</td></tr>
 <tr><th>Reservations</th><td>IEEE 802.1Q MRP, MSRP and MVRP</td></tr>
-<tr><th>Time</th><td>IEEE 802.1AS gPTP, through <a href="https://linuxptp.nwtime.org">linuxptp</a>'s ptp4l, and each entity's gPTP path and grandmaster</td></tr>
+<tr><th>Time</th><td>IEEE 802.1AS gPTP, through gptpd, and each entity's gPTP path and grandmaster</td></tr>
 <tr><th>AVB Lite</th><td>The <a href="https://github.com/avbcommunity/profiles/blob/main/avb_lite.md">AVB Lite</a> community profile: falling back over switches that are not AVB bridges, CVU SRP declarations, its PTP profile, status and alarms</td></tr>
 <tr><th>AVB Wireless</th><td>The <a href="https://github.com/avbcommunity/profiles">AVB Wireless</a> community profile: each AVB interface's wireless status (GET_WIRELESS_STATUS), whether an access point admits Class A (SET_WIRELESS_CONFIG), and its unsolicited responses</td></tr>
 <tr><th>Basic Audio</th><td>The <a href="https://github.com/avbcommunity/profiles/blob/main/audio_basic.md">Basic Audio</a> community profile: host entities' audio streams take 2 and 8 channels beside their own count, and an output's SR class follows its format</td></tr>
@@ -88,7 +88,7 @@
 <h2 id="endpoints">Entities running on the local host</h2>
 <table class="spec"><tbody>
 <tr><th>Systems</th><td>Linux, on a wired interface with a PTP hardware clock (<code>ethtool -T</code> shows one)</td></tr>
-<tr><th>Time</th><td>ptp4l running gPTP on that interface, started through triib's own systemd unit where none runs, and read through its read-only socket; an entity more than a millisecond off the grandmaster reports itself out of sync, and triib's ptp4l starts again after 10 s</td></tr>
+<tr><th>Time</th><td>gptpd running gPTP on that interface, started through its systemd unit where none runs, and read through its status socket; it never steps or slews the card's clock, and makes this computer grandmaster capable, at priority1 248 unless set otherwise; an entity more than a millisecond off the last Sync reports itself out of sync</td></tr>
 <tr><th>Entities</th><td>Milan entities with any number of streams each way; any controller binds them</td></tr>
 <tr><th>Formats</th><td>Audio: AAF or AM824 at 48, 96 or 192 kHz, 8 channels unless another count is picked, and 2 and 8 channels too, each size at every rate where it fits a frame; in SR class B in class B's own formats, else class A. Media clock: CRF, 48 kHz with a timestamp every 96 samples</td></tr>
 <tr><th>Audio</th><td>To and from the computer's audio devices; each audio stream with a virtual audio device of its own in PipeWire unless it uses a sound card; an output can send a tone or silence instead, and an input can discard what it receives; each stream measured for the app's peak meters while it shows them</td></tr>
@@ -103,7 +103,7 @@
 <tr><th>Watching</th><td>Each entity's mode and why it fell back, its PTP profile and offset, its media VLAN and what its streams take of each link, and the profile's alarms</td></tr>
 <tr><th>Falling back</th><td>Host entities fall back when no AVB bridge answers on the interface, and come back to AVB when the link comes up again</td></tr>
 <tr><th>Streams</th><td>Unicast to each listener, to 5 a talker unless set otherwise, and multicast beyond that only where allowed</td></tr>
-<tr><th>ptp4l</th><td>Started where none runs, and moved between gPTP and the AVB Lite PTP profile, through triib's systemd units and polkit rule</td></tr>
+<tr><th>gptpd</th><td>Decides when host entities fall back to the AVB Lite PTP profile, and when they go back to gPTP</td></tr>
 <tr><th>Link</th><td>Energy-Efficient Ethernet and PAUSE kept off, as the profile asks, by a systemd unit</td></tr>
 </tbody></table>
 

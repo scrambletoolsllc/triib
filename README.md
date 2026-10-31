@@ -69,17 +69,22 @@ On Linux, the Entities view adds entities running on the local host,
 which `triib-endpointd` runs, on a wired interface with a PTP hardware clock
 (`ethtool -T <interface>` shows one), as Intel's I210, I225 and I226 and
 Marvell's AQtion AQC107 have; the packages say as they install when no
-interface has one. Installing the package is all they take. They need [linuxptp](https://linuxptp.nwtime.org)'s `ptp4l`
-running gPTP on that interface, so the clock keeps the network's time,
-and where none runs there the daemon starts triib's own unit for it,
-`triib-ptp4l-gptp@<interface>`; a ptp4l run another way stays as it is.
-triib reads ptp4l's state through its read-only socket,
-`/var/run/ptp4lro`, and says when ptp4l isn't there. A host entity
-whose clock is more than a millisecond off the grandmaster's reports
-itself out of sync, as controllers then show it, and after 10 s out of
-sync triib's own ptp4l unit starts again, stepping the clock. triib opens with
-the host entities listed for its interface back on the network, starting
-the daemon. Each is a Milan
+interface has one. Installing the package and gptpd is all they take:
+gptpd, an 802.1AS daemon in a package of its own that comes with triib's
+releases, runs gPTP on that interface, and where none answers there the
+daemon starts its unit, `gptpd@<interface>`. gptpd
+never steps or slews the card's clock, which stamps the peer delay
+exchanges the neighbor measures the link with, and gives the
+grandmaster's time against it in `/run/gptpd/<interface>.time` instead.
+triib reads gptpd's state from `/run/gptpd/<interface>.sock`, and says
+when gptpd isn't installed, or won't start because another PTP daemon,
+such as a ptp4l run by hand, holds the interface. This computer is
+grandmaster capable, with priority1 248 as Milan asks; `priority1` in
+`/etc/gptpd/<interface>.conf` sets it, 255 for never and 246 to be
+preferred. A host entity whose time stands more than a millisecond off
+the last Sync reports itself out of sync, as controllers then show it.
+triib opens with the host entities listed for its interface back on the
+network, starting the daemon. Each is a Milan
 entity with any number of streams each way, which controllers,
 triib among them, bind like any other. Add entity adds one with an
 audio stream each way, listed at once, greyed, saying what it waits on
@@ -116,7 +121,6 @@ presets keep it too:
 
 ```toml
 interface = "enp2s0"
-ptp4l_socket = "/var/run/ptp4lro"
 
 [[endpoint]]
 instance = 0
@@ -146,7 +150,8 @@ recovered and its stream's counters.
 
 triib 1.0's `endpoints.toml` moves to `entities.toml`, and its talkers
 and listeners, `kind = "talker"` and `kind = "listener"` entries, read
-as entities of their one stream.
+as entities of their one stream. The `ptp4l_socket` older releases wrote
+is ignored.
 
 Where no AVB bridge answers on the interface, the entities fall back to
 [AVB Lite](https://github.com/avbcommunity/profiles/blob/main/avb_lite.md),
@@ -165,24 +170,20 @@ At the top of the file:
 - `media_vlan` sets the VLAN of AVB Lite's streams, 2 if not given, or 0
   for a priority tag only on switches whose VLANs cannot be set up.
 
-ptp4l cannot switch to AVB Lite's PTP profile by itself. The Linux
-packages install `triib-ptp4l-gptp@<interface>` and
-`triib-ptp4l-lite@<interface>` units and a polkit rule that lets the
-person at the computer start them; the daemon starts the gPTP one where
-no ptp4l runs, moves ptp4l to the AVB Lite profile when its entities
-fall back, and back when the link comes up again. Both configurations
-step the clock when it is a second or more off, as after a driver resets
-the card's clock: igb does on an I210 when its link goes down and up.
-The gPTP unit has ptp4l mark its messages PTP 2.0, as 802.1AS-2011
-devices do, where ptp4l can, from linuxptp 4.2: a PreSonus AVB switch
-ignores peer delay requests marked 2.1, which linuxptp 4.0 and 4.1,
-Ubuntu 24.04's among them, always send; 3.x sends 2.0.
-To have ptp4l run from boot rather than from the daemon's start,
-`systemctl enable --now triib-ptp4l-gptp@enp2s0`.
+gptpd decides when to fall back to AVB Lite's PTP profile, by the
+profile's rule (2.2), and goes back to gPTP whenever the link comes up
+again; the entities follow it, unless `avb_lite` says otherwise. A driver
+resetting the card's clock, as igb does on an I210 when its link goes
+down and up, starts gptpd's time afresh rather than stepping a clock.
+gptpd marks its messages PTP 2.0, as 802.1AS-2011 devices do: a PreSonus
+AVB switch ignores peer delay requests marked 2.1. To have gptpd run
+from boot rather than from the daemon's start,
+`systemctl enable --now gptpd@enp2s0`.
 
 AVB Lite also asks for Energy-Efficient Ethernet and PAUSE off the
 interface's link. The `triib-link@<interface>` unit turns them off with
-`ethtool`; the ptp4l units pull it in, or
+`ethtool`, which the daemon runs where it finds them on, through a polkit
+rule that lets the person at the computer run it, or
 `systemctl enable --now triib-link@enp2s0` runs it at every boot.
 Where a card filters VLANs in hardware, as the I210 does, a stream's
 socket takes the interface promiscuous, as the card would otherwise drop
@@ -192,9 +193,9 @@ and up again, as some drivers keep PTP from working after the change
 otherwise. Should they come back on, as after the driver starts again,
 the daemon runs the unit once more. Some drivers, atlantic's among them
 (Aquantia cards), also keep their time stamps on received PTP frames
-after the link renegotiates, as when a cable goes back in, and ptp4l
-drops every frame until the interface goes down and up; the daemon sees
-them and restarts the interface through `triib-link-reset@<interface>`.
+after the link renegotiates, as when a cable goes back in, and gptpd
+can use none of them until the interface goes down and up; the daemon
+sees them and restarts the interface through `triib-link-reset@<interface>`.
 
 The daemon runs MSRP and MVRP once for the port, for all its entities,
 as MRP runs per port: two participants on one point-to-point port do not

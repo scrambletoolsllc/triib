@@ -283,9 +283,9 @@
   "page": "index.html",
   "text": "<code>sudo tar -C / -xzf triib-{v}-*-linux.tar.gz</code>, then <code>sudo setcap cap_net_raw+ep /usr/lib/triib/triib-netraw</code>"
  },
- "d98c851458dd": {
+ "fa7cfeae686c": {
   "page": "index.html",
-  "text": "As they install, the Linux packages set <code>CAP_NET_RAW</code> on just one program, <code>triib-netraw</code>, which opens raw sockets for the others, and bring in linuxptp and ethtool for host entities. The Windows installer and programs are signed by Scramble Tools LLC. See the <a1>install notes</a1> for what differs between packages, or build it from source with Rust: <code>cargo run -p triib</code> in a clone of the repository."
+  "text": "As they install, the Linux packages set <code>CAP_NET_RAW</code> on just one program, <code>triib-netraw</code>, which opens raw sockets for the others, and bring in ethtool for host entities, which also need gptpd: its own packages come with each <a1>release</a1>. The Windows installer and programs are signed by Scramble Tools LLC. See the <a2>install notes</a2> for what differs between packages, or build it from source with Rust: <code>cargo run -p triib</code> in a clone of the repository."
  },
  "321062598d1b": {
   "page": "index.html",
@@ -639,9 +639,9 @@
   "page": "guide.html",
   "text": "A wired interface with a PTP hardware clock; <code>ethtool -T &lt;interface&gt;</code> shows whether it has one."
  },
- "4ec22c87d03b": {
+ "05185e8c3e8f": {
   "page": "guide.html",
-  "text": "<a1>linuxptp</a1>'s <code>ptp4l</code> running gPTP on that interface, so the clock keeps the network's time. Where none runs there, triib starts it through its own systemd unit, reads its state, and says when linuxptp is missing. A host entity more than a millisecond off the grandmaster reports itself out of sync, and triib starts its ptp4l again."
+  "text": "<code>gptpd</code>, in a package of its own, running gPTP on that interface, so the entities keep the network's time. Where none runs there, triib starts it through its systemd unit, reads its state, and says when gptpd is missing, or when another PTP daemon, such as a ptp4l run by hand, holds the interface. A host entity more than a millisecond off the last Sync reports itself out of sync."
  },
  "6bcfb3a8fb23": {
   "page": "guide.html",
@@ -655,9 +655,9 @@
   "page": "guide.html",
   "text": "Each audio stream has a virtual audio device of its own in PipeWire, named after the entity and the stream, such as <em>Host entity 1 Out 1</em>, for any program to play into or record from, unless the inspector picks one of the computer's devices, a test tone or silence instead. Any input can be the entity's clock source: its talkers then follow the clock recovered from that stream. <code>triib-endpointd</code> runs them all from <code>entities.toml</code>, and keeps the names, formats, bindings, clock sources and mappings controllers give, so an input binds again after a restart."
  },
- "35a61f4600cc": {
+ "872d2e6c1a4e": {
   "page": "guide.html",
-  "text": "Where no AVB bridge answers on the interface, they fall back to AVB Lite. The Linux packages carry systemd units that run ptp4l and move it to AVB Lite's PTP profile when they do, and back to gPTP when the link comes up again, and keep Energy-Efficient Ethernet and PAUSE off the link, as the profile asks. The <a1>README</a1> has the settings."
+  "text": "Where no AVB bridge answers on the interface, gptpd falls back to AVB Lite's PTP profile and the entities to AVB Lite with it, and back to gPTP when the link comes up again. The Linux packages carry a systemd unit that keeps Energy-Efficient Ethernet and PAUSE off the link, as the profile asks. The <a1>README</a1> has the settings."
  },
  "193a25500056": {
   "page": "guide.html",
@@ -972,9 +972,9 @@
   "page": "specs.html",
   "text": "Time"
  },
- "46058b4a7f23": {
+ "0686a8252d34": {
   "page": "specs.html",
-  "text": "IEEE 802.1AS gPTP, through <a1>linuxptp</a1>'s ptp4l, and each entity's gPTP path and grandmaster"
+  "text": "IEEE 802.1AS gPTP, through gptpd, and each entity's gPTP path and grandmaster"
  },
  "68fdc86eb50f": {
   "page": "specs.html",
@@ -1072,9 +1072,9 @@
   "page": "specs.html",
   "text": "Linux, on a wired interface with a PTP hardware clock (<code>ethtool -T</code> shows one)"
  },
- "648779402aca": {
+ "40bda8c3794f": {
   "page": "specs.html",
-  "text": "ptp4l running gPTP on that interface, started through triib's own systemd unit where none runs, and read through its read-only socket; an entity more than a millisecond off the grandmaster reports itself out of sync, and triib's ptp4l starts again after 10 s"
+  "text": "gptpd running gPTP on that interface, started through its systemd unit where none runs, and read through its status socket; it never steps or slews the card's clock, and makes this computer grandmaster capable, at priority1 248 unless set otherwise; an entity more than a millisecond off the last Sync reports itself out of sync"
  },
  "ffce85390a20": {
   "page": "specs.html",
@@ -1148,13 +1148,13 @@
   "page": "specs.html",
   "text": "Unicast to each listener, to 5 a talker unless set otherwise, and multicast beyond that only where allowed"
  },
- "bcd9f68b4298": {
+ "658e9c9c947d": {
   "page": "specs.html",
-  "text": "ptp4l"
+  "text": "gptpd"
  },
- "f9a5d132aad0": {
+ "39974106c802": {
   "page": "specs.html",
-  "text": "Started where none runs, and moved between gPTP and the AVB Lite PTP profile, through triib's systemd units and polkit rule"
+  "text": "Decides when host entities fall back to the AVB Lite PTP profile, and when they go back to gPTP"
  },
  "d0517071aa37": {
   "page": "specs.html",

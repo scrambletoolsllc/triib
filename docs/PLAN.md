@@ -41,11 +41,10 @@ prev's look, widgets and window layout through scramble-ui.
 - Next: P4's rest, whether macOS can run talkers and listeners of its
   own. Windows will not: on the I210 card too, it stamps no gPTP frame
   sent from user space (P4).
-- Waiting on others: the linuxptp organization TLV tables, the atlantic
-  driver's time stamps, native speakers' review of the translations, and
-  Apple moving the developer account to the organization, for Developer
-  ID signing and notarization of the macOS app, which the next release
-  waits on.
+- Waiting on others: the atlantic driver's time stamps, native
+  speakers' review of the translations, and Apple moving the developer
+  account to the organization, for Developer ID signing and notarization
+  of the macOS app, which the next release waits on.
 
 ## Guiding priorities
 
@@ -75,7 +74,7 @@ dependency.
 | Virtual endpoints | ATDECC entities running on the local host, each with any number of stream inputs and outputs, audio or CRF; 1.0's talkers and listeners, entities of one stream, folded into them |
 | Controller entity | triib advertises itself as a controller (valid time 62 s, entity model ID `0x8c1f6436c0000001` under the Scramble Tools MA-S `8C-1F-64-36-C`), answers CONTROLLER_AVAILABLE, and registers for unsolicited notifications from each entity it reads |
 | ATDECC | Our own Rust stack, controller and entity roles, in the reusable `atdecc` crate, see below |
-| PTP | linuxptp's ptp4l on Linux, in gPTP or the AVB Lite PTP profile, run by triib's systemd units; the daemon reads it through its read-only socket. Our own engine (`avb-ptp`) only where P4 shows a platform needs one |
+| PTP | gptpd on Linux, our own 802.1AS daemon from the gptp repository, one per interface and shared with plaa, in gPTP or the AVB Lite PTP profile; it never moves the PHC, and gives the grandmaster's time as a mapping the media clock reads. Elsewhere only where P4 shows a platform needs it |
 | SRP | Our own MRP, MSRP and MVRP in the reusable `avb-mrp` crate; MAAP and AVB Lite's CVU SRP framing in `atdecc`, its attribute lists in `avb-mrp` |
 | Concurrency | No tokio. Network thread per interface with a poll loop and timers; real time threads for streaming and audio; `std::sync::mpsc` into an iced subscription (prev's `External` + `post()` pattern) |
 | Processes | GUI process (controller) and `triib-endpointd` for the host entities, so audio survives GUI restarts; on a Mac, `triib --monitor` for Listen, so a Core Audio call that hangs leaves the app alone |
@@ -161,8 +160,8 @@ crates/
 | Capability | Linux | macOS | Windows |
 |---|---|---|---|
 | Controller frames (`0x22F0`) and listening to gPTP | `AF_PACKET`, bound to every protocol with a BPF filter, so it hears other programs' frames | BPF, one device per socket | Npcap |
-| Hardware timestamps, PTP | ptp4l on the PHC (`/dev/ptpN`) | The system's own gPTP; open (P4) | None for frames sent from user space, so no host entities (P4) |
-| Paced transmit | User space pacing on the PHC's time | Open (P4) | None needed: no host entities |
+| Hardware timestamps, PTP | gptpd on the PHC (`/dev/ptpN`), which it never moves | The system's own gPTP; open (P4) | None for frames sent from user space, so no host entities (P4) |
+| Paced transmit | User space pacing on gPTP time, from gptpd's mapping | Open (P4) | None needed: no host entities |
 | Audio | cpal (PipeWire, ALSA, JACK) | cpal (Core Audio) | cpal (WASAPI) |
 | What an interface can do | `ETHTOOL_GET_TS_INFO`, the PHC index, link speed | `getifaddrs`, `SIOCGIFMEDIA` | `GetAdaptersAddresses` |
 
@@ -177,37 +176,38 @@ On Linux the app, `triib-cli` and `triib-endpointd` hold no capability:
 their raw sockets and passes them over (`avb_net::broker`), as plaa's
 helper does for it. A program holding a capability is one other programs
 may not look into, so the desktop portal would refuse it dialogs, which
-triib once worked around by asking from a copy of itself without one. The
-PHC is readable by everyone under systemd's
-rules. ptp4l runs as root under triib's units, which a polkit rule lets the
-person at the computer start and stop, as the daemon does.
+triib once worked around by asking from a copy of itself without one.
+gptpd's time file and status socket are readable by everyone. gptpd runs
+under its own unit, which its package's polkit rule lets the person at
+the computer start and stop, as the daemon does, and triib's link units
+run as root under a polkit rule of triib's.
 
 ## PTP
 
-On Linux, ptp4l disciplines the interface's PHC and `triib-endpointd` asks
-its read-only socket (`/var/run/ptp4lro`) every 2 s for each entity's
-GET_AVB_INFO, GET_AS_PATH and counters. triib's systemd units run it:
+On Linux, gptpd runs gPTP on the interface, `gptpd@<interface>`, one for
+every program there, plaa too. It never steps or slews the PHC, which
+stamps the Pdelay exchanges the neighbor measures the link with, and
+writes the grandmaster's time against the PHC and CLOCK_MONOTONIC to
+`/run/gptpd/<interface>.time`, which the media clock reads.
+`triib-endpointd` takes each entity's GET_AVB_INFO, GET_AS_PATH and
+counters from its status socket, `/run/gptpd/<interface>.sock`, starts
+its unit where none answers, and says when gptpd is not installed or will
+not start beside a ptp4l run by hand. gptpd is grandmaster capable, with
+priority1 248 unless `/etc/gptpd/<interface>.conf` sets 255 (never) or
+246 (preferred). triib's own systemd units:
 
-- `triib-ptp4l-gptp@<interface>` and `triib-ptp4l-lite@<interface>`, each
-  stopping the other, for gPTP and the AVB Lite PTP profile (end to end,
-  L2, domain 0, delay requests multicast). The daemon moves ptp4l between
-  them as its endpoints fall back to AVB Lite and as the link comes up
-  again; a ptp4l run any other way it leaves alone.
 - `triib-link@<interface>` keeps Energy-Efficient Ethernet and PAUSE off
-  the link at boot, as AVB Lite asks; the daemon runs it again should they
-  come back.
+  the link, as AVB Lite asks, and sends every frame on the card's first
+  transmit queue; the daemon runs it again should they come back.
 - `triib-link-reset@<interface>` takes the interface down and up when the
   daemon sees received PTP frames keep the driver's time stamp, as the
   atlantic driver leaves them after the link renegotiates.
 
-The fallback follows the profile's 2.2 to 2.5: weighed from each link-up,
-paused while the link is down, from the Endpoint Declaration TLV, nine
-unanswered requests or two responders. Where ptp4l already runs the AVB
-Lite profile it listens instead: one gPTP peer asking without the TLV, as a
-bridge asks every second, moves ptp4l to gPTP at once while it keeps
-listening, and a beacon then brings it back without waiting. The media
-clock corrects for the grandmaster's link speed from its Grandmaster Link
-TLV.
+gptpd decides the fallback to the AVB Lite PTP profile (end to end, L2,
+domain 0, delay requests multicast) by the profile's 2.2 to 2.5, and the
+entities follow it into CVU SRP and back as the link comes up again. Its
+own Pdelay_Req carry the Endpoint Declaration TLV, and it applies the
+grandmaster's link speed from its Grandmaster Link TLV.
 
 This computer's card is a TP-Link TX401 (Marvell AQtion AQC107, Linux
 `atlantic`, firmware 3.1.100): hardware time stamps, the PTP v2 L2 event
@@ -359,17 +359,14 @@ since 1.0.0 triib reaches it through the AudioVideoBridging framework.
 
 ### P3: virtual endpoints on Linux (done)
 
-`triib-endpointd` with MSRP, MVRP, MAAP and CVU SRP, ptp4l's two profiles
-switched by the daemon, AAF and AM824 talkers and listeners routed to the
+`triib-endpointd` with MSRP, MVRP, MAAP and CVU SRP, gPTP and the AVB Lite
+PTP profile from gptpd, which took over from ptp4l's two profiles the
+daemon switched, AAF and AM824 talkers and listeners routed to the
 computer's audio, shown in the matrix and inspector, kept in presets.
 Checked against Milan endpoints, macOS's AVB listener, and an AVB Lite ESP
 endpoint through a non-AVB switch.
 
 - To do:
-  - The linuxptp organization TLV tables, as Erez Geva prefers a table or
-    a built-in option, then the Endpoint Declaration TLV from ptp4l in
-    gPTP mode: today it goes out only while ptp4l does not run gPTP on
-    the interface, as the daemon's own requests and beacons.
   - The atlantic driver's time stamps, reported to its maintainer and
     netdev: answer the thread, and drop the workaround once a fix is in
     the kernels triib's users run.
@@ -564,8 +561,8 @@ budgets: 240 instances, 75% of the link, and the real-time threads.
 
 - Pacing streams in hardware: launch time (SO_TXTIME with the etf qdisc)
   or CBS where the card has them.
-- Unicast delay requests (ptp4l's hybrid_e2e) as an option, on cards that
-  receive unicast PTP whole.
+- Unicast delay requests in AVB Lite, as ptp4l's hybrid_e2e, as a gptpd
+  option, on cards that receive unicast PTP whole.
 - The matrix showing AVB Lite transport: unicast, fan-out, escalated.
 - Electing a media clock reference by priority and connecting the CRF
   streams to it.

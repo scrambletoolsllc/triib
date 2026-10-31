@@ -128,7 +128,7 @@
         </tbody>
       </table>
     </div>
-    <p class="small">As they install, the Linux packages set <code>CAP_NET_RAW</code> on just one program, <code>triib-netraw</code>, which opens raw sockets for the others, and bring in linuxptp and ethtool for host entities. The Windows installer and programs are signed by Scramble Tools LLC. See the <a href="https://github.com/scrambletoolsllc/triib#installing">install notes</a> for what differs between packages, or build it from source with Rust: <code>cargo run -p triib</code> in a clone of the repository.</p>
+    <p class="small">As they install, the Linux packages set <code>CAP_NET_RAW</code> on just one program, <code>triib-netraw</code>, which opens raw sockets for the others, and bring in ethtool for host entities, which also need gptpd: its own packages come with each <a href="https://github.com/scrambletoolsllc/triib/releases/latest">release</a>. The Windows installer and programs are signed by Scramble Tools LLC. See the <a href="https://github.com/scrambletoolsllc/triib#installing">install notes</a> for what differs between packages, or build it from source with Rust: <code>cargo run -p triib</code> in a clone of the repository.</p>
   </section>
 
   <section id="code-signing" class="policy">

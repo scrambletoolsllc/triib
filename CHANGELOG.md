@@ -20,6 +20,29 @@ All notable changes to triib. Versions follow
 
 ### Host entities (Linux)
 
+- Host entities keep the network's time with gptpd, an 802.1AS daemon in
+  a package of its own, where triib-endpointd ran linuxptp's ptp4l.
+  gptpd never steps or slews the card's clock, which stamps the peer
+  delay exchanges the neighbor measures the link with, so those stay
+  clean through the first lock, grandmaster changes, restarts and link
+  bounces, where ptp4l could slew the clock for seconds faster than a
+  bridge accepts; and streams follow a new grandmaster within a Sync or
+  two, where they held the old time through ptp4l's slew and then
+  jumped. gptpd marks its messages PTP 2.0 on every distribution, as a
+  PreSonus AVB switch needs. triib-endpointd starts `gptpd@<interface>`
+  where none answers, and triib says when gptpd is not installed, or will
+  not start because another PTP daemon, such as a ptp4l run by hand,
+  holds the interface.
+- This computer is grandmaster capable, with priority1 248 as Milan
+  asks, where its entities never took the grandmaster's place.
+  `priority1` in gptpd's `/etc/gptpd/<interface>.conf` sets it: 255 for
+  never, 246 to be preferred. Behind a switch taking no part in AVB, the
+  network map shows this computer as the grandmaster where it is one,
+  rather than out of sync.
+- gptpd decides when to fall back to AVB Lite and when to go back, and
+  the entities follow it, where triib-endpointd weighed it and moved
+  ptp4l between two units of triib's; a program sharing the port, such
+  as plaa, sees the same decision.
 - For testing streams with other devices, an output with
   `audio = "tones"` sends a tone of its own on each channel, 500 Hz and
   125 Hz more for each channel after, and an input with
@@ -90,11 +113,12 @@ All notable changes to triib. Versions follow
 
 ### Packages
 
-- `triib-ptp4l-gptp@` has ptp4l mark its messages PTP 2.0, as
-  802.1AS-2011 devices do, where it can, from linuxptp 4.2: a PreSonus
-  AVB switch ignored the peer delay requests linuxptp 4.x marks 2.1, so
-  ptp4l behind one never took the network's time. ptp4l before 4.2,
-  which would refuse the option, runs as it did.
+- The packages recommend gptpd, where they recommended linuxptp, and the
+  PKGBUILD depends on it; gptpd's own packages come with triib's
+  releases. The ptp4l units, their configurations and their polkit rule
+  are gone, and installing stops any ptp4l unit an older triib started.
+  A polkit rule still lets the person at the computer run `triib-link@`
+  and `triib-link-reset@`.
 - The AppStream data dates 1.2.0 October 24, the day it was released.
 - The Windows installer's last page says this computer cannot be an AVB
   endpoint on Windows, no longer "yet": Windows gives no hardware time
