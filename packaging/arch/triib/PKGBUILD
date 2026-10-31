@@ -6,13 +6,12 @@ pkgdesc='Discover, connect and set up AVB and Milan devices'
 arch=('x86_64' 'aarch64')
 url='https://github.com/scrambletoolsllc/triib'
 license=('MIT OR Apache-2.0')
-depends=('alsa-lib' 'ethtool' 'gcc-libs' 'glibc' 'libcap' 'libpipewire' 'libxkbcommon' 'linuxptp' 'vulkan-icd-loader' 'wayland')
+depends=('alsa-lib' 'ethtool' 'gcc-libs' 'glibc' 'gptpd' 'libcap' 'libpipewire' 'libxkbcommon' 'vulkan-icd-loader' 'wayland')
 makedepends=('cargo' 'clang')
 optdepends=('libx11: running under X11'
             'libxcursor: running under X11'
             'libxi: running under X11')
 install=triib.install
-backup=('etc/triib/ptp4l-gptp.cfg' 'etc/triib/ptp4l-lite.cfg')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
 sha256sums=('SKIP')
 

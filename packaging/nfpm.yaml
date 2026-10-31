@@ -29,12 +29,6 @@ contents:
   - src: ./stage/usr/
     dst: /usr
     type: tree
-  - src: ./stage/etc/triib/ptp4l-gptp.cfg
-    dst: /etc/triib/ptp4l-gptp.cfg
-    type: config|noreplace
-  - src: ./stage/etc/triib/ptp4l-lite.cfg
-    dst: /etc/triib/ptp4l-lite.cfg
-    type: config|noreplace
 
 scripts:
   postinstall: ./packaging/linux/postinstall.sh
@@ -52,7 +46,7 @@ overrides:
       - libvulkan1
     recommends:
       - mesa-vulkan-drivers
-      - linuxptp
+      - gptpd
       - ethtool
   rpm:
     depends:
@@ -65,7 +59,7 @@ overrides:
       - vulkan-loader
     recommends:
       - mesa-vulkan-drivers
-      - linuxptp
+      - gptpd
       - ethtool
 
 rpm:

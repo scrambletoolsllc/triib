@@ -5,8 +5,9 @@ After=sys-subsystem-net-devices-%i.device
 
 # Some drivers (atlantic) leave their hardware time stamps on received
 # PTP frames after the link renegotiates, from a cable unplugged as well
-# as a PAUSE change, until the interface goes down and up again; ptp4l
-# then drops every frame. triib-endpointd runs this when it sees them.
+# as a PAUSE change, until the interface goes down and up again; gptpd
+# cannot use any of them meanwhile. triib-endpointd runs this when it sees
+# them.
 # An interface that is down stays down.
 [Service]
 Type=oneshot

@@ -2,7 +2,7 @@
 Description=EEE and PAUSE off, and one transmit queue, on %i for triib
 Documentation=man:ethtool(8)
 After=sys-subsystem-net-devices-%i.device
-Before=triib-ptp4l-gptp@%i.service triib-ptp4l-lite@%i.service
+Before=gptpd@%i.service
 
 # The AVB Lite profile asks an endpoint to keep Energy-Efficient Ethernet
 # and PAUSE off its own link. Once a boot is enough: the interface keeps

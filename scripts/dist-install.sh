@@ -2,10 +2,10 @@
 # Installs a built triib, triib-cli, triib-endpointd and triib-netraw and
 # their data files into a system layout, for packages: the binaries,
 # triib-netraw, the one granted CAP_NET_RAW, beside them, desktop entry,
-# icons when there are any, AppStream metadata and licenses, and the
-# ptp4l configurations, systemd units and polkit rule triib-endpointd
-# switches PTP profiles with, and the check the packages run as they
-# install for an interface that can carry host entities.
+# icons when there are any, AppStream metadata and licenses, the systemd
+# units triib-endpointd sets the link up with and the polkit rule that
+# lets it run them, and the check the packages run as they install for an
+# interface that can carry host entities.
 #
 #   scripts/dist-install.sh BINARY_DIR [DESTDIR] [PREFIX]
 #
@@ -43,13 +43,8 @@ for font_license in OFL.txt LICENSE-MaterialSymbols.txt; do
         "$share/licenses/triib/fonts/$font_license"
 done
 install -Dm644 "$root/README.md" "$share/doc/triib/README.md"
-# The units name the configurations in /etc, wherever PREFIX is.
-ptp4l="$root/packaging/linux/ptp4l"
-for config in ptp4l-gptp.cfg ptp4l-lite.cfg; do
-    install -Dm644 "$ptp4l/$config" "$destdir/etc/triib/$config"
+units="$root/packaging/linux/units"
+for unit in triib-link@.service triib-link-reset@.service; do
+    install -Dm644 "$units/$unit" "$destdir$prefix/lib/systemd/system/$unit"
 done
-for unit in triib-ptp4l-gptp@.service triib-ptp4l-lite@.service triib-link@.service \
-    triib-link-reset@.service; do
-    install -Dm644 "$ptp4l/$unit" "$destdir$prefix/lib/systemd/system/$unit"
-done
-install -Dm644 "$ptp4l/50-triib-ptp4l.rules" "$share/polkit-1/rules.d/50-triib-ptp4l.rules"
+install -Dm644 "$units/50-triib-link.rules" "$share/polkit-1/rules.d/50-triib-link.rules"

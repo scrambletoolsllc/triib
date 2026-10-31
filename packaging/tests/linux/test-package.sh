@@ -36,12 +36,14 @@ case $package in
 esac
 
 # Only what each package depends on, none of what it recommends, so a
-# dependency left out of a package shows.
+# dependency left out of a package shows. gptpd, which the debs and rpms
+# recommend, comes from triib's releases rather than Arch's repositories,
+# so the Arch package goes in without it too: triib runs without gptpd.
 install_package() {
     case $kind in
     deb) apt-get install -y --no-install-recommends -o Dpkg::Options::=--force-confold "$1" ;;
     rpm) dnf install -y --setopt=install_weak_deps=False "$1" ;;
-    arch) pacman -U --noconfirm "$1" ;;
+    arch) pacman -U --noconfirm --assume-installed gptpd "$1" ;;
     esac
 }
 add_tools() {
@@ -85,8 +87,6 @@ esac
 if [ -n "$previous" ]; then
     section "Install $(basename "$previous"), to upgrade from"
     install_package "$previous"
-    # A configuration the user changed must survive the upgrade.
-    echo '# changed before the upgrade' >>/etc/triib/ptp4l-gptp.cfg
 fi
 
 section "Install $(basename "$package")"
@@ -94,10 +94,6 @@ install_package "$package" 2>&1 | tee /tmp/install.log
 want=$(package_version "$package")
 [ "$(installed_version)" = "$want" ] || fail "installed $(installed_version), not $want"
 version=${want%-*}
-if [ -n "$previous" ]; then
-    grep -qx '# changed before the upgrade' /etc/triib/ptp4l-gptp.cfg ||
-        fail "the upgrade replaced the changed /etc/triib/ptp4l-gptp.cfg"
-fi
 
 section Files
 for program in "${programs[@]}"; do
@@ -112,23 +108,23 @@ for file in \
     /usr/share/licenses/triib/LICENSE-MIT \
     /usr/share/licenses/triib/LICENSE-APACHE \
     /usr/share/licenses/triib/fonts/OFL.txt \
-    /usr/lib/systemd/system/triib-ptp4l-gptp@.service \
-    /usr/lib/systemd/system/triib-ptp4l-lite@.service \
     /usr/lib/systemd/system/triib-link@.service \
     /usr/lib/systemd/system/triib-link-reset@.service \
-    /usr/share/polkit-1/rules.d/50-triib-ptp4l.rules \
-    /etc/triib/ptp4l-gptp.cfg \
-    /etc/triib/ptp4l-lite.cfg; do
+    /usr/share/polkit-1/rules.d/50-triib-link.rules; do
     [ -f "$file" ] || fail "$file is missing"
 done
 echo "all there"
 
-# Releases up to 1.1.1 installed these under the old app ID.
+# Releases up to 1.1.1 installed these under the old app ID, and up to
+# 1.2.0 ran ptp4l with units of their own.
 if [ -n "$previous" ]; then
     section "What the upgrade replaced"
     old=$(find /usr/share/applications /usr/share/metainfo /usr/share/icons -name "$old_id.*")
     [ -z "$old" ] || fail "upgrading left $old"
     echo "nothing left of $old_id"
+    old=$(find /usr/lib/systemd/system /usr/share/polkit-1/rules.d -name '*triib-ptp4l*')
+    [ -z "$old" ] || fail "upgrading left $old"
+    echo "nothing left of the ptp4l units"
 fi
 
 # Only the helper holds the capability; the programs get their raw
@@ -240,12 +236,12 @@ remove_package
 leftovers=()
 for path in /usr/bin/triib /usr/bin/triib-cli /usr/bin/triib-endpointd /usr/lib/triib \
     "/usr/share/applications/$id.desktop" "/usr/share/metainfo/$id.metainfo.xml" \
-    /usr/lib/systemd/system/triib-link@.service /usr/share/polkit-1/rules.d/50-triib-ptp4l.rules \
-    /etc/triib/ptp4l-lite.cfg; do
+    /usr/lib/systemd/system/triib-link@.service /usr/share/polkit-1/rules.d/50-triib-link.rules; do
     [ -e "$path" ] && leftovers+=("$path")
 done
 # Purging a Debian package, or removing with pacman's -n, takes the
-# configuration too; RPM keeps a changed one as .rpmsave.
+# configuration an older release installed too; RPM keeps a changed one
+# as .rpmsave.
 if [ "$kind" != rpm ] && [ -e /etc/triib ]; then
     leftovers+=(/etc/triib)
 fi

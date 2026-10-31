@@ -15,14 +15,18 @@ out=${2:?usage: build-arch.sh SOURCE OUT}
 recipe=$(cd "$(dirname "$0")/../../arch/triib" && pwd)
 
 pacman -Syu --noconfirm --needed base-devel
-# makepkg runs as a regular user, so the dependencies go in first.
+# makepkg runs as a regular user, so the dependencies go in first: all but
+# gptpd, which comes from triib's releases rather than Arch's repositories
+# and takes no part in the build, so makepkg leaves dependencies unchecked.
 # shellcheck source=/dev/null disable=SC2154
-(. "$recipe/PKGBUILD" && pacman -S --noconfirm --needed "${depends[@]}" "${makedepends[@]}")
+(. "$recipe/PKGBUILD" &&
+    printf '%s\n' "${depends[@]}" "${makedepends[@]}" | grep -vx gptpd |
+    xargs pacman -S --noconfirm --needed)
 useradd -m builder
 build=$(mktemp -d)
 cp "$recipe/PKGBUILD" "$recipe/triib.install" "$source_archive" "$build/"
 chown -R builder "$build"
 mkdir -p "$out"
-(cd "$build" && runuser -u builder -- makepkg --nocheck --noconfirm)
+(cd "$build" && runuser -u builder -- makepkg --nocheck --noconfirm --nodeps)
 cp "$build"/triib-[0-9]*.pkg.tar.* "$out/"
 ls -l "$out"
