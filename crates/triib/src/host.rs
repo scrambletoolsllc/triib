@@ -115,10 +115,7 @@ fn load(interface: &str) -> Result<(std::path::PathBuf, Config), String> {
     let mut config = if path.exists() {
         triib_store::load::<Config>(&path).map_err(|error| error.to_string())?
     } else {
-        Config {
-            ptp4l_socket: "/var/run/ptp4lro".into(),
-            ..Config::default()
-        }
+        Config::default()
     };
     config.interface = interface.to_owned();
     Ok((path, config))

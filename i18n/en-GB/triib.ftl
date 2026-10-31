@@ -667,13 +667,14 @@ matrix-stream-format-state = { $format }. { $state }.
 
 host-failed = Could not add it to this computer: { $reason }
 host-needs-clock = This computer's own entities need a wired interface with a PTP hardware clock
-host-no-ptp4l = ptp4l does not answer, so this computer's streams cannot keep gPTP time
+host-gptpd-silent = gptpd does not answer, so this computer's streams cannot keep gPTP time
 host-starting = Starting
 host-starting-entity = Starting { $name }
 host-setting-up = Setting up { $interface } for AVB
 host-no-link = No link on { $interface }
-host-starting-ptp4l = Starting ptp4l
-host-no-linuxptp = linuxptp is not installed, so this computer's streams cannot keep gPTP time
+host-starting-gptpd = Starting gptpd
+host-no-gptpd = gptpd is not installed, so this computer's streams cannot keep gPTP time. Install gptpd, from triib's or plaa's releases.
+host-gptpd-refused = Another PTP program, such as a ptp4l run by hand, runs on { $interface }, so gptpd will not start
 host-waiting-network = Waiting for the network
 host-state = State
 host-streaming = Streaming

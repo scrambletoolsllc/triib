@@ -1046,16 +1046,17 @@ host-add-entity = Add entity
 host-new-entity = Host entity { $number }
 host-failed = Could not add it to this computer: { $reason }
 host-needs-clock = This computer's own entities need a wired interface with a PTP hardware clock
-host-no-ptp4l = ptp4l does not answer, so this computer's streams cannot keep gPTP time
+host-gptpd-silent = gptpd does not answer, so this computer's streams cannot keep gPTP time
 # What one of this computer's entities, just added, waits on before triib
-# hears it on the network, and what triib-endpointd is setting up. ptp4l
-# and linuxptp are programs; keep their names as written.
+# hears it on the network, and what triib-endpointd is setting up. gptpd
+# and ptp4l are programs; keep their names as written.
 host-starting = Starting
 host-starting-entity = Starting { $name }
 host-setting-up = Setting up { $interface } for AVB
 host-no-link = No link on { $interface }
-host-starting-ptp4l = Starting ptp4l
-host-no-linuxptp = linuxptp is not installed, so this computer's streams cannot keep gPTP time
+host-starting-gptpd = Starting gptpd
+host-no-gptpd = gptpd is not installed, so this computer's streams cannot keep gPTP time. Install gptpd, from triib's or plaa's releases.
+host-gptpd-refused = Another PTP program, such as a ptp4l run by hand, runs on { $interface }, so gptpd will not start
 host-waiting-network = Waiting for the network
 # Another user's triib-endpointd, or root's, runs this computer's entities
 # on the interface; this user's cannot run beside it.

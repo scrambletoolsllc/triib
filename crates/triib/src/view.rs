@@ -2428,7 +2428,7 @@ pub(crate) mod tests {
     ) -> (DiscoveredEntity, EntityModel) {
         use std::time::Duration;
 
-        use atdecc::entity::{EndpointModel, Entity, Gptp, StreamModel};
+        use atdecc::entity::{ClockQuality, EndpointModel, Entity, Gptp, StreamModel};
         use atdecc::{ADP_ACMP_MULTICAST, ClockIdentity, EntityModelId};
 
         const CONTROLLER_MAC: MacAddress = MacAddress([0x02, 0, 0, 0, 0, 1]);
@@ -2458,6 +2458,7 @@ pub(crate) mod tests {
             mac,
             interface_name: "enp6s0".into(),
             clock_identity: ClockIdentity(0x9c6b_00ff_fe30_9a2b),
+            clock_quality: ClockQuality::grandmaster_capable(248),
             sampling_rates: vec![48_000, 96_000, 192_000],
             current_sampling_rate: 48_000,
             outputs: outputs.iter().map(stream).collect(),
@@ -2471,7 +2472,7 @@ pub(crate) mod tests {
         let mut controller = Controller::new(Config::new(EntityId(0x9c6b_00ff_fe30_9a2b)));
         let mut now = Instant::ZERO;
         entity.start(now);
-        // ptp4l following the bench's grandmaster.
+        // gptpd following the bench's grandmaster.
         let grandmaster = ClockIdentity(0x0001_f2ff_feff_3b14);
         entity.set_gptp(
             now,
@@ -4110,7 +4111,7 @@ pub(crate) mod tests {
             pid: 1,
             started: 0,
             interface: "enp6s0".into(),
-            gptp: "ptp4l does not answer for this interface".into(),
+            gptp: "gptpd does not answer for this interface".into(),
             foreign_mrp: false,
             config: None,
             clock: None,
@@ -4129,19 +4130,36 @@ pub(crate) mod tests {
             assert!(simulator.find("Setting up enp6s0 for AVB").is_ok());
             assert!(simulator.find("Starting").is_err());
         }
-        // Then it starts ptp4l, which keeps the entity from no controller.
-        status.setup = Some(Setup::Ptp4l);
+        // Then it starts gptpd, which keeps the entity from no controller.
+        status.setup = Some(Setup::Gptpd);
         triib.endpoints = Some(status.clone());
         {
             let mut simulator = simulate(&triib, size);
             assert!(simulator.find("Waiting for the network").is_ok());
-            assert!(simulator.find("Starting ptp4l").is_ok());
+            assert!(simulator.find("Starting gptpd").is_ok());
             assert!(
                 simulator
-                    .find("ptp4l does not answer, so this computer's streams cannot keep gPTP time")
+                    .find("gptpd does not answer, so this computer's streams cannot keep gPTP time")
                     .is_err()
             );
         }
+        // Where a ptp4l run by hand holds the interface, gptpd will not
+        // start, and the bar says so; once set up, that gptpd is silent.
+        status.setup = Some(Setup::Refused);
+        triib.endpoints = Some(status.clone());
+        assert_eq!(
+            crate::host_view::note(&triib).as_deref(),
+            Some(
+                "Another PTP program, such as a ptp4l run by hand, runs on enp6s0, \
+                 so gptpd will not start"
+            )
+        );
+        status.setup = None;
+        triib.endpoints = Some(status.clone());
+        assert_eq!(
+            crate::host_view::note(&triib).as_deref(),
+            Some("gptpd does not answer, so this computer's streams cannot keep gPTP time")
+        );
         // Heard, it is listed as itself, and no longer starting.
         let (host, model) = host_entity("Host entity 1", &["Out 1"], &["In 1"]);
         assert_eq!(host.entity_id(), entity_id);

@@ -14,10 +14,8 @@ use serde::{Deserialize, Serialize};
 #[serde(default)]
 pub struct Config {
     /// The interface the entities are on: wired, with a PTP hardware clock
-    /// that ptp4l keeps on gPTP time.
+    /// that gptpd stamps gPTP's messages with.
     pub interface: String,
-    /// ptp4l's read-only management socket.
-    pub ptp4l_socket: String,
     /// Whether the endpoints may fall back to AVB Lite.
     pub avb_lite: LiteChoice,
     /// Whether, in AVB Lite, a talker with more listeners than it serves

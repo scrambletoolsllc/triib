@@ -1,5 +1,5 @@
 //! The running endpoints: one thread taking frames from the sockets and
-//! ptp4l's state, driving each entity and the MSRP and MVRP participants,
+//! gptpd's state, driving each entity and the MSRP and MVRP participants,
 //! and starting and stopping the streams as reservations come and go.
 
 use std::collections::{HashMap, VecDeque};
@@ -13,8 +13,8 @@ use std::time::{Duration, Instant as Clock};
 
 use atdecc::acmp::AcmpFlags;
 use atdecc::entity::{
-    EndpointModel, Entity, EntityEvent, InputBinding, InputReservation, OutputReservation,
-    StreamModel, UNADDRESSED,
+    ClockQuality, EndpointModel, Entity, EntityEvent, InputBinding, InputReservation,
+    OutputReservation, StreamModel, UNADDRESSED,
 };
 use atdecc::lite::{FallbackReason, LiteFlags, LiteStatus, PtpProfile};
 use atdecc::maap::{self, Maap, MaapEvent};
@@ -41,10 +41,10 @@ use crate::config::{
     binding_text,
 };
 use crate::gptp;
-use crate::lite::{self, Declared, Fallback, Ptp4l};
+use crate::lite::{self, Declared};
 use crate::meters::{self, Meters, StreamMeter};
 use crate::port::{Port, VLAN};
-use crate::profile::{self, Profile};
+use crate::profile;
 use crate::sharing::{self, Server, Sharers};
 use crate::signal;
 use crate::status::{
@@ -144,9 +144,6 @@ const FAILURE_RESOURCES: u8 = 2;
 const LINK_UP: usize = 0;
 const LINK_DOWN: usize = 1;
 const GPTP_GM_CHANGED: usize = 5;
-/// The least time between starting one ptp4l unit and the next, so a
-/// profile switch has time to show.
-const SWITCH_AGAIN: Duration = Duration::from_secs(30);
 /// The least time between runs of the link unit, which renegotiates the
 /// link each time.
 const LINK_AGAIN: Duration = Duration::from_secs(600);
@@ -156,29 +153,23 @@ const LINK_SETTLE: Duration = Duration::from_secs(15);
 /// How many PTP frames in a row from others carrying the driver's time
 /// stamp make the daemon restart the interface: 2 s of Sync and Follow_Up.
 const STAMPED_RUN: u32 = 16;
-/// How long after running the link unit, where AVB Lite held, the link
-/// coming up is its doing, not a new link.
-const LINK_OWN: Duration = Duration::from_secs(30);
-/// How long ptp4l has to answer for the interface before the daemon starts
-/// triib's unit for it: a few of the gPTP watch's turns.
-const PTP4L_WAIT: Duration = Duration::from_secs(8);
-/// The least time between tries at starting triib's ptp4l unit where none
+/// How long gptpd has to answer for the interface before the daemon
+/// starts its unit: a few of the gPTP watch's turns.
+const GPTPD_WAIT: Duration = Duration::from_secs(8);
+/// The least time between tries at starting gptpd's unit where none
 /// answers.
-const PTP4L_AGAIN: Duration = Duration::from_secs(120);
-/// How long after starting a ptp4l unit the status says ptp4l is starting,
-/// should it not answer before: a few of the gPTP watch's turns.
-const PTP4L_ANSWER: Duration = Duration::from_secs(10);
-/// How far ptp4l's clock may be off the grandmaster's, in nanoseconds,
-/// before the daemon holds it out of sync: far past a servo settling, well
-/// short of what a stream's presentation times bear.
+const GPTPD_AGAIN: Duration = Duration::from_secs(120);
+/// How long after starting gptpd's unit the status says gptpd is
+/// starting, should it not answer before.
+const GPTPD_ANSWER: Duration = Duration::from_secs(10);
+/// How far the last Sync may stand from gptpd's mapping, in nanoseconds,
+/// before the daemon holds the time out of sync: far past what a clock's
+/// wander gives, well short of what a stream's presentation times bear.
 const OFF_SYNC: u64 = 1_000_000;
-/// How long ptp4l may stay out of sync before the daemon restarts triib's
-/// unit running it, as ptp4l steps the clock when it starts.
-const OFF_RESTART: Duration = Duration::from_secs(10);
 /// How often the daemon looks whether an app asks for the meters.
 const METERS_LOOK: Duration = Duration::from_millis(500);
 
-/// What the sockets and ptp4l hand the runtime.
+/// What the sockets and gptpd hand the runtime.
 enum Input {
     /// From where, whether sent to a group address rather than to this
     /// computer, and the frame.
@@ -612,6 +603,8 @@ impl Endpoint {
             mac,
             interface_name: interface.into(),
             clock_identity: clock,
+            // Until gptpd says what it runs.
+            clock_quality: ClockQuality::NOT_GRANDMASTER_CAPABLE,
             sampling_rates,
             current_sampling_rate,
             outputs,
@@ -830,53 +823,35 @@ pub struct Runtime {
     handed_back: Option<Clock>,
     /// The claim on the talkers' destination addresses, one each.
     maap: Option<Maap>,
-    /// Peer delay messages, which tell AVB from AVB Lite.
-    ptp: Arc<Socket>,
     /// Sends whole frames, VLAN tag and all: AVB Lite's declarations.
     tagged: FrameSender,
-    fallback: Fallback,
-    /// AVB Lite, once the endpoints fell back to it.
+    /// AVB Lite, once gptpd fell back to it.
     lite: Option<LiteMode>,
     /// Whether the interface has a PTP hardware clock, which AVB Lite
     /// needs: without one its endpoints stay off it, falling back to it
     /// for nothing and running it for no one.
     hardware_clock: bool,
     /// This interface's clock identity, its link speed in Mb/s, and what
-    /// ptp4l says of the grandmaster there.
+    /// gptpd says of the grandmaster there.
     own_clock: ClockIdentity,
     link_speed: u32,
     ptp_status: Option<gptp::Status>,
-    /// The link speed each grandmaster announced, in Mb/s, and the
-    /// correction for it the media clock carries, in nanoseconds.
-    grandmaster_links: HashMap<u64, u32>,
-    correction: i64,
     /// CVU SRP messages this computer sent its own endpoints, whether to a
     /// group address, taken once the update that sent them is done.
     local_cvu: VecDeque<(bool, Vec<u8>)>,
-    /// The link and which of triib's ptp4l units runs there, and when the
-    /// daemon last started one.
+    /// The link and whether gptpd's unit runs there, and when the daemon
+    /// last started it.
     link: Option<profile::Link>,
-    switched_at: Option<Duration>,
-    /// A ptp4l unit switch put off until `SWITCH_AGAIN` has passed, or
-    /// until a gPTP peer is heard.
-    steer_pending: bool,
+    gptpd_started_at: Option<Duration>,
     /// PTP frames from others in a row that carried the driver's time
     /// stamp, and when the daemon last restarted the interface for them.
     stamped_run: u32,
     link_reset_at: Option<Duration>,
     /// When the daemon last ran the link unit again.
     link_fixed_at: Option<Duration>,
-    /// When the daemon last started triib's ptp4l unit, or found it could
-    /// not, where no ptp4l answered for the interface.
-    ptp4l_tried_at: Option<Duration>,
-    /// Since when ptp4l's clock has been out of sync, more than `OFF_SYNC`
-    /// off the grandmaster's, and when the daemon last restarted triib's
-    /// unit for it.
-    off_since: Option<Duration>,
-    off_restarted_at: Option<Duration>,
-    /// Until when the link coming up is the link unit's doing, where AVB
-    /// Lite held as the daemon ran it.
-    link_own_until: Option<Duration>,
+    /// When the daemon last started gptpd's unit, or found it could not,
+    /// where no gptpd answered for the interface.
+    gptpd_tried_at: Option<Duration>,
     clock: Arc<MediaClock>,
     /// The talker declarations registered, by stream ID.
     talkers: HashMap<u64, TalkerDeclaration>,
@@ -905,7 +880,7 @@ pub struct Runtime {
     shared_held: HashMap<u64, (u32, Duration)>,
     /// The interface's counters, as every endpoint on it reports them for
     /// its AVB_INTERFACE: how often the link came up and went down, and
-    /// the grandmaster changed; and the grandmaster ptp4l last named.
+    /// the grandmaster changed; and the grandmaster gptpd last named.
     interface_counters: [u32; 32],
     grandmaster: Option<ClockIdentity>,
     /// The configuration running, its file, and when that last changed.
@@ -1018,8 +993,14 @@ fn bandwidth(declaration: &TalkerDeclaration) -> u64 {
 /// What a talker sent, for the log.
 fn sent(stats: &TalkerStats) -> String {
     format!(
-        "sent {} frames, {} media resets, {} send errors, device {:+} ppm, {} short",
-        stats.frames_sent, stats.media_resets, stats.send_errors, stats.drift_ppm, stats.underruns
+        "sent {} frames, {} media resets ({} late, {} gPTP time), {} send errors, device {:+} ppm, {} short",
+        stats.frames_sent,
+        stats.media_resets,
+        stats.late_resets,
+        stats.clock_resets,
+        stats.send_errors,
+        stats.drift_ppm,
+        stats.underruns
     )
 }
 
@@ -1066,7 +1047,7 @@ impl Runtime {
                     format!("no interface named {interface}"),
                 )
             })?;
-        let clock = Arc::new(MediaClock::open(found.hardware_clock)?);
+        let clock = Arc::new(MediaClock::gptpd(&interface));
         let hardware_clock = found.hardware_clock.is_some();
         if !hardware_clock {
             log(format!(
@@ -1109,19 +1090,15 @@ impl Runtime {
             "mvrp",
             |source, _, bytes| Input::Mvrp(source, bytes),
         )?;
+        // PTP frames, watched for a driver's time stamps left on them.
         read_into(
-            ptp.clone(),
+            ptp,
             stop.clone(),
             sender.clone(),
             "ptp",
             |source, _, bytes| Input::Ptp(source, bytes),
         )?;
-        let socket = if config.ptp4l_socket.is_empty() {
-            "/var/run/ptp4lro".to_owned()
-        } else {
-            config.ptp4l_socket.clone()
-        };
-        gptp::watch(socket, stop.clone(), sender.clone(), Input::Gptp);
+        gptp::watch(interface.clone(), stop.clone(), sender.clone(), Input::Gptp);
         let sharing = Server::start(
             &interface,
             sender.clone(),
@@ -1191,11 +1168,6 @@ impl Runtime {
             output.slot = slot as u16;
         }
         let maap = (talkers > 0).then(|| Maap::new(mac, (talkers as u16).max(MAAP_BLOCK)));
-        let fallback = Fallback::new(
-            own_clock.0,
-            config.avb_lite == LiteChoice::On && hardware_clock,
-            Duration::ZERO,
-        );
         let link_speed = found.speed.unwrap_or(0);
         Ok(Runtime {
             interface: interface.clone(),
@@ -1211,26 +1183,18 @@ impl Runtime {
             handed_back: None,
             maap,
             tagged: FrameSender::open(&interface)?,
-            ptp,
-            fallback,
             lite: None,
             hardware_clock,
             own_clock,
             link_speed,
             ptp_status: None,
             local_cvu: VecDeque::new(),
-            grandmaster_links: HashMap::new(),
-            correction: 0,
             link: None,
-            switched_at: None,
-            steer_pending: false,
+            gptpd_started_at: None,
             stamped_run: 0,
             link_reset_at: None,
             link_fixed_at: None,
-            ptp4l_tried_at: None,
-            off_since: None,
-            off_restarted_at: None,
-            link_own_until: None,
+            gptpd_tried_at: None,
             clock,
             talkers: HashMap::new(),
             ready_remotely: HashMap::new(),
@@ -1256,7 +1220,7 @@ impl Runtime {
             meters_written: Clock::now(),
             meters_sequence: 0,
             meter_peaks: HashMap::new(),
-            gptp_text: "ptp4l not asked yet".into(),
+            gptp_text: "gptpd not asked yet".into(),
             started: SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .map_or(0, |since| since.as_millis() as u64),
@@ -1458,8 +1422,8 @@ impl Runtime {
         }
         let since = self.elapsed();
         let mut free = free.into_iter();
-        // What ptp4l last said, so a new endpoint advertises the network's
-        // grandmaster from the start rather than at the next poll.
+        // What gptpd last said, so a new endpoint advertises the network's
+        // grandmaster from the start rather than at its next status.
         let gptp = self
             .ptp_status
             .as_ref()
@@ -1744,9 +1708,12 @@ impl Runtime {
             config: self.path.as_ref().map(|file| file.display().to_string()),
             clock: self.ptp_status.as_ref().map(|status| ClockStatus {
                 grandmaster: status.gptp.grandmaster.to_string(),
-                offset: status.offset,
-                end_to_end: status.end_to_end,
-                as_capable: status.gptp.as_capable && !status.faulty,
+                offset: status.residual,
+                end_to_end: status.lite.is_some(),
+                as_capable: status.gptp.as_capable,
+                grandmaster_is_us: status.grandmaster_is_us,
+                priority1: Some(status.priority1),
+                neighbor_rate_ppb: status.neighbor_rate_ppb,
             }),
             setup: self.setup(),
             sharers: self.sharers.statuses(),
@@ -1756,7 +1723,7 @@ impl Runtime {
     }
 
     /// What it is setting up, or misses, that the entities wait on: the
-    /// link while a link unit runs or it is down, then ptp4l until it
+    /// link while a link unit runs or it is down, then gptpd until it
     /// answers.
     fn setup(&self) -> Option<Setup> {
         let link = self.link?;
@@ -1775,14 +1742,19 @@ impl Runtime {
         if self.ptp_status.is_some() {
             return None;
         }
-        if !profile::ptp4l_installed() {
-            return Some(Setup::NoLinuxptp);
+        if !profile::gptpd_installed() {
+            return Some(Setup::NoGptpd);
         }
-        // While it waits to see whether a ptp4l answers before starting
-        // one, and for a moment after it starts one.
-        let starting =
-            since < PTP4L_WAIT || self.switched_at.is_some_and(|at| since < at + PTP4L_ANSWER);
-        starting.then_some(Setup::Ptp4l)
+        if gptp::refused(&self.interface).is_some() || profile::ptp4l_on(&self.interface) {
+            return Some(Setup::Refused);
+        }
+        // While it waits to see whether gptpd answers before starting it,
+        // and for a moment after it starts it.
+        let starting = since < GPTPD_WAIT
+            || self
+                .gptpd_started_at
+                .is_some_and(|at| since < at + GPTPD_ANSWER);
+        starting.then_some(Setup::Gptpd)
     }
 
     /// Writes how loud each running audio stream is each
@@ -1862,7 +1834,6 @@ impl Runtime {
             .and_then(Maap::poll_timeout)
             .map(|at| at.saturating_duration_since(now));
         let lite = [
-            Some(self.fallback.poll_timeout()),
             self.lite.as_ref().map(|lite| lite.next_refresh),
             self.lite
                 .as_ref()
@@ -1931,16 +1902,6 @@ impl Runtime {
                 if source != self.mac {
                     self.watch_stamps(&bytes);
                 }
-                // Without a hardware clock nothing is weighed: AVB Lite is
-                // not for it.
-                if self.hardware_clock {
-                    self.fallback.handle_ptp(since, &bytes);
-                }
-                if let Some((grandmaster, speed)) = lite::grandmaster_link(&bytes)
-                    && self.grandmaster_links.insert(grandmaster, speed) != Some(speed)
-                {
-                    self.update_correction();
-                }
             }
             // MRP from this computer's own address that the socket did not
             // send is another participant on the port, which this one must
@@ -1960,13 +1921,11 @@ impl Runtime {
             }
             Input::Mvrp(_, bytes) => self.port.mvrp.handle_pdu(since, &bytes),
             Input::Gptp(status) => {
-                // ptp4l on another interface says nothing of this one: its
-                // clock identity comes from that interface's address.
-                let status = status.filter(|status| status.own_clock == self.own_clock);
                 if status.is_none() && self.ptp_status.is_none() && !self.gptp_text.ends_with("yet")
                 {
                     return;
                 }
+                let before = self.ptp_status.take();
                 self.ptp_status.clone_from(&status);
                 if let Some(status) = &status {
                     let grandmaster = status.gptp.grandmaster;
@@ -1974,38 +1933,59 @@ impl Runtime {
                         self.interface_counters[GPTP_GM_CHANGED] += 1;
                     }
                     self.grandmaster = Some(grandmaster);
+                    // The entities' AVB_INTERFACE reports this computer's
+                    // PTP Instance as gptpd runs it.
+                    let clock = (status.own_clock, status.priority1);
+                    if before
+                        .as_ref()
+                        .is_none_or(|before| (before.own_clock, before.priority1) != clock)
+                    {
+                        if status.own_clock != self.own_clock {
+                            log(format!(
+                                "gPTP: gptpd's clock is {}, not {} from the interface's address",
+                                status.own_clock, self.own_clock
+                            ));
+                        }
+                        for endpoint in &mut self.endpoints {
+                            endpoint
+                                .entity
+                                .set_clock(clock.0, ClockQuality::of_priority1(clock.1));
+                        }
+                    }
                 }
-                self.update_ptp4l();
-                self.update_correction();
-                // A clock that far off keeps no gPTP time for the streams,
-                // whatever the link: the entities say so, as not asCapable,
-                // so controllers show them out of sync.
+                // Time that far off the last Sync keeps no gPTP time for the
+                // streams, whatever the link: the entities say so, as not
+                // asCapable, so controllers show them out of sync.
                 let off = status
                     .as_ref()
-                    .and_then(|status| status.offset)
+                    .and_then(|status| status.residual)
                     .filter(|offset| offset.unsigned_abs() > OFF_SYNC);
-                self.off_since = off.map(|_| self.off_since.unwrap_or(since));
                 let state = |status: &gptp::Status| match off {
-                    _ if status.faulty => "ptp4l's port FAULTY".into(),
                     Some(offset) => format!("{offset} ns off it, not in sync"),
+                    None if status.grandmaster_is_us => "this computer".into(),
                     None if status.gptp.as_capable => "asCapable".into(),
                     None => "not asCapable".into(),
                 };
-                self.gptp_text = match &status {
+                let text = match &status {
                     Some(status) => {
                         format!("grandmaster {}, {}", status.gptp.grandmaster, state(status))
                     }
-                    None => "ptp4l does not answer for this interface".into(),
+                    None => "gptpd does not answer for this interface".into(),
                 };
-                match &status {
-                    Some(status) => log(format!(
-                        "gPTP: grandmaster {}, peer delay {} ns, {}",
-                        status.gptp.grandmaster,
-                        status.gptp.propagation_delay,
-                        state(status)
-                    )),
-                    None => log("gPTP: ptp4l does not answer for this interface"),
+                // gptpd's status comes every 2 s, its residual and rates
+                // moving each time: only what the entities report is told.
+                if text != self.gptp_text {
+                    match &status {
+                        Some(status) => log(format!(
+                            "gPTP: grandmaster {}, peer delay {} ns, {}",
+                            status.gptp.grandmaster,
+                            status.gptp.propagation_delay,
+                            state(status)
+                        )),
+                        None => log("gPTP: gptpd does not answer for this interface"),
+                    }
                 }
+                self.gptp_text = text;
                 let mut gptp = status.map(|status| status.gptp).unwrap_or_default();
                 if off.is_some() {
                     gptp.as_capable = false;
@@ -2013,6 +1993,7 @@ impl Runtime {
                 for endpoint in &mut self.endpoints {
                     endpoint.entity.set_gptp(now, gptp.clone());
                 }
+                self.follow_profile();
             }
             Input::SharerOpened(id, writer) => {
                 self.sharers.open(id, writer);
@@ -2045,22 +2026,15 @@ impl Runtime {
             }
             Input::Link(link) => {
                 let last = self.link.replace(link);
-                let unit = last.and_then(|last| last.unit);
-                if unit != link.unit {
-                    match link.unit {
-                        Some(profile) => log(format!(
-                            "ptp4l: {} runs {profile}",
-                            profile.unit(&self.interface)
-                        )),
-                        None if unit.is_some() => log("ptp4l: triib's units stopped"),
-                        None => {}
+                if last.map(|last| last.gptpd) != Some(link.gptpd) {
+                    let unit = profile::gptpd_unit(&self.interface);
+                    match link.gptpd {
+                        true => log(format!("gPTP: {unit} runs")),
+                        false if last.is_some() => log(format!("gPTP: {unit} stopped")),
+                        false => {}
                     }
                 }
-                // The fallback waits while the link is down, as nothing can
-                // answer, and weighs afresh as it comes up (profile 2.2).
-                let since = self.elapsed();
                 if let Some(carrier) = link.carrier {
-                    self.fallback.set_link(since, carrier);
                     let before = last.and_then(|last| last.carrier);
                     if before != Some(carrier) {
                         let counter = if carrier { LINK_UP } else { LINK_DOWN };
@@ -2079,17 +2053,9 @@ impl Runtime {
                         endpoint.entity.link_up(now);
                     }
                 }
-                // AVB Lite holds until the link comes up again, though not
-                // from a link unit taking it down.
-                let came_up = link.carrier == Some(true)
-                    && last.is_some_and(|last| last.carrier == Some(false))
-                    && !self.link_own_until.is_some_and(|until| since < until);
-                if came_up && self.lite.is_some() && self.config.avb_lite == LiteChoice::Auto {
-                    log("AVB Lite: the link came up again, trying AVB");
-                    self.leave_lite();
+                if last.is_none() {
+                    self.start_link();
                 }
-                self.update_ptp4l();
-                self.steer_profile();
                 self.keep_link_power(last.and_then(|last| last.power));
             }
         }
@@ -2107,25 +2073,7 @@ impl Runtime {
         if let Some(maap) = &mut self.maap {
             maap.handle_timeout(now);
         }
-        // ptp4l's own fault stops its requests while it lasts. Without a
-        // hardware clock nothing is weighed, nor a beacon sent.
-        if self.hardware_clock {
-            if self.ptp_status.as_ref().is_some_and(|status| status.faulty) {
-                self.fallback.ptp4l_faulty(since);
-            }
-            self.fallback.handle_timeout(since);
-        }
-        if self.steer_pending && !self.switched_at.is_some_and(|at| since < at + SWITCH_AGAIN) {
-            self.steer_profile();
-        }
-        self.start_ptp4l();
-        self.restart_ptp4l();
-        if self.lite.is_none()
-            && self.config.avb_lite != LiteChoice::Off
-            && let Some(reason) = self.fallback.reason()
-        {
-            self.enter_lite(reason);
-        }
+        self.start_gptpd();
         self.lite_turn();
         while let Some((group, pdu)) = self.local_cvu.pop_front() {
             self.cvu_heard(self.mac, group, &pdu);
@@ -2202,9 +2150,6 @@ impl Runtime {
         }
         while let Some((destination, pdu)) = self.maap.as_mut().and_then(Maap::poll_transmit) {
             let _ = self.avtp.send(destination, &pdu);
-        }
-        while let Some(message) = self.fallback.poll_transmit() {
-            let _ = self.ptp.send(lite::PDELAY_DESTINATION, &message);
         }
         while let Some(pdu) = self.port.msrp.poll_transmit() {
             let _ = self.msrp.send(avb_mrp::MSRP_DESTINATION, &pdu);
@@ -3807,7 +3752,6 @@ impl Runtime {
         self.sharers.tell_mode(mode);
         self.declare_all();
         self.update_lite_status();
-        self.steer_profile();
     }
 
     /// Declares every output's stream, once MAAP gave them addresses, and
@@ -3857,9 +3801,9 @@ impl Runtime {
         }
     }
 
-    /// Leaves AVB Lite as the link comes up again (profile 2.2): CVU SRP's
-    /// declarations go, the endpoints declare with MSRP and MVRP as at the
-    /// start, and the fallback is armed again.
+    /// Leaves AVB Lite as gptpd weighs afresh in gPTP, as the link comes up
+    /// again (profile 2.2): CVU SRP's declarations go, and the endpoints
+    /// declare with MSRP and MVRP as at the start.
     fn leave_lite(&mut self) {
         let since = self.elapsed();
         for out in self.outs() {
@@ -3878,8 +3822,6 @@ impl Runtime {
         self.talkers.clear();
         self.ready_remotely.clear();
         self.listener_states.clear();
-        self.fallback = Fallback::new(self.own_clock.0, false, since);
-        self.update_ptp4l();
         self.port.join(since);
         // Programs running AVB Lite with the port hear it runs AVB, their
         // streams and listening declared by MSRP again; the others, that
@@ -3892,7 +3834,26 @@ impl Runtime {
         }
         self.sharers.tell_unable(&Notice::Available);
         self.update_lite_status();
-        self.steer_profile();
+    }
+
+    /// Runs the link unit once as the daemon starts, where it has not run
+    /// since boot: gptpd's unit no longer brings it along, as ptp4l's did,
+    /// and the talkers need its one transmit queue.
+    fn start_link(&mut self) {
+        let interface = self.interface.clone();
+        if profile::link_ran(&interface) {
+            return;
+        }
+        self.link_fixed_at = Some(self.elapsed());
+        let unit = profile::link_unit(&interface);
+        log(format!("{interface}: running {unit}"));
+        let _ = std::thread::Builder::new()
+            .name("link unit".into())
+            .spawn(move || {
+                if let Err(error) = profile::start_link(&interface) {
+                    log(format!("{interface}: cannot run {unit}: {error}"));
+                }
+            });
     }
 
     /// Keeps EEE and PAUSE off the link, as the AVB Lite profile asks (6):
@@ -3920,7 +3881,6 @@ impl Runtime {
             return;
         }
         self.link_fixed_at = Some(since);
-        self.link_own_until = self.lite.is_some().then_some(since + LINK_OWN);
         let what = match (power.eee, power.pause) {
             (true, true) => "EEE and PAUSE are",
             (true, false) => "EEE is",
@@ -3952,8 +3912,8 @@ impl Runtime {
 
     /// Restarts the interface when the PTP frames others send keep the
     /// driver's receive time stamp, as atlantic's do after the link
-    /// renegotiates, until the interface goes down and up: ptp4l drops
-    /// every one of them. At most every ten minutes, should a restart not
+    /// renegotiates, until the interface goes down and up: gptpd cannot use
+    /// any of them. At most every ten minutes, should a restart not
     /// help.
     fn watch_stamps(&mut self, message: &[u8]) {
         if !lite::stamped(message) {
@@ -3969,10 +3929,9 @@ impl Runtime {
             return;
         }
         self.link_reset_at = Some(since);
-        self.link_own_until = self.lite.is_some().then_some(since + LINK_OWN);
         let unit = profile::reset_unit(&self.interface);
         log(format!(
-            "{}: PTP frames arrive with the driver's time stamps on them, which ptp4l drops; running {unit}",
+            "{}: PTP frames arrive with the driver's time stamps on them, which gptpd cannot use; running {unit}",
             self.interface
         ));
         let interface = self.interface.clone();
@@ -3987,158 +3946,83 @@ impl Runtime {
             });
     }
 
-    /// Tells the fallback what runs PTP on the interface: what ptp4l
-    /// answers, else what triib's unit runs, as ptp4l does not answer
-    /// while its unit starts it.
-    fn update_ptp4l(&mut self) {
-        let since = self.elapsed();
-        let ptp4l = match (&self.ptp_status, self.link.and_then(|link| link.unit)) {
-            (Some(status), _) if status.end_to_end => Ptp4l::Lite,
-            (Some(_), _) => Ptp4l::Gptp,
-            (None, Some(Profile::Gptp)) => Ptp4l::Gptp,
-            (None, Some(Profile::Lite)) => Ptp4l::Lite,
-            (None, None) => Ptp4l::Absent,
+    /// Follows gptpd into AVB Lite as it falls back, and out again as it
+    /// weighs afresh in gPTP once the link comes up (profile 2.2). Where
+    /// entities.toml turns AVB Lite off the endpoints stay in AVB, and
+    /// where it turns it on they run it whatever gptpd says. Without a
+    /// hardware clock AVB Lite is not for them.
+    fn follow_profile(&mut self) {
+        let gptpd = self.ptp_status.as_ref().map(|status| status.lite);
+        let wanted = match self.config.avb_lite {
+            _ if !self.hardware_clock => None,
+            LiteChoice::Off => None,
+            LiteChoice::On => Some(FallbackReason::CONFIGURED),
+            LiteChoice::Auto => match gptpd {
+                Some(lite) => lite,
+                // While gptpd does not answer, the mode stays as it was.
+                None => self.lite.as_ref().map(|lite| lite.reason),
+            },
         };
-        self.fallback.set_ptp4l(since, ptp4l);
+        match (&self.lite, wanted) {
+            (None, Some(reason)) => self.enter_lite(reason),
+            (Some(_), None) => {
+                log("AVB Lite: gptpd runs gPTP again, declaring with MSRP");
+                self.leave_lite();
+            }
+            _ => {}
+        }
     }
 
-    /// Starts triib's ptp4l unit on the interface where no ptp4l answers
-    /// for it and none of triib's units runs one, once ptp4l has had time to
-    /// answer, so installing triib is all the network's time takes. A ptp4l
-    /// run another way on the interface stays as it is.
-    fn start_ptp4l(&mut self) {
+    /// Starts gptpd's unit on the interface where no gptpd answers for it
+    /// and the unit does not run, once gptpd has had time to answer, so
+    /// installing triib and gptpd is all the network's time takes. gptpd
+    /// does not start where another PTP daemon holds the interface.
+    fn start_gptpd(&mut self) {
         let since = self.elapsed();
         if self.ptp_status.is_some()
-            || since < PTP4L_WAIT
+            || since < GPTPD_WAIT
             || self
-                .ptp4l_tried_at
-                .is_some_and(|at| since < at + PTP4L_AGAIN)
+                .gptpd_tried_at
+                .is_some_and(|at| since < at + GPTPD_AGAIN)
         {
             return;
         }
         let Some(link) = self.link else {
             return;
         };
-        if link.unit.is_some() || link.carrier == Some(false) {
+        if link.gptpd || link.carrier == Some(false) {
             return;
         }
-        self.ptp4l_tried_at = Some(since);
+        self.gptpd_tried_at = Some(since);
         let interface = self.interface.clone();
+        if !profile::gptpd_installed() {
+            log(format!(
+                "gPTP: gptpd is not installed; install it for {interface} to keep the network's time"
+            ));
+            return;
+        }
+        if let Some(reason) = gptp::refused(&interface) {
+            log(format!(
+                "gPTP: gptpd will not start on {interface}: {reason}"
+            ));
+            return;
+        }
         if profile::ptp4l_on(&interface) {
             log(format!(
-                "ptp4l: one runs on {interface} but does not answer on the read-only socket entities.toml names"
+                "gPTP: a ptp4l runs on {interface}, which gptpd will not start beside; stop it for gptpd"
             ));
             return;
         }
-        if !profile::ptp4l_installed() {
-            log(format!(
-                "ptp4l: none runs on {interface}, and linuxptp is not installed; install it for the network's time"
-            ));
-            return;
-        }
-        let profile = if self.lite.is_some()
-            || (self.config.avb_lite == LiteChoice::On && self.hardware_clock)
-        {
-            Profile::Lite
-        } else {
-            Profile::Gptp
-        };
-        let unit = profile.unit(&interface);
+        let unit = profile::gptpd_unit(&interface);
         log(format!(
-            "ptp4l: none answers for {interface}; starting {unit}"
+            "gPTP: gptpd does not answer for {interface}; starting {unit}"
         ));
-        self.switched_at = Some(since);
+        self.gptpd_started_at = Some(since);
         let _ = std::thread::Builder::new()
-            .name("ptp4l unit".into())
+            .name("gptpd unit".into())
             .spawn(move || {
-                if let Err(error) = profile::start(&interface, profile) {
-                    log(format!("ptp4l: cannot start {unit}: {error}"));
-                }
-            });
-    }
-
-    /// Restarts triib's unit running ptp4l once its clock has stayed out of
-    /// sync for `OFF_RESTART`, as when a driver reset the hardware clock and
-    /// ptp4l does not step it: starting, ptp4l does. A ptp4l run another
-    /// way stays as it is.
-    fn restart_ptp4l(&mut self) {
-        let since = self.elapsed();
-        let Some(off) = self.off_since else {
-            return;
-        };
-        let Some(profile) = self.link.and_then(|link| link.unit) else {
-            return;
-        };
-        if since < off + OFF_RESTART
-            || self
-                .off_restarted_at
-                .is_some_and(|at| since < at + PTP4L_AGAIN)
-        {
-            return;
-        }
-        self.off_restarted_at = Some(since);
-        self.off_since = None;
-        let interface = self.interface.clone();
-        let unit = profile.unit(&interface);
-        log(format!(
-            "ptp4l: out of sync for {} s; restarting {unit}",
-            OFF_RESTART.as_secs()
-        ));
-        let _ = std::thread::Builder::new()
-            .name("ptp4l unit".into())
-            .spawn(move || {
-                if let Err(error) = profile::restart_ptp4l(&interface, profile) {
-                    log(format!("ptp4l: cannot restart {unit}: {error}"));
-                }
-            });
-    }
-
-    /// Starts the ptp4l unit for the profile the endpoints run, where one
-    /// of triib's units runs ptp4l on the interface.
-    fn steer_profile(&mut self) {
-        if self.config.avb_lite == LiteChoice::Off {
-            return;
-        }
-        let Some(unit) = self.link.and_then(|link| link.unit) else {
-            return;
-        };
-        let wanted = if self.lite.is_some() || self.fallback.reason().is_some() {
-            Profile::Lite
-        } else {
-            Profile::Gptp
-        };
-        let since = self.elapsed();
-        self.steer_pending = false;
-        if unit == wanted {
-            return;
-        }
-        // From AVB Lite, ptp4l moves to gPTP once one gPTP peer has asked
-        // for peer delay without the Endpoint Declaration TLV, as an AVB
-        // bridge does every second, and starts while the fallback keeps
-        // listening; with no such peer gPTP would have nothing to follow.
-        if unit == Profile::Lite && self.fallback.gptp_peers() != 1 {
-            self.steer_pending = true;
-            return;
-        }
-        // Too soon after the last switch, the turn makes this one once the
-        // wait is over; but back to AVB Lite before the fallback has
-        // settled, after a start or the link coming up, does not wait.
-        let back = wanted == Profile::Lite && !self.fallback.settled(since);
-        if !back && self.switched_at.is_some_and(|at| since < at + SWITCH_AGAIN) {
-            self.steer_pending = true;
-            return;
-        }
-        self.switched_at = Some(since);
-        log(format!("ptp4l: moving to {wanted}"));
-        let interface = self.interface.clone();
-        let _ = std::thread::Builder::new()
-            .name("ptp4l unit".into())
-            .spawn(move || {
-                if let Err(error) = profile::start(&interface, wanted) {
-                    log(format!(
-                        "ptp4l: cannot start {}: {error}",
-                        wanted.unit(&interface)
-                    ));
+                if let Err(error) = profile::start_gptpd(&interface) {
+                    log(format!("gPTP: cannot start {unit}: {error}"));
                 }
             });
     }
@@ -4495,28 +4379,6 @@ impl Runtime {
     /// settled on its stream follow.
     fn lite_talker_changed(&mut self, stream_id: u64) {
         self.talker_heard(stream_id);
-    }
-
-    /// Corrects the media clock for the asymmetry of the grandmaster's and
-    /// this computer's link speeds, where ptp4l runs the AVB Lite PTP
-    /// profile and the grandmaster announces its speed (profile 5); else
-    /// for nothing.
-    fn update_correction(&mut self) {
-        let wanted = match &self.ptp_status {
-            Some(status) if status.end_to_end && self.link_speed > 0 => self
-                .grandmaster_links
-                .get(&status.gptp.grandmaster.0)
-                .map_or(0, |speed| lite::link_asymmetry(*speed, self.link_speed)),
-            _ => 0,
-        };
-        if wanted != self.correction {
-            self.correction = wanted;
-            self.clock.set_correction(wanted);
-            log(format!(
-                "PTP: correcting {wanted} ns for the grandmaster's link speed against {} Mb/s here",
-                self.link_speed
-            ));
-        }
     }
 
     /// The VLAN of AVB Lite's streams and CVU SRP: the configured one, 2
@@ -4956,8 +4818,8 @@ impl Runtime {
     /// What each entity's GET_LITE_STATUS answers.
     fn update_lite_status(&mut self) {
         let ptp = self.ptp_status.as_ref();
-        let offset = ptp.and_then(|status| status.offset);
-        let gptp_runs = ptp.is_some_and(|status| !status.end_to_end);
+        let offset = ptp.and_then(|status| status.residual);
+        let gptp_runs = ptp.is_some_and(|status| status.lite.is_none());
         // AVB Lite needs a hardware clock: without one an interface is not
         // capable of it.
         let mut flags = if self.hardware_clock {
@@ -4991,8 +4853,8 @@ impl Runtime {
                     .lite
                     .as_ref()
                     .map_or(FallbackReason::NONE, |lite| lite.reason),
-                // ptp4l still in gPTP keeps the profile gPTP, fallen
-                // back or not.
+                // gptpd still in gPTP keeps the profile gPTP, as where
+                // entities.toml turns AVB Lite on.
                 ptp_profile: if self.lite.is_some() && !gptp_runs {
                     PtpProfile::AVB_LITE_PTP
                 } else {

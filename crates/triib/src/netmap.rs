@@ -526,7 +526,7 @@ pub struct ClockNode {
 
 /// The clock tree as agents read it: each domain's grandmaster, and every
 /// node with where it hangs, how its link up runs, and whether and how it
-/// keeps time; and this computer's ptp4l, where it runs one.
+/// keeps time; and this computer's gptpd, where it runs.
 pub fn clock_tree(triib: &Triib) -> (Vec<ClockNode>, serde_json::Value) {
     use serde_json::json;
 
@@ -600,7 +600,7 @@ pub fn clock_tree(triib: &Triib) -> (Vec<ClockNode>, serde_json::Value) {
             _ => node_name(&topology, root),
         })
         .collect();
-    let ptp4l = triib
+    let gptpd = triib
         .endpoints
         .as_ref()
         .filter(|status| Some(status.interface.as_str()) == triib.settings.interface.as_deref())
@@ -608,14 +608,18 @@ pub fn clock_tree(triib: &Triib) -> (Vec<ClockNode>, serde_json::Value) {
         .map(|clock| {
             json!({
                 "grandmaster": clock.grandmaster().map(|clock| clock.to_string()),
-                "offset_ns": clock.offset,
+                "grandmaster_is_this_computer": clock.grandmaster_is_us,
+                "priority1": clock.priority1,
+                "as_capable": clock.as_capable,
                 "end_to_end": clock.end_to_end,
+                "sync_residual_ns": clock.offset,
+                "neighbor_rate_ppb": clock.neighbor_rate_ppb,
             })
         });
     let tree = json!({
         "grandmasters": grandmasters,
         "nodes": listed,
-        "this_computer_ptp4l": ptp4l,
+        "this_computer_gptpd": gptpd,
     });
     (nodes, tree)
 }
@@ -754,7 +758,7 @@ fn topology_of(triib: &Triib) -> Topology {
             .flat_map(|report| &report.interfaces)
             .any(|interface| interface.clock == clock)
     };
-    // Its clock, as its triib-endpointd's ptp4l runs it on the interface.
+    // Its clock, as gptpd runs it on the interface, from triib-endpointd.
     let clock = triib
         .endpoints
         .as_ref()
@@ -765,6 +769,7 @@ fn topology_of(triib: &Triib) -> Topology {
                 grandmaster: clock.grandmaster()?,
                 offset: clock.offset.and_then(|offset| i32::try_from(offset).ok()),
                 ptp: clock.end_to_end,
+                ours: clock.grandmaster_is_us,
             })
         });
     let host = (matches!(triib.network_state, NetworkState::Running { .. }) && !shown_by_entities)
@@ -870,8 +875,12 @@ fn lite_status<'a>(triib: &'a Triib, topology: &Topology, node: NodeId) -> Optio
     }
 }
 
-/// Whether a device running AVB Lite is the PTP grandmaster it follows.
+/// Whether a device running AVB Lite, or this computer behind the
+/// switches in front of them, is the PTP grandmaster it follows.
 fn leads_ptp(triib: &Triib, topology: &Topology, node: NodeId) -> bool {
+    if topology.nodes[node].kind == NodeKind::Host {
+        return leads_switch(topology, node);
+    }
     topology.runs_lite(node)
         && lite_status(triib, topology, node).is_some_and(|status| {
             status.grandmaster.0 == 0 || Some(status.grandmaster) == topology.nodes[node].clock
@@ -1931,6 +1940,7 @@ fn clock_details(triib: &Triib, topology: &Topology, node: NodeId) -> Page {
     let ok = synced(topology, node);
     let state = match entry.apart {
         Some(apart) => apart_reason(apart),
+        None if leads_ptp(triib, topology, node) => fl!("avb-interface-grandmaster"),
         None if ok => fl!("netmap-synced-to-grandmaster"),
         // Behind a switch taking no part in AVB, in a PTP domain.
         None if entry.kind == NodeKind::Host && topology.is_ptp(topology.root_of(node)) => {

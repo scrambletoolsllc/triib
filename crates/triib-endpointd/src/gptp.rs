@@ -1,188 +1,329 @@
-//! gPTP as ptp4l runs it: asked through its read-only management socket
-//! with linuxptp's pmc every few seconds. ptp4l running the AVB Lite PTP
-//! profile answers too, end to end and without gPTP's transportSpecific.
+//! gPTP as gptpd runs it on the interface: its status, read from its
+//! socket as it comes, on every change and every few seconds. gptpd also
+//! decides whether the port runs AVB Lite (profile 2.2), which the
+//! endpoints follow.
 
-use std::process::Command;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::Sender;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use atdecc::ClockIdentity;
 use atdecc::entity::Gptp;
+use atdecc::lite::FallbackReason;
+use gptp::status::{Fallback, Profile};
 
-/// How often ptp4l is asked.
-const POLL: Duration = Duration::from_secs(2);
+/// How long gptpd may say nothing before it counts as gone: it sends its
+/// status every 2 s.
+#[cfg(unix)]
+const SILENCE: Duration = Duration::from_secs(5);
+/// How often a gptpd that does not answer is asked again.
+const RETRY: Duration = Duration::from_secs(2);
+/// How long the last grandmaster stands while gptpd names none, or does
+/// not answer, as across its restart: entities naming none for a moment
+/// would have controllers see the grandmaster change twice.
+const HOLD: Duration = Duration::from_secs(5);
 
-/// What ptp4l says, as an entity reports it, and this computer's clock
-/// identity; `None` when ptp4l does not answer.
+/// Passes gptpd's statuses on, but for one naming no grandmaster, or
+/// none at all, within [`HOLD`] of the last that named one.
+#[derive(Default)]
+struct Hold {
+    named: bool,
+    lost: Option<Instant>,
+}
+
+impl Hold {
+    /// What to send for `status` at `now`, if anything.
+    fn take(&mut self, now: Instant, status: Option<Status>) -> Option<Option<Status>> {
+        if status
+            .as_ref()
+            .is_some_and(|status| status.gptp.grandmaster != ClockIdentity(0))
+        {
+            self.named = true;
+            self.lost = None;
+            return Some(status);
+        }
+        if self.named {
+            let since = *self.lost.get_or_insert(now);
+            if now.duration_since(since) < HOLD {
+                return None;
+            }
+            self.named = false;
+        }
+        Some(status)
+    }
+}
+
+/// What gptpd says, as an entity reports it, and this computer's own PTP
+/// Instance; `None` when gptpd does not answer.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Status {
     pub gptp: Gptp,
     pub own_clock: ClockIdentity,
-    /// The servo's last offset from the grandmaster, in nanoseconds.
-    pub offset: Option<i64>,
-    /// ptp4l measures delay end to end, as the AVB Lite PTP profile does,
-    /// not peer to peer as gPTP does.
-    pub end_to_end: bool,
-    /// ptp4l's port is FAULTY, as after a fault of its own such as a
-    /// transmit time stamp coming late; it resets after its
-    /// fault_reset_interval.
-    pub faulty: bool,
+    /// The priority1 gptpd gives this computer: 255 never grandmaster.
+    pub priority1: u8,
+    /// This computer is the grandmaster.
+    pub grandmaster_is_us: bool,
+    /// AVB Lite, and why, where gptpd fell back to it.
+    pub lite: Option<FallbackReason>,
+    /// How far the last Sync stood from gptpd's mapping, in nanoseconds.
+    pub residual: Option<i64>,
+    /// The neighbor's rate against this computer's clock, in parts per
+    /// billion off one.
+    pub neighbor_rate_ppb: Option<i64>,
 }
 
-/// A clock identity as linuxptp prints it, such as `0001f2.fffe.ff3b14`.
-fn identity(text: &str) -> Option<ClockIdentity> {
-    let digits: String = text
-        .split('-')
-        .next()?
-        .chars()
-        .filter(|c| *c != '.')
-        .collect();
-    (digits.len() == 16)
-        .then(|| u64::from_str_radix(&digits, 16).ok())
-        .flatten()
-        .map(ClockIdentity)
+fn identity(clock: gptp::ClockIdentity) -> ClockIdentity {
+    ClockIdentity(clock.0)
 }
 
-/// Reads pmc's answers: `key value` lines.
-pub fn parse(output: &str) -> Option<Status> {
-    let value = |key: &str| {
-        output.lines().find_map(|line| {
-            let mut words = line.split_whitespace();
-            (words.next() == Some(key)).then(|| words.next()).flatten()
-        })
-    };
-    let present = value("gmPresent") == Some("true");
-    let grandmaster = value("gmIdentity").and_then(identity)?;
-    let own_clock = value("clockIdentity").and_then(identity)?;
-    let parent = value("parentPortIdentity").and_then(identity);
-    let delay: f64 = value("peerMeanPathDelay")
-        .and_then(|text| text.parse().ok())
-        .unwrap_or(0.0);
-    let as_capable = value("asCapable") == Some("1");
-    let domain = value("domainNumber")
-        .and_then(|text| text.parse().ok())
-        .unwrap_or(0);
-    let offset = value("master_offset").and_then(|text| text.parse().ok());
-    // PORT_DATA_SET's delayMechanism: 1 end to end, 2 peer to peer.
-    let end_to_end = value("delayMechanism") == Some("1");
-    let faulty = value("portState") == Some("FAULTY");
-    let mut path = Vec::new();
-    if present {
-        path.push(grandmaster);
-        if let Some(parent) = parent.filter(|parent| *parent != grandmaster && *parent != own_clock)
-        {
-            path.push(parent);
-        }
+/// The fallback reason as GET_LITE_STATUS gives it.
+fn reason(fallback: Fallback) -> FallbackReason {
+    match fallback {
+        Fallback::None => FallbackReason::NONE,
+        Fallback::EndpointTlv => FallbackReason::ENDPOINT_TLV,
+        Fallback::PdelayUnanswered => FallbackReason::PDELAY_UNANSWERED,
+        Fallback::MultipleResponders => FallbackReason::MULTIPLE_RESPONDERS,
+        Fallback::Configured => FallbackReason::CONFIGURED,
     }
-    path.push(own_clock);
-    Some(Status {
+}
+
+/// What gptpd's status says for `interface`, its port or, failing that,
+/// its first.
+pub fn status_of(status: &gptp::status::Status, interface: &str) -> Status {
+    let own_clock = identity(status.clock);
+    let port = status
+        .ports
+        .iter()
+        .find(|port| port.name == interface)
+        .or_else(|| status.ports.first());
+    let mut path: Vec<ClockIdentity> = status.path.iter().copied().map(identity).collect();
+    if path.is_empty() {
+        path.push(own_clock);
+    }
+    let lite = (status.profile == Profile::AvbLite).then(|| match status.fallback {
+        Fallback::None => FallbackReason::CONFIGURED,
+        fallback => reason(fallback),
+    });
+    Status {
         gptp: Gptp {
-            grandmaster: if present { grandmaster } else { own_clock },
-            domain,
-            propagation_delay: delay.max(0.0) as u32,
-            as_capable,
+            // None while gptpd names none, rather than this computer,
+            // which would tell controllers it leads.
+            grandmaster: status
+                .grandmaster
+                .as_ref()
+                .map_or(ClockIdentity(0), |grandmaster| {
+                    identity(grandmaster.identity)
+                }),
+            domain: status.domain,
+            propagation_delay: port
+                .and_then(|port| port.link_delay)
+                .map_or(0, |delay| delay.clamp(0, i64::from(u32::MAX)) as u32),
+            as_capable: port.is_some_and(|port| port.up && port.as_capable),
             path,
         },
         own_clock,
-        offset,
-        end_to_end,
-        faulty,
-    })
+        priority1: status.priority1,
+        grandmaster_is_us: status
+            .grandmaster
+            .as_ref()
+            .is_some_and(|grandmaster| grandmaster.is_us),
+        lite,
+        residual: status.residual,
+        neighbor_rate_ppb: port
+            .and_then(|port| port.neighbor_rate_ratio)
+            .map(|ratio| ((ratio - 1.0) * 1e9).round() as i64),
+    }
 }
 
-/// Asks ptp4l once, as gPTP, then as standard PTP: ptp4l ignores
-/// management messages whose transportSpecific is not its own.
-fn ask(socket: &str, client: &str) -> Option<Status> {
-    ask_as(socket, client, "1").or_else(|| ask_as(socket, client, "0"))
+/// Why gptpd will not start on `interface`, as it wrote it, where it
+/// refused.
+pub fn refused(interface: &str) -> Option<String> {
+    if interface.is_empty() || interface.contains(['/', '\0']) {
+        return None;
+    }
+    let reason = std::fs::read_to_string(format!("/run/gptpd/{interface}.refused")).ok()?;
+    let reason = reason.trim();
+    (!reason.is_empty()).then(|| reason.to_owned())
 }
 
-fn ask_as(socket: &str, client: &str, transport: &str) -> Option<Status> {
-    let output = Command::new("pmc")
-        .args(["-u", "-b", "0", "-t", transport, "-s", socket, "-i", client])
-        .args([
-            "GET TIME_STATUS_NP",
-            "GET PORT_DATA_SET",
-            "GET PORT_DATA_SET_NP",
-            "GET PARENT_DATA_SET",
-            "GET DEFAULT_DATA_SET",
-        ])
-        .output()
-        .ok()?;
-    parse(&String::from_utf8_lossy(&output.stdout))
-}
-
-/// Asks ptp4l every few seconds and sends what changed, until `stop`.
+/// Reads gptpd's status for `interface` as it comes, and sends what
+/// changed, until `stop`; `None` while gptpd does not answer.
 pub fn watch<T: Send + 'static>(
-    socket: String,
+    interface: String,
     stop: Arc<AtomicBool>,
     sender: Sender<T>,
     wrap: fn(Option<Status>) -> T,
 ) {
-    let client = triib_store::paths::runtime_dir()
-        .unwrap_or_else(std::env::temp_dir)
-        .join(format!("pmc.{}", std::process::id()));
-    let _ = std::fs::create_dir_all(client.parent().unwrap_or(&client));
-    let client = client.display().to_string();
     let _ = std::thread::Builder::new()
         .name("gptp".into())
         .spawn(move || {
+            // gptpd runs where Unix sockets do; elsewhere it never answers.
+            #[cfg(not(unix))]
+            let _ = &interface;
             let mut last: Option<Option<Status>> = None;
-            while !stop.load(Ordering::Relaxed) {
-                let status = ask(&socket, &client);
-                if last.as_ref() != Some(&status) {
-                    if sender.send(wrap(status.clone())).is_err() {
-                        return;
-                    }
-                    last = Some(status);
+            let mut hold = Hold::default();
+            let mut send = |status: Option<Status>| {
+                let Some(status) = hold.take(Instant::now(), status) else {
+                    return true;
+                };
+                if last.as_ref() == Some(&status) {
+                    return true;
                 }
-                std::thread::sleep(POLL);
+                last = Some(status.clone());
+                sender.send(wrap(status)).is_ok()
+            };
+            while !stop.load(std::sync::atomic::Ordering::Relaxed) {
+                #[cfg(unix)]
+                if let Ok(mut client) = gptp::status::Client::connect(&interface) {
+                    while !stop.load(std::sync::atomic::Ordering::Relaxed) {
+                        match client.next(Some(SILENCE)) {
+                            Ok(Some(gptp::status::Block::Status(status))) => {
+                                if !send(Some(status_of(&status, &interface))) {
+                                    return;
+                                }
+                            }
+                            Ok(Some(gptp::status::Block::Reply(_))) => {}
+                            Ok(None) | Err(_) => break,
+                        }
+                    }
+                }
+                if !send(None) {
+                    return;
+                }
+                std::thread::sleep(RETRY);
             }
-            let _ = std::fs::remove_file(&client);
         });
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gptp::relay::Role;
+    use gptp::status::{Counters, Grandmaster, Port};
 
-    const ANSWER: &str = "\
-        gmPresent                  true
-        gmIdentity                 0001f2.fffe.ff3b14
-        portIdentity            f0a731.fffe.f40f14-1
-        peerMeanPathDelay       305
-        asCapable               1
-        parentPortIdentity                    0001f2.fffe.ff3b14-6
-        clockIdentity           f0a731.fffe.f40f14
-        domainNumber            0
-        master_offset              -12
-    ";
+    const OURS: gptp::ClockIdentity = gptp::ClockIdentity(0xa010_a3ff_fea5_1726);
+    const MOTU: gptp::ClockIdentity = gptp::ClockIdentity(0x0001_f2ff_feff_3b14);
+
+    fn status() -> gptp::status::Status {
+        gptp::status::Status {
+            clock: OURS,
+            domain: 0,
+            priority1: 248,
+            profile: Profile::Gptp,
+            fallback: Fallback::None,
+            grandmaster: Some(Grandmaster {
+                identity: MOTU,
+                priority1: 246,
+                clock_class: 248,
+                clock_accuracy: 0xfe,
+                offset_scaled_log_variance: 0x436a,
+                priority2: 248,
+                steps_removed: 1,
+                is_us: false,
+            }),
+            path: vec![MOTU, OURS],
+            generation: 4,
+            residual: Some(-12),
+            ports: vec![Port {
+                name: "enp2s0".into(),
+                up: true,
+                as_capable: true,
+                role: Role::TimeReceiver,
+                link_delay: Some(305),
+                neighbor: None,
+                neighbor_rate_ratio: Some(1.000_009_5),
+            }],
+            counters: Counters::default(),
+        }
+    }
 
     #[test]
     fn reads_what_the_entities_report() {
-        let status = parse(ANSWER).unwrap();
-        assert_eq!(status.own_clock, ClockIdentity(0xf0a7_31ff_fef4_0f14));
-        assert_eq!(
-            status.gptp.grandmaster,
-            ClockIdentity(0x0001_f2ff_feff_3b14)
-        );
+        let status = status_of(&status(), "enp2s0");
+        assert_eq!(status.own_clock, ClockIdentity(OURS.0));
+        assert_eq!(status.gptp.grandmaster, ClockIdentity(MOTU.0));
         assert_eq!(status.gptp.propagation_delay, 305);
-        assert_eq!(status.offset, Some(-12));
         assert!(status.gptp.as_capable);
-        assert!(!status.end_to_end);
-        let lite = ANSWER.replace("asCapable", "delayMechanism 1\n asCapable");
-        assert!(parse(&lite).unwrap().end_to_end);
-        assert!(!status.faulty);
-        let faulty = ANSWER.replace("asCapable", "portState FAULTY\n asCapable");
-        assert!(parse(&faulty).unwrap().faulty);
         assert_eq!(
             status.gptp.path,
-            [
-                ClockIdentity(0x0001_f2ff_feff_3b14),
-                ClockIdentity(0xf0a7_31ff_fef4_0f14)
-            ]
+            [ClockIdentity(MOTU.0), ClockIdentity(OURS.0)]
         );
-        assert_eq!(parse("nothing here"), None);
+        assert_eq!(status.residual, Some(-12));
+        assert_eq!(status.neighbor_rate_ppb, Some(9_500));
+        assert_eq!(status.priority1, 248);
+        assert!(!status.grandmaster_is_us);
+        assert_eq!(status.lite, None);
+    }
+
+    /// As grandmaster the entities name this computer's clock as gPTP's
+    /// grandmaster; with none, they name none.
+    #[test]
+    fn this_computer_can_be_the_grandmaster() {
+        let mut ours = status();
+        ours.grandmaster = Some(Grandmaster {
+            identity: OURS,
+            priority1: 248,
+            steps_removed: 0,
+            is_us: true,
+            ..ours.grandmaster.unwrap()
+        });
+        ours.path = vec![OURS];
+        let status = status_of(&ours, "enp2s0");
+        assert!(status.grandmaster_is_us);
+        assert_eq!(status.gptp.grandmaster, ClockIdentity(OURS.0));
+        ours.grandmaster = None;
+        ours.path.clear();
+        let status = status_of(&ours, "enp2s0");
+        assert_eq!(status.gptp.grandmaster, ClockIdentity(0));
+        assert!(!status.grandmaster_is_us);
+        assert_eq!(status.gptp.path, [ClockIdentity(OURS.0)]);
+    }
+
+    /// gptpd naming no grandmaster, or not answering, for less than 5 s
+    /// after it named one changes nothing the entities say; longer does.
+    #[test]
+    fn the_last_grandmaster_holds_for_a_while() {
+        let named = status_of(&status(), "enp2s0");
+        let mut none = status();
+        none.grandmaster = None;
+        let none = status_of(&none, "enp2s0");
+        let mut hold = Hold::default();
+        let start = Instant::now();
+        let at = |seconds: u64| start + Duration::from_secs(seconds);
+        assert_eq!(
+            hold.take(at(0), Some(named.clone())),
+            Some(Some(named.clone()))
+        );
+        assert_eq!(hold.take(at(1), Some(none.clone())), None);
+        assert_eq!(hold.take(at(3), None), None);
+        assert_eq!(
+            hold.take(at(4), Some(named.clone())),
+            Some(Some(named.clone()))
+        );
+        assert_eq!(hold.take(at(5), None), None);
+        assert_eq!(hold.take(at(10), None), Some(None));
+        // With none named since, nothing is held.
+        assert_eq!(hold.take(at(11), Some(none.clone())), Some(Some(none)));
+    }
+
+    #[test]
+    fn avb_lite_comes_with_its_reason() {
+        let mut lite = status();
+        lite.profile = Profile::AvbLite;
+        lite.fallback = Fallback::PdelayUnanswered;
+        assert_eq!(
+            status_of(&lite, "enp2s0").lite,
+            Some(FallbackReason::PDELAY_UNANSWERED)
+        );
+        lite.fallback = Fallback::None;
+        assert_eq!(
+            status_of(&lite, "enp2s0").lite,
+            Some(FallbackReason::CONFIGURED)
+        );
+        // A port down is not asCapable, whatever it said last.
+        let mut down = status();
+        down.ports[0].up = false;
+        assert!(!status_of(&down, "enp2s0").gptp.as_capable);
     }
 }

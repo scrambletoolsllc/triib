@@ -42,8 +42,9 @@ fn setup_note(triib: &Triib) -> Option<String> {
     match status.setup? {
         Setup::Link => Some(fl!("host-setting-up", interface = interface)),
         Setup::NoLink => Some(fl!("host-no-link", interface = interface)),
-        Setup::Ptp4l => Some(fl!("host-starting-ptp4l")),
-        Setup::NoLinuxptp => Some(fl!("host-no-linuxptp")),
+        Setup::Gptpd => Some(fl!("host-starting-gptpd")),
+        Setup::NoGptpd => Some(fl!("host-no-gptpd")),
+        Setup::Refused => Some(fl!("host-gptpd-refused", interface = interface)),
         Setup::Other => None,
     }
 }
@@ -101,9 +102,9 @@ pub fn note(triib: &Triib) -> Option<String> {
     } else if triib
         .endpoints
         .as_ref()
-        .is_some_and(|status| status.gptp.starts_with("ptp4l"))
+        .is_some_and(|status| status.gptp.starts_with("gptpd does not answer"))
     {
-        Some(fl!("host-no-ptp4l"))
+        Some(fl!("host-gptpd-silent"))
     } else {
         None
     }

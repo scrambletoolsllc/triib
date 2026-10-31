@@ -435,7 +435,10 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
              its gPTP or PTP domain, whether it keeps time and how or why not, its link up \
              (gPTP on it, peer delay, bridge port, offset from the grandmaster in AVB Lite, \
              a Wi-Fi hop's time lock and signal), its link drops and grandmaster changes; \
-             and this computer's ptp4l grandmaster and offset, where it runs one.",
+             and this computer's gptpd, where it runs: its grandmaster or whether this \
+             computer is the grandmaster, its priority1, asCapable, whether it runs AVB \
+             Lite's PTP, how far the last Sync stood from its time, and the neighbor's \
+             rate.",
             |app, _: Nothing, answer| {
                 reply(&answer, Ok(Output::Json(crate::netmap::clock_tree(app).1)))
             },

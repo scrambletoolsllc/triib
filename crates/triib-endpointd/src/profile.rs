@@ -1,17 +1,13 @@
-//! ptp4l's profile on the interface, where triib's own systemd units run
-//! it: `triib-ptp4l-gptp@<interface>` for gPTP and
-//! `triib-ptp4l-lite@<interface>` for the AVB Lite PTP profile, each
-//! stopping the other as it starts. A polkit rule lets the people at the
-//! computer start them, so the daemon moves ptp4l to the AVB Lite profile
-//! when its endpoints fall back, and to gPTP again when the link comes
-//! back up (AVB Lite profile, 2.2). Where no ptp4l runs on the interface,
-//! the daemon starts the gPTP unit itself, so installing triib is all the
-//! network's time takes; ptp4l run any other way stays as it is. A third
-//! unit, `triib-link@<interface>`, keeps Energy-Efficient
-//! Ethernet and PAUSE off the link, as the profile asks (6); the daemon
-//! runs it again should they come back. A fourth,
-//! `triib-link-reset@<interface>`, takes the interface down and up for a
-//! driver that keeps its time stamps on received PTP frames.
+//! The units the daemon runs on the interface, through systemd: gptpd's,
+//! `gptpd@<interface>`, which keeps gPTP and decides between it and the
+//! AVB Lite PTP profile (profile 2.2), started where no gptpd answers, so
+//! installing triib and gptpd is all the network's time takes; and two
+//! of triib's own, which a polkit rule lets the people at the computer
+//! start. `triib-link@<interface>` keeps Energy-Efficient Ethernet and
+//! PAUSE off the link, as the profile asks (6); the daemon runs it again
+//! should they come back. `triib-link-reset@<interface>` takes the
+//! interface down and up for a driver that keeps its time stamps on
+//! received PTP frames.
 
 use std::io;
 use std::process::{Command, Stdio};
@@ -23,38 +19,18 @@ use std::time::Duration;
 /// How often the link and the units are looked at.
 const POLL: Duration = Duration::from_secs(2);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Profile {
-    Gptp,
-    Lite,
+/// gptpd's unit on `interface`.
+pub fn gptpd_unit(interface: &str) -> String {
+    format!("gptpd@{interface}.service")
 }
 
-impl Profile {
-    pub fn unit(self, interface: &str) -> String {
-        let name = match self {
-            Profile::Gptp => "gptp",
-            Profile::Lite => "lite",
-        };
-        format!("triib-ptp4l-{name}@{interface}.service")
-    }
-}
-
-impl std::fmt::Display for Profile {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(match self {
-            Profile::Gptp => "gPTP",
-            Profile::Lite => "the AVB Lite PTP profile",
-        })
-    }
-}
-
-/// What the interface's link and triib's units are doing.
+/// What the interface's link and gptpd's unit are doing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Link {
     /// The link is up; `None` when the system does not say.
     pub carrier: Option<bool>,
-    /// Which of triib's units runs ptp4l on the interface, if one does.
-    pub unit: Option<Profile>,
+    /// gptpd's unit runs on the interface.
+    pub gptpd: bool,
     /// What the interface does about EEE and PAUSE, where the system says.
     pub power: Option<avb_net::LinkPower>,
 }
@@ -78,26 +54,21 @@ fn active(unit: &str) -> bool {
         .is_ok_and(|status| status.success())
 }
 
-/// Which of triib's units runs ptp4l on `interface`, if one does.
-pub fn running(interface: &str) -> Option<Profile> {
-    if !nameable(interface) {
-        return None;
-    }
-    [Profile::Gptp, Profile::Lite]
-        .into_iter()
-        .find(|profile| active(&profile.unit(interface)))
+/// Whether gptpd's unit runs on `interface`.
+pub fn gptpd_running(interface: &str) -> bool {
+    nameable(interface) && active(&gptpd_unit(interface))
 }
 
-/// Whether linuxptp's ptp4l is installed where systemd looks for a unit's
-/// program.
-pub fn ptp4l_installed() -> bool {
+/// Whether gptpd is installed where systemd looks for a unit's program.
+pub fn gptpd_installed() -> bool {
     ["/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin"]
         .iter()
-        .any(|folder| std::path::Path::new(folder).join("ptp4l").exists())
+        .any(|folder| std::path::Path::new(folder).join("gptpd").exists())
 }
 
 /// Whether a ptp4l process names `interface` on its command line, as one
-/// run by hand or by another unit does.
+/// run by hand or by another unit does, which gptpd will not start
+/// beside.
 pub fn ptp4l_on(interface: &str) -> bool {
     let Ok(entries) = std::fs::read_dir("/proc") else {
         return false;
@@ -121,10 +92,9 @@ fn runs_ptp4l_on(line: &[u8], interface: &str) -> bool {
             .any(|pair| pair[0] == b"-i" && pair[1] == interface.as_bytes())
 }
 
-/// Starts the unit running `profile` on `interface`, which stops the
-/// other; ptp4l then starts again in that profile, its clock locking in
-/// a few seconds.
-pub fn start(interface: &str, profile: Profile) -> io::Result<()> {
+/// Starts gptpd's unit on `interface`; gptpd locks to the network in a
+/// few seconds.
+pub fn start_gptpd(interface: &str) -> io::Result<()> {
     if !nameable(interface) {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -133,7 +103,7 @@ pub fn start(interface: &str, profile: Profile) -> io::Result<()> {
     }
     let output = Command::new("systemctl")
         .args(["start", "--no-block", "--no-ask-password"])
-        .arg(profile.unit(interface))
+        .arg(gptpd_unit(interface))
         .stdin(Stdio::null())
         .output()?;
     if output.status.success() {
@@ -145,10 +115,33 @@ pub fn start(interface: &str, profile: Profile) -> io::Result<()> {
     }
 }
 
-/// Starts the unit running `profile` on `interface` again, ptp4l stepping
-/// its clock as it starts.
-pub fn restart_ptp4l(interface: &str, profile: Profile) -> io::Result<()> {
-    restart(interface, &profile.unit(interface))
+/// Whether the link unit has run on `interface` since it last started.
+pub fn link_ran(interface: &str) -> bool {
+    nameable(interface) && active(&link_unit(interface))
+}
+
+/// Runs the link unit for `interface` where it has not run: one transmit
+/// queue for every CPU, which keeps a stream's frames in order, and EEE
+/// and PAUSE off, the link renegotiating only where they change.
+pub fn start_link(interface: &str) -> io::Result<()> {
+    if !nameable(interface) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!("{interface} cannot name a unit"),
+        ));
+    }
+    let output = Command::new("systemctl")
+        .args(["start", "--no-block", "--no-ask-password"])
+        .arg(link_unit(interface))
+        .stdin(Stdio::null())
+        .output()?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(io::Error::other(
+            String::from_utf8_lossy(&output.stderr).trim().to_owned(),
+        ))
+    }
 }
 
 /// Runs the link unit for `interface` again, putting EEE and PAUSE off
@@ -251,7 +244,7 @@ pub fn watch<T: Send + 'static>(
             while !stop.load(Ordering::Relaxed) {
                 let link = Link {
                     carrier: carrier(&interface),
-                    unit: running(&interface),
+                    gptpd: gptpd_running(&interface),
                     power: power(&interface),
                 };
                 if last != Some(link) {
@@ -284,14 +277,12 @@ mod tests {
 
     #[test]
     fn units_are_named_for_the_interface() {
-        assert_eq!(
-            Profile::Lite.unit("enp2s0"),
-            "triib-ptp4l-lite@enp2s0.service"
-        );
+        assert_eq!(gptpd_unit("enp2s0"), "gptpd@enp2s0.service");
+        assert_eq!(link_unit("enp2s0"), "triib-link@enp2s0.service");
         assert!(nameable("enp2s0.2"));
         assert!(!nameable("enp2s0 x"));
         assert!(!nameable("../x"));
         assert!(!nameable(""));
-        assert_eq!(running("no/such"), None);
+        assert!(!gptpd_running("no/such"));
     }
 }

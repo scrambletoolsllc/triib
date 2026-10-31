@@ -26,7 +26,7 @@ pub struct DaemonStatus {
     /// The file it lists its entities in.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub config: Option<String>,
-    /// This computer's clock, as ptp4l runs it, when ptp4l answers.
+    /// This computer's clock, as gptpd runs it, when gptpd answers.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub clock: Option<ClockStatus>,
     /// What it is setting up, or misses, that the entities wait on.
@@ -84,29 +84,44 @@ pub enum Setup {
     Link,
     /// The link is down.
     NoLink,
-    /// ptp4l is starting, and does not answer yet.
-    Ptp4l,
-    /// No ptp4l answers, and linuxptp is not installed.
-    NoLinuxptp,
+    /// gptpd is starting, and does not answer yet.
+    Gptpd,
+    /// No gptpd answers, and it is not installed.
+    NoGptpd,
+    /// gptpd will not start on the interface: another PTP daemon, such as
+    /// a ptp4l run by hand, holds it.
+    Refused,
     /// What a later daemon says, which this app does not know.
     #[serde(other)]
     Other,
 }
 
-/// This computer's clock as ptp4l runs it on the interface.
+/// This computer's clock as gptpd runs it on the interface.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ClockStatus {
-    /// The grandmaster it follows, as text, `0x` and sixteen hex digits.
+    /// The grandmaster it follows, or this computer as grandmaster, as
+    /// text, `0x` and sixteen hex digits.
     pub grandmaster: String,
-    /// The servo's last offset from the grandmaster, in nanoseconds.
+    /// How far the last Sync stood from gptpd's mapping, in nanoseconds:
+    /// not a servo's offset, as gptpd moves no clock.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub offset: Option<i64>,
     /// It runs the AVB Lite PTP profile, end to end, rather than gPTP.
     #[serde(default)]
     pub end_to_end: bool,
-    /// Its port is as-capable and not FAULTY.
+    /// Its port is as-capable.
     #[serde(default)]
     pub as_capable: bool,
+    /// This computer is the grandmaster.
+    #[serde(default)]
+    pub grandmaster_is_us: bool,
+    /// The priority1 gptpd gives this computer: 255 never grandmaster.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub priority1: Option<u8>,
+    /// The neighbor's rate against this computer's clock, in parts per
+    /// billion off one, as gptpd measures it peer to peer.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub neighbor_rate_ppb: Option<i64>,
 }
 
 impl ClockStatus {
@@ -268,8 +283,11 @@ mod tests {
                 offset: Some(-120),
                 end_to_end: true,
                 as_capable: true,
+                grandmaster_is_us: false,
+                priority1: Some(248),
+                neighbor_rate_ppb: Some(9_500),
             }),
-            setup: Some(Setup::Ptp4l),
+            setup: Some(Setup::Gptpd),
             sharers: vec![
                 SharerStatus {
                     talkers: 1,
@@ -295,12 +313,23 @@ mod tests {
         // Only the program that cannot take its streams over loses them.
         assert_eq!(read.cut_off(), 2);
         assert_eq!(read.clock.unwrap().grandmaster(), Some(grandmaster));
-        assert!(text.contains("setup = \"ptp4l\""), "{text}");
+        assert!(text.contains("setup = \"gptpd\""), "{text}");
         // A step a later daemon names is one this app does not know,
-        // rather than no status at all.
+        // rather than no status at all, as is one an earlier daemon named.
         let later: DaemonStatus =
-            toml::from_str(&text.replace("\"ptp4l\"", "\"later-step\"")).unwrap();
+            toml::from_str(&text.replace("\"gptpd\"", "\"later-step\"")).unwrap();
         assert_eq!(later.setup, Some(Setup::Other));
+        let earlier: DaemonStatus =
+            toml::from_str(&text.replace("\"gptpd\"", "\"ptp4l\"")).unwrap();
+        assert_eq!(earlier.setup, Some(Setup::Other));
+        // A status from before gptpd lacks this computer's PTP Instance.
+        let old = text
+            .lines()
+            .filter(|line| !line.starts_with("priority1") && !line.starts_with("neighbor_rate"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let old: DaemonStatus = toml::from_str(&old).unwrap();
+        assert_eq!(old.clock.unwrap().priority1, None);
     }
 
     #[test]
