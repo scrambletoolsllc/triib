@@ -48,7 +48,7 @@ jobs:
             target: riscv64gc-unknown-linux-gnu
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install ALSA's and PipeWire's headers for audio
         if: ${{ !matrix.target }}
         run: |
@@ -141,7 +141,7 @@ jobs:
     env:
       SIGNING: ${{ vars.AZURE_SIGNING_ACCOUNT != '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -243,7 +243,7 @@ jobs:
     env:
       SIGNING: ${{ vars.MACOS_APP_IDENTITY != '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -348,7 +348,7 @@ jobs:
             runner: ubuntu-24.04
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
           name: linux-${{ matrix.arch }}
@@ -383,7 +383,7 @@ jobs:
     if: ${{ !inputs.only || inputs.only == 'all' || inputs.only == 'linux' }}
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build the package
         run: |
           pkgver=$(sed -n 's/^pkgver=//p' packaging/arch/triib/PKGBUILD)
@@ -422,7 +422,7 @@ jobs:
             runner: windows-11-arm
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
           name: windows-${{ matrix.arch }}
@@ -446,7 +446,7 @@ jobs:
     needs: windows
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
           name: windows-x64
@@ -469,7 +469,7 @@ jobs:
         runner: [macos-14, macos-15, macos-26]
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
           name: macos-arm64
@@ -489,7 +489,7 @@ jobs:
     if: github.ref_type == 'tag'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: PKGBUILD with the source checksum
         run: |
           curl -sSLf -o source.tar.gz \
@@ -510,7 +510,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
