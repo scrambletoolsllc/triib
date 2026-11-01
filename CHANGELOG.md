@@ -3,7 +3,20 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.3.0] - 2026-11-01
+
+Host entities on Linux keep the network's time with gptpd, an 802.1AS
+daemon whose packages come with triib's, in place of linuxptp's ptp4l:
+their links and streams ride through grandmaster changes, restarts and
+link bounces, and this computer can be the grandmaster. triib changes
+the format of a running stream where the entity lets it, warns when a
+Mac drops audio on its own clock, and names bridges' makers from the
+IEEE's registries on every system.
+
+Programs sharing triib-endpointd, such as plaa, keep their streams as it
+stops or starts again, host entities' streams keep their frames in
+order, and host entities send and analyze test tones and refuse the
+format changes Milan 1.3 forbids while bound or streaming.
 
 ### Controller
 
@@ -91,6 +104,10 @@ All notable changes to triib. Versions follow
 - `triib-link@` sends all of the AVB interface's frames on its first
   transmit queue: a card with several, such as the Intel I210, spread a
   stream's frames over them, and some left out of order.
+- A host entity's talker sends with priority 3, so the default fq_codel
+  queue keeps a stream's frames in one flow, where each frame could take
+  a flow of its own and leave out of order when the queue backed up, as
+  when a talker catches up after waking late.
 - A host entity withdrawing a declaration moments after making it sends
   its Leave, so a quick connect and disconnect no longer leaves a talker
   counting a listener that has gone.
