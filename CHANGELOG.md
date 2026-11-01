@@ -108,6 +108,10 @@ format changes Milan 1.3 forbids while bound or streaming.
   queue keeps a stream's frames in one flow, where each frame could take
   a flow of its own and leave out of order when the queue backed up, as
   when a talker catches up after waking late.
+- A host entity's talker starting its media clock again twice with no
+  frame sent between, as after a late send and then a jump of gPTP time,
+  changes the mr bit once, where the two changes cancelled and a
+  listener saw the stream's time jump with no media reset.
 - A host entity withdrawing a declaration moments after making it sends
   its Leave, so a quick connect and disconnect no longer leaves a talker
   counting a listener that has gone.
