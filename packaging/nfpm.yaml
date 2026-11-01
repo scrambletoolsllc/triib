@@ -31,7 +31,9 @@ contents:
     type: tree
 
 scripts:
+  preinstall: ./packaging/linux/preinstall.sh
   postinstall: ./packaging/linux/postinstall.sh
+  postremove: ./packaging/linux/postremove.sh
 
 overrides:
   deb:

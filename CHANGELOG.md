@@ -138,7 +138,9 @@ format changes Milan 1.3 forbids while bound or streaming.
   PKGBUILD depends on it; gptpd's own packages come with triib's
   releases. The ptp4l units, their configurations and their polkit rule
   are gone, and installing stops any ptp4l unit an older triib started.
-  A polkit rule still lets the person at the computer run `triib-link@`
+  Upgrading a Debian package removes the configurations in `/etc/triib`,
+  keeping a changed one as `.dpkg-bak`, where dpkg would have kept them
+  for good. A polkit rule still lets the person at the computer run `triib-link@`
   and `triib-link-reset@`.
 - The AppStream data dates 1.2.0 October 24, the day it was released.
 - The Windows installer's last page says this computer cannot be an AVB
