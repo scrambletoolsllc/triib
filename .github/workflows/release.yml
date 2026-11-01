@@ -109,7 +109,7 @@ jobs:
           ARCH=${{ matrix.arch }} nfpm package -f packaging/nfpm.yaml -p rpm -t dist/
       - name: Plain archive
         run: |
-          tar -C stage -czf dist/triib-${{ steps.version.outputs.version }}-${{ matrix.arch }}-linux.tar.gz usr etc
+          tar -C stage -czf dist/triib-${{ steps.version.outputs.version }}-${{ matrix.arch }}-linux.tar.gz usr
       - uses: actions/upload-artifact@v4
         with:
           name: linux-${{ matrix.arch }}
