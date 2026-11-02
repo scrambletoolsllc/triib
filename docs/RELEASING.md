@@ -44,9 +44,11 @@ triib sends and receives raw Ethernet, which each system guards:
   carry the capability. The packages depend on ALSA's and PipeWire's
   libraries for audio, PipeWire's for the virtual audio devices of this
   computer's streams, and recommend gptpd, which runs gPTP for the host
-  entities, where the PKGBUILD depends on it. No distribution carries
-  gptpd, so its own packages come with the releases, and apt and dnf
-  skip the Recommends without a word where it is not installed.
+  entities. No distribution carries gptpd, so its own Debian and RPM
+  packages come with the releases, and apt and dnf skip the Recommends
+  without a word where it is not installed. makepkg can't install a
+  dependency no repository has, so the PKGBUILD builds gptpd into the
+  Arch package, which provides gptpd and conflicts with its own package.
   triib-endpointd reads the grandmaster's time from gptpd's time file in
   /run/gptpd, which everyone can read. As they install, the packages say
   when no wired interface has a PTP hardware clock, which using this
@@ -82,10 +84,11 @@ triib sends and receives raw Ethernet, which each system guards:
 1. Update the version in `Cargo.toml`, the workspace version and the
    versions of the `triib-*` crates under `[workspace.dependencies]`, and
    run `cargo check` so `Cargo.lock` follows; update `pkgver` in
-   `packaging/arch/triib/PKGBUILD` and add a `<release>` to the
-   metainfo. `GPTPD_VERSION` in `.github/workflows/release.yml` names
-   the gptpd release whose Debian and RPM packages the release carries;
-   it must already be published.
+   `packaging/arch/triib/PKGBUILD`, with `pkgrel` back to 1, and add a
+   `<release>` to the metainfo. `GPTPD_VERSION` in
+   `.github/workflows/release.yml` names the gptpd release whose Debian
+   and RPM packages the release carries; it must already be published,
+   and the PKGBUILD's `_gptpd` and its source checksum must match it.
 2. Write the version's section in `CHANGELOG.md`, as `## [X.Y.Z]`; the
    release notes are taken from it, or made by GitHub when there is none.
    Changes go under `## [Unreleased]` as they land, which the release
@@ -124,7 +127,7 @@ so the new one upgrades it, and removes triib at the end.
 | Package | Where | What |
 |---|---|---|
 | .deb, .rpm | Fresh containers of Debian 13, Ubuntu 24.04 and 26.04 and Fedora 44, x86_64 and ARM64; Ubuntu 24.04 for RISC-V, under QEMU | `packaging/tests/linux/test-package.sh`: installs with the package's dependencies only, then checks its files, `CAP_NET_RAW`, the endpoint check's warning, that every shared library is found, each program's version as a regular user, raw Ethernet as that user, and the window opening and drawing under a headless sway; then that removing leaves nothing |
-| Arch | A fresh Arch container | `build-arch.sh` builds the PKGBUILD from this tree, then the same test, gptpd taken as installed, as Arch's repositories lack it |
+| Arch | A fresh Arch container | `build-arch.sh` builds the PKGBUILD from this tree, gptpd's source included, then the same test, with gptpd's files and its version checked too |
 | MSI | GitHub's Windows Server 2025 and Windows 11 ARM runners | `packaging/tests/windows/test-msi.ps1`: checks every DLL the programs import against those Windows itself provides, then installs and checks the files, the entry in Apps, the PATH, the Start menu shortcut, each program and the window; then that uninstalling leaves nothing |
 | MSI, x64 | A Windows Server 2022 container, which has nothing installed | The same, without the window |
 | .pkg | Fresh macOS 14, 15 and 26 runners | `packaging/tests/macos/test-pkg.sh`: Gatekeeper's verdict on a downloaded copy, that the programs link only macOS's own libraries and run on the oldest macOS the app claims, then installs and checks the app, triib-cli, the BPF launch daemon and access for the user, and the window; then that the uninstall script leaves nothing |

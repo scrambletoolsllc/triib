@@ -36,14 +36,13 @@ case $package in
 esac
 
 # Only what each package depends on, none of what it recommends, so a
-# dependency left out of a package shows. gptpd, which the debs and rpms
-# recommend, comes from triib's releases rather than Arch's repositories,
-# so the Arch package goes in without it too: triib runs without gptpd.
+# dependency left out of a package shows. The debs and rpms go in without
+# gptpd, which they recommend: triib runs without it.
 install_package() {
     case $kind in
     deb) apt-get install -y --no-install-recommends -o Dpkg::Options::=--force-confold "$1" ;;
     rpm) dnf install -y --setopt=install_weak_deps=False "$1" ;;
-    arch) pacman -U --noconfirm --assume-installed gptpd "$1" ;;
+    arch) pacman -U --noconfirm "$1" ;;
     esac
 }
 add_tools() {
@@ -114,6 +113,11 @@ for file in \
     [ -f "$file" ] || fail "$file is missing"
 done
 echo "all there"
+# The Arch package carries gptpd, as no repository has it.
+if [ "$kind" = arch ]; then
+    [ -f /usr/lib/systemd/system/gptpd@.service ] || fail "gptpd@.service is missing"
+    /usr/bin/gptpd --version || fail "gptpd does not run"
+fi
 
 # Releases up to 1.1.1 installed these under the old app ID, and up to
 # 1.2.0 ran ptp4l with units of their own.
@@ -236,7 +240,8 @@ remove_package
 leftovers=()
 for path in /usr/bin/triib /usr/bin/triib-cli /usr/bin/triib-endpointd /usr/lib/triib \
     "/usr/share/applications/$id.desktop" "/usr/share/metainfo/$id.metainfo.xml" \
-    /usr/lib/systemd/system/triib-link@.service /usr/share/polkit-1/rules.d/50-triib-link.rules; do
+    /usr/lib/systemd/system/triib-link@.service /usr/share/polkit-1/rules.d/50-triib-link.rules \
+    /usr/bin/gptpd /usr/lib/systemd/system/gptpd@.service; do
     [ -e "$path" ] && leftovers+=("$path")
 done
 # Purging a Debian package, or removing with pacman's -n, takes the

@@ -71,7 +71,7 @@ which `triib-endpointd` runs, on a wired interface with a PTP hardware clock
 Marvell's AQtion AQC107 have; the packages say as they install when no
 interface has one. Installing the package and gptpd is all they take:
 gptpd, an 802.1AS daemon in a package of its own that comes with triib's
-releases, runs gPTP on that interface, and where none answers there the
+releases (the Arch package builds it in), runs gPTP on that interface, and where none answers there the
 daemon starts its unit, `gptpd@<interface>`. gptpd
 never steps or slews the card's clock, which stamps the peer delay
 exchanges the neighbor measures the link with, and gives the

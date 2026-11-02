@@ -1,24 +1,34 @@
 # Maintainer: Scramble Tools <https://github.com/scrambletools>
 pkgname=triib
 pkgver=1.3.0
-pkgrel=1
+pkgrel=2
+# gptpd, which host entities keep the network's time with, goes in this
+# package, as no repository has it for makepkg to install, and a split
+# package would give it triib's version. Its own package can replace it.
+_gptpd=0.1.0
 pkgdesc='Discover, connect and set up AVB and Milan devices'
 arch=('x86_64' 'aarch64')
 url='https://github.com/scrambletoolsllc/triib'
 license=('MIT OR Apache-2.0')
-depends=('alsa-lib' 'ethtool' 'gcc-libs' 'glibc' 'gptpd' 'libcap' 'libpipewire' 'libxkbcommon' 'vulkan-icd-loader' 'wayland')
+depends=('alsa-lib' 'ethtool' 'gcc-libs' 'glibc' 'libcap' 'libpipewire' 'libxkbcommon' 'vulkan-icd-loader' 'wayland')
 makedepends=('cargo' 'clang')
 optdepends=('libx11: running under X11'
             'libxcursor: running under X11'
-            'libxi: running under X11')
+            'libxi: running under X11'
+            'polkit: starting gptpd@INTERFACE without a password')
+provides=("gptpd=$_gptpd")
+conflicts=('gptpd')
 install=triib.install
-source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
+        "gptp-$_gptpd.tar.gz::https://github.com/scrambletools/gptp/archive/refs/tags/v$_gptpd.tar.gz")
+sha256sums=('SKIP'
+            '08c56cad7f1aa634b243890a25ff8ded61daff5e8020ad123abe19594a1e85a2')
 
 prepare() {
-    cd "$pkgname-$pkgver"
     export RUSTUP_TOOLCHAIN=stable
-    cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+    for tree in "$pkgname-$pkgver" "gptp-$_gptpd"; do
+        (cd "$tree" && cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')")
+    done
 }
 
 build() {
@@ -28,6 +38,8 @@ build() {
     # The installed copy, with its own settings and cache, not a dev build.
     export TRIIB_PRODUCTION=1
     cargo build --frozen --release -p triib -p triib-cli -p triib-endpointd -p triib-netraw
+    cd "$srcdir/gptp-$_gptpd"
+    cargo build --frozen --release -p gptpd
 }
 
 check() {
@@ -35,9 +47,13 @@ check() {
     export RUSTUP_TOOLCHAIN=stable
     export CARGO_TARGET_DIR=target
     cargo test --frozen --workspace
+    cd "$srcdir/gptp-$_gptpd"
+    cargo test --frozen --workspace
 }
 
 package() {
     cd "$pkgname-$pkgver"
+    scripts/dist-install.sh target/release "$pkgdir" /usr
+    cd "$srcdir/gptp-$_gptpd"
     scripts/dist-install.sh target/release "$pkgdir" /usr
 }

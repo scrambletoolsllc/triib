@@ -3,6 +3,15 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Packages
+
+- The Arch package builds gptpd in, which it provides, so `makepkg -si`
+  installs it: 1.3.0's PKGBUILD depended on gptpd, which no repository
+  has, so makepkg stopped. Where gptpd's own package is installed,
+  pacman offers to replace it.
+
 ## [1.3.0] - 2026-11-01
 
 Host entities on Linux keep the network's time with gptpd, an 802.1AS

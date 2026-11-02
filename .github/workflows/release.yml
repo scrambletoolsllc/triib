@@ -392,6 +392,11 @@ jobs:
             echo "The PKGBUILD's pkgver $pkgver is not version $version in Cargo.toml" >&2
             exit 1
           fi
+          gptpd=$(sed -n 's/^_gptpd=//p' packaging/arch/triib/PKGBUILD)
+          if [ "$gptpd" != "$GPTPD_VERSION" ]; then
+            echo "The PKGBUILD builds gptpd $gptpd, not GPTPD_VERSION $GPTPD_VERSION" >&2
+            exit 1
+          fi
           git archive --prefix="triib-$pkgver/" -o "triib-$pkgver.tar.gz" HEAD
           docker run --rm -v "$PWD:/work" -w /work archlinux:latest \
             packaging/tests/linux/build-arch.sh "triib-$pkgver.tar.gz" dist-arch
@@ -485,7 +490,8 @@ jobs:
 
   aur:
     # The AUR package builds from GitHub's source archive of the tag; its
-    # checksum is only known once the tag exists.
+    # checksum is only known once the tag exists. gptpd's, the second
+    # source, is in the PKGBUILD already.
     if: github.ref_type == 'tag'
     runs-on: ubuntu-24.04
     steps:
@@ -496,7 +502,7 @@ jobs:
             "https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz"
           sum=$(sha256sum source.tar.gz | cut -d' ' -f1)
           mkdir -p aur
-          sed "s/^sha256sums=('SKIP')/sha256sums=('$sum')/" packaging/arch/triib/PKGBUILD >aur/PKGBUILD
+          sed "s/^sha256sums=('SKIP'/sha256sums=('$sum'/" packaging/arch/triib/PKGBUILD >aur/PKGBUILD
           cp packaging/arch/triib/triib.install aur/
       - uses: actions/upload-artifact@v4
         with:
@@ -520,8 +526,8 @@ jobs:
           cp artifacts/linux-*/* artifacts/windows-*/* artifacts/macos-*/* upload/
           # The PKGBUILD and its install file, to build the Arch package.
           cp artifacts/aur/* upload/
-          # gptpd's packages, for host entities; its PKGBUILD stays with
-          # gptpd's release, as this one has a PKGBUILD of its own.
+          # gptpd's Debian and RPM packages, for host entities; the
+          # PKGBUILD builds gptpd into the Arch package.
           gh release download "v$GPTPD_VERSION" -R scrambletools/gptp -D upload -p 'gptpd*.deb' -p 'gptpd*.rpm'
           (cd upload && sha256sum * >SHA256SUMS)
           version=${GITHUB_REF_NAME#v}
