@@ -993,10 +993,10 @@ fn bandwidth(declaration: &TalkerDeclaration) -> u64 {
 /// What a talker sent, for the log.
 fn sent(stats: &TalkerStats) -> String {
     format!(
-        "sent {} frames, {} media resets ({} late, {} gPTP time), {} send errors, device {:+} ppm, {} short",
+        "sent {} frames, {} left out late, {} media resets ({} gPTP time), {} send errors, device {:+} ppm, {} short",
         stats.frames_sent,
+        stats.frames_late,
         stats.media_resets,
-        stats.late_resets,
         stats.clock_resets,
         stats.send_errors,
         stats.drift_ppm,

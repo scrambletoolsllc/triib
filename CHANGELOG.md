@@ -14,6 +14,13 @@ All notable changes to triib. Versions follow
   seconds. After setting a stream's format, triib reads its entity again
   at once, as its sampling rate and other streams may follow.
 
+### Host entities (Linux)
+
+- A host entity's talker that wakes too late for a frame to arrive in
+  time leaves that frame out and goes on along the same timeline,
+  instead of starting its media clock again, which made its listeners
+  relock. triib-endpointd's log counts the frames left out.
+
 ### Packages
 
 - The Arch package builds gptpd in, which it provides, so `makepkg -si`
