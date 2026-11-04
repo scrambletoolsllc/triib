@@ -311,25 +311,60 @@ enum Command {
 /// triib a notification are asked nothing again.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Watch {
-    /// The entities read again in turn: their names, their streams'
-    /// formats, sampling rates and clock sources.
+    /// The entities read again every ten seconds: their names, their
+    /// streams' formats, sampling rates and clock sources.
     pub entities: Vec<EntityId>,
     /// The stream the inspector shows, asked every second how it stands.
     pub stream: Option<(EntityId, DescriptorType, u16)>,
 }
 
-/// How often the stream the inspector shows is asked how it stands, and
-/// the next entity in turn is read again.
+/// How often the stream the inspector shows is asked how it stands.
 const STREAM_EVERY: Duration = Duration::from_secs(1);
-const ENTITY_EVERY: Duration = Duration::from_secs(1);
+/// How long an entity goes before it is read again, and the least time
+/// between reading one entity and the next, which spreads them out.
+const ENTITY_EVERY: Duration = Duration::from_secs(10);
+const ENTITY_GAP: Duration = Duration::from_secs(1);
 
-/// When what the window shows was last asked for, and the entity read
-/// again next.
+/// When what the window shows was last asked for.
 #[derive(Default)]
 struct Asked {
     stream_at: Option<std::time::Instant>,
+    /// When the last entity was read again.
     entity_at: Option<std::time::Instant>,
-    turn: usize,
+    /// When each entity watched was last read, or first watched.
+    read_at: HashMap<EntityId, std::time::Instant>,
+}
+
+impl Asked {
+    /// The entity of those `silent` to read again at `now`: the one read
+    /// longest ago, once `ENTITY_EVERY` has passed since and `ENTITY_GAP`
+    /// since any was. An entity first watched counts as read then, as
+    /// entities are read in full as they come.
+    fn next_entity(&mut self, silent: &[EntityId], now: std::time::Instant) -> Option<EntityId> {
+        self.read_at.retain(|entity, _| silent.contains(entity));
+        for &entity in silent {
+            self.read_at.entry(entity).or_insert(now);
+        }
+        if self
+            .entity_at
+            .is_some_and(|at| now.saturating_duration_since(at) < ENTITY_GAP)
+        {
+            return None;
+        }
+        let entity = silent
+            .iter()
+            .copied()
+            .filter(|entity| now.saturating_duration_since(self.read_at[entity]) >= ENTITY_EVERY)
+            .min_by_key(|entity| self.read_at[entity])?;
+        self.read(entity, now);
+        Some(entity)
+    }
+
+    /// Notes that `entity` was read again at `now`.
+    fn read(&mut self, entity: EntityId, now: std::time::Instant) {
+        self.read_at.insert(entity, now);
+        self.entity_at = Some(now);
+    }
 }
 
 /// The entity that sent `frame` to `controller` as a notification, which
@@ -367,12 +402,14 @@ fn refresh(driver: &mut Driver, watch: &Watch, notifying: &HashSet<EntityId>, as
         .copied()
         .filter(|entity| !notifying.contains(entity))
         .collect();
-    if silent.is_empty() || !due(asked.entity_at, ENTITY_EVERY) {
-        return;
+    if let Some(entity) = asked.next_entity(&silent, std::time::Instant::now()) {
+        read_again(controller, now, entity);
     }
-    asked.entity_at = Some(std::time::Instant::now());
-    let entity = silent[asked.turn % silent.len()];
-    asked.turn = asked.turn.wrapping_add(1);
+}
+
+/// Reads again what the window shows of `entity`: its name, its streams'
+/// formats, sampling rates and clock sources.
+fn read_again(controller: &mut Controller, now: Instant, entity: EntityId) {
     let Some(model) = controller.model(entity) else {
         return;
     };
@@ -567,6 +604,11 @@ fn run(
                 Event::CommandFinished(command, outcome) => {
                     match steps.remove(&command).map(|step| after(step, outcome)) {
                         Some(Then::Finished(action, outcome)) => {
+                            if let Some(entity) = moves_more(action, outcome) {
+                                let now = driver.now();
+                                read_again(driver.controller_mut(), now, entity);
+                                asked.read(entity, std::time::Instant::now());
+                            }
                             Some(ReportKind::Finished(action, outcome))
                         }
                         Some(Then::Send(step)) => {
@@ -728,6 +770,17 @@ fn after(step: Step, outcome: Outcome) -> Then {
         // Started again whether or not it took the format.
         Step::Set(restart) => Then::Send(Step::Start(restart, outcome)),
         Step::Start(restart, set) => Then::Finished(restart.action(), set),
+    }
+}
+
+/// The entity `action`, finished as `outcome` says, may have changed more
+/// of than it asked, to be read again: a stream's new format can move its
+/// entity's sampling rate, and its other streams' formats with it, which
+/// the controller does not read again, nor need the entity notify of.
+fn moves_more(action: Action, outcome: Outcome) -> Option<EntityId> {
+    match action {
+        Action::SetStreamFormat { entity, .. } if outcome == Outcome::Done => Some(entity),
+        _ => None,
     }
 }
 
@@ -930,6 +983,102 @@ mod tests {
             after(Step::Act(rate), RUNNING),
             Then::Finished(rate, RUNNING)
         );
+    }
+
+    /// The entities `next_entity` picks, polled every turn for `seconds`
+    /// as the network thread does, with when each was picked.
+    fn reads(asked: &mut Asked, silent: &[EntityId], seconds: u64) -> Vec<(Duration, EntityId)> {
+        let start = std::time::Instant::now();
+        let turns =
+            u32::try_from(Duration::from_secs(seconds).as_millis() / TURN.as_millis()).unwrap();
+        (0..=turns)
+            .map(|turn| TURN * turn)
+            .filter_map(|at| {
+                asked
+                    .next_entity(silent, start + at)
+                    .map(|entity| (at, entity))
+            })
+            .collect()
+    }
+
+    /// An entity that sends no notifications is read again every ten
+    /// seconds, counting from when it came, not every second.
+    #[test]
+    fn a_silent_entity_is_read_every_ten_seconds() {
+        let at: Vec<Duration> = reads(&mut Asked::default(), &[AMP], 60)
+            .into_iter()
+            .map(|(at, _)| at)
+            .collect();
+        let seconds = [10, 20, 30, 40, 50, 60].map(Duration::from_secs);
+        assert_eq!(at, seconds);
+    }
+
+    /// Entities due together are read a second apart, the one read
+    /// longest ago first, and each still every ten seconds.
+    #[test]
+    fn silent_entities_are_read_a_second_apart() {
+        const ESP: EntityId = EntityId(0x0012_3456_789a_0001);
+        let read = reads(&mut Asked::default(), &[AMP, ESP], 30);
+        let seconds = |entity| {
+            read.iter()
+                .filter(|(_, read)| *read == entity)
+                .map(|(at, _)| at.as_secs())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(seconds(AMP), [10, 20, 30]);
+        assert_eq!(seconds(ESP), [11, 21]);
+        // So many that a second apart takes longer than ten seconds, and
+        // each is read as often as its turn comes.
+        let many: Vec<EntityId> = (1..=20).map(EntityId).collect();
+        let read = reads(&mut Asked::default(), &many, 60);
+        assert!(
+            read.windows(2)
+                .all(|pair| pair[1].0 - pair[0].0 >= ENTITY_GAP)
+        );
+        let first: Vec<Duration> = read
+            .iter()
+            .filter(|(_, entity)| *entity == many[0])
+            .map(|(at, _)| *at)
+            .collect();
+        assert_eq!(first, [10, 30, 50].map(Duration::from_secs));
+    }
+
+    /// An entity read after triib changes it waits ten seconds from then,
+    /// and one watched again counts as come anew.
+    #[test]
+    fn reading_an_entity_starts_its_ten_seconds_again() {
+        let start = std::time::Instant::now();
+        let at = |seconds| start + Duration::from_secs(seconds);
+        let mut asked = Asked::default();
+        assert_eq!(asked.next_entity(&[AMP], at(0)), None);
+        asked.read(AMP, at(5));
+        assert_eq!(asked.next_entity(&[AMP], at(10)), None);
+        assert_eq!(asked.next_entity(&[AMP], at(15)), Some(AMP));
+        // Gone from the window, as it went offline, then back.
+        assert_eq!(asked.next_entity(&[], at(16)), None);
+        assert_eq!(asked.next_entity(&[AMP], at(30)), None);
+        assert_eq!(asked.next_entity(&[AMP], at(40)), Some(AMP));
+    }
+
+    /// Only a new stream format that took is worth reading its entity
+    /// again for.
+    #[test]
+    fn a_new_stream_format_reads_its_entity_again() {
+        let format = Action::SetStreamFormat {
+            entity: AMP,
+            descriptor_type: DescriptorType::STREAM_INPUT,
+            index: 0,
+            format: StreamFormat(0x0205_0220_0040_0800),
+        };
+        assert_eq!(moves_more(format, Outcome::Done), Some(AMP));
+        assert_eq!(moves_more(format, RUNNING), None);
+        assert_eq!(moves_more(format, Outcome::NoResponse), None);
+        let rate = Action::SetSamplingRate {
+            entity: AMP,
+            unit: 0,
+            rate: SamplingRate(96_000),
+        };
+        assert_eq!(moves_more(rate, Outcome::Done), None);
     }
 
     /// Only a notification an entity sends this controller shows that it

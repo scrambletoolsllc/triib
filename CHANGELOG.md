@@ -5,6 +5,15 @@ All notable changes to triib. Versions follow
 
 ## [Unreleased]
 
+### Controller
+
+- Entities that send no notifications are read again every ten seconds
+  each, rather than one every second, which read the streams, audio
+  units and clock domains of an entity alone in sending none every
+  second; what other controllers change on them shows within ten
+  seconds. After setting a stream's format, triib reads its entity again
+  at once, as its sampling rate and other streams may follow.
+
 ### Packages
 
 - The Arch package builds gptpd in, which it provides, so `makepkg -si`

@@ -3484,8 +3484,8 @@ pub(crate) mod tests {
     }
 
     /// The network thread asks entities elsewhere again for what the window
-    /// shows of them: every one in turn, and the stream the Streams tab
-    /// shows; not this computer's, which notify.
+    /// shows of them: each every ten seconds, and the stream the Streams
+    /// tab shows; not this computer's, which notify.
     #[test]
     fn entities_elsewhere_are_asked_again() {
         let (entities, models) = bench();
