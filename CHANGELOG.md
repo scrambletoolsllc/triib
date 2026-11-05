@@ -5,6 +5,14 @@ All notable changes to triib. Versions follow
 
 ## [Unreleased]
 
+### Everywhere
+
+- When triib panics, it writes what happened and where to `crash.log`:
+  `%LOCALAPPDATA%\triib` on Windows, `~/.local/state/triib` on Linux,
+  and `~/Library/Application Support/triib` on macOS. A release build
+  on Windows has no console, so a crash showed nothing but its exit
+  code.
+
 ### Controller
 
 - Entities that send no notifications are read again every ten seconds

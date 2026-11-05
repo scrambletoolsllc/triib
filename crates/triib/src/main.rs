@@ -6,6 +6,7 @@ mod app;
 mod column_resize;
 mod control;
 mod controls_view;
+mod crash;
 mod describe;
 mod diagnostics_view;
 mod dialog;
@@ -88,6 +89,7 @@ pub fn post(event: External) {
 const INTERFACE_POLL: std::time::Duration = std::time::Duration::from_secs(2);
 
 fn main() -> iced::Result {
+    crash::install();
     if let Some(argument) = std::env::args().nth(1) {
         match argument.as_str() {
             "--version" | "-V" => println!("triib {}", env!("CARGO_PKG_VERSION")),
