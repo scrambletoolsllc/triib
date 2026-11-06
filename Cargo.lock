@@ -354,9 +354,9 @@ dependencies = [
 
 [[package]]
 name = "avb-stream"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f2137c2b6d4a5dff2a22ae39fb8ad3f8b5708b4e2f43edf0316efbd956fb777"
+checksum = "2b191d00974a19629a2ce6abd28bcdfe7cbe53032e09a1c22be94d0d33380832"
 dependencies = [
  "atdecc",
  "avb-net",

@@ -27,7 +27,9 @@ All notable changes to triib. Versions follow
 - A host entity's talker that wakes too late for a frame to arrive in
   time leaves that frame out and goes on along the same timeline,
   instead of starting its media clock again, which made its listeners
-  relock. triib-endpointd's log counts the frames left out.
+  relock. It checks again just before sending, so a frame held up after
+  it was packed is left out too, rather than going out past its
+  presentation time. triib-endpointd's log counts the frames left out.
 
 ### Packages
 
