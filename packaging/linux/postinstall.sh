@@ -30,7 +30,8 @@ entities, this package
   - installs triib-link@.service, triib-link-reset@.service and a polkit
     rule that lets you run them. When a host entity starts on an
     interface, triib-link@ keeps its frames on one transmit queue, with
-    room for about 130 microseconds of the link's traffic, and turns
+    room for about 130 microseconds of the link's traffic, under fq,
+    which can send each frame at the time stamped on it. It turns
     Energy-Efficient Ethernet and PAUSE off, reconnecting the link once
     if they were on. triib-link-reset@ reconnects a link whose driver
     leaves PTP time stamps on received frames.

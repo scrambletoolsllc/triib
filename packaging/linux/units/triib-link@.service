@@ -26,6 +26,16 @@ Before=gptpd@%i.service
 # stream's frame takes longer on a slower link; a floor already higher is
 # kept. With the interface up, it waits up to ten seconds for the link
 # to say its speed.
+#
+# That queue gets fq, which holds each frame until the departure time a
+# talker stamps on it, so a frame handed over ahead of its slot leaves
+# on time even when the talker woke late. A talker's frames are one
+# flow, and a group of streams hands over up to 2 ms of each, more with
+# AVB Lite's copies, hence the flow limit of 2000 frames. A card with
+# several queues needs its root named to reach the first one's, which
+# replaces what each holds, so it is left alone where it is set already;
+# fq on the first queue then changes in place. A card with one queue
+# has fq at its root.
 [Service]
 Type=oneshot
 RemainAfterExit=yes
@@ -45,6 +55,19 @@ ExecStart=/bin/sh -c '\
     bql="/sys/class/net/$$1/queues/tx-0/byte_queue_limits/limit_min"; \
     [ "$$floor" -gt "$$(cat "$$bql" 2>/dev/null || echo "$$floor")" ] \
         && echo "$$floor" 2>/dev/null >"$$bql"; \
+    queues=0; for queue in /sys/class/net/"$$1"/queues/tx-*; do \
+        [ -e "$$queue" ] && queues=$$((queues + 1)); done; \
+    if [ $$queues -gt 1 ]; then \
+        tc qdisc show dev "$$1" 2>/dev/null | grep -q "^qdisc mq 1: root" \
+            || tc qdisc replace dev "$$1" root handle 1: mq 2>/dev/null; \
+        tc qdisc show dev "$$1" 2>/dev/null \
+            | grep -Eq "^qdisc fq [0-9a-f]+: parent 1:1 .*flow_limit 2000p" \
+            || tc qdisc replace dev "$$1" parent 1:1 fq flow_limit 2000 2>/dev/null; \
+    elif [ $$queues -eq 1 ]; then \
+        tc qdisc show dev "$$1" 2>/dev/null \
+            | grep -Eq "^qdisc fq [0-9a-f]+: root .*flow_limit 2000p" \
+            || tc qdisc replace dev "$$1" root fq flow_limit 2000 2>/dev/null; \
+    fi; \
     before=$$(state "$$1"); \
     ethtool --set-eee "$$1" eee off 2>/dev/null; \
     ethtool --pause "$$1" autoneg off rx off tx off 2>/dev/null \

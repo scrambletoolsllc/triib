@@ -112,13 +112,14 @@ for file in \
     /usr/share/polkit-1/rules.d/50-triib-link.rules; do
     [ -f "$file" ] || fail "$file is missing"
 done
-for setting in tx-0/xps_cpus limit_min set-eee; do
+for setting in tx-0/xps_cpus limit_min 'fq flow_limit' set-eee; do
     grep -q "$setting" /usr/lib/systemd/system/triib-link@.service ||
         fail "triib-link@.service does not set $setting"
 done
-# Both come in as dependencies: ethtool for triib-link@, RealtimeKit for
-# host entities' realtime stream threads.
+# These come in as dependencies: ethtool and iproute2's tc for
+# triib-link@, RealtimeKit for host entities' realtime stream threads.
 command -v ethtool >/dev/null || fail "ethtool did not come in with triib"
+command -v tc >/dev/null || fail "tc did not come in with triib"
 [ -f /usr/share/dbus-1/system-services/org.freedesktop.RealtimeKit1.service ] ||
     fail "RealtimeKit did not come in with triib"
 echo "all there"

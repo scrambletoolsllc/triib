@@ -44,8 +44,9 @@ triib sends and receives raw Ethernet, which each system guards:
   carry the capability. The packages depend on ALSA's and PipeWire's
   libraries for audio, PipeWire's for the virtual audio devices of this
   computer's streams, on RealtimeKit for the stream threads' realtime
-  priority and on ethtool for `triib-link@`, and recommend gptpd, which
-  runs gPTP for the host entities. No distribution carries gptpd, so its
+  priority and on ethtool and iproute2 (iproute on Fedora) for
+  `triib-link@`, and recommend gptpd, which runs gPTP for the host
+  entities. No distribution carries gptpd, so its
   own Debian and RPM packages come with the releases, and apt and dnf
   skip the Recommends without a word where it is not installed. makepkg
   can't install a dependency no repository has, so the PKGBUILD builds

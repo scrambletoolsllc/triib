@@ -45,6 +45,10 @@ All notable changes to triib. Versions follow
   late, and the limit, down to a few hundred bytes, stopped the queue
   for milliseconds while a stream's frames waited. A floor already
   higher is kept.
+- `triib-link@` puts that transmit queue under fq, with room for 2000
+  frames from each talker, so frames stamped with their departure time
+  leave at it. Where the queue has fq already, only its limit changes,
+  and nothing it holds is lost.
 
 ### Packages
 
@@ -55,8 +59,9 @@ All notable changes to triib. Versions follow
 - Installing says what it changes on the system and why: the Linux
   packages as they install, and the macOS installer on its first page.
 - The Linux packages depend on RealtimeKit, without which host entities'
-  stream threads quietly ran at normal priority, and the .deb and .rpm
-  on ethtool, which they only recommended.
+  stream threads quietly ran at normal priority, and on iproute2 for
+  `tc`. The .deb and .rpm also depend on ethtool, which they only
+  recommended.
 - `triib-link@` and `triib-link-reset@` say nothing for an interface
   that is gone.
 
