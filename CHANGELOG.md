@@ -34,6 +34,12 @@ All notable changes to triib. Versions follow
   relock. It checks again just before sending, so a frame held up after
   it was packed is left out too, rather than going out past its
   presentation time. triib-endpointd's log counts the frames left out.
+- `triib-link@` keeps the transmit queue's Byte Queue Limits from going
+  below about 130 µs of the link's traffic, 16 KiB at a gigabit and
+  1.6 KiB at 100 Mb/s. Under memory load the card's completions ran
+  late, and the limit, down to a few hundred bytes, stopped the queue
+  for milliseconds while a stream's frames waited. A floor already
+  higher is kept.
 
 ### Packages
 
