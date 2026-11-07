@@ -1175,6 +1175,18 @@ fn entity_of(topology: &Topology, node: NodeId) -> Option<EntityId> {
     }
 }
 
+/// A bridge's icon: an access point with one wired link is a Wi-Fi bridge,
+/// one with more a switch with Wi-Fi, and a bridge with no Wi-Fi a switch.
+fn bridge_icon(topology: &Topology, node: NodeId) -> Icon {
+    if !topology.nodes[node].access_point {
+        Icon::Hub
+    } else if topology.wired_links(node) > 1 {
+        Icon::Router
+    } else {
+        Icon::WifiTethering
+    }
+}
+
 /// Whether a stream sends from, goes to or passes through the node.
 fn touches(topology: &Topology, stream: &Stream, node: NodeId) -> bool {
     let entity = entity_of(topology, node);
@@ -1293,8 +1305,7 @@ fn cards(
             let key = key_of(topology, node);
             let entity = entity_of(topology, node);
             let (glyph, tag) = match entry.kind {
-                NodeKind::Bridge if entry.access_point => (Icon::WifiTethering, String::new()),
-                NodeKind::Bridge => (Icon::Hub, String::new()),
+                NodeKind::Bridge => (bridge_icon(topology, node), String::new()),
                 NodeKind::Host => (Icon::Computer, String::new()),
                 NodeKind::Clock => (Icon::Schedule, String::new()),
                 NodeKind::Switch { .. } => (Icon::Lan, String::new()),
@@ -2191,7 +2202,7 @@ fn node_details(topology: &Topology, streams: &[Stream], paints: &[Paint], node:
     let items = |test: &dyn Fn(&Stream) -> bool| grouped(streams, paints, test);
     let bridge = entity.is_none() || !entry.children.is_empty();
     let glyph = match entry.kind {
-        NodeKind::Bridge => Icon::Hub,
+        NodeKind::Bridge => bridge_icon(topology, node),
         NodeKind::Host => Icon::Computer,
         NodeKind::Entity { .. } => Icon::GraphicEq,
         NodeKind::Clock => Icon::Schedule,

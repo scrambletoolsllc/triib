@@ -1914,9 +1914,10 @@ mod tests {
                     _ => None,
                 };
                 let (icon, name) = match node.kind {
-                    Kind::Bridge if node.access_point => {
-                        (Icon::WifiTethering, crate::fl!("netmap-access-point"))
-                    }
+                    Kind::Bridge if node.access_point => (
+                        crate::netmap::bridge_icon(&topology, place),
+                        crate::fl!("netmap-access-point"),
+                    ),
                     Kind::Bridge => (Icon::Hub, node.name.clone()),
                     Kind::Host => (Icon::Computer, crate::fl!("netmap-this-computer")),
                     Kind::Entity { .. } => (Icon::GraphicEq, node.name.clone()),

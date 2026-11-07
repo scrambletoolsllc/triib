@@ -21,6 +21,10 @@ All notable changes to triib. Versions follow
   second; what other controllers change on them shows within ten
   seconds. After setting a stream's format, triib reads its entity again
   at once, as its sampling rate and other streams may follow.
+- The network view tells a Wi-Fi access point that bridges to one wired
+  link from a switch with Wi-Fi, which has more: the first keeps its
+  Wi-Fi icon, the second shows a router's. A bridge's node details show
+  the same icon as its node.
 
 ### Host entities (Linux)
 
