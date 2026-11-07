@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<!--
+  The installer's first page: what installing triib changes on the Mac
+  beyond the app itself, and why, so nothing it does is a surprise.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+body { font: 13px -apple-system, "Helvetica Neue", sans-serif; line-height: 1.45; }
+h1 { font-size: 15px; margin: 0 0 8px; }
+li { margin-bottom: 6px; }
+code { font: 12px ui-monospace, Menlo, monospace; }
+</style>
+</head>
+<body>
+<h1>What installing triib changes</h1>
+<p>triib goes into Applications. So that it can reach AVB and Milan
+devices, and run this Mac's own entities, without running as an
+administrator, installing it also:</p>
+<ul>
+<li>adds you to the <code>access_bpf</code> group, creating it if it is
+not there yet, the same group Wireshark uses;</li>
+<li>installs a launch daemon, <code>run.triib.bpf</code>, which at every
+start lets that group open the Mac's packet capture devices
+(<code>/dev/bpf*</code>), so triib can send and receive AVB's own network
+frames;</li>
+<li>links <code>triib-cli</code>, triib's command line tool, into
+<code>/usr/local/bin</code>.</li>
+</ul>
+<p>Nothing else on the system changes. To take triib and the launch daemon
+out again, run <code>sudo "/Library/Application Support/triib/uninstall"</code>.
+The <code>access_bpf</code> group stays, as other apps may use it.</p>
+</body>
+</html>

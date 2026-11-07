@@ -11,7 +11,8 @@
 # alone at every start. The package installs a launch daemon that opens
 # them to the access_bpf group at each start, as Wireshark's ChmodBPF
 # does with the same group, and adds the user installing it to the group.
-# As it opens, the installer warns when the Mac has no AVB Ethernet port
+# The installer's first page says so and why (welcome.html), and as it
+# opens, it warns when the Mac has no AVB Ethernet port
 # (distribution.xml).
 #
 # TRIIB_PRODUCTION=1 makes a release build, as in CI; without it the app
@@ -145,7 +146,9 @@ if $pkg; then
         "$here/distribution.xml" >"$distribution"
     package="$out/$name-$version-$(uname -m).pkg"
     rm -f "$package"
-    product=(--distribution "$distribution" --package-path "$component")
+    resources=$(mktemp -d)
+    cp "$here/welcome.html" "$resources/"
+    product=(--distribution "$distribution" --package-path "$component" --resources "$resources")
     if [ -n "${TRIIB_INSTALLER_IDENTITY:-}" ]; then
         product+=(--sign "$TRIIB_INSTALLER_IDENTITY" --timestamp)
         if [ -n "${TRIIB_SIGN_KEYCHAIN:-}" ]; then

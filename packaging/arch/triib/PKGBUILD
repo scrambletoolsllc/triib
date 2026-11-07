@@ -10,7 +10,7 @@ pkgdesc='Discover, connect and set up AVB and Milan devices'
 arch=('x86_64' 'aarch64')
 url='https://github.com/scrambletoolsllc/triib'
 license=('MIT OR Apache-2.0')
-depends=('alsa-lib' 'ethtool' 'gcc-libs' 'glibc' 'libcap' 'libpipewire' 'libxkbcommon' 'vulkan-icd-loader' 'wayland')
+depends=('alsa-lib' 'ethtool' 'gcc-libs' 'glibc' 'libcap' 'libpipewire' 'libxkbcommon' 'rtkit' 'vulkan-icd-loader' 'wayland')
 makedepends=('cargo' 'clang')
 optdepends=('libx11: running under X11'
             'libxcursor: running under X11'

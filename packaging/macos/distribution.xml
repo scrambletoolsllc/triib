@@ -3,10 +3,12 @@
   The installer around triib's package, which bundle.sh makes with its
   pkg option, filling in the fields between at signs. As it opens, it
   warns when the Mac has no AVB Ethernet port, which using this Mac as
-  an AVB endpoint requires.
+  an AVB endpoint requires. Its first page says what installing changes
+  on the Mac and why (welcome.html).
 -->
 <installer-gui-script minSpecVersion="2">
     <title>@NAME@</title>
+    <welcome file="welcome.html" mime-type="text/html" />
     <options customize="never" require-scripts="false" hostArchitectures="@ARCH@" />
     <domains enable_localSystem="true" enable_currentUserHome="false" enable_anywhere="false" />
     <installation-check script="avbPort()" />

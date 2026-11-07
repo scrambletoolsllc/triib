@@ -5,7 +5,9 @@
 #   VERSION=1.3.0 ARCH=amd64 nfpm package -f packaging/nfpm.yaml -p deb
 #   VERSION=1.3.0 ARCH=amd64 nfpm package -f packaging/nfpm.yaml -p rpm
 #
-# Installing grants triib-netraw CAP_NET_RAW (packaging/linux).
+# Installing grants triib-netraw CAP_NET_RAW and says what it changes on
+# the system and why (packaging/linux). ethtool runs triib-link@, and
+# RealtimeKit gives host entities' stream threads realtime priority.
 name: triib
 arch: ${ARCH}
 platform: linux
@@ -46,10 +48,11 @@ overrides:
       - libwayland-client0
       - libxkbcommon0
       - libvulkan1
+      - ethtool
+      - rtkit
     recommends:
       - mesa-vulkan-drivers
       - gptpd
-      - ethtool
   rpm:
     depends:
       - alsa-lib
@@ -59,10 +62,11 @@ overrides:
       - libwayland-client
       - libxkbcommon
       - vulkan-loader
+      - ethtool
+      - rtkit
     recommends:
       - mesa-vulkan-drivers
       - gptpd
-      - ethtool
 
 rpm:
   group: Applications/Multimedia

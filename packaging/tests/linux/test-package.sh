@@ -112,6 +112,15 @@ for file in \
     /usr/share/polkit-1/rules.d/50-triib-link.rules; do
     [ -f "$file" ] || fail "$file is missing"
 done
+for setting in tx-0/xps_cpus limit_min set-eee; do
+    grep -q "$setting" /usr/lib/systemd/system/triib-link@.service ||
+        fail "triib-link@.service does not set $setting"
+done
+# Both come in as dependencies: ethtool for triib-link@, RealtimeKit for
+# host entities' realtime stream threads.
+command -v ethtool >/dev/null || fail "ethtool did not come in with triib"
+[ -f /usr/share/dbus-1/system-services/org.freedesktop.RealtimeKit1.service ] ||
+    fail "RealtimeKit did not come in with triib"
 echo "all there"
 # The Arch package carries gptpd, as no repository has it.
 if [ "$kind" = arch ]; then
@@ -147,6 +156,15 @@ section "No interface for host entities"
 grep -q 'requires an AVB Ethernet' /tmp/install.log ||
     fail "installing did not say that no interface can carry host entities"
 echo "said so as it installed"
+
+# Installing says what it changes on the system and why.
+section "What installing changes"
+explained=(CAP_NET_RAW RealtimeKit triib-link@.service)
+[ "$kind" = arch ] && explained+=(gptpd@.service)
+for said in "${explained[@]}"; do
+    grep -q "$said" /tmp/install.log || fail "installing did not explain $said"
+done
+echo "explained as it installed"
 
 section "Shared libraries"
 for program in "${programs[@]}"; do

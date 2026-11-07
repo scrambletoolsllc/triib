@@ -43,17 +43,21 @@ triib sends and receives raw Ethernet, which each system guards:
   `usr/lib/triib/triib-netraw`. There is no AppImage or Flatpak, as neither can
   carry the capability. The packages depend on ALSA's and PipeWire's
   libraries for audio, PipeWire's for the virtual audio devices of this
-  computer's streams, and recommend gptpd, which runs gPTP for the host
-  entities. No distribution carries gptpd, so its own Debian and RPM
-  packages come with the releases, and apt and dnf skip the Recommends
-  without a word where it is not installed. makepkg can't install a
-  dependency no repository has, so the PKGBUILD builds gptpd into the
-  Arch package, which provides gptpd and conflicts with its own package.
+  computer's streams, on RealtimeKit for the stream threads' realtime
+  priority and on ethtool for `triib-link@`, and recommend gptpd, which
+  runs gPTP for the host entities. No distribution carries gptpd, so its
+  own Debian and RPM packages come with the releases, and apt and dnf
+  skip the Recommends without a word where it is not installed. makepkg
+  can't install a dependency no repository has, so the PKGBUILD builds
+  gptpd into the Arch package, which provides gptpd and conflicts with
+  its own package.
   triib-endpointd reads the grandmaster's time from gptpd's time file in
   /run/gptpd, which everyone can read. As they install, the packages say
   when no wired interface has a PTP hardware clock, which using this
   computer as an AVB endpoint requires, with the Ethernet cards that have
-  one and that no Wi-Fi card can serve yet.
+  one and that no Wi-Fi card can serve yet. They also say what installing
+  changes on the system and why: the capability, RealtimeKit, the link
+  units and their polkit rule, and on Arch gptpd's unit, group and rule.
 - **macOS:** read and write access to the BPF devices, `/dev/bpf*`,
   which are root's alone at every start. The installer package puts
   `triib.app` in /Applications, links `triib-cli` into /usr/local/bin,
@@ -62,8 +66,9 @@ triib sends and receives raw Ethernet, which each system guards:
   devices to that group at every start. Wireshark's ChmodBPF uses the
   same group, so either serves both. Group membership takes effect at
   the next login. `sudo "/Library/Application Support/triib/uninstall"`
-  removes it all. macOS never hands its own AVB entity the commands
-  written to BPF, so triib reaches that entity through Apple's
+  removes it all. The installer's first page says all this before
+  anything is installed. macOS never hands its own AVB entity the
+  commands written to BPF, so triib reaches that entity through Apple's
   AudioVideoBridging framework, which needs nothing more. As it opens,
   the installer warns when the Mac has no AVB Ethernet port, one whose
   controller has a realtime queue, which using this Mac as an AVB

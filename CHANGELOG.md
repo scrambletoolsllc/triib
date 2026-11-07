@@ -52,6 +52,13 @@ All notable changes to triib. Versions follow
   installs it: 1.3.0's PKGBUILD depended on gptpd, which no repository
   has, so makepkg stopped. Where gptpd's own package is installed,
   pacman offers to replace it.
+- Installing says what it changes on the system and why: the Linux
+  packages as they install, and the macOS installer on its first page.
+- The Linux packages depend on RealtimeKit, without which host entities'
+  stream threads quietly ran at normal priority, and the .deb and .rpm
+  on ethtool, which they only recommended.
+- `triib-link@` and `triib-link-reset@` say nothing for an interface
+  that is gone.
 
 ## [1.3.0] - 2026-11-01
 
