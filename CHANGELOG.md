@@ -33,7 +33,12 @@ All notable changes to triib. Versions follow
   instead of starting its media clock again, which made its listeners
   relock. It checks again just before sending, so a frame held up after
   it was packed is left out too, rather than going out past its
-  presentation time. triib-endpointd's log counts the frames left out.
+  presentation time. After leaving frames out, it goes on at the first
+  frame at most half its allowance late, rather than one at the very
+  edge. triib-endpointd's log counts the frames left out.
+- A host entity's talker no longer waits milliseconds on the audio it
+  shares with PipeWire: a thread holding that audio while put off for
+  others now runs at the talker's priority until it lets go.
 - `triib-link@` keeps the transmit queue's Byte Queue Limits from going
   below about 130 µs of the link's traffic, 16 KiB at a gigabit and
   1.6 KiB at 100 Mb/s. Under memory load the card's completions ran
