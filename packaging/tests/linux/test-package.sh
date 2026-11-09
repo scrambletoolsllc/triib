@@ -114,7 +114,7 @@ for file in \
     /usr/share/licenses/avb-endpointd/LICENSE-MIT; do
     [ -f "$file" ] || fail "$file is missing"
 done
-for setting in tx-0/xps_cpus limit_min 'fq flow_limit' set-eee; do
+for setting in tx-0/xps_cpus limit_min 'parent 1:1 fq_codel' set-eee; do
     grep -q "$setting" /usr/lib/systemd/system/avb-link@.service ||
         fail "avb-link@.service does not set $setting"
 done

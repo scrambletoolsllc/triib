@@ -57,16 +57,17 @@ All notable changes to triib. Versions follow
 - A host entity's talker no longer waits milliseconds on the audio it
   shares with PipeWire: a thread holding that audio while put off for
   others now runs at the talker's priority until it lets go.
-- `triib-link@` keeps the transmit queue's Byte Queue Limits from going
+- The link unit keeps the transmit queue's Byte Queue Limits from going
   below about 130 µs of the link's traffic, 16 KiB at a gigabit and
   1.6 KiB at 100 Mb/s. Under memory load the card's completions ran
   late, and the limit, down to a few hundred bytes, stopped the queue
   for milliseconds while a stream's frames waited. A floor already
   higher is kept.
-- `triib-link@` puts that transmit queue under fq, with room for 2000
-  frames from each talker, so frames stamped with their departure time
-  leave at it. Where the queue has fq already, only its limit changes,
-  and nothing it holds is lost.
+- The link unit puts that transmit queue under fq_codel, whatever the
+  system's default discipline, so frames leave in the order they come.
+  Under fq, the default on some systems, a host entity's frames arrived
+  late at its listeners. Where the queue has fq_codel already, it is
+  kept, and nothing it holds is lost.
 
 ### Packages
 
