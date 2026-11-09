@@ -1,5 +1,5 @@
 //! The Streams tab's meters: how loud the first two channels of each of
-//! this computer's running streams are, as triib-endpointd measures them,
+//! this computer's running streams are, as avb-endpointd measures them,
 //! or on a Mac a helper does from the Mac's own entity's audio device,
 //! shown too on the streams of other entities connected to them, which
 //! carry the same audio.
@@ -8,10 +8,10 @@ use std::collections::BTreeMap;
 use std::time::{Duration, Instant};
 
 use atdecc::EntityId;
+use avb_endpointd::meters::{EVERY, Meters};
 use iced::widget::container;
 use iced::{Color, Element, Theme};
 use scramble_ui::{Scheme, shape};
-use triib_endpointd::meters::{EVERY, Meters};
 
 use crate::app::{Message, Triib};
 
@@ -41,7 +41,7 @@ pub type StreamKey = (EntityId, bool, u16);
 /// Who measures a reading.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Origin {
-    /// triib-endpointd, of the entities it runs.
+    /// avb-endpointd, of the entities it runs.
     Daemon,
     /// The helper, of the Mac's own entity.
     #[cfg(target_os = "macos")]
@@ -155,10 +155,13 @@ pub fn readings() -> impl iced::futures::Stream<Item = Option<Meters>> {
             let mut sent: Option<Option<u64>> = None;
             while !sender.is_closed() {
                 if asked.is_none_or(|at| at.elapsed() >= ASK_AGAIN) {
-                    triib_endpointd::meters::want();
+                    if let Some(interface) = crate::host::shown() {
+                        avb_endpointd::meters::want(&interface);
+                    }
                     asked = Some(Instant::now());
                 }
-                let reading = triib_endpointd::meters::read();
+                let reading = crate::host::shown()
+                    .and_then(|interface| avb_endpointd::meters::read(&interface));
                 let sequence = reading.as_ref().map(|meters| meters.sequence);
                 if sequence != seen {
                     seen = sequence;
@@ -299,7 +302,7 @@ fn zone_colors(dark: bool) -> [Color; 3] {
 
 #[cfg(test)]
 mod tests {
-    use triib_endpointd::meters::StreamMeter;
+    use avb_endpointd::meters::StreamMeter;
 
     use super::*;
 
@@ -360,7 +363,7 @@ mod tests {
     /// The bench, the wired ESP's first input connected to the Mac mini's
     /// first output, with `host` as one of this computer's entities.
     fn bench_with_host(host: EntityId) -> Triib {
-        use triib_endpointd::status::{DaemonStatus, EndpointStatus};
+        use avb_endpointd::status::{DaemonStatus, EndpointStatus};
         let (entities, mut models) = crate::view::tests::bench();
         let bound = crate::view::tests::reread(
             &entities,

@@ -2,10 +2,12 @@
 pkgname=triib
 pkgver=1.3.0
 pkgrel=2
-# gptpd, which host entities keep the network's time with, goes in this
-# package, as no repository has it for makepkg to install, and a split
-# package would give it triib's version. Its own package can replace it.
+# gptpd, which host entities keep the network's time with, and
+# avb-endpointd, which runs them, go in this package, as no repository
+# has them for makepkg to install, and a split package would give them
+# triib's version. Their own packages can replace them.
 _gptpd=0.1.0
+_avb_endpointd=0.1.0
 pkgdesc='Discover, connect and set up AVB and Milan devices'
 arch=('x86_64' 'aarch64')
 url='https://github.com/scrambletoolsllc/triib'
@@ -16,17 +18,19 @@ optdepends=('libx11: running under X11'
             'libxcursor: running under X11'
             'libxi: running under X11'
             'polkit: starting gptpd@INTERFACE without a password')
-provides=("gptpd=$_gptpd")
-conflicts=('gptpd')
+provides=("gptpd=$_gptpd" "avb-endpointd=$_avb_endpointd")
+conflicts=('gptpd' 'avb-endpointd')
 install=triib.install
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
-        "gptp-$_gptpd.tar.gz::https://github.com/scrambletools/gptp/archive/refs/tags/v$_gptpd.tar.gz")
+        "gptp-$_gptpd.tar.gz::https://github.com/scrambletools/gptp/archive/refs/tags/v$_gptpd.tar.gz"
+        "avb-avb-endpointd-v$_avb_endpointd.tar.gz::https://github.com/scrambletools/avb/archive/refs/tags/avb-endpointd-v$_avb_endpointd.tar.gz")
 sha256sums=('SKIP'
-            '08c56cad7f1aa634b243890a25ff8ded61daff5e8020ad123abe19594a1e85a2')
+            '08c56cad7f1aa634b243890a25ff8ded61daff5e8020ad123abe19594a1e85a2'
+            'SKIP')
 
 prepare() {
     export RUSTUP_TOOLCHAIN=stable
-    for tree in "$pkgname-$pkgver" "gptp-$_gptpd"; do
+    for tree in "$pkgname-$pkgver" "gptp-$_gptpd" "avb-avb-endpointd-v$_avb_endpointd"; do
         (cd "$tree" && cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')")
     done
 }
@@ -37,9 +41,11 @@ build() {
     export CARGO_TARGET_DIR=target
     # The installed copy, with its own settings and cache, not a dev build.
     export TRIIB_PRODUCTION=1
-    cargo build --frozen --release -p triib -p triib-cli -p triib-endpointd -p triib-netraw
+    cargo build --frozen --release -p triib -p triib-cli
     cd "$srcdir/gptp-$_gptpd"
     cargo build --frozen --release -p gptpd
+    cd "$srcdir/avb-avb-endpointd-v$_avb_endpointd"
+    cargo build --frozen --release -p avb-endpointd --features daemon -p avb-netraw
 }
 
 check() {
@@ -49,11 +55,15 @@ check() {
     cargo test --frozen --workspace
     cd "$srcdir/gptp-$_gptpd"
     cargo test --frozen --workspace
+    cd "$srcdir/avb-avb-endpointd-v$_avb_endpointd"
+    cargo test --frozen -p avb-endpointd --features daemon
 }
 
 package() {
     cd "$pkgname-$pkgver"
     scripts/dist-install.sh target/release "$pkgdir" /usr
     cd "$srcdir/gptp-$_gptpd"
+    scripts/dist-install.sh target/release "$pkgdir" /usr
+    cd "$srcdir/avb-avb-endpointd-v$_avb_endpointd"
     scripts/dist-install.sh target/release "$pkgdir" /usr
 }

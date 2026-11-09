@@ -28,6 +28,24 @@ All notable changes to triib. Versions follow
 
 ### Host entities (Linux)
 
+- This computer's entities run in avb-endpointd, from the avb crates,
+  which plaa shares, in place of triib-endpointd. It runs as the
+  person's `avb-endpointd@<interface>` unit, which triib starts and
+  enables as it adds an entity, so the entities run from login whether
+  triib is open or not, and systemd starts it again should it stop.
+  Each interface has its own list,
+  `~/.config/avb-endpointd/<interface>.toml`, and its own daemon; the
+  first daemon on an interface takes triib's entities listed for it.
+  The Entities file setting goes, and with it the warning that moving
+  entities to another interface cuts off a program sharing the daemon.
+  triib stops a triib-endpointd an older triib left running, which
+  would hold the interface against the new daemon.
+- The entities' audio devices are named `avb-` rather than `triib-`, so
+  an app that played into one picks it again once.
+- Raw sockets come from avb-netraw, and the link units are avb-link@
+  and avb-link-reset@, triib's own standing in until those are
+  installed. The daemon tries the link unit again when polkit refused
+  it, as before the person's session was there.
 - A host entity's talker that wakes too late for a frame to arrive in
   time leaves that frame out and goes on along the same timeline,
   instead of starting its media clock again, which made its listeners

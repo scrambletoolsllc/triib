@@ -1,15 +1,15 @@
-//! This computer's own entities, which triib-endpointd runs: adding,
-//! changing and removing them and their streams in its `entities.toml`,
-//! starting it, and what it says each is doing.
+//! This computer's own entities, which avb-endpointd runs, one daemon per
+//! interface: adding, changing and removing them and their streams in its
+//! `<interface>.toml`, starting its unit, and what it says each is doing.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::sync::{Mutex, PoisonError};
 use std::time::{Duration, Instant};
 
 use atdecc::{EntityId, MacAddress};
-use triib_endpointd::config::{self, Config, Direction, EndpointConfig, StreamConfig};
-use triib_endpointd::status::{DaemonStatus, EndpointStatus};
+use avb_endpointd::config::{self, Config, Direction, EndpointConfig, StreamConfig};
+use avb_endpointd::status::{self, DaemonStatus, EndpointStatus};
 
 /// Whether this system runs entities of its own.
 pub const SUPPORTED: bool = cfg!(target_os = "linux");
@@ -19,25 +19,24 @@ pub const SUPPORTED: bool = cfg!(target_os = "linux");
 pub static RECALLING: AtomicBool = AtomicBool::new(false);
 
 /// How long a daemon just started has to say it runs, before the app
-/// would start another; the daemon's lock turns that one away anyway.
+/// would start it again.
 const STARTING: Duration = Duration::from_secs(5);
-/// How long a daemon the app started must run for the next start to wait
-/// no longer than `STARTING`, and the longest the app waits to start one
-/// again after starts that did not last.
-#[cfg(unix)]
-const LASTING: Duration = Duration::from_secs(60);
-#[cfg(unix)]
+/// The longest the app waits to start the daemon again after starts that
+/// did not last.
 const LONGEST_WAIT: Duration = Duration::from_secs(5 * 60);
-/// How long a daemon asked to stop has to go, before one on another file
-/// starts anyway.
-const STOPPING: Duration = Duration::from_secs(5);
 
-/// The file the settings name for this computer's entities, if any.
-static ENTITIES_FILE: Mutex<Option<PathBuf>> = Mutex::new(None);
+/// The interface whose entities the app shows, and reads the daemon's
+/// status and meters for.
+static SHOWN: Mutex<Option<String>> = Mutex::new(None);
 
 /// The interface whose entities the app keeps running, while it shows one
 /// that runs entities of this computer's.
 static KEPT: Mutex<Option<String>> = Mutex::new(None);
+
+/// triib's entities file from before avb-endpointd ran them, which a
+/// person may have moved: what an interface without a file of its own
+/// starts from.
+static OLD_FILE: Mutex<Option<PathBuf>> = Mutex::new(None);
 
 /// When the app last started the daemon, and how long it waits to start
 /// it again by itself: `STARTING`, and twice as long after each start
@@ -52,77 +51,95 @@ static STARTS: Mutex<Starts> = Mutex::new(Starts {
     wait: STARTING,
 });
 
-/// Lists this computer's entities in `file`, or in the default file when
-/// none.
-pub fn set_entities_file(file: Option<PathBuf>) {
-    *ENTITIES_FILE.lock().unwrap_or_else(PoisonError::into_inner) = file;
+/// The interface the app shows, or none.
+pub fn show(interface: Option<&str>) {
+    let mut shown = SHOWN.lock().unwrap_or_else(PoisonError::into_inner);
+    if shown.as_deref() != interface {
+        *shown = interface.map(str::to_owned);
+    }
 }
 
-/// Where this computer's entities are listed: the file the settings
-/// name, else `entities.toml` in the data folder.
-pub fn entities_path() -> Option<PathBuf> {
-    ENTITIES_FILE
-        .lock()
-        .unwrap_or_else(PoisonError::into_inner)
-        .clone()
-        .or_else(config::path)
+/// The interface the app shows.
+pub fn shown() -> Option<String> {
+    SHOWN.lock().unwrap_or_else(PoisonError::into_inner).clone()
 }
 
-/// Moves this computer's entities to `to`: a file that is not there yet
-/// starts as a copy of the one in use, and the daemon, when it runs on
-/// another file, starts again on it. `None` is the default file.
-pub fn move_entities(to: Option<PathBuf>) -> Result<(), String> {
-    let from = entities_path();
-    set_entities_file(to);
+/// What the daemon on the interface shown says, while it runs.
+pub fn status() -> Option<DaemonStatus> {
+    status::read(&shown()?)
+}
+
+/// Where triib kept this computer's entities before avb-endpointd ran
+/// them, as the settings named it.
+pub fn set_old_file(file: Option<PathBuf>) {
+    *OLD_FILE.lock().unwrap_or_else(PoisonError::into_inner) = file;
+}
+
+/// Stops a triib-endpointd an older triib left running for this person,
+/// which would hold its interface against avb-endpointd: found by the
+/// status it wrote, and its process's name.
+pub fn stop_old_daemon() {
     if cfg!(test) {
-        return Ok(());
+        return;
     }
-    let to = entities_path().ok_or("no data folder")?;
-    if !to.exists()
-        && let Some(from) = from.filter(|from| from.exists() && *from != to)
+    #[cfg(target_os = "linux")]
     {
-        if let Some(folder) = to.parent() {
-            std::fs::create_dir_all(folder).map_err(|error| error.to_string())?;
+        let Some(path) = triib_store::paths::runtime_dir().map(|dir| dir.join("endpointd.toml"))
+        else {
+            return;
+        };
+        let Ok(text) = std::fs::read_to_string(path) else {
+            return;
+        };
+        let Some(pid) = text
+            .lines()
+            .find_map(|line| line.strip_prefix("pid = ")?.trim().parse::<u32>().ok())
+        else {
+            return;
+        };
+        let named = std::fs::read_to_string(format!("/proc/{pid}/comm"))
+            .is_ok_and(|name| name.trim() == "triib-endpointd");
+        if named {
+            eprintln!("triib: stopping triib-endpointd, as avb-endpointd runs the entities now");
+            let _ = std::process::Command::new("kill")
+                .arg("-TERM")
+                .arg(pid.to_string())
+                .status();
         }
-        std::fs::copy(&from, &to).map_err(|error| error.to_string())?;
     }
-    let Some(status) = triib_endpointd::status::read() else {
-        return Ok(());
-    };
-    if status.config.as_deref() == Some(&to.display().to_string()) {
-        return Ok(());
-    }
-    // Stops it, then starts one on the new file once it has gone.
-    std::process::Command::new("kill")
-        .arg("-TERM")
-        .arg(status.pid.to_string())
-        .status()
-        .map_err(|error| error.to_string())?;
-    std::thread::spawn(|| {
-        let asked = Instant::now();
-        while triib_endpointd::status::read().is_some() && asked.elapsed() < STOPPING {
-            std::thread::sleep(Duration::from_millis(100));
-        }
-        let _ = start();
-    });
-    Ok(())
 }
 
-/// The endpoints file, or a new one for `interface`, with the interface
-/// set to it either way.
-fn load(interface: &str) -> Result<(std::path::PathBuf, Config), String> {
-    let path = entities_path().ok_or("no data folder")?;
-    let mut config = if path.exists() {
-        triib_store::load::<Config>(&path).map_err(|error| error.to_string())?
-    } else {
-        Config::default()
+/// Where the entities on `interface` are listed.
+pub fn entities_path(interface: &str) -> Option<PathBuf> {
+    config::path(interface)
+}
+
+/// The entities on `interface`: its file's, or with none yet triib's
+/// from before, which the daemon takes too as it starts.
+fn current(interface: &str) -> Result<(PathBuf, Config), String> {
+    let path = entities_path(interface).ok_or("no configuration folder")?;
+    let config = match config::load(&path) {
+        Ok(config) => config,
+        Err(error) if error.is_missing() => old_entities(interface).unwrap_or_default(),
+        Err(error) => return Err(format!("{}: {error}", path.display())),
     };
-    config.interface = interface.to_owned();
     Ok((path, config))
 }
 
-fn save(path: &std::path::Path, config: &Config) -> Result<(), String> {
-    triib_store::save(path, config).map_err(|error| error.to_string())
+/// triib's entities from before for `interface`: from the file the
+/// settings named, else from triib's data folder.
+fn old_entities(interface: &str) -> Option<Config> {
+    let file = OLD_FILE
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .clone();
+    file.as_deref()
+        .and_then(|file| config::triib_entities_at(file, interface))
+        .or_else(|| config::triib_entities(interface))
+}
+
+fn save(path: &Path, config: &Config) -> Result<(), String> {
+    avb_endpointd::store::save(path, config).map_err(|error| error.to_string())
 }
 
 /// The place in the file of the endpoint whose entity is `entity_id`.
@@ -132,7 +149,7 @@ fn place_of(config: &Config, mac: MacAddress, entity_id: EntityId) -> Option<usi
         .iter()
         .enumerate()
         .position(|(place, endpoint)| {
-            triib_endpointd::runtime::entity_id(mac, endpoint.instance_at(place)) == entity_id
+            avb_endpointd::entity_id(mac, endpoint.instance_at(place)) == entity_id
         })
 }
 
@@ -149,12 +166,12 @@ pub struct Starting {
 /// virtual audio device; its inspector adds more and sets each up. Gives
 /// the instance its entity ID is made from.
 pub fn add(interface: &str, name: String) -> Result<u8, String> {
-    let (path, mut config) = load(interface)?;
+    let (path, mut config) = current(interface)?;
+    config.pin_instances();
     let taken: Vec<u8> = config
         .endpoints
         .iter()
-        .enumerate()
-        .map(|(place, endpoint)| endpoint.instance_at(place))
+        .filter_map(|endpoint| endpoint.instance)
         .collect();
     let free = (0..240u8)
         .find(|candidate| !taken.contains(candidate))
@@ -165,13 +182,18 @@ pub fn add(interface: &str, name: String) -> Result<u8, String> {
 }
 
 /// Removes the endpoint whose entity is `entity_id`; the others keep
-/// their entity IDs.
+/// their entity IDs. With none left the daemon ends, and its unit no
+/// longer starts with the desktop.
 pub fn remove(interface: &str, mac: MacAddress, entity_id: EntityId) -> Result<(), String> {
-    let (path, mut config) = load(interface)?;
+    let (path, mut config) = current(interface)?;
     let place = place_of(&config, mac, entity_id).ok_or("not one of this computer's")?;
-    config.endpoints = pinned(std::mem::take(&mut config.endpoints));
+    config.pin_instances();
     config.endpoints.remove(place);
-    save(&path, &config)
+    save(&path, &config)?;
+    if config.endpoints.is_empty() {
+        disable(interface);
+    }
+    Ok(())
 }
 
 /// A change to one of an entity's streams.
@@ -197,7 +219,7 @@ pub fn change_stream(
     entity_id: EntityId,
     change: StreamChange,
 ) -> Result<(), String> {
-    let (path, mut config) = load(interface)?;
+    let (path, mut config) = current(interface)?;
     let place = place_of(&config, mac, entity_id).ok_or("not one of this computer's")?;
     let endpoint = &mut config.endpoints[place];
     // An entity's streams as they are, written down once one changes.
@@ -208,7 +230,7 @@ pub fn change_stream(
                 .iter()
                 .filter(|stream| stream.direction == direction)
                 .count();
-            if same >= triib_endpointd::config::MOST_STREAMS {
+            if same >= avb_endpointd::config::MOST_STREAMS {
                 return Err("no room for another".into());
             }
             streams.push(if clock {
@@ -226,7 +248,7 @@ pub fn change_stream(
             streams[at].format = None;
         }
         StreamChange::Audio(at, audio) if at < streams.len() => {
-            streams[at].audio = (audio != triib_endpointd::config::VIRTUAL).then_some(audio);
+            streams[at].audio = (audio != avb_endpointd::config::VIRTUAL).then_some(audio);
         }
         _ => return Err("no such stream".into()),
     }
@@ -240,21 +262,11 @@ pub fn endpoints(interface: &str) -> Vec<EndpointConfig> {
     if cfg!(test) {
         return Vec::new();
     }
-    let Some(config) = entities_path().and_then(|path| triib_store::load::<Config>(&path).ok())
-    else {
+    let Ok((_, mut config)) = current(interface) else {
         return Vec::new();
     };
-    if config.interface != interface {
-        return Vec::new();
-    }
-    pinned(config.endpoints)
-}
-
-fn pinned(mut endpoints: Vec<EndpointConfig>) -> Vec<EndpointConfig> {
-    for (place, endpoint) in endpoints.iter_mut().enumerate() {
-        endpoint.instance = Some(endpoint.instance_at(place));
-    }
-    endpoints
+    config.pin_instances();
+    config.endpoints
 }
 
 /// Runs `endpoints` on `interface` in place of the ones there, starting
@@ -264,37 +276,40 @@ pub fn restore(interface: &str, endpoints: &[EndpointConfig]) -> Result<bool, St
     if cfg!(test) {
         return Ok(false);
     }
-    let path = entities_path().ok_or("no data folder")?;
-    let running = triib_endpointd::status::read().is_some();
-    let now = triib_store::load::<Config>(&path).ok();
-    let same = now.as_ref().is_some_and(|config| {
-        config.interface == interface && pinned(config.endpoints.clone()) == endpoints
-    });
+    let running = status::read(interface).is_some();
+    let (path, mut config) = current(interface)?;
+    let on_file = config::load(&path).is_ok();
+    let mut now = config.clone();
+    now.pin_instances();
+    let same = on_file && now.endpoints == endpoints;
     if !same {
-        let (path, mut config) = load(interface)?;
         config.endpoints = endpoints.to_vec();
         save(&path, &config)?;
     }
-    ensure_running()?;
+    if endpoints.is_empty() {
+        disable(interface);
+        return Ok(false);
+    }
+    ensure_running(interface)?;
     Ok(!same || !running)
 }
 
-/// The interface this user's endpoints would run on, when another
-/// user's or root's daemon holds it: a daemon of this user's would be
-/// turned away.
+/// The interface shown, when another person's or root's daemon holds it
+/// and this person lists entities there: a daemon of this person's would
+/// be turned away.
 pub fn elsewhere() -> Option<String> {
-    let interface = triib_store::load::<Config>(&entities_path()?)
-        .ok()?
-        .interface;
-    (!interface.is_empty() && triib_endpointd::status::interface_claimed(&interface))
-        .then_some(interface)
+    let interface = shown()?;
+    (status::read(&interface).is_none()
+        && status::interface_claimed(&interface)
+        && !endpoints(&interface).is_empty())
+    .then_some(interface)
 }
 
-/// Starts triib-endpointd, from beside triib, unless it runs already, was
-/// started a moment ago and has not said so yet, or another user's holds
-/// the interface.
-pub fn ensure_running() -> Result<(), String> {
-    if triib_endpointd::status::read().is_some() || elsewhere().is_some() {
+/// Starts the daemon's unit on `interface`, enabled so that it starts
+/// with the desktop after, unless it runs already, was started a moment
+/// ago and has not said so yet, or another person's holds the interface.
+pub fn ensure_running(interface: &str) -> Result<(), String> {
+    if status::read(interface).is_some() || status::interface_claimed(interface) {
         return Ok(());
     }
     let mut starts = STARTS.lock().unwrap_or_else(PoisonError::into_inner);
@@ -303,7 +318,7 @@ pub fn ensure_running() -> Result<(), String> {
     }
     starts.at = Some(Instant::now());
     drop(starts);
-    start()
+    start(interface)
 }
 
 /// Keeps this computer's entities on `interface` running while the app
@@ -315,93 +330,92 @@ pub fn keep_running(interface: Option<&str>) {
     }
 }
 
-/// Starts triib-endpointd where it does not run and entities are listed
-/// for the interface the app keeps: as triib opens, and whenever it stops
-/// while triib runs, as after a crash. Starts that do not last wait
-/// longer each time.
+/// Starts the daemon's unit where it does not run and entities are listed
+/// for the interface the app keeps: as triib opens, as for entities
+/// listed before the unit was enabled, and should it have stopped. Starts
+/// that do not last wait longer each time.
 pub fn bring_back() {
     let Some(interface) = KEPT.lock().unwrap_or_else(PoisonError::into_inner).clone() else {
         return;
     };
-    if triib_endpointd::status::read().is_some() || elsewhere().is_some() {
-        return;
-    }
-    if endpoints(&interface).is_empty() {
-        return;
-    }
     let mut starts = STARTS.lock().unwrap_or_else(PoisonError::into_inner);
+    if status::read(&interface).is_some() {
+        starts.wait = STARTING;
+        return;
+    }
+    if status::interface_claimed(&interface) || endpoints(&interface).is_empty() {
+        return;
+    }
     if starts.at.is_some_and(|at| at.elapsed() < starts.wait) {
         return;
     }
+    // A start before this one that never came to run.
+    if starts.at.is_some() {
+        starts.wait = (starts.wait * 2).min(LONGEST_WAIT);
+    }
     starts.at = Some(Instant::now());
     drop(starts);
-    eprintln!("triib: triib-endpointd does not run; starting it");
-    if let Err(error) = start() {
-        eprintln!("triib: could not start triib-endpointd: {error}");
+    eprintln!("triib: avb-endpointd does not run on {interface}; starting it");
+    if let Err(error) = start(&interface) {
+        eprintln!("triib: could not start avb-endpointd on {interface}: {error}");
     }
 }
 
-#[cfg(unix)]
-fn start() -> Result<(), String> {
-    use std::os::unix::process::CommandExt;
-    use std::process::{Command, Stdio};
-
-    // Beside triib, else wherever the PATH finds it.
-    let program = std::env::current_exe()
-        .map(|path| path.with_file_name("triib-endpointd"))
-        .ok()
-        .filter(|path| path.exists())
-        .unwrap_or_else(|| "triib-endpointd".into());
-    // The last run's log is kept beside the new one, for why it stopped.
-    let log = triib_store::paths::state_dir()
-        .map(|dir| {
-            let _ = std::fs::create_dir_all(&dir);
-            let path = dir.join("endpointd.log");
-            let _ = std::fs::rename(&path, dir.join("endpointd.log.1"));
-            path
-        })
-        .and_then(|path| std::fs::File::create(path).ok());
-    let (out, error) = match log {
-        Some(file) => match file.try_clone() {
-            Ok(copy) => (Stdio::from(file), Stdio::from(copy)),
-            Err(_) => (Stdio::null(), Stdio::null()),
-        },
-        None => (Stdio::null(), Stdio::null()),
-    };
-    let mut command = Command::new(program);
-    if let Some(file) = entities_path() {
-        command.arg("--config").arg(file);
+/// The daemon's unit on `interface`, which must be named as it is: what
+/// Linux allows in an interface name, less what a unit name would need
+/// escaped.
+fn unit(interface: &str) -> Result<String, String> {
+    let nameable = !interface.is_empty()
+        && interface
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | '-'));
+    if nameable {
+        Ok(format!("avb-endpointd@{interface}.service"))
+    } else {
+        Err(format!("{interface} cannot name a unit"))
     }
-    let mut child = command
-        .stdin(Stdio::null())
-        .stdout(out)
-        .stderr(error)
-        // Its own process group, so it outlives the app.
-        .process_group(0)
-        .spawn()
+}
+
+/// Runs `systemctl --user` with `arguments` for `unit`.
+#[cfg(target_os = "linux")]
+fn user_systemctl(arguments: &[&str], unit: &str) -> Result<(), String> {
+    let output = std::process::Command::new("systemctl")
+        .arg("--user")
+        .args(arguments)
+        .arg(unit)
+        .stdin(std::process::Stdio::null())
+        .output()
         .map_err(|error| error.to_string())?;
-    // Collected as it ends while the app runs, as the app is its parent
-    // until then: else it would linger as a zombie, its process still
-    // there to look at. How long it ran says how long to wait before
-    // starting it again.
-    let started = Instant::now();
-    let _ = std::thread::Builder::new()
-        .name("endpointd".into())
-        .spawn(move || {
-            let _ = child.wait();
-            let mut starts = STARTS.lock().unwrap_or_else(PoisonError::into_inner);
-            starts.wait = if started.elapsed() < LASTING {
-                (starts.wait * 2).min(LONGEST_WAIT)
-            } else {
-                STARTING
-            };
-        });
-    Ok(())
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(String::from_utf8_lossy(&output.stderr).trim().to_owned())
+    }
 }
 
-#[cfg(not(unix))]
-fn start() -> Result<(), String> {
+/// Starts the daemon's unit on `interface`, enabled, after clearing a
+/// failure that would keep systemd from starting it.
+#[cfg(target_os = "linux")]
+fn start(interface: &str) -> Result<(), String> {
+    let unit = unit(interface)?;
+    let _ = user_systemctl(&["reset-failed"], &unit);
+    user_systemctl(&["enable", "--now"], &unit)
+}
+
+#[cfg(not(target_os = "linux"))]
+fn start(_interface: &str) -> Result<(), String> {
     Err("not on this system".into())
+}
+
+/// Keeps the daemon's unit on `interface` from starting with the desktop,
+/// as with no entities listed it has nothing to do.
+fn disable(interface: &str) {
+    #[cfg(target_os = "linux")]
+    if let Ok(unit) = unit(interface) {
+        let _ = user_systemctl(&["disable"], &unit);
+    }
+    #[cfg(not(target_os = "linux"))]
+    let _ = interface;
 }
 
 /// What the daemon says of the endpoint whose entity is `entity_id`.
@@ -411,4 +425,18 @@ pub fn status_of(status: Option<&DaemonStatus>, entity_id: EntityId) -> Option<&
         .endpoints
         .iter()
         .find(|endpoint| endpoint.entity_id == id)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_unit_is_named_for_the_interface() {
+        assert_eq!(unit("enp2s0").unwrap(), "avb-endpointd@enp2s0.service");
+        assert_eq!(unit("br-lan.2").unwrap(), "avb-endpointd@br-lan.2.service");
+        assert!(unit("").is_err());
+        assert!(unit("../x").is_err());
+        assert!(unit("a b").is_err());
+    }
 }

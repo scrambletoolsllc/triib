@@ -91,9 +91,9 @@ pub struct Triib {
     /// Why this computer cannot listen for the bridge's gPTP messages,
     /// when it cannot.
     pub cannot_listen: Option<String>,
-    /// What triib-endpointd says this computer's entities are doing, while
+    /// What avb-endpointd says this computer's entities are doing, while
     /// it runs.
-    pub endpoints: Option<triib_endpointd::status::DaemonStatus>,
+    pub endpoints: Option<avb_endpointd::status::DaemonStatus>,
     /// Whether macOS runs AVB on the interface, giving the Mac an entity
     /// of its own; `None` off macOS.
     pub avb_enabled: Option<bool>,
@@ -117,12 +117,12 @@ pub struct Triib {
     /// The listening helper while listening, and what it last said.
     monitor: Option<crate::monitor::Supervisor>,
     pub monitor_status: crate::monitor::Status,
-    /// The interface another user's or root's triib-endpointd holds.
+    /// The interface another person's or root's avb-endpointd holds.
     pub endpoints_elsewhere: Option<String>,
     /// This computer's entities added this session that triib has yet to
     /// hear.
     pub starting: Vec<crate::host::Starting>,
-    /// triib-endpointd was started this session for the host entities
+    /// avb-endpointd was started this session for the host entities
     /// listed, as triib opened.
     /// The audio devices' names: inputs, then outputs.
     pub audio_devices: (Vec<String>, Vec<String>),
@@ -144,8 +144,8 @@ pub struct Triib {
     pub matrix_filters_open: bool,
     /// Each storage place as typed in Settings, not yet applied, and why
     /// the one given could not be used.
-    pub storage_drafts: [String; 2],
-    pub storage_errors: [Option<String>; 2],
+    pub storage_drafts: [String; 1],
+    pub storage_errors: [Option<String>; 1],
     /// On a narrow window, the network view shows its list instead of the map.
     pub network_list: bool,
     /// The name being edited in the inspector, and its text so far.
@@ -345,10 +345,7 @@ pub enum Message {
     AnimationsEnabled(Option<bool>),
     External(External),
     /// A new reading of the meters, or none, and who measured it.
-    Meters(
-        crate::meters::Origin,
-        Option<triib_endpointd::meters::Meters>,
-    ),
+    Meters(crate::meters::Origin, Option<avb_endpointd::meters::Meters>),
     /// The user answered whether the agent asking may control triib.
     AgentAnswered(bool),
     /// The agent's prompt takes answers now.
@@ -464,8 +461,8 @@ impl Triib {
 
     pub fn boot(omarchy_dir: Option<PathBuf>) -> (Self, Task<Message>) {
         let (settings, settings_error) = Settings::load();
-        triib_endpointd::config::move_endpoints_file();
-        crate::host::set_entities_file(Some(settings.entities_file.clone()));
+        crate::host::set_old_file(settings.entities_file.clone());
+        crate::host::stop_old_daemon();
         crate::presets::set_folder(settings.presets_folder.clone());
         crate::i18n::set_language(settings.chosen_language());
         let mut triib = Self {
@@ -693,7 +690,7 @@ impl Triib {
     }
 
     /// Whether `entity_id` is one of this computer's own entities: one
-    /// triib-endpointd runs, or on a Mac the Mac's own.
+    /// avb-endpointd runs, or on a Mac the Mac's own.
     pub fn is_this_computers(&self, entity_id: EntityId) -> bool {
         // Until the daemon's status names it, as it does a moment after the
         // entity advertises: one of its models, from this computer's
@@ -702,7 +699,7 @@ impl Triib {
             || self.entities.get(&entity_id).is_some_and(|entity| {
                 self.interface()
                     .is_some_and(|interface| interface.mac == entity.mac)
-                    && triib_endpointd::runtime::is_device_model(entity.adp.entity_model_id)
+                    && avb_endpointd::is_device_model(entity.adp.entity_model_id)
             })
             || self.is_this_mac(entity_id)
     }
@@ -782,14 +779,6 @@ impl Triib {
                     self.presets = crate::presets::load_all();
                     self.settings.presets_folder = path;
                 }
-                Storage::Entities => {
-                    if let Err(problem) = crate::host::move_entities(Some(path.clone())) {
-                        crate::host::set_entities_file(Some(self.settings.entities_file.clone()));
-                        self.storage_errors[storage.index()] = Some(problem);
-                        return;
-                    }
-                    self.settings.entities_file = path;
-                }
             }
             self.save_settings();
         }
@@ -811,14 +800,14 @@ impl Triib {
             + 1;
         let name = crate::fl!("host-new-entity", number = count);
         let result = crate::host::add(&interface, name.clone()).and_then(|instance| {
-            crate::host::ensure_running()?;
+            crate::host::ensure_running(&interface)?;
             Ok(instance)
         });
         match result {
             // Listed at once, starting, until triib hears it.
             Ok(instance) => self.starting.push(crate::host::Starting {
                 interface,
-                entity_id: triib_endpointd::runtime::entity_id(mac, instance),
+                entity_id: avb_endpointd::entity_id(mac, instance),
                 name,
             }),
             Err(error) => self.notice = Some(crate::fl!("host-failed", reason = error)),
@@ -867,6 +856,7 @@ impl Triib {
             .filter(|_| self.hosts_endpoints())
             .map(|interface| interface.name.as_str());
         crate::host::keep_running(kept);
+        crate::host::show(self.interface().map(|interface| interface.name.as_str()));
         let shown = self.shown();
         if shown != self.watched {
             if let Some(network) = &self.network {
@@ -1352,7 +1342,7 @@ impl Triib {
                 // show once the device has it: the next index its way.
                 if let crate::host::StreamChange::Add { direction, .. } = &change {
                     self.add_stream_open = false;
-                    let input = *direction == triib_endpointd::config::Direction::In;
+                    let input = *direction == avb_endpointd::config::Direction::In;
                     let next = self
                         .models
                         .get(&entity_id)
@@ -1700,7 +1690,7 @@ impl Triib {
     }
 
     /// This computer's entities starting, which the entity list shows as
-    /// such: on the interface shown, unless another user's triib-endpointd
+    /// such: on the interface shown, unless another person's avb-endpointd
     /// holds it, and that the search finds, by name.
     pub fn starting_entities(&self) -> impl Iterator<Item = &crate::host::Starting> {
         let search = self.search_text();

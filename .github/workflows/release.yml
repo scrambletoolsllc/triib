@@ -20,13 +20,16 @@ env:
   # gptpd's release, whose Debian and RPM packages this release carries
   # too, as no distribution has gptpd.
   GPTPD_VERSION: 0.1.0
+  # avb-endpointd's release, from the avb crates, which runs host entities
+  # and goes in triib's Linux packages until it has its own.
+  AVB_ENDPOINTD_VERSION: 0.1.0
 
 jobs:
   linux:
     # Built on an older system so the packages run on newer ones too:
     # Ubuntu 24.04, as PipeWire's Rust bindings need its headers, so the
     # packages need glibc 2.39. The
-    # Debian and RPM packages grant triib-netraw, which opens the others'
+    # Debian and RPM packages grant avb-netraw, which opens the others'
     # raw sockets, CAP_NET_RAW as they install; a plain archive cannot, so
     # it says how in the README. No AppImage or Flatpak, which cannot carry
     # the capability. GitHub has
@@ -49,6 +52,11 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: scrambletools/avb
+          ref: avb-endpointd-v${{ env.AVB_ENDPOINTD_VERSION }}
+          path: avb
       - name: Install ALSA's and PipeWire's headers for audio
         if: ${{ !matrix.target }}
         run: |
@@ -63,6 +71,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.arch }}
+          workspaces: |
+            . -> target
+            avb -> target
       - name: Version
         id: version
         run: |
@@ -78,11 +89,15 @@ jobs:
         id: build
         run: |
           if [ -n "$TARGET" ]; then
-            cargo build --release --locked -p triib -p triib-cli -p triib-endpointd -p triib-netraw --target "$TARGET"
+            cargo build --release --locked -p triib -p triib-cli --target "$TARGET"
+            (cd avb && cargo build --release --locked -p avb-endpointd --features daemon -p avb-netraw --target "$TARGET")
             echo "binaries=target/$TARGET/release" >>"$GITHUB_OUTPUT"
+            echo "avb=avb/target/$TARGET/release" >>"$GITHUB_OUTPUT"
           else
-            cargo build --release --locked -p triib -p triib-cli -p triib-endpointd -p triib-netraw
+            cargo build --release --locked -p triib -p triib-cli
+            (cd avb && cargo build --release --locked -p avb-endpointd --features daemon -p avb-netraw)
             echo "binaries=target/release" >>"$GITHUB_OUTPUT"
+            echo "avb=avb/target/release" >>"$GITHUB_OUTPUT"
           fi
         env:
           TRIIB_PRODUCTION: '1'
@@ -91,13 +106,16 @@ jobs:
         run: |
           run=""
           [ -n "$TARGET" ] && run="qemu-${{ matrix.arch }}-static -L /"
-          for program in triib triib-cli triib-endpointd; do
+          for program in triib triib-cli; do
             $run ${{ steps.build.outputs.binaries }}/$program --version
           done
+          $run ${{ steps.build.outputs.avb }}/avb-endpointd --version
         env:
           TARGET: ${{ matrix.target }}
       - name: Stage
-        run: scripts/dist-install.sh ${{ steps.build.outputs.binaries }} stage /usr
+        run: |
+          scripts/dist-install.sh ${{ steps.build.outputs.binaries }} stage /usr
+          avb/scripts/dist-install.sh ${{ steps.build.outputs.avb }} stage /usr
       - name: Debian and RPM packages
         run: |
           curl -sSLf -o nfpm.deb \
@@ -395,6 +413,11 @@ jobs:
           gptpd=$(sed -n 's/^_gptpd=//p' packaging/arch/triib/PKGBUILD)
           if [ "$gptpd" != "$GPTPD_VERSION" ]; then
             echo "The PKGBUILD builds gptpd $gptpd, not GPTPD_VERSION $GPTPD_VERSION" >&2
+            exit 1
+          fi
+          endpointd=$(sed -n 's/^_avb_endpointd=//p' packaging/arch/triib/PKGBUILD)
+          if [ "$endpointd" != "$AVB_ENDPOINTD_VERSION" ]; then
+            echo "The PKGBUILD builds avb-endpointd $endpointd, not AVB_ENDPOINTD_VERSION $AVB_ENDPOINTD_VERSION" >&2
             exit 1
           fi
           git archive --prefix="triib-$pkgver/" -o "triib-$pkgver.tar.gz" HEAD

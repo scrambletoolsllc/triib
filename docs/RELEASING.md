@@ -9,8 +9,8 @@ Everything a release ships is built from this repository:
 | `data/icons/triib-icon.svg` | The app icon, which `scripts/make-icons.sh` renders into `data/icons/hicolor/` (which every package picks up), `data/icons/triib-1024.png` for macOS and `packaging/windows/triib.ico` |
 | `packaging/licenses/` | The licenses of the fonts triib carries, from scramble-ui |
 | `scripts/cross-setup.sh` | Sets up an x86_64 Ubuntu to cross-compile for RISC-V |
-| `scripts/dist-install.sh` | Installs a build of triib, triib-cli and triib-endpointd and the files above into a system layout; the Linux packages use it |
-| `packaging/nfpm.yaml`, `packaging/linux/postinstall.sh` | Debian and RPM packages, made with nfpm, which grant `triib-netraw` `CAP_NET_RAW` as they install and run `packaging/linux/endpoint-check` |
+| `scripts/dist-install.sh` | Installs a build of triib and triib-cli and the files above into a system layout; the Linux packages use it, with the avb repository's own `scripts/dist-install.sh` for avb-endpointd |
+| `packaging/nfpm.yaml`, `packaging/linux/postinstall.sh` | Debian and RPM packages, made with nfpm, which grant `avb-netraw` `CAP_NET_RAW` as they install and run `packaging/linux/endpoint-check` |
 | `packaging/arch/triib/` | AUR package, whose install script does the same |
 | `packaging/windows/` | Windows MSI (WiX 5) and zip, made by `build.ps1` |
 | `packaging/macos/` | triib.app and its installer package, made by `bundle.sh --pkg` around `distribution.xml`, signed and notarized as [macOS signing](#macos-signing) says, with the capture access helper |
@@ -36,29 +36,35 @@ Builds without it are development builds, which keep their own.
 triib sends and receives raw Ethernet, which each system guards:
 
 - **Linux:** the `CAP_NET_RAW` capability, held only by
-  `/usr/lib/triib/triib-netraw`, which opens raw sockets for `triib`,
-  `triib-cli` and `triib-endpointd`. The .deb, .rpm and AUR packages set
-  it when they install (`setcap`, from libcap). The tarball cannot; after
-  unpacking, run `sudo setcap cap_net_raw+ep` on
-  `usr/lib/triib/triib-netraw`. There is no AppImage or Flatpak, as neither can
-  carry the capability. The packages depend on ALSA's and PipeWire's
-  libraries for audio, PipeWire's for the virtual audio devices of this
-  computer's streams, on RealtimeKit for the stream threads' realtime
-  priority and on ethtool and iproute2 (iproute on Fedora) for
-  `triib-link@`, and recommend gptpd, which runs gPTP for the host
-  entities. No distribution carries gptpd, so its
-  own Debian and RPM packages come with the releases, and apt and dnf
-  skip the Recommends without a word where it is not installed. makepkg
-  can't install a dependency no repository has, so the PKGBUILD builds
-  gptpd into the Arch package, which provides gptpd and conflicts with
-  its own package.
-  triib-endpointd reads the grandmaster's time from gptpd's time file in
-  /run/gptpd, which everyone can read. As they install, the packages say
-  when no wired interface has a PTP hardware clock, which using this
-  computer as an AVB endpoint requires, with the Ethernet cards that have
-  one and that no Wi-Fi card can serve yet. They also say what installing
-  changes on the system and why: the capability, RealtimeKit, the link
-  units and their polkit rule, and on Arch gptpd's unit, group and rule.
+  `/usr/lib/avb-endpointd/avb-netraw`, which opens raw sockets for
+  `triib`, `triib-cli` and `avb-endpointd`. The .deb, .rpm and AUR
+  packages set it when they install (`setcap`, from libcap). The tarball
+  cannot; after unpacking, run `sudo setcap cap_net_raw+ep` on
+  `usr/lib/avb-endpointd/avb-netraw`. There is no AppImage or Flatpak,
+  as neither can carry the capability. The packages depend on ALSA's and
+  PipeWire's libraries for audio, PipeWire's for the virtual audio
+  devices of this computer's streams, on RealtimeKit for the stream
+  threads' realtime priority and on ethtool and iproute2 (iproute on
+  Fedora) for `avb-link@`, and recommend gptpd, which runs gPTP for the
+  host entities. They carry avb-endpointd, which runs the host entities,
+  from the avb repository's release that `AVB_ENDPOINTD_VERSION` in the
+  release workflow and `_avb_endpointd` in the PKGBUILD name, built
+  beside triib: the daemon, `avb-netraw`, the person's
+  `avb-endpointd@.service`, the link units and their polkit rule. Each
+  package provides avb-endpointd and conflicts with its own package,
+  which replaces it once there is one. No distribution carries gptpd, so
+  its own Debian and RPM packages come with the releases, and apt and
+  dnf skip the Recommends without a word where it is not installed.
+  makepkg can't install a dependency no repository has, so the PKGBUILD
+  builds gptpd into the Arch package, which provides gptpd and conflicts
+  with its own package. avb-endpointd reads the grandmaster's time from
+  gptpd's time file in /run/gptpd, which everyone can read. As they
+  install, the packages say when no wired interface has a PTP hardware
+  clock, which using this computer as an AVB endpoint requires, with the
+  Ethernet cards that have one and that no Wi-Fi card can serve yet.
+  They also say what installing changes on the system and why: the
+  capability, avb-endpointd's user service, RealtimeKit, the link units
+  and their polkit rule, and on Arch gptpd's unit, group and rule.
 - **macOS:** read and write access to the BPF devices, `/dev/bpf*`,
   which are root's alone at every start. The installer package puts
   `triib.app` in /Applications, links `triib-cli` into /usr/local/bin,

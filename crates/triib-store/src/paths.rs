@@ -80,7 +80,7 @@ pub fn cache_dir() -> Option<PathBuf> {
     }
 }
 
-/// Sockets between the app and `triib-endpointd`. macOS has no runtime
+/// The app's control socket. macOS has no runtime
 /// folder; there it is under `$TMPDIR`, which macOS gives each user.
 pub fn runtime_dir() -> Option<PathBuf> {
     env::var_os("XDG_RUNTIME_DIR")

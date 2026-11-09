@@ -56,10 +56,10 @@ pub enum External {
     OmarchyThemeChanged,
     Interfaces(Vec<avb_net::Interface>),
     Network(network::Report),
-    /// What triib-endpointd says it is doing, or `None` when it is not
+    /// What avb-endpointd says it is doing, or `None` when it is not
     /// running.
-    Endpoints(Option<triib_endpointd::status::DaemonStatus>),
-    /// The interface another user's or root's triib-endpointd holds, the
+    Endpoints(Option<avb_endpointd::status::DaemonStatus>),
+    /// The interface another person's or root's avb-endpointd holds, the
     /// one this user's endpoints would run on.
     EndpointsElsewhere(Option<String>),
     /// The audio devices' names: inputs, then outputs.
@@ -186,12 +186,19 @@ fn update(triib: &mut app::Triib, message: app::Message) -> iced::Task<app::Mess
     task
 }
 
-/// Has raw sockets come from triib-netraw, the one file granted
-/// CAP_NET_RAW, once it starts: tried at launch, and again each time the
+/// Has raw sockets come from avb-netraw, the one file granted
+/// CAP_NET_RAW, or from triib-netraw where an older triib left only that,
+/// once it starts: tried at launch, and again each time the
 /// network is, as after the capability is granted.
 #[cfg(target_os = "linux")]
 pub fn use_netraw() {
-    let _ = avb_net::broker::use_helper("triib-netraw", &[std::path::Path::new("/usr/lib/triib")]);
+    let _ = avb_net::broker::use_helper(
+        "avb-netraw",
+        &[std::path::Path::new("/usr/lib/avb-endpointd")],
+    )
+    .or_else(|_| {
+        avb_net::broker::use_helper("triib-netraw", &[std::path::Path::new("/usr/lib/triib")])
+    });
 }
 
 /// Asks wgpu for Vulkan alone, unless WGPU_BACKEND names others. Without
@@ -250,7 +257,7 @@ fn watch_interfaces() {
         });
 }
 
-/// Posts what triib-endpointd says whenever it changes, and the audio
+/// Posts what avb-endpointd says whenever it changes, and the audio
 /// devices now and then.
 /// Looks for audio devices every few seconds where the endpoints'
 /// watcher does not, for listening.
@@ -280,7 +287,7 @@ fn watch_endpoints() {
             let mut turn = 0u64;
             loop {
                 turn += 1;
-                let now = triib_endpointd::status::read();
+                let now = host::status();
                 let recalling = host::RECALLING.load(std::sync::atomic::Ordering::Relaxed);
                 // Without a daemon of this user's, whether another holds
                 // the interface its endpoints would run on.

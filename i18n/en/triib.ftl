@@ -60,21 +60,13 @@ settings-allowed-agents = Allowed: { $agents }
 settings-forget-agents = Forget
 settings-storage = Storage
 settings-storage-presets = Presets folder
-settings-storage-entities = Entities file
 settings-storage-apply = Apply
 settings-storage-choose = Choose…
 # $file is where triib keeps its settings.
 settings-storage-note = Presets already kept at an old place stay there; move them over to keep using them. triib's settings are saved in { $file }.
-# Under the storage note where this computer runs entities of its own.
-settings-storage-entities-note = An entities file not there yet starts as a copy of the one in use, and triib-endpointd starts again on it.
-# Under the entities file while it is changed and a program sharing
-# triib-endpointd cannot take its reservations over. plaa is another app.
-settings-storage-entities-cut-off = Applying starts triib-endpointd again, and an older plaa or another program sharing it would lose its streams for about 15 seconds.
 dialog-choose-presets = Choose the presets folder
-dialog-choose-entities = Choose the folder for the entities file
 settings-full-path = Use a full path, such as ~/Documents/triib.
 # $path is a folder or file as typed or chosen.
-settings-path-is-folder = { $path } is a folder, not a file.
 settings-folder-missing = There is no folder { $path }. Create it first, or choose one.
 settings-path-is-file = { $path } is a file, not a folder.
 # $error is the system's reason.
@@ -1048,7 +1040,7 @@ host-failed = Could not add it to this computer: { $reason }
 host-needs-clock = This computer's own entities need a wired interface with a PTP hardware clock
 host-gptpd-silent = gptpd does not answer, so this computer's streams cannot keep gPTP time
 # What one of this computer's entities, just added, waits on before triib
-# hears it on the network, and what triib-endpointd is setting up. gptpd
+# hears it on the network, and what avb-endpointd is setting up. gptpd
 # and ptp4l are programs; keep their names as written.
 host-starting = Starting
 host-starting-entity = Starting { $name }
@@ -1058,16 +1050,13 @@ host-starting-gptpd = Starting gptpd
 host-no-gptpd = gptpd is not installed, so this computer's streams cannot keep gPTP time. Install gptpd, from triib's or plaa's releases.
 host-gptpd-refused = Another PTP program, such as a ptp4l run by hand, runs on { $interface }, so gptpd will not start
 host-waiting-network = Waiting for the network
-# Another user's triib-endpointd, or root's, runs this computer's entities
+# Another user's avb-endpointd, or root's, runs this computer's entities
 # on the interface; this user's cannot run beside it.
-host-elsewhere = triib-endpointd runs on { $interface } for another user or as root, so this computer's entities run there, not here
+host-elsewhere = avb-endpointd runs on { $interface } for another user or as root, so this computer's entities run there, not here
 # MSRP and MVRP are protocols that reserve bandwidth and VLANs; keep them as
 # written. Another program on this computer runs them on the same port.
 host-foreign-mrp = Another program declares MSRP or MVRP on { $interface } from this computer's address, which can withdraw what this computer's streams need
 host-alarm-foreign-mrp = Another program on this computer declares MSRP or MVRP on { $interface }
-# Adding or changing an entity on another interface than the one
-# triib-endpointd runs on moves it there. plaa is another app; keep its name.
-host-sharers-cut-off = Adding or changing this computer's entities here moves them off { $interface }, where an older plaa or another program sharing triib-endpointd would lose its streams for about 15 seconds
 host-state = State
 host-streaming = Streaming
 host-waiting = Waiting for a listener

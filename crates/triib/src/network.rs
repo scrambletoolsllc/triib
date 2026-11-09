@@ -230,7 +230,7 @@ pub enum Remedy {
 
 impl Failure {
     fn from_io(error: &io::Error) -> Self {
-        // On Linux the helper holding the capability, triib-netraw.
+        // On Linux the helper holding the capability, avb-netraw.
         let program = || {
             #[cfg(target_os = "linux")]
             let program = avb_net::broker::needs_capability();

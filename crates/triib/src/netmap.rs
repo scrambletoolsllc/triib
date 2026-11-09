@@ -758,7 +758,7 @@ fn topology_of(triib: &Triib) -> Topology {
             .flat_map(|report| &report.interfaces)
             .any(|interface| interface.clock == clock)
     };
-    // Its clock, as gptpd runs it on the interface, from triib-endpointd.
+    // Its clock, as gptpd runs it on the interface, from avb-endpointd.
     let clock = triib
         .endpoints
         .as_ref()
@@ -2556,7 +2556,7 @@ mod tests {
     /// its own entities once one of them is there.
     #[test]
     fn the_map_leaves_out_controllers_and_a_redundant_host() {
-        use triib_endpointd::status::{DaemonStatus, EndpointStatus};
+        use avb_endpointd::status::{DaemonStatus, EndpointStatus};
 
         let (entities, models) = crate::view::tests::bench();
         let interface = avb_net::Interface {

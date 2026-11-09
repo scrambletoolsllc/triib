@@ -10,7 +10,7 @@ pub use portal::*;
 pub use native::*;
 
 /// On Linux, through the portal: triib holds no capability, its raw
-/// sockets coming from triib-netraw, so the portal answers it.
+/// sockets coming from avb-netraw, so the portal answers it.
 #[cfg(target_os = "linux")]
 mod portal {
     use std::path::PathBuf;

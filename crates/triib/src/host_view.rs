@@ -6,6 +6,8 @@
 use std::fmt;
 
 use atdecc::EntityId;
+use avb_endpointd::config::{Direction, VIRTUAL};
+use avb_endpointd::status::{DaemonStatus, Setup};
 use iced::{Element, Fill};
 use scramble_ui::button::{self, Kind, Size};
 use scramble_ui::dropdown::Entry;
@@ -13,8 +15,6 @@ use scramble_ui::font::{Type, styled};
 use scramble_ui::icon::Icon;
 use scramble_ui::popover::popover;
 use scramble_ui::{component, dir, dropdown, style};
-use triib_endpointd::config::{Direction, VIRTUAL};
-use triib_endpointd::status::{DaemonStatus, Setup};
 
 use crate::app::{Message, Triib};
 use crate::fl;
@@ -81,22 +81,12 @@ pub fn note(triib: &Triib) -> Option<String> {
         .as_ref()
         .filter(|status| status.foreign_mrp)
         .map(|status| status.interface.clone());
-    // Entities changed here move off the interface the daemon runs on,
-    // and it starts again on this one.
-    let moving = triib
-        .endpoints
-        .as_ref()
-        .zip(triib.interface())
-        .filter(|(status, interface)| status.interface != interface.name && status.cut_off() > 0)
-        .map(|(status, _)| status.interface.clone());
     if !triib.hosts_endpoints() {
         Some(fl!("host-needs-clock"))
     } else if let Some(interface) = &triib.endpoints_elsewhere {
         Some(fl!("host-elsewhere", interface = interface.clone()))
     } else if let Some(interface) = foreign {
         Some(fl!("host-foreign-mrp", interface = interface))
-    } else if let Some(interface) = moving {
-        Some(fl!("host-sharers-cut-off", interface = interface))
     } else if let Some(note) = setup_note(triib) {
         Some(note)
     } else if triib

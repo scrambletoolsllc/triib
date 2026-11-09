@@ -13,6 +13,16 @@ use iced::widget::image::Handle;
 /// The longest side of a logo decoded, against images no logo needs.
 const MAX_SIDE: u32 = 1024;
 
+/// The logo this computer's entities carry, as avb-endpointd gives them:
+/// triib's app icon, at 128 pixels.
+#[cfg(test)]
+pub const HOST_LOGO: &[u8] =
+    include_bytes!("../../../data/icons/hicolor/128x128/apps/run.triib.png");
+/// Their vendor's logo: Scramble Tools' square white logo on a black
+/// circle, at 128 pixels.
+#[cfg(test)]
+pub const HOST_VENDOR_LOGO: &[u8] = include_bytes!("../../../data/icons/scramble-vendor.png");
+
 /// Which of an entity's logos.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Logo {
@@ -225,10 +235,7 @@ mod tests {
 
     #[test]
     fn triibs_logos_decode() {
-        for png in [
-            triib_endpointd::runtime::LOGO,
-            triib_endpointd::runtime::VENDOR_LOGO,
-        ] {
+        for png in [crate::logos::HOST_LOGO, crate::logos::HOST_VENDOR_LOGO] {
             let pixels = decode(png).expect("decoded");
             assert_eq!((pixels.width, pixels.height), (128, 128));
             assert_eq!(pixels.rgba.len(), 128 * 128 * 4);
@@ -295,7 +302,7 @@ mod tests {
     /// window's scale.
     #[test]
     fn logos_fit_the_size_they_show_at() {
-        let pixels = decode(triib_endpointd::runtime::LOGO).expect("decoded");
+        let pixels = decode(crate::logos::HOST_LOGO).expect("decoded");
         let fitted = fit(&pixels, 24);
         assert_eq!((fitted.width, fitted.height), (24, 24));
         assert_eq!(fitted.rgba.len(), 24 * 24 * 4);

@@ -37,6 +37,20 @@ mod home_path {
     }
 }
 
+/// A path read with `~` for the home folder, and never written.
+mod old_home_path {
+    use std::path::{Path, PathBuf};
+
+    use serde::{Deserialize, Deserializer};
+
+    pub fn deserialize<'de, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Option<PathBuf>, D::Error> {
+        let text = String::deserialize(deserializer)?;
+        Ok(Some(triib_store::paths::expand_home(Path::new(&text))))
+    }
+}
+
 /// A kind of interface the interface picker can leave out.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InterfaceFilter {
@@ -158,9 +172,15 @@ pub struct Settings {
     /// The folder presets are kept in.
     #[serde(with = "home_path")]
     pub presets_folder: PathBuf,
-    /// The file this computer's entities are listed in.
-    #[serde(with = "home_path")]
-    pub entities_file: PathBuf,
+    /// The file this computer's entities were listed in before
+    /// avb-endpointd ran them, read for an interface without a file of its
+    /// own yet, and no longer written.
+    #[serde(
+        default,
+        deserialize_with = "old_home_path::deserialize",
+        skip_serializing
+    )]
+    pub entities_file: Option<PathBuf>,
     /// What this computer listens to, and through which output.
     pub listen: crate::monitor::Listen,
     /// The entity list leaves out all but this computer's own entities.
@@ -214,7 +234,7 @@ impl Default for Settings {
             hide_wireless_interfaces: false,
             hide_unclocked_interfaces: false,
             presets_folder: default_presets_folder(),
-            entities_file: triib_endpointd::config::path().unwrap_or_default(),
+            entities_file: None,
             listen: crate::monitor::Listen::default(),
             host_entities_only: false,
             hide_controllers: false,

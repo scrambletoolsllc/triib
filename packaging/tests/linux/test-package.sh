@@ -20,7 +20,7 @@ emulated=${TRIIB_TEST_EMULATED:-}
 shots=${TRIIB_TEST_SHOTS:-}
 id=run.triib
 old_id=io.github.scrambletools.triib
-programs=(triib triib-cli triib-endpointd)
+programs=(triib triib-cli avb-endpointd)
 
 section() { printf '\n== %s\n' "$*"; }
 fail() {
@@ -107,17 +107,22 @@ for file in \
     /usr/share/licenses/triib/LICENSE-MIT \
     /usr/share/licenses/triib/LICENSE-APACHE \
     /usr/share/licenses/triib/fonts/OFL.txt \
-    /usr/lib/systemd/system/triib-link@.service \
-    /usr/lib/systemd/system/triib-link-reset@.service \
-    /usr/share/polkit-1/rules.d/50-triib-link.rules; do
+    /usr/lib/systemd/user/avb-endpointd@.service \
+    /usr/lib/systemd/system/avb-link@.service \
+    /usr/lib/systemd/system/avb-link-reset@.service \
+    /usr/share/polkit-1/rules.d/50-avb-link.rules \
+    /usr/share/licenses/avb-endpointd/LICENSE-MIT; do
     [ -f "$file" ] || fail "$file is missing"
 done
 for setting in tx-0/xps_cpus limit_min 'fq flow_limit' set-eee; do
-    grep -q "$setting" /usr/lib/systemd/system/triib-link@.service ||
-        fail "triib-link@.service does not set $setting"
+    grep -q "$setting" /usr/lib/systemd/system/avb-link@.service ||
+        fail "avb-link@.service does not set $setting"
 done
+grep -q '^ExecStart=/usr/bin/avb-endpointd --interface %i$' /usr/lib/systemd/user/avb-endpointd@.service ||
+    fail "avb-endpointd@.service does not run /usr/bin/avb-endpointd"
+/usr/bin/avb-endpointd --version || fail "avb-endpointd does not run"
 # These come in as dependencies: ethtool and iproute2's tc for
-# triib-link@, RealtimeKit for host entities' realtime stream threads.
+# avb-link@, RealtimeKit for host entities' realtime stream threads.
 command -v ethtool >/dev/null || fail "ethtool did not come in with triib"
 command -v tc >/dev/null || fail "tc did not come in with triib"
 [ -f /usr/share/dbus-1/system-services/org.freedesktop.RealtimeKit1.service ] ||
@@ -139,14 +144,20 @@ if [ -n "$previous" ]; then
     old=$(find /usr/lib/systemd/system /usr/share/polkit-1/rules.d -name '*triib-ptp4l*')
     [ -z "$old" ] || fail "upgrading left $old"
     echo "nothing left of the ptp4l units"
+    # Up to 1.3.0 host entities ran in triib-endpointd, with triib's own
+    # helper and link units.
+    old=$(find /usr/bin /usr/lib/triib /usr/lib/systemd/system /usr/share/polkit-1/rules.d \
+        -name 'triib-endpointd' -o -name 'triib-netraw' -o -name 'triib-link*')
+    [ -z "$old" ] || fail "upgrading left $old"
+    echo "nothing left of triib-endpointd"
 fi
 
 # Only the helper holds the capability; the programs get their raw
 # sockets from it.
 section Capabilities
-capabilities=$(getcap /usr/lib/triib/triib-netraw)
+capabilities=$(getcap /usr/lib/avb-endpointd/avb-netraw)
 echo "$capabilities"
-grep -Eq 'cap_net_raw[+=]ep' <<<"$capabilities" || fail "/usr/lib/triib/triib-netraw lacks CAP_NET_RAW"
+grep -Eq 'cap_net_raw[+=]ep' <<<"$capabilities" || fail "/usr/lib/avb-endpointd/avb-netraw lacks CAP_NET_RAW"
 for program in "${programs[@]}"; do
     [ -z "$(getcap "/usr/bin/$program")" ] || fail "/usr/bin/$program holds a capability"
 done
@@ -160,7 +171,7 @@ echo "said so as it installed"
 
 # Installing says what it changes on the system and why.
 section "What installing changes"
-explained=(CAP_NET_RAW RealtimeKit triib-link@.service)
+explained=(CAP_NET_RAW avb-endpointd@.service RealtimeKit avb-link@.service)
 [ "$kind" = arch ] && explained+=(gptpd@.service)
 for said in "${explained[@]}"; do
     grep -q "$said" /tmp/install.log || fail "installing did not explain $said"
@@ -257,9 +268,10 @@ fi
 section Remove
 remove_package
 leftovers=()
-for path in /usr/bin/triib /usr/bin/triib-cli /usr/bin/triib-endpointd /usr/lib/triib \
+for path in /usr/bin/triib /usr/bin/triib-cli /usr/bin/avb-endpointd /usr/lib/triib \
+    /usr/lib/avb-endpointd /usr/lib/systemd/user/avb-endpointd@.service \
     "/usr/share/applications/$id.desktop" "/usr/share/metainfo/$id.metainfo.xml" \
-    /usr/lib/systemd/system/triib-link@.service /usr/share/polkit-1/rules.d/50-triib-link.rules \
+    /usr/lib/systemd/system/avb-link@.service /usr/share/polkit-1/rules.d/50-avb-link.rules \
     /usr/bin/gptpd /usr/lib/systemd/system/gptpd@.service; do
     [ -e "$path" ] && leftovers+=("$path")
 done

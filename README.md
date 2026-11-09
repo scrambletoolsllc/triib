@@ -53,8 +53,8 @@ receive raw Ethernet:
 
 | System | Package | What it sets up |
 |---|---|---|
-| Linux | .deb, .rpm, PKGBUILD | `CAP_NET_RAW` for `/usr/lib/triib/triib-netraw`, which opens raw sockets for `triib`, `triib-cli` and `triib-endpointd` |
-| Linux | .tar.gz | nothing: once it is unpacked into / (`sudo tar -C / -xzf`), run `sudo setcap cap_net_raw+ep /usr/lib/triib/triib-netraw` |
+| Linux | .deb, .rpm, PKGBUILD | `CAP_NET_RAW` for `/usr/lib/avb-endpointd/avb-netraw`, which opens raw sockets for `triib`, `triib-cli` and `avb-endpointd` |
+| Linux | .tar.gz | nothing: once it is unpacked into / (`sudo tar -C / -xzf`), run `sudo setcap cap_net_raw+ep /usr/lib/avb-endpointd/avb-netraw` |
 | macOS (Apple Silicon) | .pkg | access to `/dev/bpf*` for the user installing it, at every start, as Wireshark's ChmodBPF does; `triib-cli` in /usr/local/bin |
 | Windows | .msi, .zip | nothing itself: install [Npcap](https://npcap.com) first, which the installer and triib point to when it is missing |
 
@@ -66,7 +66,7 @@ commands a program writes to BPF; see [the Mac's own entity](#the-macs-own-entit
 ## Host entities
 
 On Linux, the Entities view adds entities running on the local host,
-which `triib-endpointd` runs, on a wired interface with a PTP hardware clock
+which `avb-endpointd` runs, on a wired interface with a PTP hardware clock
 (`ethtool -T <interface>` shows one), as Intel's I210, I225 and I226 and
 Marvell's AQtion AQC107 have; the packages say as they install when no
 interface has one. Installing the package and gptpd is all they take:
@@ -83,8 +83,17 @@ grandmaster capable, with priority1 248 as Milan asks; `priority1` in
 `/etc/gptpd/<interface>.conf` sets it, 255 for never and 246 to be
 preferred. A host entity whose time stands more than a millisecond off
 the last Sync reports itself out of sync, as controllers then show it.
-triib opens with the host entities listed for its interface back on the
-network, starting the daemon. Each is a Milan
+avb-endpointd, from the [avb crates](https://github.com/scrambletools/avb)
+and shared with plaa, runs as the person's `avb-endpointd@<interface>`
+unit, one for each interface, which triib starts and enables as it adds
+an entity there: the entities run from each desktop login after, whether
+triib is open or not, and systemd starts the daemon again should it
+stop. They are listed in `~/.config/avb-endpointd/<interface>.toml`; the
+first daemon on an interface takes the entities an older triib listed
+for it. Until avb-endpointd has packages of its own, triib's Linux
+packages carry it. triib opens with the host entities listed for its
+interface back on the network, starting the daemon where it does not
+run. Each is a Milan
 entity with any number of streams each way, which controllers,
 triib among them, bind like any other. Add entity adds one with an
 audio stream each way, listed at once, greyed, saying what it waits on
@@ -181,10 +190,10 @@ from boot rather than from the daemon's start,
 `systemctl enable --now gptpd@enp2s0`.
 
 AVB Lite also asks for Energy-Efficient Ethernet and PAUSE off the
-interface's link. The `triib-link@<interface>` unit turns them off with
+interface's link. The `avb-link@<interface>` unit turns them off with
 `ethtool`, which the daemon runs where it finds them on, through a polkit
 rule that lets the person at the computer run it, or
-`systemctl enable --now triib-link@enp2s0` runs it at every boot.
+`systemctl enable --now avb-link@enp2s0` runs it at every boot.
 Where a card filters VLANs in hardware, as the I210 does, a stream's
 socket takes the interface promiscuous, as the card would otherwise drop
 every stream frame, tagged with its VLAN. Where
@@ -195,7 +204,7 @@ the daemon runs the unit once more. Some drivers, atlantic's among them
 (Aquantia cards), also keep their time stamps on received PTP frames
 after the link renegotiates, as when a cable goes back in, and gptpd
 can use none of them until the interface goes down and up; the daemon
-sees them and restarts the interface through `triib-link-reset@<interface>`.
+sees them and restarts the interface through `avb-link-reset@<interface>`.
 
 The daemon runs MSRP and MVRP once for the port, for all its entities,
 as MRP runs per port: two participants on one point-to-point port do not
@@ -299,8 +308,10 @@ cargo run -p triib-cli -- wireless-config <interface> <entity-id> <avb-interface
 cargo run -p triib-cli -- transit <interface> <entity-id> <output> [nanoseconds]
 cargo run -p triib-cli -- descriptor <interface> <entity-id> <type:index>
 cargo run -p triib-cli -- harvest <interface> <entity-id> [repeat]
-cargo run -p triib-endpointd -- [--config <entities.toml>] [--interface <interface>]
 ```
+
+The daemon builds in the avb repository:
+`cargo run -p avb-endpointd --features daemon -- --interface <interface>`.
 
 triib uses [scramble-ui](https://github.com/scrambletools/scramble-ui)
 at the revision `Cargo.toml` pins, as prev does. To change both together,
@@ -322,15 +333,17 @@ Once the scramble-ui change is pushed, move the pin to its revision and
 build once without the file, so `Cargo.lock` names the revision again.
 
 On Linux, sending and receiving ATDECC frames needs `CAP_NET_RAW`, which
-only `triib-netraw` holds: it opens the raw sockets for triib, triib-cli
-and triib-endpointd and passes them over, so they hold no capability and
+only `avb-netraw` holds: it opens the raw sockets for triib, triib-cli
+and avb-endpointd and passes them over, so they hold no capability and
 the desktop's portals still answer triib (a program holding one is one
-they may not look into). Build it with the rest and grant it once per
-build:
+they may not look into). The packages install it in
+`/usr/lib/avb-endpointd`; triib also takes an older triib's
+`/usr/lib/triib/triib-netraw`. For a build of your own, build it in the
+avb repository and grant it once per build:
 
 ```
-cargo build -p triib-netraw
-sudo setcap cap_net_raw+ep target/debug/triib-netraw
+cargo build -p avb-netraw
+sudo setcap cap_net_raw+ep target/debug/avb-netraw
 ```
 
 triib, if already running and offering the command, carries on by
@@ -356,16 +369,16 @@ whether raw Ethernet is ready.
 |---|---|
 | `triib` | The app |
 | `triib-cli` | Headless controller |
-| `triib-endpointd` | Runs the host entities |
-| `triib-pipewire` | Virtual audio devices as PipeWire nodes |
 | `triib-store` | Settings and cache files |
 
 The AVB crates live in [scrambletools/avb](https://github.com/scrambletools/avb),
 shared with other apps and taken from crates.io: `atdecc` (IEEE 1722.1
 ATDECC with Milan, frames and state machines, no I/O), `avb-mrp` (MRP,
 MSRP and MVRP, no I/O), `avb-net` (raw Ethernet, interfaces and the PTP
-hardware clock per operating system) and `avb-stream` (AAF and AM824
-streams, the media clock and audio devices). To change them together with
+hardware clock per operating system), `avb-stream` (AAF and AM824
+streams, the media clock and audio devices) and `avb-endpointd` (the
+files triib shares with the daemon that runs host entities). To change
+them together with
 triib, put a checkout beside this one and build with
 `cargo --config .cargo/avb-local.toml build`, a git-ignored file with:
 
@@ -375,6 +388,7 @@ atdecc = { path = "../avb/crates/atdecc" }
 avb-mrp = { path = "../avb/crates/avb-mrp" }
 avb-net = { path = "../avb/crates/avb-net" }
 avb-stream = { path = "../avb/crates/avb-stream" }
+avb-endpointd = { path = "../avb/crates/avb-endpointd" }
 ```
 
 It writes local paths into Cargo.lock, so build once without it before

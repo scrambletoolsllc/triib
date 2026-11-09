@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run as the packages install: says when no interface can carry this
 # computer's own AVB endpoints, a wired one with a PTP hardware clock as
-# triib-endpointd asks, and which cards have one. Silent otherwise.
+# avb-endpointd asks, and which cards have one. Silent otherwise.
 for interface in /sys/class/net/*; do
     [ "$(cat "$interface/type" 2>/dev/null)" = 1 ] || continue
     [ -e "$interface/device" ] || continue

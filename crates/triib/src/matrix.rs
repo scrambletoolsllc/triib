@@ -1172,7 +1172,7 @@ mod tests {
     /// the binding; any other's own cells stay blank.
     #[test]
     fn this_computers_entities_connect_to_themselves() {
-        use triib_endpointd::status::{DaemonStatus, EndpointStatus};
+        use avb_endpointd::status::{DaemonStatus, EndpointStatus};
 
         let (entities, models) = crate::view::tests::bench();
         let interface = avb_net::Interface {

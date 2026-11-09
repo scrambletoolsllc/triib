@@ -546,7 +546,7 @@ mod tests {
     /// heard, raises an alarm on the first of its endpoints triib sees.
     #[test]
     fn another_participant_on_the_port_raises_an_alarm() {
-        use triib_endpointd::status::{DaemonStatus, EndpointStatus};
+        use avb_endpointd::status::{DaemonStatus, EndpointStatus};
         let mut triib = lite_bench(-180, 6_336);
         let endpoint = |entity: EntityId| EndpointStatus {
             entity_id: entity.to_string(),

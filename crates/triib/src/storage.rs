@@ -11,19 +11,14 @@ use crate::settings::Settings;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Storage {
     Presets,
-    /// This computer's entities, which triib-endpointd runs.
-    Entities,
 }
 
 impl Storage {
-    pub const ALL: [Storage; 2] = [Storage::Presets, Storage::Entities];
+    pub const ALL: [Storage; 1] = [Storage::Presets];
 
-    /// Those Settings show: the entities file only where this computer
-    /// runs entities of its own.
+    /// Those Settings show.
     pub fn shown() -> impl Iterator<Item = Storage> {
-        Self::ALL
-            .into_iter()
-            .filter(|storage| *storage != Storage::Entities || crate::host::SUPPORTED)
+        Self::ALL.into_iter()
     }
 
     pub fn index(self) -> usize {
@@ -33,7 +28,6 @@ impl Storage {
     pub fn label(self) -> String {
         match self {
             Storage::Presets => fl!("settings-storage-presets"),
-            Storage::Entities => fl!("settings-storage-entities"),
         }
     }
 
@@ -41,20 +35,13 @@ impl Storage {
     pub fn choose_title(self) -> String {
         match self {
             Storage::Presets => fl!("dialog-choose-presets"),
-            Storage::Entities => fl!("dialog-choose-entities"),
         }
     }
 
     pub fn path(self, settings: &Settings) -> &Path {
         match self {
             Storage::Presets => &settings.presets_folder,
-            Storage::Entities => &settings.entities_file,
         }
-    }
-
-    /// Whether it is a file, kept in a folder, rather than a folder.
-    pub fn is_file(self) -> bool {
-        self == Storage::Entities
     }
 
     /// The folder its dialog starts in: the one it is in now, or the
@@ -62,43 +49,26 @@ impl Storage {
     /// presets before the first is saved, is in hidden folders the dialog
     /// would not show.
     pub fn current_folder(self, settings: &Settings) -> Option<PathBuf> {
-        let path = self.path(settings);
-        let folder = if self.is_file() { path.parent()? } else { path };
-        folder
+        self.path(settings)
             .ancestors()
             .find(|folder| folder.is_dir())
             .map(Path::to_path_buf)
     }
 
     /// The path it takes from `path` as typed or chosen: `~` the home
-    /// folder, and for a file, a folder given its file name.
-    pub fn take(self, settings: &Settings, path: &Path) -> PathBuf {
-        let path = triib_store::paths::expand_home(path);
-        if self.is_file() && path.is_dir() {
-            let name = self
-                .path(settings)
-                .file_name()
-                .unwrap_or(std::ffi::OsStr::new("entities.toml"));
-            return path.join(name);
-        }
-        path
+    /// folder.
+    pub fn take(self, _settings: &Settings, path: &Path) -> PathBuf {
+        triib_store::paths::expand_home(path)
     }
 }
 
 /// Whether triib can keep `storage` at `path`: a full path to a folder
-/// that is there and that it can write in (for a file, a file in one).
-pub fn check(storage: Storage, path: &Path) -> Result<(), String> {
+/// that is there and that it can write in.
+pub fn check(_storage: Storage, path: &Path) -> Result<(), String> {
     if !path.is_absolute() {
         return Err(fl!("settings-full-path"));
     }
-    let folder = if storage.is_file() {
-        if path.is_dir() {
-            return Err(fl!("settings-path-is-folder", path = shown_path(path)));
-        }
-        path.parent().unwrap_or(path)
-    } else {
-        path
-    };
+    let folder = path;
     if !folder.exists() {
         return Err(fl!("settings-folder-missing", path = shown_path(folder)));
     }
@@ -132,13 +102,12 @@ mod tests {
     use super::*;
 
     /// A place is taken once it is a full path to a folder triib can write
-    /// in; a file's folder must be there, and a file is not a folder.
+    /// in; a file is not a folder.
     #[test]
     fn places_are_checked() {
         let dir = std::env::temp_dir().join(format!("triib-storage-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         assert!(check(Storage::Presets, &dir).is_ok());
-        assert!(check(Storage::Entities, &dir.join("entities.toml")).is_ok());
         assert_eq!(
             check(Storage::Presets, Path::new("presets")),
             Err("Use a full path, such as ~/Documents/triib.".to_owned())
@@ -148,11 +117,6 @@ mod tests {
                 .unwrap_err()
                 .starts_with("There is no folder")
         );
-        assert!(
-            check(Storage::Entities, &dir)
-                .unwrap_err()
-                .ends_with("is a folder, not a file.")
-        );
         let file = dir.join("file");
         std::fs::write(&file, b"").unwrap();
         assert!(
@@ -160,21 +124,13 @@ mod tests {
                 .unwrap_err()
                 .ends_with("is a file, not a folder.")
         );
-        // A folder given for the entities file gets its file name.
-        let mut settings = Settings::default();
-        assert_eq!(
-            Storage::Entities.take(&settings, &dir),
-            dir.join("entities.toml")
-        );
         // The dialog starts in the nearest folder there.
-        settings.presets_folder = dir.join("presets/not/yet");
+        let settings = Settings {
+            presets_folder: dir.join("presets/not/yet"),
+            ..Settings::default()
+        };
         assert_eq!(
             Storage::Presets.current_folder(&settings),
-            Some(dir.clone())
-        );
-        settings.entities_file = dir.join("entities.toml");
-        assert_eq!(
-            Storage::Entities.current_folder(&settings),
             Some(dir.clone())
         );
         let _ = std::fs::remove_dir_all(&dir);

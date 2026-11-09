@@ -77,7 +77,7 @@ dependency.
 | PTP | gptpd on Linux, our own 802.1AS daemon from the gptp repository, one per interface and shared with plaa, in gPTP or the AVB Lite PTP profile; it never moves the PHC, and gives the grandmaster's time as a mapping the media clock reads. Elsewhere only where P4 shows a platform needs it |
 | SRP | Our own MRP, MSRP and MVRP in the reusable `avb-mrp` crate; MAAP and AVB Lite's CVU SRP framing in `atdecc`, its attribute lists in `avb-mrp` |
 | Concurrency | No tokio. Network thread per interface with a poll loop and timers; real time threads for streaming and audio; `std::sync::mpsc` into an iced subscription (prev's `External` + `post()` pattern) |
-| Processes | GUI process (controller) and `triib-endpointd` for the host entities, so audio survives GUI restarts; on a Mac, `triib --monitor` for Listen, so a Core Audio call that hangs leaves the app alone |
+| Processes | GUI process (controller) and `avb-endpointd`, the person's `avb-endpointd@<interface>` unit from the avb crates, shared with plaa, for the host entities, so they run with or without triib open; on a Mac, `triib --monitor` for Listen, so a Core Audio call that hangs leaves the app alone |
 | Platform layer | `avb-net`: raw Ethernet frames, interfaces and hardware timestamps per operating system, the only platform code the protocol crates use. Audio (cpal) and the media clock live in `avb-stream` |
 | Settings, cache, presets | TOML settings through `triib-store`; the entity model cache keeps raw descriptor bytes, decoded by `atdecc` on load, so the protocol crates need no serde; TOML presets in the data folder |
 | Interface text | Fluent files under `i18n/`, 38 languages, as prev |
@@ -149,8 +149,6 @@ crates.io, where triib takes them from.
 ```
 crates/
   triib-store     settings and cache files
-  triib-pipewire  virtual audio devices as PipeWire nodes
-  triib-endpointd daemon running the host entities
   triib-cli       headless controller
   triib           the iced app, including the entity store the GUI draws
 ```
@@ -171,8 +169,8 @@ administrators only. The app shows the fix. Host entities are
 offered per interface where it reports a PTP hardware clock and a wired
 link.
 
-On Linux the app, `triib-cli` and `triib-endpointd` hold no capability:
-`triib-netraw`, the one program the packages grant `CAP_NET_RAW`, opens
+On Linux the app, `triib-cli` and `avb-endpointd` hold no capability:
+`avb-netraw`, the one program the packages grant `CAP_NET_RAW`, opens
 their raw sockets and passes them over (`avb_net::broker`), as plaa's
 helper does for it. A program holding a capability is one other programs
 may not look into, so the desktop portal would refuse it dialogs, which
@@ -189,17 +187,17 @@ every program there, plaa too. It never steps or slews the PHC, which
 stamps the Pdelay exchanges the neighbor measures the link with, and
 writes the grandmaster's time against the PHC and CLOCK_MONOTONIC to
 `/run/gptpd/<interface>.time`, which the media clock reads.
-`triib-endpointd` takes each entity's GET_AVB_INFO, GET_AS_PATH and
+`avb-endpointd` takes each entity's GET_AVB_INFO, GET_AS_PATH and
 counters from its status socket, `/run/gptpd/<interface>.sock`, starts
 its unit where none answers, and says when gptpd is not installed or will
 not start beside a ptp4l run by hand. gptpd is grandmaster capable, with
 priority1 248 unless `/etc/gptpd/<interface>.conf` sets 255 (never) or
 246 (preferred). triib's own systemd units:
 
-- `triib-link@<interface>` keeps Energy-Efficient Ethernet and PAUSE off
+- `avb-link@<interface>` keeps Energy-Efficient Ethernet and PAUSE off
   the link, as AVB Lite asks, and sends every frame on the card's first
   transmit queue; the daemon runs it again should they come back.
-- `triib-link-reset@<interface>` takes the interface down and up when the
+- `avb-link-reset@<interface>` takes the interface down and up when the
   daemon sees received PTP frames keep the driver's time stamp, as the
   atlantic driver leaves them after the link renegotiates.
 
@@ -238,9 +236,10 @@ Intel's i210, i225 and i226 are the known choices with launch time.
   `entities.toml` entries and presets read as entities of their one
   stream, named as the entity is. The app calls them entities, as AEM
   does.
-- `triib-endpointd` runs them from `entities.toml`, which the app writes
-  and the daemon reads again when it changes, keeping the names, formats
-  and bindings controllers give.
+- `avb-endpointd` runs them from `<interface>.toml` in
+  `~/.config/avb-endpointd`, which the app writes and the daemon reads
+  again when it changes, keeping the names, formats and bindings
+  controllers give. Until 1.3.0 triib's own `triib-endpointd` ran them.
 - Audio to and from any cpal device, a test tone or nothing. The device's
   clock is not the network's, so the resampler follows its drift, and the
   listener plays each sample at its presentation time, or a fixed delay
@@ -428,7 +427,7 @@ in the access point's beacons, and streamed unicast on the air.
   daemon used: the hidden `TimeSync` setting beside
   `*PtpHardwareTimestamp`, and the private OIDs for the transmit and
   receive stamps and the clock.
-- **Windows, as decided:** no `triib-endpointd`, as its hardware support
+- **Windows, as decided:** no `avb-endpointd`, as its hardware support
   is too weak (2026-10-28). On an I210 in a Windows 11 PC, with Intel's
   driver 31.3 (e1r 14.1.28.0) and with Windows' own 12.19.1.32, the
   private OIDs answer once `TimeSync` is on, but no gPTP frame sent from

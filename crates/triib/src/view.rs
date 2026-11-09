@@ -941,7 +941,7 @@ impl fmt::Display for Transit {
 }
 
 /// A stream output's max transit time, `current` nanoseconds, with a
-/// picker of others; set by SET_MAX_TRANSIT_TIME, through triib-endpointd
+/// picker of others; set by SET_MAX_TRANSIT_TIME, through avb-endpointd
 /// for this computer's, which keeps it.
 fn transit_picker<'a>(triib: &'a Triib, entity: EntityId, output: u16, current: u64) -> Value<'a> {
     let changing = triib
@@ -2418,7 +2418,7 @@ pub(crate) mod tests {
     }
 
     /// One of this computer's entities on the bench's interface, as
-    /// triib-endpointd runs it and a controller reads it: named `name`,
+    /// avb-endpointd runs it and a controller reads it: named `name`,
     /// with audio `outputs` and `inputs` of the formats the bench's ESP
     /// offers.
     fn host_entity(
@@ -2445,7 +2445,7 @@ pub(crate) mod tests {
             channels: esp.current_format.channels().unwrap_or(8),
         };
         let mac = MacAddress(HOST_MAC);
-        let entity_id = triib_endpointd::runtime::entity_id(mac, 0);
+        let entity_id = avb_endpointd::entity_id(mac, 0);
         let model = EndpointModel {
             entity_id,
             entity_model_id: EntityModelId(0x8c1f_6436_c001_0001),
@@ -2465,8 +2465,8 @@ pub(crate) mod tests {
             inputs: inputs.iter().map(stream).collect(),
             clock_source: 0,
             clock_source_inputs: (0..inputs.len() as u16).collect(),
-            logo: Some(triib_endpointd::runtime::LOGO.to_vec()),
-            vendor_logo: Some(triib_endpointd::runtime::VENDOR_LOGO.to_vec()),
+            logo: Some(crate::logos::HOST_LOGO.to_vec()),
+            vendor_logo: Some(crate::logos::HOST_VENDOR_LOGO.to_vec()),
         };
         let mut entity = Entity::new(model, &[]);
         let mut controller = Controller::new(Config::new(EntityId(0x9c6b_00ff_fe30_9a2b)));
@@ -3319,8 +3319,8 @@ pub(crate) mod tests {
                 };
             }
             if host.is_some() {
-                use triib_endpointd::config::Direction;
-                use triib_endpointd::status::{DaemonStatus, EndpointStatus, StreamStatus};
+                use avb_endpointd::config::Direction;
+                use avb_endpointd::status::{DaemonStatus, EndpointStatus, StreamStatus};
                 let stream = |direction, name: &str, state: &str| StreamStatus {
                     direction,
                     clock: false,
@@ -3353,9 +3353,9 @@ pub(crate) mod tests {
                 // at -10.5 dBFS; its input not running.
                 triib.meter_levels.take(
                     crate::meters::Origin::Daemon,
-                    Some(triib_endpointd::meters::Meters {
+                    Some(avb_endpointd::meters::Meters {
                         sequence: 1,
-                        streams: vec![triib_endpointd::meters::StreamMeter {
+                        streams: vec![avb_endpointd::meters::StreamMeter {
                             entity_id: host.map(|id| id.to_string()).unwrap_or_default(),
                             input: false,
                             index: 0,
@@ -3368,11 +3368,11 @@ pub(crate) mod tests {
             if suffix.contains("starting")
                 && let Some(status) = &mut triib.endpoints
             {
-                let entity_id = triib_endpointd::runtime::entity_id(MacAddress(HOST_MAC), 1);
-                status.setup = Some(triib_endpointd::status::Setup::Link);
+                let entity_id = avb_endpointd::entity_id(MacAddress(HOST_MAC), 1);
+                status.setup = Some(avb_endpointd::status::Setup::Link);
                 status
                     .endpoints
-                    .push(triib_endpointd::status::EndpointStatus {
+                    .push(avb_endpointd::status::EndpointStatus {
                         entity_id: entity_id.to_string(),
                         name: "Host entity 2".into(),
                         state: "unbound".into(),
@@ -3701,68 +3701,11 @@ pub(crate) mod tests {
         }
     }
 
-    /// A program sharing triib-endpointd that cannot take its streams over
-    /// is warned of where a change starts the daemon again: this
-    /// computer's entities changed on another interface than its own, and
-    /// the entities file moved.
-    #[test]
-    #[cfg(target_os = "linux")]
-    fn programs_that_cannot_take_their_streams_over_are_warned_of() {
-        use crate::storage::Storage;
-        use triib_endpointd::status::{DaemonStatus, SharerStatus};
-
-        let status = |interface: &str, hands_over| DaemonStatus {
-            pid: 1,
-            started: 0,
-            interface: interface.into(),
-            gptp: "grandmaster 0x0001f2fffeff3b14, asCapable".into(),
-            foreign_mrp: false,
-            config: None,
-            clock: None,
-            setup: None,
-            sharers: vec![SharerStatus {
-                talkers: 1,
-                listening: 1,
-                hands_over,
-            }],
-            endpoints: Vec::new(),
-        };
-        let moving = "Adding or changing this computer's entities here moves them off \
-                      enp2s0, where an older plaa or another program sharing \
-                      triib-endpointd would lose its streams for about 15 seconds";
-        let mut triib = logging(View::Entities, true);
-        triib.settings.log = false;
-        triib.endpoints = Some(status("enp2s0", false));
-        assert_eq!(crate::host_view::note(&triib).as_deref(), Some(moving));
-        // One that takes them over, or changes on the daemon's own
-        // interface, which it makes in place.
-        triib.endpoints = Some(status("enp2s0", true));
-        assert_ne!(crate::host_view::note(&triib).as_deref(), Some(moving));
-        triib.endpoints = Some(status("enp6s0", false));
-        assert_ne!(crate::host_view::note(&triib).as_deref(), Some(moving));
-
-        let applying = "Applying starts triib-endpointd again, and an older plaa or \
-                        another program sharing it would lose its streams for about 15 \
-                        seconds.";
-        triib.settings_open = true;
-        let _ = triib.update(Message::SettingsOpened);
-        triib.settings_tab = crate::settings_view::SettingsTab::Storage;
-        let size = Size::new(1280.0, 1400.0);
-        assert!(simulate(&triib, size).find(applying).is_err());
-        let _ = triib.update(Message::StorageDraft(
-            Storage::Entities,
-            "/elsewhere/entities.toml".into(),
-        ));
-        assert!(simulate(&triib, size).find(applying).is_ok());
-        triib.endpoints = Some(status("enp6s0", true));
-        assert!(simulate(&triib, size).find(applying).is_err());
-    }
-
     #[test]
     #[cfg(target_os = "linux")]
     fn this_computers_endpoints_are_added_and_shown_as_its_own() {
-        use triib_endpointd::config::Direction;
-        use triib_endpointd::status::{DaemonStatus, EndpointStatus, StreamStatus};
+        use avb_endpointd::config::Direction;
+        use avb_endpointd::status::{DaemonStatus, EndpointStatus, StreamStatus};
 
         let mut triib = logging(View::Entities, true);
         triib.settings.log = false;
@@ -3878,7 +3821,7 @@ pub(crate) mod tests {
                     Message::HostStream(
                         _,
                         crate::host::StreamChange::Add {
-                            direction: triib_endpointd::config::Direction::Out,
+                            direction: avb_endpointd::config::Direction::Out,
                             clock: true,
                         }
                     )
@@ -4060,7 +4003,7 @@ pub(crate) mod tests {
     fn a_missing_permission_offers_its_command() {
         let mut triib = logging(View::Matrix, false);
         triib.settings.log = false;
-        let command = "sudo setcap cap_net_raw+ep /usr/lib/triib/triib-netraw";
+        let command = "sudo setcap cap_net_raw+ep /usr/lib/avb-endpointd/avb-netraw";
         triib.network_state = NetworkState::Failed(Failure {
             message: fl!("network-permission"),
             remedy: Some(Remedy::Command(command.to_owned())),
@@ -4078,13 +4021,13 @@ pub(crate) mod tests {
     #[test]
     #[cfg(target_os = "linux")]
     fn an_entity_just_added_is_listed_starting_until_heard() {
-        use triib_endpointd::status::{DaemonStatus, EndpointStatus, Setup};
+        use avb_endpointd::status::{DaemonStatus, EndpointStatus, Setup};
 
         let mut triib = logging(View::Entities, false);
         triib.settings.log = false;
         // Wide enough for the State column.
         let size = Size::new(2200.0, 600.0);
-        let entity_id = triib_endpointd::runtime::entity_id(MacAddress(HOST_MAC), 0);
+        let entity_id = avb_endpointd::entity_id(MacAddress(HOST_MAC), 0);
         triib.starting.push(crate::host::Starting {
             interface: "enp6s0".into(),
             entity_id,
@@ -4254,9 +4197,8 @@ pub(crate) mod tests {
         }
     }
 
-    /// The Storage tab takes each place typed, with ~ the home folder and
-    /// a folder for the entities file taking its file name, and refuses
-    /// one that is not full or not there.
+    /// The Storage tab takes each place typed, with ~ the home folder, and
+    /// refuses one that is not full or not there.
     #[test]
     #[cfg(target_os = "linux")]
     fn settings_take_storage_places() {
@@ -4274,35 +4216,20 @@ pub(crate) mod tests {
                 [Message::StorageChoose(Storage::Presets)]
             ));
         }
-        let entities = triib.settings.entities_file.clone();
+        let presets = triib.settings.presets_folder.clone();
         let _ = triib.update(Message::StorageDraft(
-            Storage::Entities,
-            "triib/entities.toml".into(),
+            Storage::Presets,
+            "triib/presets".into(),
         ));
-        let _ = triib.update(Message::StorageApply(Storage::Entities));
+        let _ = triib.update(Message::StorageApply(Storage::Presets));
         assert_eq!(
-            triib.storage_errors[Storage::Entities.index()].as_deref(),
+            triib.storage_errors[Storage::Presets.index()].as_deref(),
             Some("Use a full path, such as ~/Documents/triib.")
         );
-        assert_eq!(triib.settings.entities_file, entities);
+        assert_eq!(triib.settings.presets_folder, presets);
 
         let dir = std::env::temp_dir().join(format!("triib-places-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        let _ = triib.update(Message::StorageDraft(
-            Storage::Entities,
-            dir.display().to_string(),
-        ));
-        let _ = triib.update(Message::StorageApply(Storage::Entities));
-        assert!(triib.storage_errors[Storage::Entities.index()].is_none());
-        assert_eq!(triib.settings.entities_file, dir.join("entities.toml"));
-        assert_eq!(
-            crate::host::entities_path(),
-            Some(dir.join("entities.toml"))
-        );
-        assert_eq!(
-            triib.storage_drafts[Storage::Entities.index()],
-            crate::storage::shown_path(&dir.join("entities.toml"))
-        );
 
         let _ = triib.update(Message::StorageDraft(
             Storage::Presets,
@@ -4323,7 +4250,6 @@ pub(crate) mod tests {
         // A dialog closed without a choice changes nothing.
         let _ = triib.update(Message::StorageChosen(Storage::Presets, Ok(None)));
         assert_eq!(triib.settings.presets_folder, dir);
-        crate::host::set_entities_file(Some(entities));
         crate::presets::set_folder(crate::settings::default_presets_folder());
         let _ = std::fs::remove_dir_all(&dir);
     }

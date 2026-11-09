@@ -19,7 +19,7 @@ atdecc = { workspace = true, features = ["std"] }
 avb-mrp.workspace = true
 avb-net = { workspace = true, features = ["std"] }
 triib-store.workspace = true
-triib-endpointd.workspace = true
+avb-endpointd.workspace = true
 avb-stream.workspace = true
 i18n-embed = { version = "0.16", features = ["desktop-requester", "fluent-system"] }
 i18n-embed-fl = "0.10"

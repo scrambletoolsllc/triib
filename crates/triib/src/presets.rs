@@ -10,6 +10,7 @@ use atdecc::control::{ControlDescriptor, ControlType, Shape, encode_values};
 use atdecc::descriptor::{DescriptorType, SamplingRate, StreamFormat};
 use atdecc::model::{EntityModel, EnumerationState};
 use atdecc::{EntityId, MacAddress};
+use avb_endpointd::config::EndpointConfig;
 use iced::widget::{container, mouse_area, opaque, text_input};
 use iced::{Center, Element, Fill};
 use scramble_ui::button::{self, Kind};
@@ -18,7 +19,6 @@ use scramble_ui::icon::Icon;
 use scramble_ui::{column, row};
 use scramble_ui::{component, style};
 use serde::{Deserialize, Serialize};
-use triib_endpointd::config::EndpointConfig;
 
 use crate::app::{Message, Triib};
 use crate::fl;
@@ -52,9 +52,7 @@ impl HostPreset {
         self.endpoints
             .iter()
             .enumerate()
-            .map(|(place, endpoint)| {
-                triib_endpointd::runtime::entity_id(mac, endpoint.instance_at(place))
-            })
+            .map(|(place, endpoint)| avb_endpointd::entity_id(mac, endpoint.instance_at(place)))
             .collect()
     }
 }
@@ -269,7 +267,7 @@ pub fn moved_to(preset: &Preset, mac: MacAddress) -> Preset {
                 let mut id = hex(talker.0);
                 rename(&mut id);
                 if let Some(talker) = number(&id) {
-                    stream.bound = Some(triib_endpointd::config::binding_text(
+                    stream.bound = Some(avb_endpointd::config::binding_text(
                         EntityId(talker),
                         output,
                     ));
@@ -756,7 +754,7 @@ mod tests {
 
     /// A device that talks and one that listens to it.
     fn host_endpoints() -> Vec<EndpointConfig> {
-        use triib_endpointd::config::{Direction, StreamConfig};
+        use avb_endpointd::config::{Direction, StreamConfig};
         vec![
             EndpointConfig {
                 streams: vec![StreamConfig {
@@ -845,7 +843,7 @@ mod tests {
 
     #[test]
     fn a_recall_waits_for_this_computers_endpoints() {
-        use triib_endpointd::status::DaemonStatus;
+        use avb_endpointd::status::DaemonStatus;
 
         let mut triib = sample();
         triib.settings.interface = Some("enp6s0".to_owned());

@@ -1,14 +1,17 @@
 # Debian and RPM packages, made with nfpm (https://nfpm.goreleaser.com)
-# from a tree staged by scripts/dist-install.sh:
+# from a tree staged by triib's scripts/dist-install.sh and, from a build
+# of the avb crates' release, avb's:
 #
 #   scripts/dist-install.sh target/release stage /usr
+#   ../avb/scripts/dist-install.sh ../avb/target/release stage /usr
 #   VERSION=1.3.0 ARCH=amd64 nfpm package -f packaging/nfpm.yaml -p deb
 #   VERSION=1.3.0 ARCH=amd64 nfpm package -f packaging/nfpm.yaml -p rpm
 #
-# Installing grants triib-netraw CAP_NET_RAW and says what it changes on
-# the system and why (packaging/linux). ethtool and iproute2's ip and tc
-# run triib-link@, and RealtimeKit gives host entities' stream threads
-# realtime priority.
+# avb-endpointd, which runs host entities, goes in this package until it
+# has its own, which replaces it. Installing grants avb-netraw
+# CAP_NET_RAW and says what it changes on the system and why
+# (packaging/linux). ethtool and iproute2's ip and tc run avb-link@, and
+# RealtimeKit gives host entities' stream threads realtime priority.
 name: triib
 arch: ${ARCH}
 platform: linux
@@ -25,8 +28,13 @@ description: |-
   triib is a lightweight ATDECC (IEEE 1722.1) controller with Milan and
   AVB Lite support: a connection matrix, the network as gPTP shows it,
   device settings, presets and a frame log, with triib-cli for the
-  command line and triib-endpointd for talkers and listeners on this
+  command line and avb-endpointd for talkers and listeners on this
   computer.
+
+provides:
+  - avb-endpointd
+conflicts:
+  - avb-endpointd
 
 contents:
   - src: ./stage/usr/

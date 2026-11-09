@@ -1,19 +1,17 @@
 #!/usr/bin/env bash
-# Installs a built triib, triib-cli, triib-endpointd and triib-netraw and
-# their data files into a system layout, for packages: the binaries,
-# triib-netraw, the one granted CAP_NET_RAW, beside them, desktop entry,
-# icons when there are any, AppStream metadata and licenses, the systemd
-# units triib-endpointd sets the link up with and the polkit rule that
-# lets it run them, and the check the packages run as they install for an
-# interface that can carry host entities.
+# Installs a built triib and triib-cli and their data files into a system
+# layout, for packages: the binaries, desktop entry, icons when there are
+# any, AppStream metadata and licenses, and the check the packages run as
+# they install for an interface that can carry host entities. Host
+# entities run in avb-endpointd, which installs with its own
+# scripts/dist-install.sh, as do avb-netraw, the one program granted
+# CAP_NET_RAW, which opens triib's raw sockets, and the link units.
 #
 #   scripts/dist-install.sh BINARY_DIR [DESTDIR] [PREFIX]
 #
-# BINARY_DIR holds the four programs from a release build made with
+# BINARY_DIR holds the two programs from a release build made with
 # TRIIB_PRODUCTION=1. DESTDIR is the staging root (empty for a direct
-# install) and PREFIX defaults to /usr. Packages then grant triib-netraw
-# CAP_NET_RAW when installed; the others hold no capability, their raw
-# sockets coming from it.
+# install) and PREFIX defaults to /usr.
 set -euo pipefail
 
 binaries=${1:?usage: dist-install.sh BINARY_DIR [DESTDIR] [PREFIX]}
@@ -25,8 +23,6 @@ share="$destdir$prefix/share"
 
 install -Dm755 "$binaries/triib" "$destdir$prefix/bin/triib"
 install -Dm755 "$binaries/triib-cli" "$destdir$prefix/bin/triib-cli"
-install -Dm755 "$binaries/triib-endpointd" "$destdir$prefix/bin/triib-endpointd"
-install -Dm755 "$binaries/triib-netraw" "$destdir$prefix/lib/triib/triib-netraw"
 install -Dm755 "$root/packaging/linux/endpoint-check" "$destdir$prefix/lib/triib/endpoint-check"
 install -Dm644 "$root/data/$id.desktop" "$share/applications/$id.desktop"
 install -Dm644 "$root/data/$id.metainfo.xml" "$share/metainfo/$id.metainfo.xml"
@@ -43,8 +39,3 @@ for font_license in OFL.txt LICENSE-MaterialSymbols.txt; do
         "$share/licenses/triib/fonts/$font_license"
 done
 install -Dm644 "$root/README.md" "$share/doc/triib/README.md"
-units="$root/packaging/linux/units"
-for unit in triib-link@.service triib-link-reset@.service; do
-    install -Dm644 "$units/$unit" "$destdir$prefix/lib/systemd/system/$unit"
-done
-install -Dm644 "$units/50-triib-link.rules" "$share/polkit-1/rules.d/50-triib-link.rules"
