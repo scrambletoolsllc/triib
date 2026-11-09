@@ -286,6 +286,8 @@ dependencies = [
 [[package]]
 name = "atdecc"
 version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "738eebba7497de90ef387ee6dc040e6b5bd38d0146aa14290bfe9b9d6bbf0992"
 dependencies = [
  "avb-mrp",
  "avb-net",
@@ -309,6 +311,8 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 [[package]]
 name = "avb-endpointd"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ba64da953fca4940a1090f693321efb2df3a753839a5c1ae1ae600368af1c3d"
 dependencies = [
  "atdecc",
  "avb-net",
@@ -319,13 +323,17 @@ dependencies = [
 [[package]]
 name = "avb-mrp"
 version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "66a54e458e40f417b6e172b611d077f4a297809e8bf6d3bc03f940b5545d07cd"
 dependencies = [
  "avb-net",
 ]
 
 [[package]]
 name = "avb-net"
-version = "0.1.3"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6a7363c4ea3b6fd90b639555d081ceddf83154600770278922043d0ef74f9408"
 dependencies = [
  "libc",
  "raw-ether",
@@ -333,7 +341,9 @@ dependencies = [
 
 [[package]]
 name = "avb-stream"
-version = "0.3.2"
+version = "0.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f203f864620750fb6c6dfa9e703c806981a01c7713632ddcf6ec89112494f633"
 dependencies = [
  "atdecc",
  "avb-net",
