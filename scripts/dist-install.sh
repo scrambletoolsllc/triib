@@ -31,6 +31,23 @@ if [ -d "$root/data/icons" ]; then
         install -Dm644 "$root/data/icons/$icon" "$share/icons/$icon"
     done
 fi
+# triib's model for avb-endpointd, which its entities show controllers:
+# with triib's version, and triib's app icon as its logo.
+models="$share/avb-endpointd/models"
+version=$(sed -n 's/^version = "\(.*\)"$/\1/p' "$root/Cargo.toml" | head -n 1)
+icon="$root/data/icons/hicolor/128x128/apps/$id.png"
+install -d "$models"
+{
+    cat "$root/packaging/linux/models/triib.toml"
+    echo "firmware_version = \"$version\""
+    if [ -f "$icon" ]; then
+        echo 'logo = "triib.png"'
+    fi
+} >"$models/triib.toml"
+chmod 0644 "$models/triib.toml"
+if [ -f "$icon" ]; then
+    install -m644 "$icon" "$models/triib.png"
+fi
 for license in LICENSE-MIT LICENSE-APACHE; do
     install -Dm644 "$root/$license" "$share/licenses/triib/$license"
 done

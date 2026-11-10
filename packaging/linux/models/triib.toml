@@ -1,0 +1,7 @@
+# triib's model, for the entities triib adds to avb-endpointd: the vendor,
+# model name and logos controllers show them with. scripts/dist-install.sh
+# installs it with triib's app icon as its logo and writes triib's version
+# in as the firmware version. The vendor's logo comes with avb-endpointd.
+vendor_name = "Scramble Tools"
+model_name = "triib entity"
+vendor_logo = "scramble-vendor.png"

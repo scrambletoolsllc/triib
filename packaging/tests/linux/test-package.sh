@@ -111,9 +111,18 @@ for file in \
     /usr/lib/systemd/system/avb-link@.service \
     /usr/lib/systemd/system/avb-link-reset@.service \
     /usr/share/polkit-1/rules.d/50-avb-link.rules \
-    /usr/share/licenses/avb-endpointd/LICENSE-MIT; do
+    /usr/share/licenses/avb-endpointd/LICENSE-MIT \
+    /usr/share/avb-endpointd/models/avb-endpointd.toml \
+    /usr/share/avb-endpointd/models/scramble-vendor.png \
+    /usr/share/avb-endpointd/models/triib.toml \
+    /usr/share/avb-endpointd/models/triib.png; do
     [ -f "$file" ] || fail "$file is missing"
 done
+# triib's entities show triib's model, with its logo and version.
+grep -q '^logo = "triib.png"$' /usr/share/avb-endpointd/models/triib.toml ||
+    fail "triib's model names no logo"
+grep -q '^firmware_version = "' /usr/share/avb-endpointd/models/triib.toml ||
+    fail "triib's model has no version"
 for setting in tx-0/xps_cpus limit_min 'parent 1:1 fq_codel' set-eee; do
     grep -q "$setting" /usr/lib/systemd/system/avb-link@.service ||
         fail "avb-link@.service does not set $setting"

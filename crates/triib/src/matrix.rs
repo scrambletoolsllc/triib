@@ -1197,6 +1197,10 @@ mod tests {
             setup: None,
             sharers: Vec::new(),
             endpoints: vec![EndpointStatus {
+                default: false,
+                held: false,
+                model: None,
+                generic_model: false,
                 entity_id: host.to_string(),
                 name: "Host entity 1".into(),
                 state: "waiting".into(),

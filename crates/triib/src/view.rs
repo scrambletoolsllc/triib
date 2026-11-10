@@ -3322,6 +3322,7 @@ pub(crate) mod tests {
                 use avb_endpointd::config::Direction;
                 use avb_endpointd::status::{DaemonStatus, EndpointStatus, StreamStatus};
                 let stream = |direction, name: &str, state: &str| StreamStatus {
+                    blocked: None,
                     direction,
                     clock: false,
                     name: name.into(),
@@ -3340,6 +3341,10 @@ pub(crate) mod tests {
                     setup: None,
                     sharers: Vec::new(),
                     endpoints: vec![EndpointStatus {
+                        default: false,
+                        held: false,
+                        model: None,
+                        generic_model: false,
                         entity_id: host.map(|id| id.to_string()).unwrap_or_default(),
                         name: "Host entity 1".into(),
                         state: "streaming".into(),
@@ -3373,6 +3378,10 @@ pub(crate) mod tests {
                 status
                     .endpoints
                     .push(avb_endpointd::status::EndpointStatus {
+                        default: false,
+                        held: false,
+                        model: None,
+                        generic_model: false,
                         entity_id: entity_id.to_string(),
                         name: "Host entity 2".into(),
                         state: "unbound".into(),
@@ -3737,11 +3746,16 @@ pub(crate) mod tests {
             setup: None,
             sharers: Vec::new(),
             endpoints: vec![EndpointStatus {
+                default: false,
+                held: false,
+                model: None,
+                generic_model: false,
                 entity_id: WIRED_ESP.to_string(),
                 name: "Host device 1".into(),
                 state: "listening".into(),
                 streams: vec![
                     StreamStatus {
+                        blocked: None,
                         direction: Direction::Out,
                         clock: false,
                         name: "Out 1".into(),
@@ -3750,6 +3764,7 @@ pub(crate) mod tests {
                         state: "streaming".into(),
                     },
                     StreamStatus {
+                        blocked: None,
                         direction: Direction::In,
                         clock: false,
                         name: "In 1".into(),
@@ -4061,6 +4076,10 @@ pub(crate) mod tests {
             setup: Some(Setup::Link),
             sharers: Vec::new(),
             endpoints: vec![EndpointStatus {
+                default: false,
+                held: false,
+                model: None,
+                generic_model: false,
                 entity_id: entity_id.to_string(),
                 name: "Host entity 1".into(),
                 state: "unbound".into(),

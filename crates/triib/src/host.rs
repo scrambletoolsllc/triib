@@ -1,8 +1,14 @@
 //! This computer's own entities, which avb-endpointd runs, one daemon per
 //! interface: adding, changing and removing them and their streams in its
-//! `<interface>.toml`, starting its unit, and what it says each is doing.
+//! `<interface>.toml`, under the file's lock, starting its unit, and what
+//! it says each is doing.
+//!
+//! Beside triib's entities the daemon runs the interface's default entity,
+//! this computer on the network for any app, such as plaa. triib shows it
+//! with the others, but neither removes it nor changes its streams, and
+//! leaves the daemon running for it when triib's own entities are gone.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Mutex, PoisonError};
 use std::time::{Duration, Instant};
@@ -115,7 +121,8 @@ pub fn entities_path(interface: &str) -> Option<PathBuf> {
 }
 
 /// The entities on `interface`: its file's, or with none yet triib's
-/// from before, which the daemon takes too as it starts.
+/// from before, which the daemon takes too as it starts. For reading; a
+/// change goes through `edit`.
 fn current(interface: &str) -> Result<(PathBuf, Config), String> {
     let path = entities_path(interface).ok_or("no configuration folder")?;
     let config = match config::load(&path) {
@@ -138,8 +145,30 @@ fn old_entities(interface: &str) -> Option<Config> {
         .or_else(|| config::triib_entities(interface))
 }
 
-fn save(path: &Path, config: &Config) -> Result<(), String> {
-    avb_endpointd::store::save(path, config).map_err(|error| error.to_string())
+/// triib's model, which triib's package installs for the daemon: its
+/// entities' vendor, model name, version and logos.
+const MODEL: &str = "triib";
+
+/// Changes the entities on `interface` under the file's lock, so neither
+/// another app's change nor the daemon's in between is lost: with no file
+/// yet, from triib's entities from before.
+fn edit<R>(
+    interface: &str,
+    change: impl FnOnce(&mut Config) -> Result<R, String>,
+) -> Result<R, String> {
+    let path = entities_path(interface).ok_or("no configuration folder")?;
+    config::edit_at(&path, |config| {
+        if !path.exists() {
+            *config = old_entities(interface).unwrap_or_default();
+        }
+        change(config)
+    })
+    .map_err(|error| format!("{}: {error}", path.display()))?
+}
+
+/// triib's own entities among `endpoints`: all but the default entity.
+fn own(endpoints: &[EndpointConfig]) -> impl Iterator<Item = &EndpointConfig> {
+    endpoints.iter().filter(|endpoint| !endpoint.is_default)
 }
 
 /// The place in the file of the endpoint whose entity is `entity_id`.
@@ -166,34 +195,30 @@ pub struct Starting {
 /// virtual audio device; its inspector adds more and sets each up. Gives
 /// the instance its entity ID is made from.
 pub fn add(interface: &str, name: String) -> Result<u8, String> {
-    let (path, mut config) = current(interface)?;
-    config.pin_instances();
-    let taken: Vec<u8> = config
-        .endpoints
-        .iter()
-        .filter_map(|endpoint| endpoint.instance)
-        .collect();
-    let free = (0..240u8)
-        .find(|candidate| !taken.contains(candidate))
-        .ok_or("no room")?;
-    config.endpoints.push(EndpointConfig::new(name, Some(free)));
-    save(&path, &config)?;
-    Ok(free)
+    edit(interface, |config| {
+        config.pin_instances();
+        let free = config.free_instance().ok_or("no room")?;
+        config.endpoints.push(EndpointConfig {
+            model: Some(MODEL.into()),
+            ..EndpointConfig::new(name, Some(free))
+        });
+        Ok(free)
+    })
 }
 
 /// Removes the endpoint whose entity is `entity_id`; the others keep
-/// their entity IDs. With none left the daemon ends, and its unit no
-/// longer starts with the desktop.
+/// their entity IDs. The daemon goes on running the default entity, for
+/// other apps, when triib's are all gone.
 pub fn remove(interface: &str, mac: MacAddress, entity_id: EntityId) -> Result<(), String> {
-    let (path, mut config) = current(interface)?;
-    let place = place_of(&config, mac, entity_id).ok_or("not one of this computer's")?;
-    config.pin_instances();
-    config.endpoints.remove(place);
-    save(&path, &config)?;
-    if config.endpoints.is_empty() {
-        disable(interface);
-    }
-    Ok(())
+    edit(interface, |config| {
+        let place = place_of(config, mac, entity_id).ok_or("not one of this computer's")?;
+        if config.endpoints[place].is_default {
+            return Err("the default entity stays, for other apps".into());
+        }
+        config.pin_instances();
+        config.endpoints.remove(place);
+        Ok(())
+    })
 }
 
 /// A change to one of an entity's streams.
@@ -219,9 +244,18 @@ pub fn change_stream(
     entity_id: EntityId,
     change: StreamChange,
 ) -> Result<(), String> {
-    let (path, mut config) = current(interface)?;
-    let place = place_of(&config, mac, entity_id).ok_or("not one of this computer's")?;
-    let endpoint = &mut config.endpoints[place];
+    edit(interface, |config| {
+        let place = place_of(config, mac, entity_id).ok_or("not one of this computer's")?;
+        change_streams(&mut config.endpoints[place], change)
+    })
+}
+
+/// Changes one of `endpoint`'s streams, but not the default entity's,
+/// whose streams other apps play into and record from.
+fn change_streams(endpoint: &mut EndpointConfig, change: StreamChange) -> Result<(), String> {
+    if endpoint.is_default {
+        return Err("the default entity's streams stay, for other apps".into());
+    }
     // An entity's streams as they are, written down once one changes.
     let mut streams = endpoint.stream_configs();
     match change {
@@ -253,7 +287,7 @@ pub fn change_stream(
         _ => return Err("no such stream".into()),
     }
     endpoint.streams = streams;
-    save(&path, &config)
+    Ok(())
 }
 
 /// The endpoints on `interface`, each with its instance written down so
@@ -270,38 +304,41 @@ pub fn endpoints(interface: &str) -> Vec<EndpointConfig> {
 }
 
 /// Runs `endpoints` on `interface` in place of the ones there, starting
-/// the daemon when it isn't running. Says whether they will start again,
-/// which they do when anything changed.
+/// the daemon when it isn't running and triib's own are among them. The
+/// default entity stays, with the settings `endpoints` give it where they
+/// have it. Says whether they will start again, which they do when
+/// anything changed.
 pub fn restore(interface: &str, endpoints: &[EndpointConfig]) -> Result<bool, String> {
     if cfg!(test) {
         return Ok(false);
     }
     let running = status::read(interface).is_some();
-    let (path, mut config) = current(interface)?;
-    let on_file = config::load(&path).is_ok();
-    let mut now = config.clone();
-    now.pin_instances();
-    let same = on_file && now.endpoints == endpoints;
-    if !same {
+    let path = entities_path(interface).ok_or("no configuration folder")?;
+    let on_file = path.exists();
+    let changed = edit(interface, |config| {
+        let mut now = config.clone();
+        now.pin_instances();
+        if on_file && now.endpoints == endpoints {
+            return Ok(false);
+        }
         config.endpoints = endpoints.to_vec();
-        save(&path, &config)?;
-    }
-    if endpoints.is_empty() {
-        disable(interface);
+        Ok(true)
+    })?;
+    if own(endpoints).next().is_none() {
         return Ok(false);
     }
     ensure_running(interface)?;
-    Ok(!same || !running)
+    Ok(changed || !running)
 }
 
 /// The interface shown, when another person's or root's daemon holds it
-/// and this person lists entities there: a daemon of this person's would
-/// be turned away.
+/// and this person lists entities of triib's there: a daemon of this
+/// person's would be turned away.
 pub fn elsewhere() -> Option<String> {
     let interface = shown()?;
     (status::read(&interface).is_none()
         && status::interface_claimed(&interface)
-        && !endpoints(&interface).is_empty())
+        && own(&endpoints(&interface)).next().is_some())
     .then_some(interface)
 }
 
@@ -330,8 +367,8 @@ pub fn keep_running(interface: Option<&str>) {
     }
 }
 
-/// Starts the daemon's unit where it does not run and entities are listed
-/// for the interface the app keeps: as triib opens, as for entities
+/// Starts the daemon's unit where it does not run and entities of triib's
+/// are listed for the interface the app keeps: as triib opens, as for entities
 /// listed before the unit was enabled, and should it have stopped. Starts
 /// that do not last wait longer each time.
 pub fn bring_back() {
@@ -343,7 +380,7 @@ pub fn bring_back() {
         starts.wait = STARTING;
         return;
     }
-    if status::interface_claimed(&interface) || endpoints(&interface).is_empty() {
+    if status::interface_claimed(&interface) || own(&endpoints(&interface)).next().is_none() {
         return;
     }
     if starts.at.is_some_and(|at| at.elapsed() < starts.wait) {
@@ -407,15 +444,10 @@ fn start(_interface: &str) -> Result<(), String> {
     Err("not on this system".into())
 }
 
-/// Keeps the daemon's unit on `interface` from starting with the desktop,
-/// as with no entities listed it has nothing to do.
-fn disable(interface: &str) {
-    #[cfg(target_os = "linux")]
-    if let Ok(unit) = unit(interface) {
-        let _ = user_systemctl(&["disable"], &unit);
-    }
-    #[cfg(not(target_os = "linux"))]
-    let _ = interface;
+/// Whether `entity_id` is the interface's default entity, which triib
+/// shows but neither removes nor changes the streams of.
+pub fn is_default(status: Option<&DaemonStatus>, entity_id: EntityId) -> bool {
+    status_of(status, entity_id).is_some_and(|endpoint| endpoint.default)
 }
 
 /// What the daemon says of the endpoint whose entity is `entity_id`.

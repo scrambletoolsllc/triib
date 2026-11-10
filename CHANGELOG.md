@@ -28,7 +28,7 @@ All notable changes to triib. Versions follow
 
 ### Host entities (Linux)
 
-- This computer's entities run in avb-endpointd, from the avb crates,
+- This computer's entities run in avb-endpointd, from Linux-AVB-Endpoint,
   which plaa shares, in place of triib-endpointd. It runs as the
   person's `avb-endpointd@<interface>` unit, which triib starts and
   enables as it adds an entity, so the entities run from login whether
@@ -40,6 +40,17 @@ All notable changes to triib. Versions follow
   entities to another interface cuts off a program sharing the daemon.
   triib stops a triib-endpointd an older triib left running, which
   would hold the interface against the new daemon.
+- Beside triib's entities, each interface's daemon runs a default
+  entity named for the computer, with a stereo Playback output and
+  Listen input that any app, such as plaa, plays into and records from.
+  triib shows it with its own but doesn't remove it or change its
+  streams, and leaves the daemon running for it when its own entities
+  are gone, where it stopped the daemon before.
+- triib changes the entities' file under its lock, so another app's
+  change or the daemon's in between is kept.
+- triib's entities show controllers triib's model, its name, version and
+  logo, from a model file the package installs, as the daemon no longer
+  carries triib's.
 - The entities' audio devices are named `avb-` rather than `triib-`, so
   an app that played into one picks it again once.
 - Raw sockets come from avb-netraw, and the link units are avb-link@

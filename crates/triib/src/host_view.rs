@@ -435,26 +435,32 @@ impl fmt::Display for Audio {
 }
 
 /// The inspector's section for one of this computer's entities: its
-/// state, and a button that removes it. Its streams are on the Streams
+/// state, and a button that removes it, but for the default entity, which
+/// other apps play into and record from. Its streams are on the Streams
 /// tab.
 pub fn sections(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>> {
     let Some(endpoint) = crate::host::status_of(triib.endpoints.as_ref(), entity_id) else {
         return Vec::new();
     };
-    vec![
+    let mut rows = vec![
         component::section(fl!("netmap-this-computer")),
         property(fl!("host-state"), state_label(&endpoint.state)),
-        button::with_icon(Kind::Outlined, Icon::Delete, fl!("host-remove"))
-            .size(Size::ExtraSmall)
-            .on_press(Message::HostRemoved(entity_id))
-            .into(),
-    ]
+    ];
+    if !endpoint.default {
+        rows.push(
+            button::with_icon(Kind::Outlined, Icon::Delete, fl!("host-remove"))
+                .size(Size::ExtraSmall)
+                .on_press(Message::HostRemoved(entity_id))
+                .into(),
+        );
+    }
+    rows
 }
 
 /// An entity's button that adds a stream, with a menu of the kinds it
 /// adds: audio or a media clock, either way.
 pub fn add_buttons(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Message>> {
-    if !triib.is_host(entity_id) {
+    if !triib.is_host(entity_id) || crate::host::is_default(triib.endpoints.as_ref(), entity_id) {
         return Vec::new();
     }
     let open = triib.add_stream_open;
@@ -487,14 +493,17 @@ pub fn add_buttons(triib: &Triib, entity_id: EntityId) -> Vec<Element<'_, Messag
 
 /// What this computer sets for one of its entities' streams, the stream
 /// input or output `index`: where its audio comes from or goes, and its
-/// channels. Nothing for others' entities.
+/// channels. Nothing for others' entities, nor the default entity's, which
+/// other apps play into and record from.
 pub fn stream_rows(
     triib: &Triib,
     entity_id: EntityId,
     input: bool,
     index: u16,
 ) -> Vec<Element<'_, Message>> {
-    let Some(endpoint) = crate::host::status_of(triib.endpoints.as_ref(), entity_id) else {
+    let Some(endpoint) = crate::host::status_of(triib.endpoints.as_ref(), entity_id)
+        .filter(|endpoint| !endpoint.default)
+    else {
         return Vec::new();
     };
     let audio_label = if input {
@@ -534,14 +543,16 @@ pub fn stream_rows(
 }
 
 /// The button that removes an entity's stream input or output `index`,
-/// but not its last stream; none for others' entities.
+/// but not its last stream; none for others' entities, nor the default
+/// entity's.
 pub fn remove_stream(
     triib: &Triib,
     entity_id: EntityId,
     input: bool,
     index: u16,
 ) -> Option<Element<'_, Message>> {
-    let endpoint = crate::host::status_of(triib.endpoints.as_ref(), entity_id)?;
+    let endpoint = crate::host::status_of(triib.endpoints.as_ref(), entity_id)
+        .filter(|endpoint| !endpoint.default)?;
     let direction = if input { Direction::In } else { Direction::Out };
     let at = endpoint
         .streams

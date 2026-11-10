@@ -20,9 +20,9 @@ env:
   # gptpd's release, whose Debian and RPM packages this release carries
   # too, as no distribution has gptpd.
   GPTPD_VERSION: 0.1.0
-  # avb-endpointd's release, from the avb crates, which runs host entities
-  # and goes in triib's Linux packages until it has its own.
-  AVB_ENDPOINTD_VERSION: 0.1.1
+  # avb-endpointd's release, from Linux-AVB-Endpoint, which runs host
+  # entities and goes in triib's Linux packages until it has its own.
+  AVB_ENDPOINTD_VERSION: 0.2.0
 
 jobs:
   linux:
@@ -54,9 +54,9 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/checkout@v5
         with:
-          repository: scrambletools/avb
+          repository: scrambletools/Linux-AVB-Endpoint
           ref: avb-endpointd-v${{ env.AVB_ENDPOINTD_VERSION }}
-          path: avb
+          path: endpointd
       - name: Install ALSA's and PipeWire's headers for audio
         if: ${{ !matrix.target }}
         run: |
@@ -73,7 +73,7 @@ jobs:
           key: ${{ matrix.arch }}
           workspaces: |
             . -> target
-            avb -> target
+            endpointd -> target
       - name: Version
         id: version
         run: |
@@ -90,14 +90,14 @@ jobs:
         run: |
           if [ -n "$TARGET" ]; then
             cargo build --release --locked -p triib -p triib-cli --target "$TARGET"
-            (cd avb && cargo build --release --locked -p avb-endpointd --features daemon -p avb-netraw --target "$TARGET")
+            (cd endpointd && cargo build --release --locked -p avb-endpointd --features daemon -p avb-netraw --target "$TARGET")
             echo "binaries=target/$TARGET/release" >>"$GITHUB_OUTPUT"
-            echo "avb=avb/target/$TARGET/release" >>"$GITHUB_OUTPUT"
+            echo "endpointd=endpointd/target/$TARGET/release" >>"$GITHUB_OUTPUT"
           else
             cargo build --release --locked -p triib -p triib-cli
-            (cd avb && cargo build --release --locked -p avb-endpointd --features daemon -p avb-netraw)
+            (cd endpointd && cargo build --release --locked -p avb-endpointd --features daemon -p avb-netraw)
             echo "binaries=target/release" >>"$GITHUB_OUTPUT"
-            echo "avb=avb/target/release" >>"$GITHUB_OUTPUT"
+            echo "endpointd=endpointd/target/release" >>"$GITHUB_OUTPUT"
           fi
         env:
           TRIIB_PRODUCTION: '1'
@@ -109,13 +109,13 @@ jobs:
           for program in triib triib-cli; do
             $run ${{ steps.build.outputs.binaries }}/$program --version
           done
-          $run ${{ steps.build.outputs.avb }}/avb-endpointd --version
+          $run ${{ steps.build.outputs.endpointd }}/avb-endpointd --version
         env:
           TARGET: ${{ matrix.target }}
       - name: Stage
         run: |
           scripts/dist-install.sh ${{ steps.build.outputs.binaries }} stage /usr
-          avb/scripts/dist-install.sh ${{ steps.build.outputs.avb }} stage /usr
+          endpointd/scripts/dist-install.sh ${{ steps.build.outputs.endpointd }} stage /usr
       - name: Debian and RPM packages
         run: |
           curl -sSLf -o nfpm.deb \

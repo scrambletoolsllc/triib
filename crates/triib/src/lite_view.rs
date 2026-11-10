@@ -549,6 +549,10 @@ mod tests {
         use avb_endpointd::status::{DaemonStatus, EndpointStatus};
         let mut triib = lite_bench(-180, 6_336);
         let endpoint = |entity: EntityId| EndpointStatus {
+            default: false,
+            held: false,
+            model: None,
+            generic_model: false,
             entity_id: entity.to_string(),
             name: "Host device 1".into(),
             state: "listening".into(),
