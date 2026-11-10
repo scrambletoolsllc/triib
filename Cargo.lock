@@ -310,9 +310,9 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
 name = "avb-endpointd"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b69817b3eeaf5f418e3eb05368c5c9d3222b95a4b9f1f110da3d78e32a54fc43"
+checksum = "bc9a6689ee8dc8183dc7ad22140c7a0e988c04a3f63f456defe999d22bd639b9"
 dependencies = [
  "atdecc",
  "avb-net",

@@ -45,7 +45,10 @@ All notable changes to triib. Versions follow
   Listen input that any app, such as plaa, plays into and records from.
   triib shows it with its own but doesn't remove it or change its
   streams, and leaves the daemon running for it when its own entities
-  are gone, where it stopped the daemon before.
+  are gone, where it stopped the daemon before. The daemon holds back
+  any entity whose ID another program on the computer advertises, as an
+  older plaa does at the default entity's, rather than advertising a
+  second entity with that ID.
 - triib changes the entities' file under its lock, so another app's
   change or the daemon's in between is kept.
 - triib's entities show controllers triib's model, its name, version and
