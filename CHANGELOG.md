@@ -82,6 +82,16 @@ All notable changes to triib. Versions follow
   Under fq, the default on some systems, a host entity's frames arrived
   late at its listeners. Where the queue has fq_codel already, it is
   kept, and nothing it holds is lost.
+- A host entity's talker sends its frames named as AVTP, so fq_codel
+  keeps a stream's frames in one flow, in order when the queue backs
+  up. Named by their VLAN tag, nearly every frame took a flow of its
+  own, as fq_codel doesn't go by the priority the talker sets.
+- The link unit pins the stream queue after setting the queue
+  disciplines, where replacing a root that divides the queues into
+  classes, such as mqprio, wiped the pin and a stream's frames spread
+  over the card's queues again. Such a root is first made one class of
+  every queue, as the map from priorities to classes it left behind
+  sent frames past the pin.
 
 ### Packages
 

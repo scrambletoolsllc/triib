@@ -22,7 +22,7 @@ env:
   GPTPD_VERSION: 0.1.0
   # avb-endpointd's release, from Linux-AVB-Endpoint, which runs host
   # entities and goes in triib's Linux packages until it has its own.
-  AVB_ENDPOINTD_VERSION: 0.2.1
+  AVB_ENDPOINTD_VERSION: 0.2.2
 
 jobs:
   linux:
