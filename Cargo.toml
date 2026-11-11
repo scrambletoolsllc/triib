@@ -16,7 +16,7 @@ repository = "https://github.com/scrambletoolsllc/triib"
 atdecc = { version = "0.2.0", default-features = false }
 avb-mrp = { version = "0.1.4", default-features = false }
 avb-net = { version = "0.1.2", default-features = false }
-avb-stream = "0.3.2"
+avb-stream = "0.3.6"
 gptp = "0.1.0"
 # This computer's entities run in avb-endpointd, shared with plaa: its
 # files, status and meters, from crates.io.
