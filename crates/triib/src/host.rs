@@ -85,11 +85,11 @@ pub fn set_old_file(file: Option<PathBuf>) {
 /// which would hold its interface against avb-endpointd: found by the
 /// status it wrote, and its process's name.
 pub fn stop_old_daemon() {
-    if cfg!(test) {
-        return;
-    }
     #[cfg(target_os = "linux")]
     {
+        if cfg!(test) {
+            return;
+        }
         let Some(path) = triib_store::paths::runtime_dir().map(|dir| dir.join("endpointd.toml"))
         else {
             return;
@@ -401,6 +401,7 @@ pub fn bring_back() {
 /// The daemon's unit on `interface`, which must be named as it is: what
 /// Linux allows in an interface name, less what a unit name would need
 /// escaped.
+#[cfg(any(target_os = "linux", test))]
 fn unit(interface: &str) -> Result<String, String> {
     let nameable = !interface.is_empty()
         && interface
