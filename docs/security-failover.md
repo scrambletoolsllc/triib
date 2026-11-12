@@ -452,10 +452,10 @@ Milan 8.3's requirements, by crate:
 |---|---|---|---|
 | atdecc | avb | S1's entity conformance fixes; then `#[non_exhaustive]` on public enums and structs, with constructors or Default first for any struct triib or plaa build with literals (Config included); S1 lock requests and state; S2 hook; S3 checks, bounds and fuzzing; F3 per-interface presence and Annex C; F4 entity with two interfaces | 0.2.x for the entity fixes, with 0.2.1's DISCONNECT_TX fix; 0.3.0 for the breaking pass with S1 to S3; 0.3.x for F3 and F4 once additions no longer break |
 | avb-lite | avb | atdecc 0.3 | minor |
-| avb-net | avb | the app ring and card launch time (no atdecc dependency) | 0.2.0 |
+| avb-net | avb | card launch time, on raw-ether 0.2, which only adds the launch kind; atdecc and avb-mrp depend on avb-net and re-export its MacAddress, and avb-lite sits on it through them, so it stays 0.1.x until atdecc 0.3 | 0.1.6 |
 | avb-stream | avb | the app ring and card launch time; then atdecc 0.3, whose StreamFormat its API carries (formats, Media/Aaf/Am824/Crf::of, TalkerConfig.format); F1 holdover and tu; F4 redundant talker and listener | 0.4.0 now; 0.5.0 with atdecc 0.3 |
 | avb-mrp | avb (bridge module: Linux-AVB-Bridge) | two independent instances on one host, F4, if anything is needed; no atdecc dependency | patch |
-| avb-endpointd | Linux-AVB-Endpoint | avb-net 0.2 and avb-stream 0.4; S1 lock release; S2 allowlist; S4 sockets, claim holder report, unit options and avb-netraw as a system service; F4 redundant daemon; F5 interface return and waiting at start | breaking with atdecc 0.3, as its API carries atdecc::EntityId; again for F4 |
+| avb-endpointd | Linux-AVB-Endpoint | avb-net 0.1.6 and avb-stream 0.4; S1 lock release; S2 allowlist; S4 sockets, claim holder report, unit options and avb-netraw as a system service; F4 redundant daemon; F5 interface return and waiting at start | breaking with atdecc 0.3, as its API carries atdecc::EntityId; again for F4 |
 | gptpd, raw-ether | gptp (decision 7) | raw-ether's broker transport for the avb-netraw service (S4); gptpd's F1 check; a `priority1 N` bridge option making the relay grandmaster-capable, for the secondary network's grandmaster or T2 on scrambox's network | patch |
 | Linux-AVB-Bridge | Linux-AVB-Bridge | T3 `avb-fault`; T4 two-bridge mode, an estimated 2 to 4 days; lanmind reading both instances | its own |
 | triib | triib | S1, S2 and S4 to S5 UI; packaging for the avb-netraw service; F1 to F3 UI; F4 setup | 1.4.0 for S, 1.5.0 for F3 and F4 |
@@ -468,11 +468,14 @@ How the updates move:
    sketch and the test that shows it, never as edits to their
    repositories. Each project designs and builds its own.
 2. **What ships first** (M0 below): atdecc 0.2.1 with S1's entity
-   fixes; then avb-net 0.2.0 and avb-stream 0.4.0, carrying the app
+   fixes; then avb-net 0.1.6 and avb-stream 0.4.0, carrying the app
    ring and card launch time; then avb-endpointd on those. avb-stream
    doesn't wait for atdecc 0.3, which breaks it anyway, so waiting would
-   save nobody a move. triib and plaa each checked that avb-stream 0.4.0
-   needs only a version bump.
+   save nobody a move. avb-net stays 0.1.x: atdecc and avb-mrp
+   re-export its MacAddress, so an avb-net 0.2.0 beside atdecc 0.2
+   would leave triib, plaa and avb-endpointd with two MacAddress types.
+   triib and plaa each checked that avb-stream 0.4.0 needs only a
+   version bump.
 3. **One breaking release.** The `#[non_exhaustive]` pass and S1 to S3
    ship together as atdecc 0.3.0, so the API breaks once.
    - avb-stream 0.5, avb-lite and avb-endpointd follow, then triib and
@@ -605,7 +608,7 @@ returns scrambox to the normal bench, and its first run is checked.
 0. **M0, what's in flight** (decision 8).
    - atdecc 0.2.1 (the DISCONNECT_TX fix) with S1's entity conformance
      fixes, as 0.2.x.
-   - avb-net 0.2.0 and avb-stream 0.4.0: the app ring and card launch
+   - avb-net 0.1.6 and avb-stream 0.4.0: the app ring and card launch
      time.
    - avb-endpointd on those. triib and plaa move with a version bump.
 1. **M1, locks and checks.**
