@@ -285,9 +285,9 @@ dependencies = [
 
 [[package]]
 name = "atdecc"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "738eebba7497de90ef387ee6dc040e6b5bd38d0146aa14290bfe9b9d6bbf0992"
+checksum = "3da4b033aae64d434ba2cc8923fb031077692c2c3aaf25893c6e75fa33b27a5e"
 dependencies = [
  "avb-mrp",
  "avb-net",
@@ -322,18 +322,18 @@ dependencies = [
 
 [[package]]
 name = "avb-mrp"
-version = "0.1.4"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66a54e458e40f417b6e172b611d077f4a297809e8bf6d3bc03f940b5545d07cd"
+checksum = "2b0ba64117540c5d0295af103f2630b0e5c7e7e3f45badbee76a85d0c4774a3b"
 dependencies = [
  "avb-net",
 ]
 
 [[package]]
 name = "avb-net"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc7a0225dda61d7f0aae67fe4b24986a61c466682eab721c8110c35307d0ad9e"
+checksum = "394a1f77d62d102b0f0ee99e6c3dae3c240c635b785b76510c38d423b07ccaa5"
 dependencies = [
  "libc",
  "raw-ether",
@@ -341,9 +341,9 @@ dependencies = [
 
 [[package]]
 name = "avb-stream"
-version = "0.3.6"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3cf3492ca27515fc2582a8b14376b03a14a393f3462944a2fffd0f08645f05e3"
+checksum = "cf2a664bb38e50b261d4335e2d13e3b3d770a274e66413685cdcbe22d82d3e44"
 dependencies = [
  "atdecc",
  "avb-net",
@@ -1423,9 +1423,9 @@ dependencies = [
 
 [[package]]
 name = "gptp"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ae8e6faa2a5ca271c590ab1694dcbc1eda97e49dc5e91a9fb85707fffd59138"
+checksum = "54a135d78e91887574b20b2bab724f024709a75505ec54f0f59bf4eab5504bad"
 
 [[package]]
 name = "gpu-alloc"
@@ -1643,7 +1643,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.58.0",
+ "windows-core 0.62.2",
 ]
 
 [[package]]
@@ -3175,9 +3175,9 @@ checksum = "a611d15b50743feb4c76b7d03edcb0e64f399c26961e4efe6975bc398be6aa3d"
 
 [[package]]
 name = "raw-ether"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97ba549cb32f376dba4e784ec16c6e094c5d4bdf59c00da80cba43ceea5ad67c"
+checksum = "0d66ef1a3463d64480a3365492192b67212ac859bb16dde19e727eeb0b1c64be"
 dependencies = [
  "libc",
  "windows-sys 0.61.2",
@@ -3865,7 +3865,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "once_cell",
  "rustix 1.1.5",
  "windows-sys 0.61.2",

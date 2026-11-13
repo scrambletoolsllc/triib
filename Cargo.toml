@@ -13,11 +13,11 @@ repository = "https://github.com/scrambletoolsllc/triib"
 # The AVB crates, shared with other apps, from crates.io. A git-ignored
 # .cargo/avb-local.toml can point them at a local checkout while changing
 # both (see the README).
-atdecc = { version = "0.2.0", default-features = false }
+atdecc = { version = "0.2.1", default-features = false }
 avb-mrp = { version = "0.1.4", default-features = false }
-avb-net = { version = "0.1.2", default-features = false }
-avb-stream = "0.3.6"
-gptp = "0.1.0"
+avb-net = { version = "0.1.6", default-features = false }
+avb-stream = "0.4.0"
+gptp = "0.2.0"
 # This computer's entities run in avb-endpointd, shared with plaa: its
 # files, status and meters, from crates.io.
 avb-endpointd = "0.2.2"
