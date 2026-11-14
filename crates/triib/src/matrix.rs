@@ -1186,27 +1186,15 @@ mod tests {
         };
         let mut triib = Triib::sample(Settings::default(), interface, entities, models);
         let host = crate::view::tests::WIRED_ESP;
-        triib.endpoints = Some(DaemonStatus {
-            pid: 1,
-            started: 0,
-            interface: "enp6s0".into(),
-            gptp: String::new(),
-            foreign_mrp: false,
-            config: None,
-            clock: None,
-            setup: None,
-            sharers: Vec::new(),
-            endpoints: vec![EndpointStatus {
-                default: false,
-                held: false,
-                model: None,
-                generic_model: false,
-                entity_id: host.to_string(),
-                name: "Host entity 1".into(),
-                state: "waiting".into(),
-                streams: Vec::new(),
-            }],
-        });
+        let mut endpoint = EndpointStatus::default();
+        endpoint.entity_id = host.to_string();
+        endpoint.name = "Host entity 1".into();
+        endpoint.state = "waiting".into();
+        let mut status = DaemonStatus::default();
+        status.pid = 1;
+        status.interface = "enp6s0".into();
+        status.endpoints = vec![endpoint];
+        triib.endpoints = Some(status);
         let talkers = groups(&triib, Side::Talker);
         let listeners = groups(&triib, Side::Listener);
         let built = grid(&triib, &talkers, &listeners);

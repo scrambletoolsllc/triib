@@ -859,18 +859,11 @@ mod tests {
             host: Some(host),
         };
         // The daemon has not started on them yet.
-        triib.endpoints = Some(DaemonStatus {
-            pid: 1,
-            started: 1_000,
-            interface: "enp6s0".to_owned(),
-            gptp: String::new(),
-            foreign_mrp: false,
-            config: None,
-            clock: None,
-            setup: None,
-            sharers: Vec::new(),
-            endpoints: Vec::new(),
-        });
+        let mut status = DaemonStatus::default();
+        status.pid = 1;
+        status.started = 1_000;
+        status.interface = "enp6s0".to_owned();
+        triib.endpoints = Some(status);
         assert!(!host_ready(&triib, &preset, 2_000));
         // It has, but their entities are not here yet.
         triib.endpoints.as_mut().unwrap().started = 3_000;

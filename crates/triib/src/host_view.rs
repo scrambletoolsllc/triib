@@ -45,7 +45,8 @@ fn setup_note(triib: &Triib) -> Option<String> {
         Setup::Gptpd => Some(fl!("host-starting-gptpd")),
         Setup::NoGptpd => Some(fl!("host-no-gptpd")),
         Setup::Refused => Some(fl!("host-gptpd-refused", interface = interface)),
-        Setup::Other => None,
+        // Setup::Other, or what a later daemon adds.
+        _ => None,
     }
 }
 

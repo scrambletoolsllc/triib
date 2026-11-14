@@ -3321,39 +3321,29 @@ pub(crate) mod tests {
             if host.is_some() {
                 use avb_endpointd::config::Direction;
                 use avb_endpointd::status::{DaemonStatus, EndpointStatus, StreamStatus};
-                let stream = |direction, name: &str, state: &str| StreamStatus {
-                    blocked: None,
-                    direction,
-                    clock: false,
-                    name: name.into(),
-                    channels: 8,
-                    audio: "virtual".into(),
-                    state: state.into(),
+                let stream = |direction, name: &str, state: &str| {
+                    let mut stream = StreamStatus::default();
+                    stream.direction = direction;
+                    stream.name = name.into();
+                    stream.channels = 8;
+                    stream.audio = "virtual".into();
+                    stream.state = state.into();
+                    stream
                 };
-                triib.endpoints = Some(DaemonStatus {
-                    pid: 1,
-                    started: 0,
-                    interface: "enp6s0".into(),
-                    gptp: "grandmaster 0x0001f2fffeff3b14, asCapable".into(),
-                    foreign_mrp: false,
-                    config: None,
-                    clock: None,
-                    setup: None,
-                    sharers: Vec::new(),
-                    endpoints: vec![EndpointStatus {
-                        default: false,
-                        held: false,
-                        model: None,
-                        generic_model: false,
-                        entity_id: host.map(|id| id.to_string()).unwrap_or_default(),
-                        name: "Host entity 1".into(),
-                        state: "streaming".into(),
-                        streams: vec![
-                            stream(Direction::Out, "Out 1", "streaming"),
-                            stream(Direction::In, "In 1", "unbound"),
-                        ],
-                    }],
-                });
+                let mut endpoint = EndpointStatus::default();
+                endpoint.entity_id = host.map(|id| id.to_string()).unwrap_or_default();
+                endpoint.name = "Host entity 1".into();
+                endpoint.state = "streaming".into();
+                endpoint.streams = vec![
+                    stream(Direction::Out, "Out 1", "streaming"),
+                    stream(Direction::In, "In 1", "unbound"),
+                ];
+                let mut status = DaemonStatus::default();
+                status.pid = 1;
+                status.interface = "enp6s0".into();
+                status.gptp = "grandmaster 0x0001f2fffeff3b14, asCapable".into();
+                status.endpoints = vec![endpoint];
+                triib.endpoints = Some(status);
                 // Its output sending, one channel at full scale, the other
                 // at -10.5 dBFS; its input not running.
                 triib.meter_levels.take(
@@ -3375,18 +3365,11 @@ pub(crate) mod tests {
             {
                 let entity_id = avb_endpointd::entity_id(MacAddress(HOST_MAC), 1);
                 status.setup = Some(avb_endpointd::status::Setup::Link);
-                status
-                    .endpoints
-                    .push(avb_endpointd::status::EndpointStatus {
-                        default: false,
-                        held: false,
-                        model: None,
-                        generic_model: false,
-                        entity_id: entity_id.to_string(),
-                        name: "Host entity 2".into(),
-                        state: "unbound".into(),
-                        streams: Vec::new(),
-                    });
+                let mut endpoint = avb_endpointd::status::EndpointStatus::default();
+                endpoint.entity_id = entity_id.to_string();
+                endpoint.name = "Host entity 2".into();
+                endpoint.state = "unbound".into();
+                status.endpoints.push(endpoint);
                 triib.starting.push(crate::host::Starting {
                     interface: "enp6s0".into(),
                     entity_id,
@@ -3735,46 +3718,29 @@ pub(crate) mod tests {
         // The wired ESP, as if this computer ran it as a device with a
         // stream each way: the inspector shows its state, and a button
         // that removes it.
-        triib.endpoints = Some(DaemonStatus {
-            pid: 1,
-            started: 0,
-            interface: "enp6s0".into(),
-            gptp: "grandmaster 0x0001f2fffeff3b14, asCapable".into(),
-            foreign_mrp: false,
-            config: None,
-            clock: None,
-            setup: None,
-            sharers: Vec::new(),
-            endpoints: vec![EndpointStatus {
-                default: false,
-                held: false,
-                model: None,
-                generic_model: false,
-                entity_id: WIRED_ESP.to_string(),
-                name: "Host device 1".into(),
-                state: "listening".into(),
-                streams: vec![
-                    StreamStatus {
-                        blocked: None,
-                        direction: Direction::Out,
-                        clock: false,
-                        name: "Out 1".into(),
-                        channels: 8,
-                        audio: "virtual".into(),
-                        state: "streaming".into(),
-                    },
-                    StreamStatus {
-                        blocked: None,
-                        direction: Direction::In,
-                        clock: false,
-                        name: "In 1".into(),
-                        channels: 2,
-                        audio: "discard".into(),
-                        state: "unbound".into(),
-                    },
-                ],
-            }],
-        });
+        let mut output = StreamStatus::default();
+        output.direction = Direction::Out;
+        output.name = "Out 1".into();
+        output.channels = 8;
+        output.audio = "virtual".into();
+        output.state = "streaming".into();
+        let mut input = StreamStatus::default();
+        input.direction = Direction::In;
+        input.name = "In 1".into();
+        input.channels = 2;
+        input.audio = "discard".into();
+        input.state = "unbound".into();
+        let mut endpoint = EndpointStatus::default();
+        endpoint.entity_id = WIRED_ESP.to_string();
+        endpoint.name = "Host device 1".into();
+        endpoint.state = "listening".into();
+        endpoint.streams = vec![output, input];
+        let mut status = DaemonStatus::default();
+        status.pid = 1;
+        status.interface = "enp6s0".into();
+        status.gptp = "grandmaster 0x0001f2fffeff3b14, asCapable".into();
+        status.endpoints = vec![endpoint];
+        triib.endpoints = Some(status);
         triib.inspector_tab = InspectorTab::Entity;
         let mut simulator = simulate(&triib, size);
         assert!(simulator.find("Listening").is_ok());
@@ -4065,27 +4031,16 @@ pub(crate) mod tests {
             );
         }
         // The daemon runs it, and sets the link up first.
-        let mut status = DaemonStatus {
-            pid: 1,
-            started: 0,
-            interface: "enp6s0".into(),
-            gptp: "gptpd does not answer for this interface".into(),
-            foreign_mrp: false,
-            config: None,
-            clock: None,
-            setup: Some(Setup::Link),
-            sharers: Vec::new(),
-            endpoints: vec![EndpointStatus {
-                default: false,
-                held: false,
-                model: None,
-                generic_model: false,
-                entity_id: entity_id.to_string(),
-                name: "Host entity 1".into(),
-                state: "unbound".into(),
-                streams: Vec::new(),
-            }],
-        };
+        let mut endpoint = EndpointStatus::default();
+        endpoint.entity_id = entity_id.to_string();
+        endpoint.name = "Host entity 1".into();
+        endpoint.state = "unbound".into();
+        let mut status = DaemonStatus::default();
+        status.pid = 1;
+        status.interface = "enp6s0".into();
+        status.gptp = "gptpd does not answer for this interface".into();
+        status.setup = Some(Setup::Link);
+        status.endpoints = vec![endpoint];
         triib.endpoints = Some(status.clone());
         {
             let mut simulator = simulate(&triib, size);

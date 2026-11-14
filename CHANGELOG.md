@@ -92,6 +92,20 @@ All notable changes to triib. Versions follow
   over the card's queues again. Such a root is first made one class of
   every queue, as the map from priorities to classes it left behind
   sent frames past the pin.
+- The daemon gives other devices' streams on the network audio devices
+  of their own, so any app plays to them or records from them as from
+  speakers and a microphone. Every listener input found gets an output
+  device, which connects the default entity's talker to it while an app
+  plays into it; talker outputs get recording devices once pinned, as
+  `sources = "pinned"` is the default. Each interface's file holds the
+  modes and the pinned and hidden streams. triib's own entities are
+  left out, and triib's features go on as before.
+- triib keeps those settings, and the streams the daemon pins as an app
+  first plays to them, when it changes the entities' file: on the
+  daemon's 0.2 library it dropped them.
+- The default entity leaves alone a stream input that another of this
+  computer's talkers feeds, as it does one another controller connected,
+  rather than taking it over for an app.
 
 ### Packages
 

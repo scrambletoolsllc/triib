@@ -2596,27 +2596,15 @@ mod tests {
             NodeKind::Entity { entity_id, .. } if *entity_id == controller
         )));
         assert!(kinds(&triib).contains(&NodeKind::Host));
-        triib.endpoints = Some(DaemonStatus {
-            pid: 1,
-            started: 0,
-            interface: "enp6s0".into(),
-            gptp: String::new(),
-            foreign_mrp: false,
-            config: None,
-            clock: None,
-            setup: None,
-            sharers: Vec::new(),
-            endpoints: vec![EndpointStatus {
-                default: false,
-                held: false,
-                model: None,
-                generic_model: false,
-                entity_id: crate::view::tests::WIRED_ESP.to_string(),
-                name: "Host entity 1".into(),
-                state: "running".into(),
-                streams: Vec::new(),
-            }],
-        });
+        let mut endpoint = EndpointStatus::default();
+        endpoint.entity_id = crate::view::tests::WIRED_ESP.to_string();
+        endpoint.name = "Host entity 1".into();
+        endpoint.state = "running".into();
+        let mut status = DaemonStatus::default();
+        status.pid = 1;
+        status.interface = "enp6s0".into();
+        status.endpoints = vec![endpoint];
+        triib.endpoints = Some(status);
         assert!(!kinds(&triib).contains(&NodeKind::Host));
     }
 

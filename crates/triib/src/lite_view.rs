@@ -548,28 +548,17 @@ mod tests {
     fn another_participant_on_the_port_raises_an_alarm() {
         use avb_endpointd::status::{DaemonStatus, EndpointStatus};
         let mut triib = lite_bench(-180, 6_336);
-        let endpoint = |entity: EntityId| EndpointStatus {
-            default: false,
-            held: false,
-            model: None,
-            generic_model: false,
-            entity_id: entity.to_string(),
-            name: "Host device 1".into(),
-            state: "listening".into(),
-            streams: Vec::new(),
+        let endpoint = |entity: EntityId| {
+            let mut endpoint = EndpointStatus::default();
+            endpoint.entity_id = entity.to_string();
+            endpoint.name = "Host device 1".into();
+            endpoint.state = "listening".into();
+            endpoint
         };
-        let mut status = DaemonStatus {
-            pid: 1,
-            started: 0,
-            interface: "enp2s0".into(),
-            gptp: String::new(),
-            foreign_mrp: false,
-            config: None,
-            clock: None,
-            setup: None,
-            sharers: Vec::new(),
-            endpoints: vec![endpoint(EntityId(0x1234)), endpoint(WIRED_ESP)],
-        };
+        let mut status = DaemonStatus::default();
+        status.pid = 1;
+        status.interface = "enp2s0".into();
+        status.endpoints = vec![endpoint(EntityId(0x1234)), endpoint(WIRED_ESP)];
         triib.endpoints = Some(status.clone());
         assert!(alarms(&triib).is_empty());
         status.foreign_mrp = true;
