@@ -148,7 +148,7 @@ so the new one upgrades it, and removes triib at the end.
 | Arch | A fresh Arch container | `build-arch.sh` builds the PKGBUILD from this tree, gptpd's source included, then the same test, with gptpd's files and its version checked too |
 | MSI | GitHub's Windows Server 2025 and Windows 11 ARM runners | `packaging/tests/windows/test-msi.ps1`: checks every DLL the programs import against those Windows itself provides, then installs and checks the files, the entry in Apps, the PATH, the Start menu shortcut, each program and the window; then that uninstalling leaves nothing |
 | MSI, x64 | A Windows Server 2022 container, which has nothing installed | The same, without the window |
-| .pkg | Fresh macOS 14, 15 and 26 runners for Apple Silicon, and macOS 15 for Intel | `packaging/tests/macos/test-pkg.sh`: that the programs are built for the Macs the package installs on, Gatekeeper's verdict on a downloaded copy, that the programs link only macOS's own libraries and run on the oldest macOS the app claims, then installs and checks the app, triib-cli, the BPF launch daemon and access for the user, and the window; then that the uninstall script leaves nothing |
+| .pkg | Fresh macOS 15 and 26 runners for Apple Silicon, and macOS 15 for Intel | `packaging/tests/macos/test-pkg.sh`: that the programs are built for the Macs the package installs on, Gatekeeper's verdict on a downloaded copy, that the programs link only macOS's own libraries and run on the oldest macOS the app claims, then installs and checks the app, triib-cli, the BPF launch daemon and access for the user, and the window; then that the uninstall script leaves nothing |
 
 To run one by hand:
 

@@ -527,14 +527,12 @@ jobs:
   macos-install:
     # Each macOS that GitHub runs, each a fresh machine: the Apple Silicon
     # package on each, and the Intel package on macOS 15, GitHub's last
-    # Intel runner.
+    # Intel runner. GitHub no longer runs macOS 14.
     needs: macos
     strategy:
       fail-fast: false
       matrix:
         include:
-          - arch: arm64
-            runner: macos-14
           - arch: arm64
             runner: macos-15
           - arch: arm64
