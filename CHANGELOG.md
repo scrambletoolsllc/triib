@@ -3,7 +3,17 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.4.0] - 2026-11-19
+
+Host entities on Linux run in avb-endpointd, the daemon plaa shares,
+from login whether triib is open or not, beside a default entity any
+app plays into and records from, and other devices' streams on the
+network get audio devices of their own. Their talkers leave out a frame
+that would arrive late rather than starting their media clock again,
+and their links keep a stream's frames in order and moving under memory
+load. The packages carry avb-endpointd 0.3.3 and gptpd 0.2.1, macOS has
+an installer package for Intel Macs, and when triib panics it writes
+what happened to `crash.log`.
 
 ### Everywhere
 
@@ -112,6 +122,12 @@ All notable changes to triib. Versions follow
 - An installer package for Intel Macs (`x86_64`), beside the Apple
   Silicon one (`arm64`): macOS 11 and later, signed and notarized as it
   is, and tested on GitHub's macOS 15 Intel runner.
+- The Linux packages carry avb-endpointd 0.3.3, whose `log`, `crash`
+  and `firmware` commands follow a device's log, save its crash dump and
+  upload its firmware, and the release gptpd 0.2.1, which keeps the
+  grandmaster through Syncs a card leaves without a time stamp, holds
+  back a late step for five seconds, and takes `sync-receipt-timeout`
+  for a switch that pauses its Syncs.
 - The Arch package builds gptpd in, which it provides, so `makepkg -si`
   installs it: 1.3.0's PKGBUILD depended on gptpd, which no repository
   has, so makepkg stopped. Where gptpd's own package is installed,

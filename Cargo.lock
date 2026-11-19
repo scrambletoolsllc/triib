@@ -285,9 +285,9 @@ dependencies = [
 
 [[package]]
 name = "atdecc"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9abcb607f3eb4722a1770bf7cd489da633f7fee18aa3464451eda58687baff49"
+checksum = "764b1d0072bf4e0dcb3b461b329c3481734512a5e1aad960c41c1c342c6b8b31"
 dependencies = [
  "avb-mrp",
  "avb-net",
@@ -310,9 +310,9 @@ checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
 name = "avb-endpointd"
-version = "0.3.1"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3d724c63b8b660f38b8ca9409100a9d5d863e762f917f8dd4ed34995d1c061b"
+checksum = "355d1cd960dd05237203ab34452b76d921fb0819cf158f2a8abf169bab0cc70d"
 dependencies = [
  "atdecc",
  "avb-net",
@@ -4109,7 +4109,7 @@ dependencies = [
 
 [[package]]
 name = "triib"
-version = "1.3.0"
+version = "1.4.0"
 dependencies = [
  "ashpd",
  "atdecc",
@@ -4145,7 +4145,7 @@ dependencies = [
 
 [[package]]
 name = "triib-cli"
-version = "1.3.0"
+version = "1.4.0"
 dependencies = [
  "atdecc",
  "avb-net",
@@ -4153,7 +4153,7 @@ dependencies = [
 
 [[package]]
 name = "triib-store"
-version = "1.3.0"
+version = "1.4.0"
 dependencies = [
  "serde",
  "tempfile",

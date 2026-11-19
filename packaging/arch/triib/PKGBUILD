@@ -1,13 +1,13 @@
 # Maintainer: Scramble Tools <https://github.com/scrambletools>
 pkgname=triib
-pkgver=1.3.0
-pkgrel=2
+pkgver=1.4.0
+pkgrel=1
 # gptpd, which host entities keep the network's time with, and
 # avb-endpointd, which runs them, go in this package, as no repository
 # has them for makepkg to install, and a split package would give them
 # triib's version. Their own packages can replace them.
-_gptpd=0.1.0
-_avb_endpointd=0.3.1
+_gptpd=0.2.1
+_avb_endpointd=0.3.3
 pkgdesc='Discover, connect and set up AVB and Milan devices'
 arch=('x86_64' 'aarch64')
 url='https://github.com/scrambletoolsllc/triib'
@@ -25,8 +25,8 @@ source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
         "gptp-$_gptpd.tar.gz::https://github.com/scrambletools/gptp/archive/refs/tags/v$_gptpd.tar.gz"
         "Linux-AVB-Endpoint-avb-endpointd-v$_avb_endpointd.tar.gz::https://github.com/scrambletools/Linux-AVB-Endpoint/archive/refs/tags/avb-endpointd-v$_avb_endpointd.tar.gz")
 sha256sums=('SKIP'
-            '08c56cad7f1aa634b243890a25ff8ded61daff5e8020ad123abe19594a1e85a2'
-            '1ea91451dcdcb61ba22ffee1d6803a8485997459e63d0229249e80cd1379844b')
+            'fd114beedf47d52dd4544559e8f1b33b94e8e9450b66ddc594b087b1ff22cd1e'
+            '537ac8a7370478a9e406f7c0f2994dc78b53b50029c590524257a43ffa0f39c7')
 
 prepare() {
     export RUSTUP_TOOLCHAIN=stable

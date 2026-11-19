@@ -4,8 +4,8 @@
 #
 #   scripts/dist-install.sh target/release stage /usr
 #   ../avb/scripts/dist-install.sh ../avb/target/release stage /usr
-#   VERSION=1.3.0 ARCH=amd64 nfpm package -f packaging/nfpm.yaml -p deb
-#   VERSION=1.3.0 ARCH=amd64 nfpm package -f packaging/nfpm.yaml -p rpm
+#   VERSION=1.4.0 ARCH=amd64 nfpm package -f packaging/nfpm.yaml -p deb
+#   VERSION=1.4.0 ARCH=amd64 nfpm package -f packaging/nfpm.yaml -p rpm
 #
 # avb-endpointd, which runs host entities, goes in this package until it
 # has its own, which replaces it. Installing grants avb-netraw

@@ -19,10 +19,10 @@ env:
   NFPM_VERSION: 2.43.0
   # gptpd's release, whose Debian and RPM packages this release carries
   # too, as no distribution has gptpd.
-  GPTPD_VERSION: 0.1.0
+  GPTPD_VERSION: 0.2.1
   # avb-endpointd's release, from Linux-AVB-Endpoint, which runs host
   # entities and goes in triib's Linux packages until it has its own.
-  AVB_ENDPOINTD_VERSION: 0.3.1
+  AVB_ENDPOINTD_VERSION: 0.3.3
 
 jobs:
   linux:
