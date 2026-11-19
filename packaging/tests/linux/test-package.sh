@@ -5,17 +5,21 @@
 # regular user, the window under a headless Wayland compositor, and what
 # removing it leaves behind. run.sh beside it starts the container.
 #
-#   test-package.sh PACKAGE [PREVIOUS]
+#   test-package.sh PACKAGE [PREVIOUS [PREVIOUS_GPTPD]]
 #
 # PACKAGE is a .deb, .rpm or Arch package. PREVIOUS, an older package of
-# the same kind, goes in first, so PACKAGE upgrades it.
+# the same kind, goes in first, so PACKAGE upgrades it; PREVIOUS_GPTPD,
+# gptpd's own package from that release, goes in beside it, for PACKAGE,
+# which carries gptpd, to replace.
 # TRIIB_TEST_EMULATED=1, for an architecture running under QEMU, leaves
 # out raw Ethernet and the window. TRIIB_TEST_SHOTS names a directory for
 # a screenshot of the window.
 set -euo pipefail
 
-package=$(readlink -f "${1:?usage: test-package.sh PACKAGE [PREVIOUS]}")
+usage="usage: test-package.sh PACKAGE [PREVIOUS [PREVIOUS_GPTPD]]"
+package=$(readlink -f "${1:?$usage}")
 previous=${2:+$(readlink -f "$2")}
+previous_gptpd=${3:+$(readlink -f "$3")}
 emulated=${TRIIB_TEST_EMULATED:-}
 shots=${TRIIB_TEST_SHOTS:-}
 id=run.triib
@@ -36,8 +40,7 @@ case $package in
 esac
 
 # Only what each package depends on, none of what it recommends, so a
-# dependency left out of a package shows. The debs and rpms go in without
-# gptpd, which they recommend: triib runs without it.
+# dependency left out of a package shows.
 install_package() {
     case $kind in
     deb) apt-get install -y --no-install-recommends -o Dpkg::Options::=--force-confold "$1" ;;
@@ -86,6 +89,10 @@ esac
 if [ -n "$previous" ]; then
     section "Install $(basename "$previous"), to upgrade from"
     install_package "$previous"
+    if [ -n "$previous_gptpd" ]; then
+        section "Install $(basename "$previous_gptpd") beside it"
+        install_package "$previous_gptpd"
+    fi
 fi
 
 section "Install $(basename "$package")"
@@ -137,10 +144,34 @@ command -v tc >/dev/null || fail "tc did not come in with triib"
 [ -f /usr/share/dbus-1/system-services/org.freedesktop.RealtimeKit1.service ] ||
     fail "RealtimeKit did not come in with triib"
 echo "all there"
-# The Arch package carries gptpd, as no repository has it.
-if [ "$kind" = arch ]; then
-    [ -f /usr/lib/systemd/system/gptpd@.service ] || fail "gptpd@.service is missing"
-    /usr/bin/gptpd --version || fail "gptpd does not run"
+
+# Every package carries gptpd, as no distribution has it, with its unit,
+# its polkit rule, and the gptpd group the unit runs it in.
+section gptpd
+for file in /usr/lib/systemd/system/gptpd@.service /usr/share/polkit-1/rules.d/50-gptpd.rules \
+    /usr/lib/sysusers.d/gptpd.conf /usr/share/licenses/gptpd/LICENSE-MIT; do
+    [ -f "$file" ] || fail "$file is missing"
+done
+grep -q '^ExecStart=/usr/bin/gptpd %i$' /usr/lib/systemd/system/gptpd@.service ||
+    fail "gptpd@.service does not run /usr/bin/gptpd"
+/usr/bin/gptpd --version || fail "gptpd does not run"
+getent group gptpd >/dev/null || fail "installing made no gptpd group"
+echo "gptpd and its group are there"
+# The older release's gptpd package is gone, its files now triib's.
+if [ -n "$previous_gptpd" ]; then
+    case $kind in
+    deb)
+        owner=$(dpkg -S /usr/bin/gptpd | cut -d: -f1)
+        ! dpkg-query -W -f '${Status}' gptpd 2>/dev/null | grep -q 'ok installed' ||
+            fail "gptpd's own package is still installed"
+        ;;
+    rpm)
+        owner=$(rpm -qf --qf '%{NAME}' /usr/bin/gptpd)
+        ! rpm -q gptpd >/dev/null 2>&1 || fail "gptpd's own package is still installed"
+        ;;
+    esac
+    [ "$owner" = triib ] || fail "/usr/bin/gptpd belongs to $owner, not triib"
+    echo "triib replaced $(basename "$previous_gptpd")"
 fi
 
 # Releases up to 1.1.1 installed these under the old app ID, and up to
@@ -180,8 +211,7 @@ echo "said so as it installed"
 
 # Installing says what it changes on the system and why.
 section "What installing changes"
-explained=(CAP_NET_RAW avb-endpointd@.service RealtimeKit avb-link@.service)
-[ "$kind" = arch ] && explained+=(gptpd@.service)
+explained=(CAP_NET_RAW avb-endpointd@.service RealtimeKit avb-link@.service gptpd@.service)
 for said in "${explained[@]}"; do
     grep -q "$said" /tmp/install.log || fail "installing did not explain $said"
 done
@@ -198,10 +228,24 @@ section "Each program, as a regular user"
 command -v runuser >/dev/null || add_tools util-linux >/dev/null
 useradd -m tester
 as_tester() { runuser -u tester -- "$@"; }
-for program in "${programs[@]}"; do
+# triib's programs carry its version; avb-endpointd and gptpd their own
+# releases', AVB_ENDPOINTD_VERSION and GPTPD_VERSION where given, as the
+# release workflow does.
+for program in "${programs[@]}" gptpd; do
+    case $program in
+    avb-endpointd) want_version=${AVB_ENDPOINTD_VERSION:-} ;;
+    gptpd) want_version=${GPTPD_VERSION:-} ;;
+    *) want_version=$version ;;
+    esac
     printed=$(as_tester "/usr/bin/$program" --version)
     echo "$printed"
-    [ "$printed" = "$program $version" ] || fail "$program --version printed '$printed', not '$program $version'"
+    if [ -n "$want_version" ]; then
+        [ "$printed" = "$program $want_version" ] ||
+            fail "$program --version printed '$printed', not '$program $want_version'"
+    else
+        [[ $printed =~ ^$program\ [0-9]+\.[0-9]+\.[0-9]+$ ]] ||
+            fail "$program --version printed '$printed', not '$program' and a version"
+    fi
 done
 
 if [ -z "$emulated" ]; then

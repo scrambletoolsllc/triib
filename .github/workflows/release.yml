@@ -17,8 +17,9 @@ on:
 env:
   CARGO_TERM_COLOR: always
   NFPM_VERSION: 2.43.0
-  # gptpd's release, whose Debian and RPM packages this release carries
-  # too, as no distribution has gptpd.
+  # gptpd's release, from the gptp repository, which keeps the network's
+  # time for host entities. Every Linux package carries it, built from its
+  # tag, as no distribution has gptpd, so one package is all it takes.
   GPTPD_VERSION: 0.2.1
   # avb-endpointd's release, from Linux-AVB-Endpoint, which runs host
   # entities and goes in triib's Linux packages until it has its own.
@@ -57,6 +58,11 @@ jobs:
           repository: scrambletools/Linux-AVB-Endpoint
           ref: avb-endpointd-v${{ env.AVB_ENDPOINTD_VERSION }}
           path: endpointd
+      - uses: actions/checkout@v5
+        with:
+          repository: scrambletools/gptp
+          ref: v${{ env.GPTPD_VERSION }}
+          path: gptp
       - name: Install ALSA's and PipeWire's headers for audio
         if: ${{ !matrix.target }}
         run: |
@@ -74,6 +80,7 @@ jobs:
           workspaces: |
             . -> target
             endpointd -> target
+            gptp -> target
       - name: Version
         id: version
         run: |
@@ -91,14 +98,19 @@ jobs:
           if [ -n "$TARGET" ]; then
             cargo build --release --locked -p triib -p triib-cli --target "$TARGET"
             (cd endpointd && cargo build --release --locked -p avb-endpointd --features daemon -p avb-netraw --target "$TARGET")
-            echo "binaries=target/$TARGET/release" >>"$GITHUB_OUTPUT"
-            echo "endpointd=endpointd/target/$TARGET/release" >>"$GITHUB_OUTPUT"
+            (cd gptp && cargo build --release --locked -p gptpd --target "$TARGET")
+            release=$TARGET/release
           else
             cargo build --release --locked -p triib -p triib-cli
             (cd endpointd && cargo build --release --locked -p avb-endpointd --features daemon -p avb-netraw)
-            echo "binaries=target/release" >>"$GITHUB_OUTPUT"
-            echo "endpointd=endpointd/target/release" >>"$GITHUB_OUTPUT"
+            (cd gptp && cargo build --release --locked -p gptpd)
+            release=release
           fi
+          {
+            echo "binaries=target/$release"
+            echo "endpointd=endpointd/target/$release"
+            echo "gptpd=gptp/target/$release"
+          } >>"$GITHUB_OUTPUT"
         env:
           TRIIB_PRODUCTION: '1'
           TARGET: ${{ matrix.target }}
@@ -110,12 +122,14 @@ jobs:
             $run ${{ steps.build.outputs.binaries }}/$program --version
           done
           $run ${{ steps.build.outputs.endpointd }}/avb-endpointd --version
+          $run ${{ steps.build.outputs.gptpd }}/gptpd --version
         env:
           TARGET: ${{ matrix.target }}
       - name: Stage
         run: |
           scripts/dist-install.sh ${{ steps.build.outputs.binaries }} stage /usr
           endpointd/scripts/dist-install.sh ${{ steps.build.outputs.endpointd }} stage /usr
+          gptp/scripts/dist-install.sh ${{ steps.build.outputs.gptpd }} stage /usr
       - name: Debian and RPM packages
         run: |
           curl -sSLf -o nfpm.deb \
@@ -392,7 +406,19 @@ jobs:
           *) package=$(ls packages/*.deb) ;;
           esac
           previous=$(packaging/tests/previous-release.sh "$package" previous)
-          packaging/tests/linux/run.sh "$IMAGE" "$package" $previous
+          # The last release's gptpd package too, which its users installed
+          # beside triib, for this one, which carries gptpd, to replace.
+          gptpd=
+          if [ -n "$previous" ]; then
+            case $package in
+            *.deb) pattern="gptpd_*_${package##*_}" ;;
+            *.rpm) arch=${package%.rpm}; pattern="gptpd-*.${arch##*.}.rpm" ;;
+            esac
+            tag=$(gh release view --json tagName --jq .tagName)
+            gh release download "$tag" --pattern "$pattern" --dir previous --clobber || true
+            gptpd=$(find previous -maxdepth 1 -name "$pattern" | head -1)
+          fi
+          packaging/tests/linux/run.sh "$IMAGE" "$package" $previous $gptpd
         env:
           IMAGE: ${{ matrix.image }}
           GH_TOKEN: ${{ github.token }}
@@ -569,9 +595,8 @@ jobs:
           cp artifacts/linux-*/* artifacts/windows-*/* artifacts/macos-*/* upload/
           # The PKGBUILD and its install file, to build the Arch package.
           cp artifacts/aur/* upload/
-          # gptpd's Debian and RPM packages, for host entities; the
-          # PKGBUILD builds gptpd into the Arch package.
-          gh release download "v$GPTPD_VERSION" -R scrambletools/gptp -D upload -p 'gptpd*.deb' -p 'gptpd*.rpm'
+          # No gptpd packages beside triib's: each carries gptpd, and
+          # replaces gptpd's own package where an older release put it.
           (cd upload && sha256sum * >SHA256SUMS)
           version=${GITHUB_REF_NAME#v}
           # This version's section of the changelog, without its heading.

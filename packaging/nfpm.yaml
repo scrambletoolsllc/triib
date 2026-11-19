@@ -1,17 +1,21 @@
 # Debian and RPM packages, made with nfpm (https://nfpm.goreleaser.com)
-# from a tree staged by triib's scripts/dist-install.sh and, from a build
-# of the avb crates' release, avb's:
+# from a tree staged by triib's scripts/dist-install.sh and, from builds
+# of their releases' tags, avb-endpointd's and gptpd's:
 #
 #   scripts/dist-install.sh target/release stage /usr
-#   ../avb/scripts/dist-install.sh ../avb/target/release stage /usr
+#   endpointd/scripts/dist-install.sh endpointd/target/release stage /usr
+#   gptp/scripts/dist-install.sh gptp/target/release stage /usr
 #   VERSION=1.4.0 ARCH=amd64 nfpm package -f packaging/nfpm.yaml -p deb
 #   VERSION=1.4.0 ARCH=amd64 nfpm package -f packaging/nfpm.yaml -p rpm
 #
-# avb-endpointd, which runs host entities, goes in this package until it
-# has its own, which replaces it. Installing grants avb-netraw
-# CAP_NET_RAW and says what it changes on the system and why
-# (packaging/linux). ethtool and iproute2's ip and tc run avb-link@, and
-# RealtimeKit gives host entities' stream threads realtime priority.
+# avb-endpointd, which runs host entities, and gptpd, which keeps their
+# network's time, go in this package, as no distribution has them, so
+# installing it is all host entities take. It replaces gptpd's own
+# package, which older releases came with. Installing grants avb-netraw
+# CAP_NET_RAW, makes the gptpd group, and says what it changes on the
+# system and why (packaging/linux). ethtool and iproute2's ip and tc run
+# avb-link@, and RealtimeKit gives host entities' stream threads realtime
+# priority.
 name: triib
 arch: ${ARCH}
 platform: linux
@@ -28,18 +32,28 @@ description: |-
   triib is a lightweight ATDECC (IEEE 1722.1) controller with Milan and
   AVB Lite support: a connection matrix, the network as gPTP shows it,
   device settings, presets and a frame log, with triib-cli for the
-  command line and avb-endpointd for talkers and listeners on this
-  computer.
+  command line, and avb-endpointd and gptpd for talkers and listeners
+  on this computer.
 
 provides:
   - avb-endpointd
+  - gptpd
 conflicts:
   - avb-endpointd
+  - gptpd
+# Replaces in a .deb, Obsoletes in an .rpm: apt and dnf take gptpd's own
+# package out for this one, rather than refusing.
+replaces:
+  - gptpd
 
 contents:
   - src: ./stage/usr/
     dst: /usr
     type: tree
+  - dst: /etc/gptpd
+    type: dir
+    file_info:
+      mode: 0755
 
 scripts:
   preinstall: ./packaging/linux/preinstall.sh
@@ -62,7 +76,7 @@ overrides:
       - rtkit
     recommends:
       - mesa-vulkan-drivers
-      - gptpd
+      - polkitd | policykit-1
   rpm:
     depends:
       - alsa-lib
@@ -77,7 +91,7 @@ overrides:
       - rtkit
     recommends:
       - mesa-vulkan-drivers
-      - gptpd
+      - polkit
 
 rpm:
   group: Applications/Multimedia

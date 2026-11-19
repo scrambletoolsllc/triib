@@ -43,31 +43,34 @@ triib sends and receives raw Ethernet, which each system guards:
   `triib`, `triib-cli` and `avb-endpointd`. The .deb, .rpm and AUR
   packages set it when they install (`setcap`, from libcap). The tarball
   cannot; after unpacking, run `sudo setcap cap_net_raw+ep` on
-  `usr/lib/avb-endpointd/avb-netraw`. There is no AppImage or Flatpak,
+  `usr/lib/avb-endpointd/avb-netraw`, and `sudo systemd-sysusers
+  gptpd.conf` for gptpd's group. There is no AppImage or Flatpak,
   as neither can carry the capability. The packages depend on ALSA's and
   PipeWire's libraries for audio, PipeWire's for the virtual audio
   devices of this computer's streams, on RealtimeKit for the stream
   threads' realtime priority and on ethtool and iproute2 (iproute on
-  Fedora) for `avb-link@`, and recommend gptpd, which runs gPTP for the
-  host entities. They carry avb-endpointd, which runs the host entities,
-  from the avb repository's release that `AVB_ENDPOINTD_VERSION` in the
-  release workflow and `_avb_endpointd` in the PKGBUILD name, built
-  beside triib: the daemon, `avb-netraw`, the person's
-  `avb-endpointd@.service`, the link units and their polkit rule. Each
-  package provides avb-endpointd and conflicts with its own package,
-  which replaces it once there is one. No distribution carries gptpd, so
-  its own Debian and RPM packages come with the releases, and apt and
-  dnf skip the Recommends without a word where it is not installed.
-  makepkg can't install a dependency no repository has, so the PKGBUILD
-  builds gptpd into the Arch package, which provides gptpd and conflicts
-  with its own package. avb-endpointd reads the grandmaster's time from
+  Fedora) for `avb-link@`, and recommend polkit, whose rules let the
+  person at the computer start the link units and gptpd. They carry
+  avb-endpointd, which runs the host entities, from the avb repository's
+  release that `AVB_ENDPOINTD_VERSION` in the release workflow and
+  `_avb_endpointd` in the PKGBUILD name, built beside triib: the daemon,
+  `avb-netraw`, the person's `avb-endpointd@.service`, the link units
+  and their polkit rule. No distribution carries gptpd, which runs gPTP
+  for the host entities, so every package carries it too, built from
+  the gptp tag that `GPTPD_VERSION` and `_gptpd` name: the daemon,
+  `gptpd@.service`, its polkit rule and its group, which installing
+  makes. Each package provides avb-endpointd and gptpd and conflicts
+  with their own packages, so installing it is all host entities take;
+  the .deb and .rpm also replace gptpd's own package, which releases up
+  to 1.3.0 came with, so apt and dnf swap it out rather than refuse.
+  avb-endpointd reads the grandmaster's time from
   gptpd's time file in /run/gptpd, which everyone can read. As they
   install, the packages say when no wired interface has a PTP hardware
   clock, which using this computer as an AVB endpoint requires, with the
   Ethernet cards that have one and that no Wi-Fi card can serve yet.
   They also say what installing changes on the system and why: the
   capability, avb-endpointd's user service, RealtimeKit, the link units
-  and their polkit rule, and on Arch gptpd's unit, group and rule.
+  and their polkit rule, and gptpd's unit, group and rule.
 - **macOS:** read and write access to the BPF devices, `/dev/bpf*`,
   which are root's alone at every start. The installer package puts
   `triib.app` in /Applications, links `triib-cli` into /usr/local/bin,
@@ -101,9 +104,9 @@ triib sends and receives raw Ethernet, which each system guards:
    run `cargo check` so `Cargo.lock` follows; update `pkgver` in
    `packaging/arch/triib/PKGBUILD`, with `pkgrel` back to 1, and add a
    `<release>` to the metainfo. `GPTPD_VERSION` in
-   `.github/workflows/release.yml` names the gptpd release whose Debian
-   and RPM packages the release carries; it must already be published,
-   and the PKGBUILD's `_gptpd` and its source checksum must match it.
+   `.github/workflows/release.yml` names the gptpd release every Linux
+   package builds in from its tag; it must already be tagged, and the
+   PKGBUILD's `_gptpd` and its source checksum must match it.
 2. Write the version's section in `CHANGELOG.md`, as `## [X.Y.Z]`; the
    release notes are taken from it, or made by GitHub when there is none.
    Changes go under `## [Unreleased]` as they land, which the release

@@ -47,15 +47,16 @@ Website: **[triib.run](https://triib.run)**, with
 ## Installing
 
 [Releases](https://github.com/scrambletoolsllc/triib/releases) have
-packages for Linux on x86_64, ARM64 and RISC-V, Windows on x64 and ARM64,
-and macOS on Apple Silicon, each setting up what triib needs to send and
-receive raw Ethernet:
+packages for Linux on x86_64, ARM64 and RISC-V (Debian 13, Ubuntu 24.04,
+Fedora 40 and later, or any with glibc 2.39), Windows on x64 and ARM64,
+and macOS on Apple Silicon and Intel, each setting up what triib needs to
+send and receive raw Ethernet:
 
 | System | Package | What it sets up |
 |---|---|---|
-| Linux | .deb, .rpm, PKGBUILD | `CAP_NET_RAW` for `/usr/lib/avb-endpointd/avb-netraw`, which opens raw sockets for `triib`, `triib-cli` and `avb-endpointd` |
-| Linux | .tar.gz | nothing: once it is unpacked into / (`sudo tar -C / -xzf`), run `sudo setcap cap_net_raw+ep /usr/lib/avb-endpointd/avb-netraw` |
-| macOS (Apple Silicon) | .pkg | access to `/dev/bpf*` for the user installing it, at every start, as Wireshark's ChmodBPF does; `triib-cli` in /usr/local/bin |
+| Linux | .deb, .rpm, PKGBUILD | `CAP_NET_RAW` for `/usr/lib/avb-endpointd/avb-netraw`, which opens raw sockets for `triib`, `triib-cli` and `avb-endpointd`; gptpd, with its unit and group, for host entities |
+| Linux | .tar.gz | nothing: once it is unpacked into / (`sudo tar -C / -xzf`), run `sudo setcap cap_net_raw+ep /usr/lib/avb-endpointd/avb-netraw` and `sudo systemd-sysusers gptpd.conf` |
+| macOS (Apple Silicon and Intel) | .pkg | access to `/dev/bpf*` for the user installing it, at every start, as Wireshark's ChmodBPF does; `triib-cli` in /usr/local/bin |
 | Windows | .msi, .zip | nothing itself: install [Npcap](https://npcap.com) first, which the installer and triib point to when it is missing |
 
 On macOS, triib reaches the Mac's own AVB entity through Apple's
@@ -69,10 +70,9 @@ On Linux, the Entities view adds entities running on the local host,
 which `avb-endpointd` runs, on a wired interface with a PTP hardware clock
 (`ethtool -T <interface>` shows one), as Intel's I210, I225 and I226 and
 Marvell's AQtion AQC107 have; the packages say as they install when no
-interface has one. Installing the package and gptpd is all they take:
-gptpd, an 802.1AS daemon in a package of its own that comes with triib's
-releases (the Arch package builds it in), runs gPTP on that interface, and where none answers there the
-daemon starts its unit, `gptpd@<interface>`. gptpd
+interface has one. Installing the package is all they take: it carries
+gptpd, an 802.1AS daemon, which runs gPTP on that interface, and where
+none answers there the daemon starts its unit, `gptpd@<interface>`. gptpd
 never steps or slews the card's clock, which stamps the peer delay
 exchanges the neighbor measures the link with, and gives the
 grandmaster's time against it in `/run/gptpd/<interface>.time` instead.

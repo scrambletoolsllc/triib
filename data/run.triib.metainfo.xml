@@ -69,7 +69,7 @@
   <releases>
     <release version="1.4.0" date="2026-11-19">
       <description>
-        <p>Host entities on Linux run in avb-endpointd, the daemon plaa shares, from login whether triib is open or not, beside a default entity any app plays into and records from, and other devices' streams on the network get audio devices of their own. Their talkers leave out a frame that would arrive late rather than starting their media clock again, and their links keep a stream's frames in order and moving under memory load. The packages carry avb-endpointd 0.3.3 and gptpd 0.2.1, macOS has an installer package for Intel Macs, and when triib panics it writes what happened to crash.log.</p>
+        <p>Host entities on Linux run in avb-endpointd, the daemon plaa shares, from login whether triib is open or not, beside a default entity any app plays into and records from, and other devices' streams on the network get audio devices of their own. Their talkers leave out a frame that would arrive late rather than starting their media clock again, and their links keep a stream's frames in order and moving under memory load. Every Linux package carries gptpd 0.2.1 beside avb-endpointd 0.3.3, so installing it is all host entities take, macOS has an installer package for Intel Macs, and when triib panics it writes what happened to crash.log.</p>
       </description>
     </release>
     <release version="1.3.0" date="2026-11-01">

@@ -3,7 +3,9 @@
 # without root, through avb-netraw, the one program granted CAP_NET_RAW,
 # which opens their raw sockets, and has systemd read the units that come
 # with avb-endpointd: its own, and the link units it runs as host entities
-# need them, keeping EEE and PAUSE off the link. Says what installing changes on the system and why.
+# need them, keeping EEE and PAUSE off the link, and makes the gptpd group
+# gptpd@ runs in, as gptpd's own package did. Says what installing changes
+# on the system and why.
 # Stops the ptp4l units older releases started, as gptpd keeps the
 # network's time now, and on Debian removes their unchanged
 # configurations (see preinstall.sh), then says when no interface can
@@ -17,6 +19,14 @@ fi
 program=/usr/lib/avb-endpointd/avb-netraw
 if ! setcap cap_net_raw+ep "$program"; then
     echo "triib: could not grant $program CAP_NET_RAW; run: sudo setcap cap_net_raw+ep $program" >&2
+fi
+# systemd-sysusers where there is one, as on any desktop; groupadd where
+# not, as in a container.
+if command -v systemd-sysusers >/dev/null 2>&1; then
+    systemd-sysusers gptpd.conf || true
+fi
+if ! getent group gptpd >/dev/null 2>&1; then
+    groupadd --system gptpd || echo "triib: could not make the gptpd group; run: sudo groupadd --system gptpd" >&2
 fi
 cat <<'EOF'
 triib: to reach AVB and Milan devices, and to run this computer's own
@@ -37,7 +47,10 @@ entities, this package
     fq_codel, which sends frames in the order they come. It turns
     Energy-Efficient Ethernet and PAUSE off, reconnecting the link once
     if they were on. avb-link-reset@ reconnects a link whose driver
-    leaves PTP time stamps on received frames.
+    leaves PTP time stamps on received frames;
+  - installs gptpd, which keeps the network's time for host entities,
+    with gptpd@.service, a gptpd group whose members may send it
+    commands, and a polkit rule that lets you start it on an interface.
 Nothing on an interface changes until a host entity starts there.
 EOF
 if [ -d /run/systemd/system ]; then
