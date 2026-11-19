@@ -109,6 +109,9 @@ All notable changes to triib. Versions follow
 
 ### Packages
 
+- An installer package for Intel Macs (`x86_64`), beside the Apple
+  Silicon one (`arm64`): macOS 11 and later, signed and notarized as it
+  is, and tested on GitHub's macOS 15 Intel runner.
 - The Arch package builds gptpd in, which it provides, so `makepkg -si`
   installs it: 1.3.0's PKGBUILD depended on gptpd, which no repository
   has, so makepkg stopped. Where gptpd's own package is installed,

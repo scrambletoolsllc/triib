@@ -22,8 +22,11 @@ Everything a release ships is built from this repository:
 
 Each package is built for x86_64 and ARM64 on GitHub's runners of that
 architecture, and the Linux packages also for RISC-V, cross-compiled by
-`scripts/cross-setup.sh` and checked under QEMU; the macOS package is
-built for Apple Silicon only.
+`scripts/cross-setup.sh` and checked under QEMU. On macOS that is a
+package for Apple Silicon (`arm64`) and one for Intel Macs (`x86_64`),
+the Intel one on macOS 15, GitHub's last Intel runner. `bundle.sh
+--arch x86_64` also builds the Intel package on an Apple Silicon Mac,
+whose own test then runs it under Rosetta.
 
 Packages are built with `TRIIB_PRODUCTION=1`, which makes the installed
 copy: settings in `triib.toml` (`~/.config` on Linux, `%APPDATA%\triib`
@@ -142,7 +145,7 @@ so the new one upgrades it, and removes triib at the end.
 | Arch | A fresh Arch container | `build-arch.sh` builds the PKGBUILD from this tree, gptpd's source included, then the same test, with gptpd's files and its version checked too |
 | MSI | GitHub's Windows Server 2025 and Windows 11 ARM runners | `packaging/tests/windows/test-msi.ps1`: checks every DLL the programs import against those Windows itself provides, then installs and checks the files, the entry in Apps, the PATH, the Start menu shortcut, each program and the window; then that uninstalling leaves nothing |
 | MSI, x64 | A Windows Server 2022 container, which has nothing installed | The same, without the window |
-| .pkg | Fresh macOS 14, 15 and 26 runners | `packaging/tests/macos/test-pkg.sh`: Gatekeeper's verdict on a downloaded copy, that the programs link only macOS's own libraries and run on the oldest macOS the app claims, then installs and checks the app, triib-cli, the BPF launch daemon and access for the user, and the window; then that the uninstall script leaves nothing |
+| .pkg | Fresh macOS 14, 15 and 26 runners for Apple Silicon, and macOS 15 for Intel | `packaging/tests/macos/test-pkg.sh`: that the programs are built for the Macs the package installs on, Gatekeeper's verdict on a downloaded copy, that the programs link only macOS's own libraries and run on the oldest macOS the app claims, then installs and checks the app, triib-cli, the BPF launch daemon and access for the user, and the window; then that the uninstall script leaves nothing |
 
 To run one by hand:
 
@@ -153,7 +156,8 @@ To run one by hand:
   packaging\tests\windows\test-msi.ps1 -Msi triib-X.Y.Z-x64.msi`. For a
   fully clean Windows 11, run it in Windows Sandbox.
 - macOS, on a Mac without triib installed, with sudo:
-  `packaging/tests/macos/test-pkg.sh triib-X.Y.Z-arm64.pkg`.
+  `packaging/tests/macos/test-pkg.sh triib-X.Y.Z-arm64.pkg`, or
+  `triib-X.Y.Z-x86_64.pkg` on an Intel Mac.
 
 When a new DLL fails the Windows check, link it in or install it beside
 triib; add it to the script's list only when every Windows triib

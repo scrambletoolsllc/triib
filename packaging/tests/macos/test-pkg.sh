@@ -44,9 +44,20 @@ section "macOS $(sw_vers -productVersion), $(uname -m)"
 work=$(mktemp -d)
 pkgutil --expand-full "$package" "$work/expanded"
 want=$(xmllint --xpath 'string(//pkg-ref[@version]/@version)' "$work/expanded/Distribution")
+# arm64 for Apple Silicon or x86_64 for Intel: the Macs it installs on.
+arch=$(xmllint --xpath 'string(//options/@hostArchitectures)' "$work/expanded/Distribution")
 bundle="$work/expanded/$id.pkg/Payload/Applications/triib.app"
 [ -d "$bundle" ] || fail "the package has no triib.app"
-echo "triib $want"
+echo "triib $want, for $arch"
+case $arch in
+arm64 | x86_64) ;;
+*) fail "the package is for \"$arch\", not arm64 or x86_64" ;;
+esac
+if [ "$arch" != "$(uname -m)" ]; then
+    # An Intel package also runs on Apple Silicon, under Rosetta.
+    [ "$arch" = x86_64 ] || fail "an $arch package can't run on an $(uname -m) Mac"
+    echo "on an $(uname -m) Mac, so it runs under Rosetta"
+fi
 
 section "Gatekeeper, for a downloaded copy"
 if [ "${TRIIB_EXPECT_SIGNED:-}" = true ]; then
@@ -76,8 +87,11 @@ while IFS= read -r -d '' binary; do
         *) problems+=("$name links $library, which macOS does not have") ;;
         esac
     done < <(otool -L "$binary" | tail -n +2 | awk '{print $1}')
-    lipo -archs "$binary" | grep -qw arm64 || problems+=("$name has no arm64 code")
-    minos=$(vtool -show-build "$binary" | awk '$1 == "minos" {print $2; exit}')
+    lipo -archs "$binary" | grep -qw "$arch" || problems+=("$name has no $arch code")
+    # LC_BUILD_VERSION's minos, or for a target before macOS 10.14, as an
+    # Intel build's is, LC_VERSION_MIN_MACOSX's version.
+    minos=$(vtool -show-build "$binary" | awk '$1 == "minos" || $1 == "version" {print $2; exit}')
+    [ -n "$minos" ] || problems+=("$name says no oldest macOS")
     echo "$name: macOS $minos and later"
     at_most "$minos" "$minimum" || problems+=("$name needs macOS $minos, the app claims $minimum")
 done < <(find "$bundle/Contents/MacOS" -type f -print0)

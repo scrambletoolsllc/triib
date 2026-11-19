@@ -248,16 +248,26 @@ jobs:
           path: packages/*
 
   macos:
-    # triib.app in an installer package for Apple Silicon, which also lets
-    # the user capture without root (packaging/macos). Once the repository
-    # variable MACOS_APP_IDENTITY is set (see docs/RELEASING.md), the app
+    # triib.app in an installer package, which also lets the user capture
+    # without root (packaging/macos): one for Apple Silicon and one for
+    # Intel Macs, each built on GitHub's runner of that architecture.
+    # Once the repository variable MACOS_APP_IDENTITY is set (see
+    # docs/RELEASING.md), the app
     # and package carry Scramble Tools' Developer ID signatures and the
     # package is notarized; until then they are signed ad hoc. The
     # certificates and the App Store Connect API key are secrets of the
     # environment "release".
     if: ${{ !inputs.only || inputs.only == 'all' || inputs.only == 'macos' }}
     environment: release
-    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-15
+          - arch: x86_64
+            runner: macos-15-intel
+    runs-on: ${{ matrix.runner }}
     env:
       SIGNING: ${{ vars.MACOS_APP_IDENTITY != '' }}
     steps:
@@ -265,7 +275,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
-          key: macos
+          key: macos-${{ matrix.arch }}
       # A keychain of its own holding the two Developer ID identities, for
       # this run only, and the notary key beside it.
       - if: env.SIGNING == 'true'
@@ -306,7 +316,7 @@ jobs:
             echo "TRIIB_NOTARY_ISSUER=$NOTARY_ISSUER"
           } >>"$GITHUB_ENV"
       - name: App and installer package
-        run: packaging/macos/bundle.sh --pkg --out dist
+        run: packaging/macos/bundle.sh --pkg --out dist --arch ${{ matrix.arch }}
         env:
           TRIIB_PRODUCTION: '1'
       - name: Check that it runs
@@ -338,7 +348,7 @@ jobs:
           rm -f "$RUNNER_TEMP/notary.p8"
       - uses: actions/upload-artifact@v4
         with:
-          name: macos-arm64
+          name: macos-${{ matrix.arch }}
           path: dist/*.pkg
 
   # The packages, installed as users would install them, in clean systems
@@ -489,18 +499,28 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "the test failed in the container" }
 
   macos-install:
-    # Each macOS that GitHub runs, each a fresh machine.
+    # Each macOS that GitHub runs, each a fresh machine: the Apple Silicon
+    # package on each, and the Intel package on macOS 15, GitHub's last
+    # Intel runner.
     needs: macos
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-14, macos-15, macos-26]
+        include:
+          - arch: arm64
+            runner: macos-14
+          - arch: arm64
+            runner: macos-15
+          - arch: arm64
+            runner: macos-26
+          - arch: x86_64
+            runner: macos-15-intel
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
-          name: macos-arm64
+          name: macos-${{ matrix.arch }}
           path: packages
       - name: Install, upgrade, run and remove
         run: |

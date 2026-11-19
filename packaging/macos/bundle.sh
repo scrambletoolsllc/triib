@@ -5,7 +5,11 @@
 # unless an identity is given, as below. A release carries Scramble
 # Tools' Developer ID signatures and is notarized (docs/RELEASING.md).
 #
-#   packaging/macos/bundle.sh [--pkg] [--out DIR]
+#   packaging/macos/bundle.sh [--pkg] [--out DIR] [--arch arm64|x86_64]
+#
+# The app is built for this Mac's architecture unless --arch names the
+# other: arm64 for Apple Silicon, x86_64 for Intel. The package installs
+# only on a Mac of that architecture, and its name ends in it.
 #
 # triib reaches the network through the BPF devices, which are root's
 # alone at every start. The package installs a launch daemon that opens
@@ -33,14 +37,21 @@ root=$(cd "$(dirname "$0")/../.." && pwd)
 here="$root/packaging/macos"
 out="$root/target/macos"
 pkg=false
+arch=$(uname -m)
 while [ $# -gt 0 ]; do
     case "$1" in
         --pkg) pkg=true ;;
         --out) out=$2; shift ;;
+        --arch) arch=$2; shift ;;
         *) echo "unknown option: $1" >&2; exit 2 ;;
     esac
     shift
 done
+case "$arch" in
+    arm64) triple=aarch64-apple-darwin ;;
+    x86_64) triple=x86_64-apple-darwin ;;
+    *) echo "unknown architecture: $arch (arm64 or x86_64)" >&2; exit 2 ;;
+esac
 
 version=$(sed -n 's/^version = "\(.*\)"/\1/p' "$root/Cargo.toml" | head -1)
 if [ -n "${TRIIB_PRODUCTION:-}" ]; then
@@ -49,12 +60,21 @@ else
     name=triib-dev; id=run.triib.dev
 fi
 
-cargo build --release --locked -p triib -p triib-cli --manifest-path "$root/Cargo.toml"
+# Built for the other architecture, the programs go under its own target
+# folder, so this Mac's build stays where it was.
+build=(cargo build --release --locked -p triib -p triib-cli --manifest-path "$root/Cargo.toml")
+if [ "$arch" = "$(uname -m)" ]; then
+    "${build[@]}"
+    built="$root/target/release"
+else
+    "${build[@]}" --target "$triple"
+    built="$root/target/$triple/release"
+fi
 
 app="$out/$name.app"
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/licenses/fonts"
-cp "$root/target/release/triib" "$root/target/release/triib-cli" "$app/Contents/MacOS/"
+cp "$built/triib" "$built/triib-cli" "$app/Contents/MacOS/"
 cp "$root/LICENSE-MIT" "$root/LICENSE-APACHE" "$app/Contents/Resources/licenses/"
 cp "$root"/packaging/licenses/* "$app/Contents/Resources/licenses/fonts/"
 
@@ -142,9 +162,9 @@ if $pkg; then
         --identifier "$id" --version "$version" --install-location / "$component/$id.pkg" >/dev/null
     distribution=$(mktemp -d)/distribution.xml
     sed -e "s/@NAME@/$name/g" -e "s/@ID@/$id/g" -e "s/@VERSION@/$version/g" \
-        -e "s/@ARCH@/$(uname -m)/g" -e "s/@PACKAGE@/$id.pkg/g" \
+        -e "s/@ARCH@/$arch/g" -e "s/@PACKAGE@/$id.pkg/g" \
         "$here/distribution.xml" >"$distribution"
-    package="$out/$name-$version-$(uname -m).pkg"
+    package="$out/$name-$version-$arch.pkg"
     rm -f "$package"
     resources=$(mktemp -d)
     cp "$here/welcome.html" "$resources/"
