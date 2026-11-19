@@ -88,6 +88,8 @@ overrides:
       - vulkan-loader
       - ethtool
       - iproute
+      # Fedora's tc comes in a package of its own.
+      - iproute-tc
       - rtkit
     recommends:
       - mesa-vulkan-drivers

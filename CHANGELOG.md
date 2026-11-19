@@ -144,8 +144,8 @@ happened to `crash.log`.
   packages as they install, and the macOS installer on its first page.
 - The Linux packages depend on RealtimeKit, without which host entities'
   stream threads quietly ran at normal priority, and on iproute2 for
-  `tc`. The .deb and .rpm also depend on ethtool, which they only
-  recommended.
+  `tc`, which Fedora keeps in iproute-tc. The .deb and .rpm also
+  depend on ethtool, which they only recommended.
 - `triib-link@` and `triib-link-reset@` say nothing for an interface
   that is gone.
 

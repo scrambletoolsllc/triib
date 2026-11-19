@@ -48,9 +48,10 @@ triib sends and receives raw Ethernet, which each system guards:
   as neither can carry the capability. The packages depend on ALSA's and
   PipeWire's libraries for audio, PipeWire's for the virtual audio
   devices of this computer's streams, on RealtimeKit for the stream
-  threads' realtime priority and on ethtool and iproute2 (iproute on
-  Fedora) for `avb-link@`, and recommend polkit, whose rules let the
-  person at the computer start the link units and gptpd. They carry
+  threads' realtime priority and on ethtool and iproute2 (iproute and
+  iproute-tc on Fedora, which keeps `tc` apart) for `avb-link@`, and
+  recommend polkit, whose rules let the person at the computer start
+  the link units and gptpd. They carry
   avb-endpointd, which runs the host entities, from the avb repository's
   release that `AVB_ENDPOINTD_VERSION` in the release workflow and
   `_avb_endpointd` in the PKGBUILD name, built beside triib: the daemon,
