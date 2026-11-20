@@ -35,8 +35,8 @@ All notable changes to triib. Versions follow
   `--image` where an entity has several, says what an ESP-IDF file is,
   refuses one for the other processor unless `--anyway`, and watches
   for the entity going back for 75 s or `--settle`. Updating devices'
-  firmware lives in triib and triib-cli alone: avb-endpointd's
-  `firmware` command goes in its next release.
+  firmware lives in triib and triib-cli alone: the Linux packages carry
+  avb-endpointd 0.3.4, which has no `firmware` command.
 
 ## [1.4.0] - 2026-11-19
 

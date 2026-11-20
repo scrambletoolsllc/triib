@@ -20,7 +20,7 @@ avb-stream = "0.4.0"
 gptp = "0.2.0"
 # This computer's entities run in avb-endpointd, shared with plaa: its
 # files, status and meters, from crates.io.
-avb-endpointd = "0.3.3"
+avb-endpointd = "0.3.4"
 triib-store = { path = "crates/triib-store", version = "1.4.0" }
 triib-firmware = { path = "crates/triib-firmware", version = "1.4.0" }
 # Pinned by revision, as prev pins it. A git-ignored .cargo/config.toml can
