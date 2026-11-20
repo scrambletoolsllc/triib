@@ -2423,17 +2423,7 @@ pub(crate) mod tests {
     /// One of this computer's entities on the bench's interface, as
     /// avb-endpointd runs it and a controller reads it: named `name`,
     /// with audio `outputs` and `inputs` of the formats the bench's ESP
-    /// offers.
-    fn host_entity(
-        name: &str,
-        outputs: &[&str],
-        inputs: &[&str],
-    ) -> (DiscoveredEntity, EntityModel) {
-        host_entity_taking(name, outputs, inputs, None)
-    }
-
-    /// As [`host_entity`], taking firmware of up to `firmware` octets
-    /// where given.
+    /// offers, taking firmware of up to `firmware` octets where given.
     pub(crate) fn host_entity_taking(
         name: &str,
         outputs: &[&str],
@@ -4141,7 +4131,7 @@ pub(crate) mod tests {
             Some("gptpd does not answer, so this computer's streams cannot keep gPTP time")
         );
         // Heard, it is listed as itself, and no longer starting.
-        let (host, model) = host_entity("Host entity 1", &["Out 1"], &["In 1"]);
+        let (host, model) = host_entity_taking("Host entity 1", &["Out 1"], &["In 1"], None);
         assert_eq!(host.entity_id(), entity_id);
         triib.entities.insert(entity_id, host);
         triib.models.insert(entity_id, model);
