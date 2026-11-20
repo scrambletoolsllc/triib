@@ -643,6 +643,9 @@ firmware-storing-percent = กำลังบันทึก: { $percent }%
 firmware-storing = กำลังบันทึก…
 firmware-restarting = บันทึกแล้ว กำลังเริ่มใหม่…
 firmware-updated = อัปเดตด้วย { $file } แล้ว
+firmware-checking = อัปเดตด้วย { $file } แล้ว กำลังตรวจสอบว่ายังคงใช้เฟิร์มแวร์นี้อยู่…
+firmware-went-back = กลับไปใช้เฟิร์มแวร์เดิม { $version } แล้ว เพราะเฟิร์มแวร์ใหม่ไม่ได้ทำงานต่อ
+firmware-came-back-other = กลับมาทำงานด้วย { $version } แล้ว ไม่ใช่เฟิร์มแวร์ใหม่
 firmware-stopped = หยุดแล้ว ยังคงใช้เฟิร์มแวร์เดิม
 firmware-failed-size = ไฟล์ใหญ่กว่าที่รับได้
 firmware-failed-locked = คอนโทรลเลอร์อื่นล็อกไว้อยู่
@@ -656,6 +659,15 @@ firmware-confirm-title = อัปเดตเฟิร์มแวร์หร�
 firmware-confirm-body = { $entity } จะรับ { $file } ({ $size }) เป็น “{ $image }” ของตน แล้วเริ่มใหม่ด้วยเฟิร์มแวร์นั้น ตอนนี้ใช้ { $version } อยู่ สตรีมของเอนทิตีนี้จะหยุดจนกว่าจะกลับมา จึงควรเปิดเครื่องและเชื่อมต่อไว้ตลอด
 firmware-confirm-cancel = ยกเลิก
 firmware-confirm-update = อัปเดต
+firmware-confirm-anyway = อัปเดตต่อไป
+firmware-file = ไฟล์นี้คือ { $project } { $version } สำหรับ { $chip }, ELF { $elf }
+firmware-confirm-coprocessor = โคโปรเซสเซอร์อาจไม่เก็บสำเนาของเฟิร์มแวร์เดิมไว้เลย หากไฟล์นี้ทำงานไม่ได้ การกู้คืนอุปกรณ์อาจต้องใช้สายเคเบิล ส่งเฉพาะไฟล์ที่ทดสอบกับอุปกรณ์นี้แล้วเท่านั้น
+firmware-doubt-coprocessor = ไฟล์นี้เป็นของโคโปรเซสเซอร์ แต่ “{ $image }” ไม่ใช่
+firmware-doubt-not-coprocessor = ไฟล์นี้ดูไม่เหมือนเป็นของโคโปรเซสเซอร์ แต่ “{ $image }” เป็นของโคโปรเซสเซอร์
+firmware-doubt-learned = ครั้งที่แล้ว “{ $image }” รับ { $project } สำหรับ { $chip }
+firmware-doubt-other = ไฟล์นี้คล้ายกับไฟล์ที่ “{ $image }” รับไปครั้งที่แล้ว
+firmware-unsigned = ไฟล์นี้ไม่มีลายเซ็น อุปกรณ์ที่ตรวจสอบลายเซ็นจะปฏิเสธไฟล์นี้
+firmware-runs-already = ใช้ไฟล์นี้อยู่แล้ว
 
 ## Log
 

@@ -741,6 +741,9 @@ firmware-storing-percent = Gemmer: { $percent }{" "}%
 firmware-storing = Gemmer…
 firmware-restarting = Gemt. Genstarter…
 firmware-updated = Opdateret med { $file }
+firmware-checking = Opdateret med { $file }. Kontrollerer, at den beholder den nye firmware…
+firmware-went-back = Den gik tilbage til sin hidtidige firmware, { $version }: den nye firmware blev ikke ved med at køre.
+firmware-came-back-other = Den kom tilbage og kører { $version }, ikke den nye firmware.
 firmware-stopped = Stoppet. Den beholder sin hidtidige firmware.
 firmware-failed-size = Filen er større, end entiteten kan rumme.
 firmware-failed-locked = En anden controller har låst den.
@@ -754,6 +757,15 @@ firmware-confirm-title = Vil du opdatere firmwaren?
 firmware-confirm-body = { $entity } installerer { $file } ({ $size }) som »{ $image }« og genstarter derefter med den. Nuværende version: { $version }. Dens streams stopper, indtil den er tilbage, så hold den tændt og forbundet.
 firmware-confirm-cancel = Annuller
 firmware-confirm-update = Opdater
+firmware-confirm-anyway = Opdater alligevel
+firmware-file = Filen er { $project } { $version } til { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = En coprocessor beholder måske ingen kopi af sin hidtidige firmware: hvis denne fil ikke kører, kan det kræve et kabel at gendanne enheden. Send kun en fil, der er testet på denne enhed.
+firmware-doubt-coprocessor = Denne fil hører til en coprocessor, og det gør »{ $image }« ikke.
+firmware-doubt-not-coprocessor = Denne fil ser ikke ud til at høre til en coprocessor, og det gør »{ $image }«.
+firmware-doubt-learned = Sidste gang tog »{ $image }« imod { $project } til { $chip }.
+firmware-doubt-other = Denne fil ligner den, »{ $image }« tog imod sidste gang.
+firmware-unsigned = Filen er ikke signeret: en enhed, der kontrollerer signaturer, afviser den.
+firmware-runs-already = Den kører allerede denne fil.
 
 ## Log
 

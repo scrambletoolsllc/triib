@@ -646,6 +646,9 @@ firmware-storing-percent = 正在儲存：{ $percent }%
 firmware-storing = 正在儲存…
 firmware-restarting = 已儲存。正在重新啟動…
 firmware-updated = 已使用 { $file } 更新
+firmware-checking = 已使用 { $file } 更新。正在確認它是否保留新韌體…
+firmware-went-back = 它已回到原有韌體 { $version }：新韌體未能持續執行。
+firmware-came-back-other = 它恢復後執行的是 { $version }，而不是新韌體。
 firmware-stopped = 已停止。它仍保留原有韌體。
 firmware-failed-size = 檔案超出了它可接收的大小。
 firmware-failed-locked = 另一個控制器已將其鎖定。
@@ -659,6 +662,15 @@ firmware-confirm-title = 要更新韌體嗎？
 firmware-confirm-body = { $entity } 將接收 { $file }（{ $size }）作為其「{ $image }」，然後以新韌體重新啟動。它目前執行的是 { $version }。在它恢復之前，其串流會停止，因此請保持通電並維持網路連線。
 firmware-confirm-cancel = 取消
 firmware-confirm-update = 更新
+firmware-confirm-anyway = 仍要更新
+firmware-file = 此檔案是適用於 { $chip } 的 { $project } { $version }，ELF { $elf }。
+firmware-confirm-coprocessor = 協同處理器可能不會保留原有韌體的任何副本：如果此檔案無法執行，復原裝置可能需要連接纜線。請只傳送已在此裝置上測試過的檔案。
+firmware-doubt-coprocessor = 此檔案屬於協同處理器，而「{ $image }」不是。
+firmware-doubt-not-coprocessor = 此檔案看起來不屬於協同處理器，而「{ $image }」是協同處理器的。
+firmware-doubt-learned = 上次，「{ $image }」接收的是適用於 { $chip } 的 { $project }。
+firmware-doubt-other = 此檔案與「{ $image }」上次接收的檔案相似。
+firmware-unsigned = 該檔案未簽署：會檢查簽章的裝置將拒絕它。
+firmware-runs-already = 它已在執行此檔案。
 
 ## Log
 

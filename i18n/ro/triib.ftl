@@ -802,6 +802,9 @@ firmware-storing-percent = Se stochează: { $percent }{"\u00A0"}%
 firmware-storing = Se stochează…
 firmware-restarting = Stocat. Se repornește…
 firmware-updated = Actualizat cu { $file }
+firmware-checking = Actualizat cu { $file }. Se verifică dacă entitatea păstrează firmware-ul…
+firmware-went-back = Entitatea a revenit la firmware-ul pe care îl avea, { $version }: noul firmware nu a continuat să ruleze.
+firmware-came-back-other = Entitatea a revenit rulând { $version }, nu noul firmware.
 firmware-stopped = Oprit. Entitatea păstrează firmware-ul pe care îl avea.
 firmware-failed-size = Fișierul este mai mare decât acceptă entitatea.
 firmware-failed-locked = Entitatea este blocată de alt controler.
@@ -815,6 +818,15 @@ firmware-confirm-title = Actualizezi firmware-ul?
 firmware-confirm-body = { $entity } va primi { $file } ({ $size }) ca „{ $image }”, apoi va reporni cu el. Acum rulează versiunea { $version }. Fluxurile sale se opresc până revine, așa că menține entitatea alimentată și conectată.
 firmware-confirm-cancel = Anulează
 firmware-confirm-update = Actualizează
+firmware-confirm-anyway = Actualizează oricum
+firmware-file = Fișierul este { $project } { $version } pentru { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = Un coprocesor s-ar putea să nu păstreze nicio copie a firmware-ului pe care îl avea: dacă acest fișier nu rulează, recuperarea dispozitivului poate necesita un cablu. Trimite doar un fișier testat pe acest dispozitiv.
+firmware-doubt-coprocessor = Acest fișier este pentru un coprocesor, iar „{ $image }” nu este.
+firmware-doubt-not-coprocessor = Acest fișier nu pare să fie pentru un coprocesor, iar „{ $image }” este.
+firmware-doubt-learned = Data trecută, „{ $image }” a primit { $project } pentru { $chip }.
+firmware-doubt-other = Acest fișier seamănă cu cel primit de „{ $image }” data trecută.
+firmware-unsigned = Fișierul nu este semnat: un dispozitiv care verifică semnăturile îl refuză.
+firmware-runs-already = Entitatea rulează deja acest fișier.
 
 ## Log
 

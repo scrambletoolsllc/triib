@@ -790,6 +790,9 @@ firmware-storing-percent = S’està desant: { $percent }{"\u00A0"}%
 firmware-storing = S’està desant…
 firmware-restarting = Desat. S’està reiniciant…
 firmware-updated = Actualitzat amb { $file }
+firmware-checking = Actualitzat amb { $file }. S’està comprovant que el conserva…
+firmware-went-back = Ha tornat al firmware que tenia, { $version }: el firmware nou no ha continuat funcionant.
+firmware-came-back-other = Ha tornat executant { $version }, no el firmware nou.
 firmware-stopped = Actualització aturada. Conserva el firmware que tenia.
 firmware-failed-size = El fitxer és més gran del que admet.
 firmware-failed-locked = Un altre controlador la té bloquejada.
@@ -803,6 +806,15 @@ firmware-confirm-title = Voleu actualitzar el firmware?
 firmware-confirm-body = { $entity } instal·larà { $file } ({ $size }) com a «{ $image }» i després es reiniciarà amb aquest fitxer. Versió actual: { $version }. Els seus fluxos s’aturaran fins que torni, així que manteniu-la engegada i connectada.
 firmware-confirm-cancel = Cancel·la
 firmware-confirm-update = Actualitza
+firmware-confirm-anyway = Actualitza igualment
+firmware-file = El fitxer és { $project } { $version } per a { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = Pot ser que un coprocessador no conservi cap còpia del firmware que tenia: si aquest fitxer no funciona, recuperar el dispositiu pot requerir un cable. Envieu només un fitxer provat en aquest dispositiu.
+firmware-doubt-coprocessor = Aquest fitxer és d’un coprocessador, i «{ $image }» no ho és.
+firmware-doubt-not-coprocessor = Aquest fitxer no sembla d’un coprocessador, i «{ $image }» sí que ho és.
+firmware-doubt-learned = L’última vegada, «{ $image }» va rebre { $project } per a { $chip }.
+firmware-doubt-other = Aquest fitxer s’assembla al que «{ $image }» va rebre l’última vegada.
+firmware-unsigned = El fitxer no està signat: un dispositiu que comprova les signatures el rebutja.
+firmware-runs-already = Ja executa aquest fitxer.
 
 ## Log
 

@@ -28,6 +28,7 @@ use atdecc::{
     AemStatus, ClockIdentity, ControllerCapabilities, DiscoveredEntity, EntityCapabilities,
     EntityId, Event, ListenerCapabilities, OfflineReason, StreamId, TalkerCapabilities,
 };
+use triib_firmware::esp_image;
 
 const USAGE: &str = "\
 usage: triib-cli <command>
@@ -110,11 +111,16 @@ commands:
                                      read index 0 of each descriptor type the
                                      entity has and print how long each took
   controls <interface> [entity-id]   print each control's values and ranges
-  firmware <interface> <entity-id> [<image> <file> [--no-restart]]
+  firmware <interface> <entity-id> [<file> [--image <image>] [--anyway]
+           [--no-restart] [--settle <seconds>]]
                                      list the firmware images an entity takes,
                                      or update one from a file, the image by
-                                     its index or name as listed; the entity
-                                     restarts on it unless --no-restart
+                                     its index or name as listed where it has
+                                     several; an ESP-IDF file for the other
+                                     processor is refused unless --anyway; the
+                                     entity restarts on it unless --no-restart
+                                     and is watched for going back to the
+                                     firmware it had, 75 seconds or --settle
   control <interface> <entity-id> <control> <value>...
                                      set a control by its index, each value in
                                      its unit, such as -12 for -12 dB, a
@@ -386,13 +392,11 @@ fn main() -> ExitCode {
             else {
                 return usage();
             };
-            let update = match (argument(3), argument(4), argument(5)) {
-                (None, None, None) => None,
-                (Some(image), Some(file), None) => Some((image, file, true)),
-                (Some(image), Some(file), Some("--no-restart")) => Some((image, file, false)),
-                _ => return usage(),
+            let update = match FirmwareUpdate::parse(arguments.get(3..).unwrap_or_default()) {
+                Ok(update) => update,
+                Err(()) => return usage(),
             };
-            firmware(interface, entity, update)
+            firmware(interface, entity, update.as_ref())
         }
         Some("help" | "--help" | "-h") => {
             println!("{USAGE}");
@@ -2833,13 +2837,59 @@ fn summary(entity: &DiscoveredEntity) -> String {
     )
 }
 
+/// An update `triib-cli firmware` asks for.
+struct FirmwareUpdate<'a> {
+    file: &'a str,
+    /// The image, by index or name; the only one when not given.
+    image: Option<&'a str>,
+    /// Send a file triib doubts suits the image all the same.
+    anyway: bool,
+    restart: bool,
+    /// How long to watch for the entity going back to the firmware it had.
+    settle: Duration,
+}
+
+impl<'a> FirmwareUpdate<'a> {
+    /// The update the words after the entity ask for, none for a listing.
+    fn parse(words: &'a [String]) -> Result<Option<Self>, ()> {
+        let mut words = words.iter().map(String::as_str);
+        let Some(file) = words.next() else {
+            return Ok(None);
+        };
+        let mut update = FirmwareUpdate {
+            file,
+            image: None,
+            anyway: false,
+            restart: true,
+            settle: Duration::from_secs(75),
+        };
+        while let Some(word) = words.next() {
+            match word {
+                "--image" => update.image = Some(words.next().ok_or(())?),
+                "--anyway" => update.anyway = true,
+                "--no-restart" => update.restart = false,
+                "--settle" => {
+                    let seconds = words.next().and_then(|word| word.parse().ok()).ok_or(())?;
+                    update.settle = Duration::from_secs(seconds);
+                }
+                _ => return Err(()),
+            }
+        }
+        Ok(Some(update))
+    }
+}
+
 /// Lists the firmware images `entity` takes, or with `update` uploads a
-/// file to one, the image by its index or name, and with a restart waits
-/// for the entity to come back and prints its firmware.
+/// file to one. An ESP-IDF file says what it is, and one for the other
+/// processor, a coprocessor's for the entity's own image or the other way
+/// round, is refused unless the update says to send it anyway. With a
+/// restart, it waits for the entity to come back, tells by the ELF hash
+/// its version ends with whether it runs the new firmware, and watches
+/// for it going back to the firmware it had.
 fn firmware(
     interface: &str,
     entity: EntityId,
-    update: Option<(&str, &str, bool)>,
+    update: Option<&FirmwareUpdate<'_>>,
 ) -> Result<(), String> {
     const RESTART: Duration = Duration::from_secs(120);
     let fail = |error: std::io::Error| format!("{interface}: {error}");
@@ -2859,9 +2909,23 @@ fn firmware(
         .memory_objects()
         .filter(|object| object.memory_object_type == MemoryObjectType::FIRMWARE_IMAGE)
         .collect();
-    let Some((wanted, file, restart)) = update else {
-        let version = model.entity().map_or("", |entity| entity.firmware_version);
-        println!("{entity} runs firmware {version}");
+    let listed = || {
+        images
+            .iter()
+            .map(|object| {
+                format!(
+                    "{}: {} (up to {} octets)",
+                    object.index, object.object_name, object.maximum_length
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    let before = model
+        .entity()
+        .map_or_else(String::new, |entity| entity.firmware_version.to_owned());
+    let Some(update) = update else {
+        println!("{entity} runs firmware {before}");
         if images.is_empty() {
             println!("it takes no firmware images");
         }
@@ -2873,23 +2937,96 @@ fn firmware(
         }
         return driver.close().map_err(fail);
     };
-    let object = images
-        .iter()
-        .find(|object| wanted.parse::<u16>() == Ok(object.index))
-        .or_else(|| {
-            images
-                .iter()
-                .find(|object| object.object_name.eq_ignore_ascii_case(wanted))
-        })
-        .ok_or_else(|| format!("{entity} has no firmware image {wanted}"))?;
+    let object = match update.image {
+        Some(wanted) => images
+            .iter()
+            .find(|object| wanted.parse::<u16>() == Ok(object.index))
+            .or_else(|| {
+                images
+                    .iter()
+                    .find(|object| object.object_name.eq_ignore_ascii_case(wanted))
+            })
+            .ok_or_else(|| {
+                format!(
+                    "{entity} has no firmware image {wanted}; it has {}",
+                    listed()
+                )
+            })?,
+        None => match images.as_slice() {
+            [only] => only,
+            [] => return Err(format!("{entity} takes no firmware images")),
+            _ => {
+                return Err(format!(
+                    "{entity} has several firmware images; name one with --image: {}",
+                    listed()
+                ));
+            }
+        },
+    };
+    let file = update.file;
     let image = std::fs::read(file).map_err(|error| format!("{file}: {error}"))?;
-    println!(
-        "sending {file} ({} octets) to {entity}'s \"{}\"",
-        image.len(),
-        object.object_name
-    );
+    let coprocessor = esp_image::object_is_coprocessor(object.object_name);
+    let described = esp_image::parse(&image).ok();
+    match &described {
+        Some(described) => println!(
+            "{file}: {} {} for {}, {} octets, ELF {}, {}",
+            described.project,
+            described.version,
+            described.chip(),
+            image.len(),
+            described.elf_sha9(),
+            match described.signatures {
+                0 => "not signed".to_owned(),
+                1 => "signed with one key".to_owned(),
+                keys => format!("signed with {keys} keys"),
+            }
+        ),
+        None => println!("{file}: {} octets, not an ESP-IDF app image", image.len()),
+    }
+    println!("{entity} runs {before}");
+    let doubts = described
+        .as_ref()
+        .map(|described| esp_image::check(described, object.object_name))
+        .unwrap_or_default();
+    let stopping: Vec<String> = doubts
+        .iter()
+        .filter(|doubt| doubt.stops())
+        .map(ToString::to_string)
+        .collect();
+    for doubt in doubts.iter().filter(|doubt| !doubt.stops()) {
+        eprintln!("warning: {doubt}");
+    }
+    if described.is_none() && coprocessor {
+        eprintln!("warning: {}", esp_image::Doubt::NoRollback);
+    }
+    if described
+        .as_ref()
+        .is_some_and(|described| esp_image::runs_already(described, &before))
+    {
+        eprintln!("note: {entity} runs this image already");
+    }
+    if !stopping.is_empty() {
+        if !update.anyway {
+            driver.close().map_err(fail)?;
+            return Err(format!(
+                "{}; --anyway sends it all the same",
+                stopping.join("; ")
+            ));
+        }
+        for doubt in &stopping {
+            eprintln!("warning: {doubt}; sending it anyway");
+        }
+    }
+    println!("sending {file} to {entity}'s \"{}\"", object.object_name);
     let now = driver.now();
-    let mut upload = Upload::start(driver.controller_mut(), now, entity, object, image, restart);
+    let mut upload = Upload::start(
+        driver.controller_mut(),
+        now,
+        entity,
+        object,
+        image,
+        update.restart,
+    );
     let mut shown = String::new();
     loop {
         driver.turn(Duration::from_millis(100)).map_err(fail)?;
@@ -2936,40 +3073,104 @@ fn firmware(
             break;
         }
     }
-    match upload.stage() {
-        Stage::Done if restart => {
+    let result = match upload.stage() {
+        Stage::Done if update.restart => {
             println!("stored; {entity} restarts on it");
-            let started = Instant::now();
-            loop {
-                driver.turn(Duration::from_millis(250)).map_err(fail)?;
-                let back = std::iter::from_fn(|| driver.controller_mut().poll_event())
-                    .any(|event| event == Event::EntityEnumerated(entity));
-                if back {
-                    let model = driver.controller().model(entity);
-                    let version = model
-                        .and_then(EntityModel::entity)
-                        .map_or("", |entity| entity.firmware_version);
-                    println!("{entity} is back, running {version}");
-                    break;
-                }
-                if started.elapsed() >= RESTART {
-                    driver.close().map_err(fail)?;
-                    return Err(format!(
-                        "{entity} was not back within {} seconds",
-                        RESTART.as_secs()
-                    ));
-                }
+            // What it runs once back: the new firmware, the one it had, or
+            // something else, by the ELF hash its version ends with.
+            let verdict = |version: &str| {
+                described
+                    .as_ref()
+                    .filter(|_| !coprocessor)
+                    .map(|described| esp_image::running(described, &before, version))
+            };
+            let after = back(&mut driver, entity, RESTART).map_err(fail)?;
+            match (after, verdict) {
+                (None, _) => Err(format!(
+                    "{entity} was not back within {} seconds",
+                    RESTART.as_secs()
+                )),
+                (Some(after), verdict) => match verdict(&after) {
+                    Some(esp_image::Running::Old) => Err(format!("{entity} went back to {after}")),
+                    Some(esp_image::Running::Other) => Err(format!(
+                        "{entity} came back running {after}, not the new firmware"
+                    )),
+                    Some(esp_image::Running::New)
+                        if update.settle > Duration::ZERO
+                            && esp_image::version_sha9(&before)
+                                != esp_image::version_sha9(&after) =>
+                    {
+                        println!(
+                            "{entity} is back, running {after}; watching {} s for it going back",
+                            update.settle.as_secs()
+                        );
+                        match back(&mut driver, entity, update.settle).map_err(fail)? {
+                            None => {
+                                println!("{entity} kept {after}");
+                                Ok(())
+                            }
+                            Some(later) => match verdict(&later) {
+                                Some(esp_image::Running::New) => {
+                                    println!("{entity} restarted and still runs {later}");
+                                    Ok(())
+                                }
+                                Some(esp_image::Running::Old) => {
+                                    Err(format!("{entity} went back to {later}"))
+                                }
+                                _ => Err(format!("{entity} came back running {later}")),
+                            },
+                        }
+                    }
+                    _ => {
+                        println!("{entity} is back, running {after}");
+                        if coprocessor {
+                            println!(
+                                "its coprocessor's firmware version is not readable over ATDECC"
+                            );
+                        }
+                        Ok(())
+                    }
+                },
             }
         }
-        Stage::Done => println!("stored; {entity} runs it from its next start"),
-        Stage::Aborted => println!("stopped"),
-        Stage::Failed(failure) => {
-            driver.close().map_err(fail)?;
-            return Err(upload_failure(failure));
+        Stage::Done => {
+            println!("stored; {entity} runs it from its next start");
+            Ok(())
         }
-        _ => {}
+        Stage::Aborted => {
+            println!("stopped");
+            Ok(())
+        }
+        Stage::Failed(failure) => Err(upload_failure(failure)),
+        _ => Ok(()),
+    };
+    driver.close().map_err(fail)?;
+    result
+}
+
+/// Waits up to `within` for `entity` to be read in full again, as after a
+/// restart, and gives its firmware version then.
+fn back(
+    driver: &mut Driver,
+    entity: EntityId,
+    within: Duration,
+) -> std::io::Result<Option<String>> {
+    let started = Instant::now();
+    while started.elapsed() < within {
+        driver.turn(Duration::from_millis(250))?;
+        let read = std::iter::from_fn(|| driver.controller_mut().poll_event())
+            .any(|event| event == Event::EntityEnumerated(entity));
+        if read {
+            return Ok(Some(
+                driver
+                    .controller()
+                    .model(entity)
+                    .and_then(EntityModel::entity)
+                    .map_or_else(String::new, |entity| entity.firmware_version.to_owned()),
+            ));
+        }
     }
-    driver.close().map_err(fail)
+    Ok(None)
 }
 
 fn upload_failure(failure: UploadFailure) -> String {

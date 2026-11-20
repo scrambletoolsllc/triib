@@ -731,6 +731,9 @@ firmware-storing-percent = সংরক্ষণ হচ্ছে: { $percent }%
 firmware-storing = সংরক্ষণ হচ্ছে…
 firmware-restarting = সংরক্ষিত। আবার চালু হচ্ছে…
 firmware-updated = { $file } দিয়ে আপডেট হয়েছে
+firmware-checking = { $file } দিয়ে আপডেট হয়েছে। এটি সেটি রাখে কি না যাচাই করা হচ্ছে…
+firmware-went-back = এটি আগের ফার্মওয়্যার { $version }-এ ফিরে গেছে: নতুন ফার্মওয়্যারটি চালু থাকেনি।
+firmware-came-back-other = এটি { $version } চালিয়ে ফিরে এসেছে, নতুন ফার্মওয়্যারটি নয়।
 firmware-stopped = থামানো হয়েছে। এটি আগের ফার্মওয়্যারই রাখে।
 firmware-failed-size = ফাইলটি এর ধারণক্ষমতার চেয়ে বড়।
 firmware-failed-locked = অন্য একটি controller এটিকে লক করে রেখেছে।
@@ -744,6 +747,15 @@ firmware-confirm-title = ফার্মওয়্যার আপডেট �
 firmware-confirm-body = { $entity } { $file } ({ $size }) ফাইলটিকে নিজের “{ $image }” হিসেবে ইনস্টল করবে, তারপর সেটি দিয়ে আবার চালু হবে। বর্তমান সংস্করণ: { $version }। ফিরে না আসা পর্যন্ত এর streams বন্ধ থাকবে, তাই এটিকে চালু ও সংযুক্ত রাখুন।
 firmware-confirm-cancel = বাতিল করুন
 firmware-confirm-update = আপডেট করুন
+firmware-confirm-anyway = তবুও আপডেট করুন
+firmware-file = ফাইলটি { $chip }-এর জন্য { $project } { $version }, ELF { $elf }।
+firmware-confirm-coprocessor = কোপ্রসেসর হয়তো আগের ফার্মওয়্যারের কোনো কপি রাখে না: এই ফাইলটি না চললে ডিভাইসটি পুনরুদ্ধার করতে ক্যাবল লাগতে পারে। শুধু এই ডিভাইসে পরীক্ষিত ফাইল পাঠান।
+firmware-doubt-coprocessor = এই ফাইলটি একটি কোপ্রসেসরের, কিন্তু “{ $image }” তা নয়।
+firmware-doubt-not-coprocessor = এই ফাইলটি কোপ্রসেসরের বলে মনে হচ্ছে না, কিন্তু “{ $image }” কোপ্রসেসরের।
+firmware-doubt-learned = গতবার “{ $image }” { $chip }-এর জন্য { $project } নিয়েছিল।
+firmware-doubt-other = এই ফাইলটি গতবার “{ $image }”-এর নেওয়া ফাইলটির মতো।
+firmware-unsigned = ফাইলটি স্বাক্ষরিত নয়: যে ডিভাইস স্বাক্ষর যাচাই করে, সেটি ফাইলটি প্রত্যাখ্যান করে।
+firmware-runs-already = এটি ইতিমধ্যে এই ফাইলটি চালাচ্ছে।
 
 ## Log
 

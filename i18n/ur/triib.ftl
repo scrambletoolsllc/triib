@@ -731,6 +731,9 @@ firmware-storing-percent = محفوظ ہو رہا ہے: { $percent }%
 firmware-storing = محفوظ ہو رہا ہے…
 firmware-restarting = محفوظ ہو گیا۔ دوبارہ شروع ہو رہا ہے…
 firmware-updated = { $file } سے اپ ڈیٹ ہو گیا
+firmware-checking = { $file } سے اپ ڈیٹ ہو گیا۔ جانچا جا رہا ہے کہ یہ نئے فرم ویئر پر قائم رہتا ہے یا نہیں…
+firmware-went-back = یہ پہلے والے فرم ویئر { $version } پر واپس چلا گیا: نیا فرم ویئر چلتا نہ رہ سکا۔
+firmware-came-back-other = یہ { $version } چلاتے ہوئے واپس آیا، نیا فرم ویئر نہیں۔
 firmware-stopped = روک دیا گیا۔ اس کے پاس پہلے والا فرم ویئر ہی رہتا ہے۔
 firmware-failed-size = فائل اس سے بڑی ہے جتنی یہ لیتا ہے۔
 firmware-failed-locked = کسی اور کنٹرولر نے اسے لاک کر رکھا ہے۔
@@ -744,6 +747,15 @@ firmware-confirm-title = کیا فرم ویئر اپ ڈیٹ کریں؟
 firmware-confirm-body = { $entity } فائل { $file } ({ $size }) کو اپنے "{ $image }" کے طور پر لے گا، پھر نئے فرم ویئر پر دوبارہ شروع ہوگا۔ ابھی یہ { $version } چلا رہا ہے۔ واپس آنے تک اس کے اسٹریمز رکے رہیں گے، اس لیے اسے بجلی اور نیٹ ورک سے جڑا رہنے دیں۔
 firmware-confirm-cancel = منسوخ کریں
 firmware-confirm-update = اپ ڈیٹ کریں
+firmware-confirm-anyway = پھر بھی اپ ڈیٹ کریں
+firmware-file = یہ فائل { $chip } کے لیے { $project } { $version } ہے، ELF { $elf }۔
+firmware-confirm-coprocessor = ممکن ہے کوپروسیسر پہلے والے فرم ویئر کی کوئی کاپی نہ رکھے: اگر یہ فائل نہ چلی تو ڈیوائس کو بحال کرنے کے لیے کیبل درکار ہو سکتی ہے۔ صرف وہی فائل بھیجیں جو اس ڈیوائس پر آزمائی گئی ہو۔
+firmware-doubt-coprocessor = یہ فائل کوپروسیسر کی ہے، لیکن "{ $image }" کوپروسیسر کا نہیں۔
+firmware-doubt-not-coprocessor = یہ فائل کوپروسیسر کی نہیں لگتی، لیکن "{ $image }" کوپروسیسر کا ہے۔
+firmware-doubt-learned = پچھلی بار "{ $image }" نے { $chip } کے لیے { $project } لیا تھا۔
+firmware-doubt-other = یہ فائل اس فائل جیسی ہے جو پچھلی بار "{ $image }" نے لی تھی۔
+firmware-unsigned = فائل پر دستخط نہیں ہیں: جو ڈیوائس دستخط جانچتی ہے وہ اسے رد کر دیتی ہے۔
+firmware-runs-already = یہ پہلے ہی یہی فائل چلا رہا ہے۔
 
 ## Log
 

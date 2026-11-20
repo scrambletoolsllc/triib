@@ -782,6 +782,9 @@ firmware-storing-percent = Guardando: { $percent } %
 firmware-storing = Guardando…
 firmware-restarting = Guardado. Reiniciando…
 firmware-updated = Actualizado con { $file }
+firmware-checking = Actualizado con { $file }. Comprobando que lo conserva…
+firmware-went-back = Ha vuelto al firmware que tenía, { $version }: el firmware nuevo no ha seguido funcionando.
+firmware-came-back-other = Ha vuelto ejecutando { $version }, no el firmware nuevo.
 firmware-stopped = Actualización detenida. Conserva el firmware que tenía.
 firmware-failed-size = El archivo es más grande de lo que admite.
 firmware-failed-locked = Otro controlador la tiene bloqueada.
@@ -795,6 +798,15 @@ firmware-confirm-title = ¿Actualizar el firmware?
 firmware-confirm-body = { $entity } instalará { $file } ({ $size }) como su «{ $image }» y después se reiniciará con él. Versión actual: { $version }. Sus flujos se detendrán hasta que vuelva, así que mantenla encendida y conectada.
 firmware-confirm-cancel = Cancelar
 firmware-confirm-update = Actualizar
+firmware-confirm-anyway = Actualizar de todos modos
+firmware-file = El archivo es { $project } { $version } para { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = Puede que un coprocesador no conserve ninguna copia del firmware que tenía: si este archivo no funciona, recuperar el dispositivo puede requerir un cable. Envía solo un archivo probado en este dispositivo.
+firmware-doubt-coprocessor = Este archivo es de un coprocesador, y «{ $image }» no lo es.
+firmware-doubt-not-coprocessor = Este archivo no parece de un coprocesador, y «{ $image }» sí lo es.
+firmware-doubt-learned = La última vez, «{ $image }» recibió { $project } para { $chip }.
+firmware-doubt-other = Este archivo se parece al que «{ $image }» recibió la última vez.
+firmware-unsigned = El archivo no está firmado: un dispositivo que comprueba las firmas lo rechaza.
+firmware-runs-already = Ya ejecuta este archivo.
 
 ## Log
 

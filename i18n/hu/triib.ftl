@@ -733,6 +733,9 @@ firmware-storing-percent = Tárolás: { $percent }%
 firmware-storing = Tárolás…
 firmware-restarting = Tárolva. Újraindítás…
 firmware-updated = Frissítve ezzel: { $file }
+firmware-checking = Frissítve ezzel: { $file }. Ellenőrzés, hogy az új firmware megmarad-e rajta…
+firmware-went-back = Visszaállt a korábbi firmware-re, { $version }: az új firmware nem futott tovább.
+firmware-came-back-other = Visszatért, de { $version } fut rajta, nem az új firmware.
 firmware-stopped = Leállítva. A korábbi firmware marad rajta.
 firmware-failed-size = A fájl nagyobb annál, amit fogad.
 firmware-failed-locked = Egy másik vezérlő zárolta.
@@ -746,6 +749,15 @@ firmware-confirm-title = Frissíti a firmware-t?
 firmware-confirm-body = { $entity } megkapja a fájlt ({ $file }, { $size }) „{ $image }”-ként, majd újraindul vele. Jelenlegi verzió: { $version }. A streamjei leállnak, amíg vissza nem tér, ezért tartsa áram alatt és a hálózatra csatlakoztatva.
 firmware-confirm-cancel = Mégse
 firmware-confirm-update = Frissítés
+firmware-confirm-anyway = Frissítés mindenképpen
+firmware-file = A fájl: { $project } { $version }, { $chip } chiphez, ELF { $elf }.
+firmware-confirm-coprocessor = Előfordulhat, hogy egy koprocesszor nem tart meg másolatot a korábbi firmware-ről: ha ez a fájl nem fut, az eszköz helyreállításához kábel kellhet. Csak olyan fájlt küldjön, amelyet ezen az eszközön teszteltek.
+firmware-doubt-coprocessor = Ez a fájl koprocesszorhoz való, „{ $image }” viszont nem.
+firmware-doubt-not-coprocessor = Ez a fájl nem tűnik koprocesszorhoz valónak, „{ $image }” viszont koprocesszorhoz való.
+firmware-doubt-learned = Legutóbb „{ $image }” ezt kapta: { $project }, { $chip } chiphez.
+firmware-doubt-other = Ez a fájl olyan, mint az, amelyet „{ $image }” legutóbb kapott.
+firmware-unsigned = A fájl nincs aláírva: az aláírásokat ellenőrző eszköz elutasítja.
+firmware-runs-already = Már ez a fájl fut rajta.
 
 ## Log
 

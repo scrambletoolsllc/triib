@@ -757,6 +757,9 @@ firmware-storing-percent = Tallennetaan: { $percent }{" "}%
 firmware-storing = Tallennetaan…
 firmware-restarting = Tallennettu. Käynnistyy uudelleen…
 firmware-updated = Päivitetty tiedostolla { $file }
+firmware-checking = Päivitetty tiedostolla { $file }. Tarkistetaan, että uusi laiteohjelmisto säilyy…
+firmware-went-back = Se palasi aiempaan laiteohjelmistoonsa, { $version }: uusi laiteohjelmisto ei pysynyt käynnissä.
+firmware-came-back-other = Se palasi, ja käynnissä on { $version }, ei uusi laiteohjelmisto.
 firmware-stopped = Keskeytetty. Aiempi laiteohjelmisto säilyy.
 firmware-failed-size = Tiedosto on suurempi kuin mitä se ottaa vastaan.
 firmware-failed-locked = Toinen ohjain on lukinnut sen.
@@ -770,6 +773,15 @@ firmware-confirm-title = Päivitetäänkö laiteohjelmisto?
 firmware-confirm-body = { $entity } tallentaa tiedoston { $file } ({ $size }) kohteeseen ”{ $image }” ja käynnistyy sitten uudelleen uudella laiteohjelmistolla. Nykyinen versio: { $version }. Sen striimit pysähtyvät, kunnes se palaa, joten pidä sen virta päällä ja verkkoyhteys kytkettynä.
 firmware-confirm-cancel = Peruuta
 firmware-confirm-update = Päivitä
+firmware-confirm-anyway = Päivitä silti
+firmware-file = Tiedosto on { $project } { $version } piirille { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = Apuprosessori ei välttämättä säilytä kopiota aiemmasta laiteohjelmistostaan: jos tämä tiedosto ei toimi, laitteen palauttaminen voi vaatia kaapelin. Lähetä vain tällä laitteella testattu tiedosto.
+firmware-doubt-coprocessor = Tämä tiedosto on apuprosessorin laiteohjelmisto, mutta ”{ $image }” ei ole.
+firmware-doubt-not-coprocessor = Tämä tiedosto ei näytä apuprosessorin laiteohjelmistolta, mutta ”{ $image }” on sellainen.
+firmware-doubt-learned = Viime kerralla ”{ $image }” otti vastaan tiedoston { $project } piirille { $chip }.
+firmware-doubt-other = Tämä tiedosto on samanlainen kuin se, jonka ”{ $image }” otti vastaan viime kerralla.
+firmware-unsigned = Tiedostoa ei ole allekirjoitettu: allekirjoitukset tarkistava laite hylkää sen.
+firmware-runs-already = Tämä tiedosto on siinä jo käynnissä.
 
 ## Log
 

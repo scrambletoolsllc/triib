@@ -731,6 +731,9 @@ firmware-storing-percent = در حال ذخیره: { $percent }٪
 firmware-storing = در حال ذخیره…
 firmware-restarting = ذخیره شد. در حال راه‌اندازی دوباره…
 firmware-updated = با { $file } به‌روز شد
+firmware-checking = با { $file } به‌روز شد. در حال بررسی اینکه میان‌افزار جدید را نگه می‌دارد…
+firmware-went-back = به میان‌افزار قبلی خود، { $version }، بازگشت: میان‌افزار جدید به کار خود ادامه نداد.
+firmware-came-back-other = بازگشت و { $version } را اجرا می‌کند، نه میان‌افزار جدید را.
 firmware-stopped = متوقف شد. میان‌افزار قبلی خود را نگه می‌دارد.
 firmware-failed-size = پرونده از گنجایش آن بزرگ‌تر است.
 firmware-failed-locked = کنترلر دیگری آن را قفل کرده است.
@@ -744,6 +747,15 @@ firmware-confirm-title = میان‌افزار به‌روز شود؟
 firmware-confirm-body = { $entity } پروندهٔ { $file } ({ $size }) را به‌عنوان «{ $image }» نصب می‌کند و سپس با آن دوباره راه‌اندازی می‌شود. نسخهٔ کنونی: { $version }. جریان‌هایش تا بازگشتش متوقف می‌مانند، پس آن را روشن و متصل نگه دارید.
 firmware-confirm-cancel = لغو
 firmware-confirm-update = به‌روزرسانی
+firmware-confirm-anyway = به‌روزرسانی در هر صورت
+firmware-file = این پرونده { $project } { $version } برای { $chip } است، ELF { $elf }.
+firmware-confirm-coprocessor = ممکن است کمک‌پردازنده هیچ رونوشتی از میان‌افزار قبلی خود نگه ندارد: اگر این پرونده اجرا نشود، بازیابی دستگاه ممکن است به کابل نیاز داشته باشد. فقط پرونده‌ای را بفرستید که روی همین دستگاه آزموده شده است.
+firmware-doubt-coprocessor = این پرونده برای کمک‌پردازنده است، ولی «{ $image }» نیست.
+firmware-doubt-not-coprocessor = به نظر نمی‌رسد این پرونده برای کمک‌پردازنده باشد، ولی «{ $image }» هست.
+firmware-doubt-learned = دفعهٔ پیش، «{ $image }» { $project } برای { $chip } را دریافت کرد.
+firmware-doubt-other = این پرونده شبیه پرونده‌ای است که «{ $image }» دفعهٔ پیش دریافت کرد.
+firmware-unsigned = پرونده امضا نشده است: دستگاهی که امضاها را بررسی می‌کند، آن را رد می‌کند.
+firmware-runs-already = هم‌اکنون همین پرونده را اجرا می‌کند.
 
 ## Log
 

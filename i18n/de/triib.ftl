@@ -741,6 +741,9 @@ firmware-storing-percent = Wird gespeichert: { $percent }{" "}%
 firmware-storing = Wird gespeichert …
 firmware-restarting = Gespeichert. Wird neu gestartet …
 firmware-updated = Mit { $file } aktualisiert
+firmware-checking = Mit { $file } aktualisiert. Wird geprüft, ob die neue Firmware weiterläuft …
+firmware-went-back = Die Entität ist zu ihrer bisherigen Firmware { $version } zurückgekehrt: Die neue Firmware lief nicht weiter.
+firmware-came-back-other = Die Entität ist zurückgekehrt und läuft mit { $version }, nicht mit der neuen Firmware.
 firmware-stopped = Abgebrochen. Die bisherige Firmware bleibt erhalten.
 firmware-failed-size = Die Datei ist größer, als die Entität aufnehmen kann.
 firmware-failed-locked = Ein anderer Controller hat sie gesperrt.
@@ -754,6 +757,15 @@ firmware-confirm-title = Firmware aktualisieren?
 firmware-confirm-body = { $entity } installiert { $file } ({ $size }) als „{ $image }“ und startet danach damit neu. Aktuelle Version: { $version }. Bis sie wieder da ist, stoppen ihre Streams; trennen Sie sie also nicht von Strom und Netzwerk.
 firmware-confirm-cancel = Abbrechen
 firmware-confirm-update = Aktualisieren
+firmware-confirm-anyway = Trotzdem aktualisieren
+firmware-file = Die Datei enthält { $project } { $version } für { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = Ein Koprozessor behält unter Umständen keine Kopie seiner bisherigen Firmware: Läuft diese Datei nicht, kann die Wiederherstellung des Geräts ein Kabel erfordern. Senden Sie nur eine Datei, die auf diesem Gerät getestet wurde.
+firmware-doubt-coprocessor = Diese Datei ist für einen Koprozessor, „{ $image }“ aber nicht.
+firmware-doubt-not-coprocessor = Diese Datei scheint nicht für einen Koprozessor zu sein, „{ $image }“ aber schon.
+firmware-doubt-learned = Beim letzten Mal hat „{ $image }“ { $project } für { $chip } aufgenommen.
+firmware-doubt-other = Diese Datei ähnelt der, die „{ $image }“ beim letzten Mal aufgenommen hat.
+firmware-unsigned = Die Datei ist nicht signiert: Ein Gerät, das Signaturen prüft, lehnt sie ab.
+firmware-runs-already = Die Entität führt diese Datei bereits aus.
 
 ## Log
 

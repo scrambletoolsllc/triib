@@ -651,6 +651,9 @@ firmware-storing-percent = Menyimpan: { $percent }%
 firmware-storing = Menyimpan…
 firmware-restarting = Tersimpan. Memulai ulang…
 firmware-updated = Diperbarui dengan { $file }
+firmware-checking = Diperbarui dengan { $file }. Memeriksa apakah firmware barunya tetap terpasang…
+firmware-went-back = Ia kembali ke firmware lamanya, { $version }: firmware baru tidak dapat terus berjalan.
+firmware-came-back-other = Ia kembali dengan menjalankan { $version }, bukan firmware baru.
 firmware-stopped = Dihentikan. Firmware lamanya tetap terpasang.
 firmware-failed-size = Berkas lebih besar dari yang dapat diterimanya.
 firmware-failed-locked = Controller lain menguncinya.
@@ -664,6 +667,15 @@ firmware-confirm-title = Perbarui firmware?
 firmware-confirm-body = { $entity } akan menerima { $file } ({ $size }) sebagai "{ $image }", lalu memulai ulang dengannya. Versi saat ini: { $version }. Stream-nya berhenti sampai ia kembali, jadi jaga agar tetap menyala dan terhubung.
 firmware-confirm-cancel = Batal
 firmware-confirm-update = Perbarui
+firmware-confirm-anyway = Tetap perbarui
+firmware-file = Berkas ini adalah { $project } { $version } untuk { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = Koprosesor mungkin tidak menyimpan salinan firmware lamanya: jika berkas ini tidak berjalan, memulihkan perangkat bisa memerlukan kabel. Kirim hanya berkas yang sudah diuji pada perangkat ini.
+firmware-doubt-coprocessor = Berkas ini untuk koprosesor, sedangkan "{ $image }" bukan.
+firmware-doubt-not-coprocessor = Berkas ini tampaknya bukan untuk koprosesor, sedangkan "{ $image }" untuk koprosesor.
+firmware-doubt-learned = Terakhir kali, "{ $image }" menerima { $project } untuk { $chip }.
+firmware-doubt-other = Berkas ini mirip dengan yang diterima "{ $image }" terakhir kali.
+firmware-unsigned = Berkas tidak ditandatangani: perangkat yang memeriksa tanda tangan akan menolaknya.
+firmware-runs-already = Ia sudah menjalankan berkas ini.
 
 ## Log
 

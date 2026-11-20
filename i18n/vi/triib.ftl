@@ -646,6 +646,9 @@ firmware-storing-percent = Đang lưu: { $percent }%
 firmware-storing = Đang lưu…
 firmware-restarting = Đã lưu. Đang khởi động lại…
 firmware-updated = Đã cập nhật bằng { $file }
+firmware-checking = Đã cập nhật bằng { $file }. Đang kiểm tra xem thực thể có giữ firmware mới không…
+firmware-went-back = Thực thể đã quay lại firmware cũ, { $version }: firmware mới không tiếp tục chạy được.
+firmware-came-back-other = Thực thể đã quay lại nhưng đang chạy { $version }, không phải firmware mới.
 firmware-stopped = Đã dừng. Thực thể vẫn giữ firmware cũ.
 firmware-failed-size = Tệp lớn hơn mức thực thể nhận được.
 firmware-failed-locked = Một bộ điều khiển khác đang khóa thực thể này.
@@ -659,6 +662,15 @@ firmware-confirm-title = Cập nhật firmware?
 firmware-confirm-body = { $entity } sẽ nhận { $file } ({ $size }) làm “{ $image }” của nó, rồi khởi động lại với firmware đó. Hiện nó đang chạy { $version }. Các luồng của nó sẽ dừng cho đến khi nó hoạt động trở lại, vì vậy hãy giữ cho nó được cấp nguồn và kết nối mạng.
 firmware-confirm-cancel = Hủy
 firmware-confirm-update = Cập nhật
+firmware-confirm-anyway = Vẫn cập nhật
+firmware-file = Tệp này là { $project } { $version } cho { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = Bộ đồng xử lý có thể không giữ bản sao nào của firmware cũ: nếu tệp này không chạy, việc khôi phục thiết bị có thể cần đến cáp. Chỉ gửi tệp đã được thử nghiệm trên thiết bị này.
+firmware-doubt-coprocessor = Tệp này dành cho bộ đồng xử lý, nhưng “{ $image }” thì không.
+firmware-doubt-not-coprocessor = Tệp này có vẻ không dành cho bộ đồng xử lý, nhưng “{ $image }” lại dành cho bộ đồng xử lý.
+firmware-doubt-learned = Lần trước, “{ $image }” đã nhận { $project } cho { $chip }.
+firmware-doubt-other = Tệp này giống tệp mà “{ $image }” đã nhận lần trước.
+firmware-unsigned = Tệp chưa được ký: thiết bị có kiểm tra chữ ký sẽ từ chối tệp này.
+firmware-runs-already = Thực thể đang chạy tệp này rồi.
 
 ## Log
 

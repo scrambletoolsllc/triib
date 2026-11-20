@@ -807,6 +807,9 @@ firmware-storing-percent = Zapisywanie: { $percent }%
 firmware-storing = Zapisywanie…
 firmware-restarting = Zapisano. Ponowne uruchamianie…
 firmware-updated = Zaktualizowano z pliku { $file }
+firmware-checking = Zaktualizowano z pliku { $file }. Sprawdzanie, czy encja zachowuje nowy firmware…
+firmware-went-back = Encja wróciła do poprzedniego firmware, { $version }: nowy firmware nie działał dalej.
+firmware-came-back-other = Encja wróciła z działającą wersją { $version }, a nie z nowym firmware.
 firmware-stopped = Zatrzymano. Encja zachowuje dotychczasowy firmware.
 firmware-failed-size = Plik jest większy, niż encja może przyjąć.
 firmware-failed-locked = Encja jest zablokowana przez inny kontroler.
@@ -820,6 +823,15 @@ firmware-confirm-title = Zaktualizować firmware?
 firmware-confirm-body = Encja { $entity } przyjmie { $file } ({ $size }) jako „{ $image }”, a następnie uruchomi się ponownie z nowym firmware. Obecnie działa w wersji { $version }. Jej strumienie zatrzymają się do czasu jej powrotu, więc nie odłączaj jej od zasilania ani od sieci.
 firmware-confirm-cancel = Anuluj
 firmware-confirm-update = Aktualizuj
+firmware-confirm-anyway = Aktualizuj mimo to
+firmware-file = Plik to { $project } { $version } dla { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = Koprocesor może nie zachować żadnej kopii dotychczasowego firmware: jeśli ten plik nie zadziała, odzyskanie urządzenia może wymagać kabla. Wysyłaj tylko plik przetestowany na tym urządzeniu.
+firmware-doubt-coprocessor = Ten plik jest plikiem koprocesora, a „{ $image }” nie należy do koprocesora.
+firmware-doubt-not-coprocessor = Ten plik nie wygląda na plik koprocesora, a „{ $image }” należy do koprocesora.
+firmware-doubt-learned = Ostatnio do „{ $image }” wgrano { $project } dla { $chip }.
+firmware-doubt-other = Ten plik przypomina plik, który ostatnio wgrano do „{ $image }”.
+firmware-unsigned = Plik nie jest podpisany: urządzenie, które sprawdza podpisy, go odrzuca.
+firmware-runs-already = Na encji już działa ten plik.
 
 ## Log
 

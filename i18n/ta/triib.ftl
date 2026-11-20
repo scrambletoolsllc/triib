@@ -731,6 +731,9 @@ firmware-storing-percent = சேமிக்கிறது: { $percent }%
 firmware-storing = சேமிக்கிறது…
 firmware-restarting = சேமிக்கப்பட்டது. மீண்டும் தொடங்குகிறது…
 firmware-updated = { $file } மூலம் புதுப்பிக்கப்பட்டது
+firmware-checking = { $file } மூலம் புதுப்பிக்கப்பட்டது. அது புதிய ஃபர்ம்வேரையே வைத்திருக்கிறதா எனச் சரிபார்க்கிறது…
+firmware-went-back = அது முன்பிருந்த ஃபர்ம்வேரான { $version }-க்குத் திரும்பிவிட்டது: புதிய ஃபர்ம்வேர் தொடர்ந்து இயங்கவில்லை.
+firmware-came-back-other = அது புதிய ஃபர்ம்வேரில் அல்ல, { $version }-இல் இயங்கியபடி திரும்பியது.
 firmware-stopped = நிறுத்தப்பட்டது. அது முன்பிருந்த ஃபர்ம்வேரையே வைத்திருக்கும்.
 firmware-failed-size = அது ஏற்கும் அளவை விடக் கோப்பு பெரியது.
 firmware-failed-locked = வேறொரு controller அதை lock செய்துள்ளது.
@@ -744,6 +747,15 @@ firmware-confirm-title = ஃபர்ம்வேரைப் புதுப்
 firmware-confirm-body = { $entity }, { $file } ({ $size }) கோப்பைத் தனது “{ $image }” ஆக ஏற்று, பின்னர் அதைக் கொண்டு மீண்டும் தொடங்கும். இப்போது அது { $version }-இல் இயங்குகிறது. அது திரும்பும் வரை அதன் streams நிற்கும், எனவே அதன் மின்சாரத்தையும் இணைப்பையும் துண்டிக்க வேண்டாம்.
 firmware-confirm-cancel = ரத்துசெய்
 firmware-confirm-update = புதுப்பி
+firmware-confirm-anyway = இருந்தாலும் புதுப்பி
+firmware-file = இந்தக் கோப்பு { $chip }-க்கான { $project } { $version }, ELF { $elf }.
+firmware-confirm-coprocessor = துணைச் செயலி முன்பிருந்த ஃபர்ம்வேரின் எந்த நகலையும் வைத்திருக்காமல் போகலாம்: இந்தக் கோப்பு இயங்காவிட்டால், சாதனத்தை மீட்க ஒரு கேபிள் தேவைப்படலாம். இந்தச் சாதனத்தில் சோதிக்கப்பட்ட கோப்பை மட்டுமே அனுப்பவும்.
+firmware-doubt-coprocessor = இந்தக் கோப்பு துணைச் செயலிக்கானது, ஆனால் “{ $image }” அப்படி இல்லை.
+firmware-doubt-not-coprocessor = இந்தக் கோப்பு துணைச் செயலிக்கானதாகத் தெரியவில்லை, ஆனால் “{ $image }” துணைச் செயலிக்கானது.
+firmware-doubt-learned = கடந்த முறை, “{ $image }” { $chip }-க்கான { $project }-ஐ ஏற்றது.
+firmware-doubt-other = இந்தக் கோப்பு, கடந்த முறை “{ $image }” ஏற்ற கோப்பைப் போன்றது.
+firmware-unsigned = கோப்பு கையொப்பமிடப்படவில்லை: கையொப்பங்களைச் சரிபார்க்கும் சாதனம் அதை மறுக்கும்.
+firmware-runs-already = அது ஏற்கனவே இந்தக் கோப்பில் இயங்குகிறது.
 
 ## Log
 

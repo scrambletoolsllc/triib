@@ -750,6 +750,9 @@ firmware-storing-percent = Lagrar: { $percent }{" "}%
 firmware-storing = Lagrar…
 firmware-restarting = Lagrat. Startar om…
 firmware-updated = Uppdaterad med { $file }
+firmware-checking = Uppdaterad med { $file }. Kontrollerar att den behåller firmwaren…
+firmware-went-back = Den gick tillbaka till den firmware den hade, { $version }: den nya firmwaren fortsatte inte att köras.
+firmware-came-back-other = Den kom tillbaka och kör { $version }, inte den nya firmwaren.
 firmware-stopped = Stoppad. Den behåller den firmware den hade.
 firmware-failed-size = Filen är större än den tar emot.
 firmware-failed-locked = En annan controller har låst den.
@@ -763,6 +766,15 @@ firmware-confirm-title = Vill du uppdatera firmwaren?
 firmware-confirm-body = { $entity } tar emot { $file } ({ $size }) som ”{ $image }” och startar sedan om med den. Nu kör den { $version }. Dess streamar stoppas tills den är tillbaka, så se till att den har ström och är ansluten.
 firmware-confirm-cancel = Avbryt
 firmware-confirm-update = Uppdatera
+firmware-confirm-anyway = Uppdatera ändå
+firmware-file = Filen är { $project } { $version } för { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = En samprocessor behåller kanske ingen kopia av den firmware den hade: om den här filen inte körs kan det krävas en kabel för att återställa enheten. Skicka bara en fil som har testats på den här enheten.
+firmware-doubt-coprocessor = Den här filen är för en samprocessor, men ”{ $image }” är det inte.
+firmware-doubt-not-coprocessor = Den här filen ser inte ut att vara för en samprocessor, men ”{ $image }” är det.
+firmware-doubt-learned = Förra gången tog ”{ $image }” emot { $project } för { $chip }.
+firmware-doubt-other = Den här filen liknar den som ”{ $image }” tog emot förra gången.
+firmware-unsigned = Filen är inte signerad: en enhet som kontrollerar signaturer avvisar den.
+firmware-runs-already = Den kör redan den här filen.
 
 ## Log
 

@@ -766,6 +766,9 @@ firmware-storing-percent = שומר: { $percent }%
 firmware-storing = שומר…
 firmware-restarting = נשמר. מופעל מחדש…
 firmware-updated = עודכן באמצעות { $file }
+firmware-checking = עודכן באמצעות { $file }. בודק שהקושחה החדשה נשארת בו…
+firmware-went-back = הוא חזר לקושחה הקודמת שלו, { $version }: הקושחה החדשה לא המשיכה לפעול.
+firmware-came-back-other = הוא חזר כשהוא מריץ את { $version }, לא את הקושחה החדשה.
 firmware-stopped = נעצר. הקושחה הקודמת נשארת בו.
 firmware-failed-size = הקובץ גדול ממה שהוא מקבל.
 firmware-failed-locked = בקר אחר נעל אותו.
@@ -779,6 +782,15 @@ firmware-confirm-title = לעדכן את הקושחה?
 firmware-confirm-body = { $entity } יקבל את { $file } ({ $size }) בתור "{ $image }" שלו, ואז יופעל מחדש איתו. הגרסה הנוכחית: { $version }. הזרמים שלו ייעצרו עד שיחזור, אז הקפידו שיישאר מחובר לחשמל ולרשת.
 firmware-confirm-cancel = ביטול
 firmware-confirm-update = עדכון
+firmware-confirm-anyway = עדכון בכל זאת
+firmware-file = הקובץ הוא { $project } { $version } עבור { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = ייתכן שמעבד משנה לא שומר עותק של הקושחה הקודמת שלו: אם הקובץ הזה לא יפעל, שחזור ההתקן עשוי לדרוש כבל. שלחו רק קובץ שנבדק בהתקן הזה.
+firmware-doubt-coprocessor = הקובץ הזה מיועד למעבד משנה, ו-"{ $image }" לא.
+firmware-doubt-not-coprocessor = נראה שהקובץ הזה לא מיועד למעבד משנה, ו-"{ $image }" כן.
+firmware-doubt-learned = בפעם הקודמת, "{ $image }" קיבל את { $project } עבור { $chip }.
+firmware-doubt-other = הקובץ הזה דומה לקובץ ש-"{ $image }" קיבל בפעם הקודמת.
+firmware-unsigned = הקובץ לא חתום: התקן שבודק חתימות דוחה אותו.
+firmware-runs-already = הוא כבר מריץ את הקובץ הזה.
 
 ## Log
 

@@ -951,6 +951,9 @@ firmware-storing-percent = Storing: { $percent }%
 firmware-storing = Storing…
 firmware-restarting = Stored. Restarting…
 firmware-updated = Updated with { $file }
+firmware-checking = Updated with { $file }. Checking that it keeps it…
+firmware-went-back = It went back to the firmware it had, { $version }: the new firmware did not keep running.
+firmware-came-back-other = It came back running { $version }, not the new firmware.
 firmware-stopped = Stopped. It keeps the firmware it had.
 firmware-failed-size = The file is larger than it takes.
 firmware-failed-locked = Another controller has it locked.
@@ -964,6 +967,15 @@ firmware-confirm-title = Update the firmware?
 firmware-confirm-body = { $entity } will take { $file } ({ $size }) as its "{ $image }", then restart on it. Its firmware now: { $version }. Its streams stop until it is back, so keep it powered and connected.
 firmware-confirm-cancel = Cancel
 firmware-confirm-update = Update
+firmware-confirm-anyway = Update anyway
+firmware-file = The file is { $project } { $version } for { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = A coprocessor may keep no copy of the firmware it had: if this file does not run, recovering the device can take a cable. Send only a file tested on this device.
+firmware-doubt-coprocessor = This file is a coprocessor's, and "{ $image }" is not.
+firmware-doubt-not-coprocessor = This file does not look like a coprocessor's, and "{ $image }" is one.
+firmware-doubt-learned = Last time, "{ $image }" took { $project } for { $chip }.
+firmware-doubt-other = This file is like the one "{ $image }" took last time.
+firmware-unsigned = The file is not signed: a device that checks signatures refuses it.
+firmware-runs-already = It runs this file already.
 
 ## Log
 # The ATDECC frames triib sends and hears. Each frame's summary stays in the

@@ -17,6 +17,26 @@ All notable changes to triib. Versions follow
   `triib-cli firmware` lists an entity's images and updates one from a
   file, and agents do the same through `firmware_status`,
   `update_firmware` and `stop_firmware_update`.
+- Before a file goes, the confirmation says what an ESP-IDF app image is
+  for, its project, version and chip, and why triib doubts it suits the
+  image: a coprocessor's file for an image that is not a coprocessor's,
+  or the other way round, or a file unlike the one the same model's
+  image took last time. A coprocessor's image warns that it may keep no
+  copy of the firmware it had. Agents' updates stop at the doubts
+  unless the agent says the user still means it.
+- Back on new firmware of its own, an entity is watched for 75 s, and
+  one that goes back to the firmware it had, as an ESP32 does when the
+  new firmware does not keep running, shows it. An ESP32's version ends
+  with its firmware's ELF hash, which also tells an entity back on
+  firmware other than the file sent. The confirmation notes a file that
+  is not signed, which a device checking signatures refuses, and one the
+  entity runs already.
+- `triib-cli firmware` takes the file first and the image with
+  `--image` where an entity has several, says what an ESP-IDF file is,
+  refuses one for the other processor unless `--anyway`, and watches
+  for the entity going back for 75 s or `--settle`. Updating devices'
+  firmware lives in triib and triib-cli alone: avb-endpointd's
+  `firmware` command goes in its next release.
 
 ## [1.4.0] - 2026-11-19
 

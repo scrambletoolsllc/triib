@@ -1,0 +1,11 @@
+[package]
+name = "triib-firmware"
+description = "What a firmware file is, as triib and triib-cli send one to a device"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lints]
+workspace = true

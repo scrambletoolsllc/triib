@@ -651,6 +651,9 @@ firmware-storing-percent = Menyimpan: { $percent }%
 firmware-storing = Menyimpan…
 firmware-restarting = Disimpan. Memulakan semula…
 firmware-updated = Dikemas kini dengan { $file }
+firmware-checking = Dikemas kini dengan { $file }. Menyemak sama ada ia mengekalkan perisian tegar baharu…
+firmware-went-back = Ia kembali kepada perisian tegar sebelumnya, { $version }: perisian tegar baharu tidak kekal berjalan.
+firmware-came-back-other = Ia kembali dengan menjalankan { $version }, bukan perisian tegar baharu.
 firmware-stopped = Dihentikan. Ia mengekalkan perisian tegar sedia ada.
 firmware-failed-size = Fail lebih besar daripada yang diterimanya.
 firmware-failed-locked = Pengawal lain telah menguncinya.
@@ -664,6 +667,15 @@ firmware-confirm-title = Kemas kini perisian tegar?
 firmware-confirm-body = { $entity } akan menerima { $file } ({ $size }) sebagai "{ $image }", kemudian dimulakan semula dengan perisian tegar baharu itu. Kini ia menjalankan { $version }. Strimnya berhenti sehingga ia kembali, jadi pastikan bekalan kuasa dan sambungannya tidak terputus.
 firmware-confirm-cancel = Batal
 firmware-confirm-update = Kemas kini
+firmware-confirm-anyway = Kemas kini juga
+firmware-file = Fail ini ialah { $project } { $version } untuk { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = Koprosesor mungkin tidak mengekalkan salinan perisian tegar sedia ada: jika fail ini tidak berjalan, memulihkan peranti mungkin memerlukan kabel. Hantar hanya fail yang telah diuji pada peranti ini.
+firmware-doubt-coprocessor = Fail ini untuk koprosesor, tetapi "{ $image }" bukan untuk koprosesor.
+firmware-doubt-not-coprocessor = Fail ini tidak kelihatan seperti fail koprosesor, tetapi "{ $image }" untuk koprosesor.
+firmware-doubt-learned = Kali terakhir, "{ $image }" menerima { $project } untuk { $chip }.
+firmware-doubt-other = Fail ini serupa dengan fail yang diterima oleh "{ $image }" kali terakhir.
+firmware-unsigned = Fail ini tidak ditandatangani: peranti yang menyemak tandatangan akan menolaknya.
+firmware-runs-already = Ia sudah menjalankan fail ini.
 
 ## Log
 

@@ -310,7 +310,7 @@ cargo run -p triib-cli -- wireless-config <interface> <entity-id> <avb-interface
 cargo run -p triib-cli -- transit <interface> <entity-id> <output> [nanoseconds]
 cargo run -p triib-cli -- descriptor <interface> <entity-id> <type:index>
 cargo run -p triib-cli -- harvest <interface> <entity-id> [repeat]
-cargo run -p triib-cli -- firmware <interface> <entity-id> [<image> <file> [--no-restart]]
+cargo run -p triib-cli -- firmware <interface> <entity-id> [<file> [--image <image>] [--anyway] [--no-restart] [--settle <seconds>]]
 ```
 
 The daemon builds in the avb repository:

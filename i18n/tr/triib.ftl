@@ -733,6 +733,9 @@ firmware-storing-percent = Kaydediliyor: %{ $percent }
 firmware-storing = Kaydediliyor…
 firmware-restarting = Kaydedildi. Yeniden başlıyor…
 firmware-updated = { $file } dosyasıyla güncellendi
+firmware-checking = { $file } dosyasıyla güncellendi. Yeni ürün yazılımını koruyup korumadığı denetleniyor…
+firmware-went-back = Önceki ürün yazılımına, { $version } sürümüne geri döndü: yeni ürün yazılımı çalışmayı sürdürmedi.
+firmware-came-back-other = Yeni ürün yazılımıyla değil, { $version } sürümüyle çalışarak geri geldi.
 firmware-stopped = Durduruldu. Önceki ürün yazılımını korur.
 firmware-failed-size = Dosya, alabileceğinden büyük.
 firmware-failed-locked = Başka bir denetleyici bu varlığı kilitlemiş.
@@ -746,6 +749,15 @@ firmware-confirm-title = Ürün yazılımı güncellensin mi?
 firmware-confirm-body = { $entity }, { $file } dosyasını ({ $size }) “{ $image }” olarak alacak, ardından yeni ürün yazılımıyla yeniden başlayacak. Şu anda { $version } sürümünü çalıştırıyor. Geri gelene kadar akışları durur; bu yüzden gücünü ve bağlantısını kesmeyin.
 firmware-confirm-cancel = İptal
 firmware-confirm-update = Güncelle
+firmware-confirm-anyway = Yine de güncelle
+firmware-file = Bu dosya { $chip } için { $project } { $version }, ELF { $elf }.
+firmware-confirm-coprocessor = Bir yardımcı işlemci, önceki ürün yazılımının hiçbir kopyasını saklamayabilir: bu dosya çalışmazsa cihazı kurtarmak için kablo gerekebilir. Yalnızca bu cihazda test edilmiş bir dosya gönderin.
+firmware-doubt-coprocessor = Bu dosya bir yardımcı işlemciye ait, ancak “{ $image }” yardımcı işlemciye ait değil.
+firmware-doubt-not-coprocessor = Bu dosya bir yardımcı işlemciye ait görünmüyor, ancak “{ $image }” bir yardımcı işlemciye ait.
+firmware-doubt-learned = Geçen sefer “{ $image }”, { $chip } için { $project } aldı.
+firmware-doubt-other = Bu dosya, geçen sefer “{ $image }” için alınan dosyaya benziyor.
+firmware-unsigned = Dosya imzalı değil: imzaları denetleyen bir cihaz onu reddeder.
+firmware-runs-already = Bu dosyayı zaten çalıştırıyor.
 
 ## Log
 

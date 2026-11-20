@@ -806,6 +806,9 @@ firmware-storing-percent = Збереження: { $percent }%
 firmware-storing = Збереження…
 firmware-restarting = Збережено. Перезапуск…
 firmware-updated = Оновлено з файлу { $file }
+firmware-checking = Оновлено з файлу { $file }. Перевірка, чи сутність лишається з новою прошивкою…
+firmware-went-back = Сутність повернулася до попередньої прошивки, { $version }: нова прошивка не змогла працювати далі.
+firmware-came-back-other = Сутність повернулася й працює на { $version }, а не на новій прошивці.
 firmware-stopped = Зупинено. Сутність лишається з попередньою прошивкою.
 firmware-failed-size = Файл більший, ніж приймає сутність.
 firmware-failed-locked = Сутність заблокував інший контролер.
@@ -819,6 +822,15 @@ firmware-confirm-title = Оновити прошивку?
 firmware-confirm-body = Сутність { $entity } прийме { $file } ({ $size }) як «{ $image }» і перезапуститься з новою прошивкою. Зараз вона працює на { $version }. Її потоки зупиняться, доки вона не повернеться, тож не вимикайте їй живлення й не від'єднуйте її від мережі.
 firmware-confirm-cancel = Скасувати
 firmware-confirm-update = Оновити
+firmware-confirm-anyway = Все одно оновити
+firmware-file = Це файл { $project } { $version } для { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = Співпроцесор може не зберігати жодної копії попередньої прошивки: якщо цей файл не запрацює, для відновлення пристрою може знадобитися кабель. Надсилайте лише файл, перевірений на цьому пристрої.
+firmware-doubt-coprocessor = Цей файл призначений для співпроцесора, а «{ $image }» — ні.
+firmware-doubt-not-coprocessor = Цей файл не схожий на файл для співпроцесора, а «{ $image }» — для співпроцесора.
+firmware-doubt-learned = Минулого разу в «{ $image }» записано { $project } для { $chip }.
+firmware-doubt-other = Цей файл схожий на той, що минулого разу записано в «{ $image }».
+firmware-unsigned = Файл не підписано: пристрій, що перевіряє підписи, його відхиляє.
+firmware-runs-already = На сутності вже працює цей файл.
 
 ## Log
 

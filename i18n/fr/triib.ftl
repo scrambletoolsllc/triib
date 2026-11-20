@@ -790,6 +790,9 @@ firmware-storing-percent = Enregistrement : { $percent }{"\u202F"}%
 firmware-storing = Enregistrement…
 firmware-restarting = Enregistré. Redémarrage…
 firmware-updated = Mis à jour avec { $file }
+firmware-checking = Mis à jour avec { $file }. On vérifie qu’il garde le nouveau firmware…
+firmware-went-back = Il est revenu au firmware qu’il avait, { $version } : le nouveau firmware n’est pas resté en marche.
+firmware-came-back-other = Il est revenu avec { $version } en marche, pas avec le nouveau firmware.
 firmware-stopped = Arrêté. Il garde le firmware qu’il avait.
 firmware-failed-size = Le fichier est plus grand que ce qu’il accepte.
 firmware-failed-locked = Un autre contrôleur l’a verrouillé.
@@ -803,6 +806,15 @@ firmware-confirm-title = Mettre à jour le firmware ?
 firmware-confirm-body = { $entity } recevra { $file } ({ $size }) comme « { $image } », puis redémarrera dessus. Version actuelle : { $version }. Ses flux s’arrêtent jusqu’à son retour, gardez-le donc alimenté et connecté.
 firmware-confirm-cancel = Annuler
 firmware-confirm-update = Mettre à jour
+firmware-confirm-anyway = Mettre à jour quand même
+firmware-file = Le fichier est { $project } { $version } pour { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = Un coprocesseur peut ne garder aucune copie du firmware qu’il avait : si ce fichier ne fonctionne pas, la récupération de l’appareil peut nécessiter un câble. N’envoyez qu’un fichier testé sur cet appareil.
+firmware-doubt-coprocessor = Ce fichier est destiné à un coprocesseur, alors que « { $image } » ne l’est pas.
+firmware-doubt-not-coprocessor = Ce fichier ne semble pas destiné à un coprocesseur, alors que « { $image } » l’est.
+firmware-doubt-learned = La dernière fois, « { $image } » a reçu { $project } pour { $chip }.
+firmware-doubt-other = Ce fichier ressemble à celui que « { $image } » a reçu la dernière fois.
+firmware-unsigned = Le fichier n’est pas signé : un appareil qui vérifie les signatures le refuse.
+firmware-runs-already = Il exécute déjà ce fichier.
 
 ## Log
 

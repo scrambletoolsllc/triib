@@ -808,6 +808,9 @@ firmware-storing-percent = Ukládání: { $percent }{" "}%
 firmware-storing = Ukládání…
 firmware-restarting = Uloženo. Restartování…
 firmware-updated = Aktualizováno ze souboru { $file }
+firmware-checking = Aktualizováno ze souboru { $file }. Ověřování, že si ho ponechá…
+firmware-went-back = Vrátila se k dosavadnímu firmwaru { $version }: nový firmware nezůstal spuštěný.
+firmware-came-back-other = Vrátila se a běží na { $version }, ne na novém firmwaru.
 firmware-stopped = Zastaveno. Entita si ponechává dosavadní firmware.
 firmware-failed-size = Soubor je větší, než entita pojme.
 firmware-failed-locked = Jiný kontrolér ji má zamčenou.
@@ -821,6 +824,15 @@ firmware-confirm-title = Aktualizovat firmware?
 firmware-confirm-body = Entita { $entity } převezme soubor { $file } ({ $size }) jako „{ $image }“ a pak se s ním restartuje. Aktuální verze: { $version }. Dokud nebude zpět, budou její streamy zastavené, proto ji nechte napájenou a připojenou.
 firmware-confirm-cancel = Zrušit
 firmware-confirm-update = Aktualizovat
+firmware-confirm-anyway = Přesto aktualizovat
+firmware-file = Soubor je { $project } { $version } pro { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = Koprocesor si nemusí ponechat žádnou kopii dosavadního firmwaru: pokud tento soubor nepoběží, může obnovení zařízení vyžadovat kabel. Odešlete jen soubor otestovaný na tomto zařízení.
+firmware-doubt-coprocessor = Tento soubor je pro koprocesor, ale „{ $image }“ ne.
+firmware-doubt-not-coprocessor = Tento soubor nevypadá jako soubor pro koprocesor, ale „{ $image }“ pro koprocesor je.
+firmware-doubt-learned = Minule se do „{ $image }“ nahrál { $project } pro { $chip }.
+firmware-doubt-other = Tento soubor se podobá tomu, který se minule nahrál do „{ $image }“.
+firmware-unsigned = Soubor není podepsaný: zařízení, které kontroluje podpisy, ho odmítá.
+firmware-runs-already = Tento soubor už má spuštěný.
 
 ## Log
 

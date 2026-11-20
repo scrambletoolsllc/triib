@@ -237,6 +237,9 @@ struct UpdateFirmware {
     image: Option<String>,
     /// The file to send, by its full path on this computer.
     file: String,
+    /// Send it even though triib doubts it suits the image, as the user
+    /// confirmed after hearing why.
+    despite_doubts: Option<bool>,
 }
 
 #[derive(Deserialize, JsonSchema)]
@@ -668,8 +671,11 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
              such as \"Firmware\" for the device's own and \"Coprocessor firmware\" for its \
              coprocessor's, with its index and the most it takes, the firmware the entity \
              runs, and how an update to each goes or went: starting, sending with the \
-             octets sent of the file's, storing, restarting, updated, stopped or failed \
-             and why. Every entity that takes updates when no entity is named.",
+             octets sent of the file's, storing, restarting, checking that it keeps the \
+             new firmware, updated, went back to the firmware it had, came back on other \
+             firmware, stopped or failed \
+             and why, with what the file is where triib can tell and the firmware before \
+             and after. Every entity that takes updates when no entity is named.",
             |app, input: FirmwareOf, answer| {
                 let entities: Vec<EntityId> = match input.entity_id.as_deref().map(entity_id) {
                     Some(Ok(entity)) => vec![entity],
@@ -700,9 +706,13 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
              the entity against other controllers, the entity stops its streams, takes \
              the file, checks and stores it, and restarts on it. Answers once it is \
              stored, or with why the entity refused it, which leaves the firmware it had; \
-             firmware_status then shows when the entity is back and the firmware it runs. \
+             firmware_status then shows when the entity is back, the firmware it runs, and \
+             whether it kept it or went back to the firmware it had. triib refuses a file \
+             it doubts suits the image, such as a coprocessor's for the device's own \
+             firmware or one unlike the file the image took last time, saying why; pass \
+             despite_doubts only once the user has heard the doubts and still means it. \
              Only for a file the user means for that device and image: the entity checks \
-             it, but a coprocessor's image has no way back.",
+             it, but a coprocessor may have no way back.",
             |app, input: UpdateFirmware, answer| match start_update(app, &input) {
                 Ok(key) => {
                     app.agents.firmware_waits.push((key, answer));
@@ -898,6 +908,9 @@ fn update_json(update: &crate::firmware::Update) -> Value {
         Stage::Writing { sent, total } => ("sending", Some(sent), Some(total)),
         Stage::Aborting => ("stopping", None, None),
         Stage::Storing { .. } => ("storing", None, None),
+        Stage::Done if update.went_back => ("went_back", None, None),
+        Stage::Done if update.elsewhere => ("came_back_other", None, None),
+        Stage::Done if update.back && update.watching() => ("checking", None, None),
         Stage::Done if update.back => ("updated", None, None),
         Stage::Done => ("restarting", None, None),
         Stage::Aborted => ("stopped", None, None),
@@ -905,9 +918,12 @@ fn update_json(update: &crate::firmware::Update) -> Value {
     };
     json!({
         "file": update.file,
+        "file_is": update.kind,
         "stage": stage,
         "sent": sent,
         "total": total,
+        "firmware_before": update.before,
+        "firmware_after": update.after,
         "text": crate::firmware::stage_text(update),
     })
 }
@@ -958,6 +974,19 @@ fn start_update(app: &mut Triib, input: &UpdateFirmware) -> Result<(EntityId, u1
     let index = pick_image(model, input.image.as_ref()).map_err(invalid)?;
     let path = std::path::Path::new(&input.file);
     let image = std::fs::read(path).map_err(|error| invalid(format!("{}: {error}", input.file)))?;
+    let doubts = crate::firmware::doubts(
+        app,
+        entity,
+        index,
+        crate::firmware::identify(&image).as_ref(),
+    );
+    if !doubts.is_empty() && input.despite_doubts != Some(true) {
+        return Err(invalid(format!(
+            "triib doubts this file suits the image: {} Tell the user, and pass \
+             despite_doubts: true only if they still mean it.",
+            doubts.join(" ")
+        )));
+    }
     let file = path.file_name().map_or_else(
         || input.file.clone(),
         |name| name.to_string_lossy().into_owned(),
@@ -1922,12 +1951,11 @@ mod tests {
         app.firmware.updates.insert(
             (entity, index),
             crate::firmware::Update {
-                file: "avb-endpoint.bin".to_owned(),
                 stage: Stage::Writing {
                     sent: 1004,
                     total: 4000,
                 },
-                back: false,
+                ..crate::firmware::Update::new("avb-endpoint.bin")
             },
         );
         let listed = call(&mut app, "firmware_status", json!({})).unwrap();
@@ -1984,6 +2012,45 @@ mod tests {
         let message = ask(&mut app, None, &path);
         assert_eq!(message, crate::fl!("firmware-no-network"));
         assert!(app.firmware.updates.is_empty());
+        let _ = std::fs::remove_file(&file);
+    }
+
+    /// A coprocessor's file for the device's own firmware is refused,
+    /// with why, unless the agent says the user still means it.
+    #[test]
+    fn update_firmware_refuses_a_file_it_doubts() {
+        let (mut app, entity) = taking_firmware();
+        app.network_state = NetworkState::Running {
+            controller: EntityId(1),
+        };
+        let mut image = vec![0; 2048];
+        image[0] = 0xe9;
+        image[12..14].copy_from_slice(&0x000d_u16.to_le_bytes());
+        image[32..36].copy_from_slice(&0xabcd_5432_u32.to_le_bytes());
+        image[80..102].copy_from_slice(b"avb_bridge_coprocessor");
+        let file = std::env::temp_dir().join(format!("triib-copro-{}.bin", std::process::id()));
+        std::fs::write(&file, &image).unwrap();
+        let path = file.to_string_lossy().into_owned();
+        let doubted = call(
+            &mut app,
+            "update_firmware",
+            json!({ "entity_id": entity.to_string(), "file": path }),
+        )
+        .unwrap_err()
+        .message;
+        assert!(
+            doubted.contains("coprocessor") && doubted.contains("despite_doubts"),
+            "{doubted}"
+        );
+        // Meant all the same, it goes as far as this sample's missing network.
+        let meant = call(
+            &mut app,
+            "update_firmware",
+            json!({ "entity_id": entity.to_string(), "file": path, "despite_doubts": true }),
+        )
+        .unwrap_err()
+        .message;
+        assert_eq!(meant, crate::fl!("firmware-no-network"));
         let _ = std::fs::remove_file(&file);
     }
 

@@ -4139,6 +4139,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "triib-firmware",
  "triib-store",
  "windows-sys 0.61.2",
 ]
@@ -4149,7 +4150,12 @@ version = "1.4.0"
 dependencies = [
  "atdecc",
  "avb-net",
+ "triib-firmware",
 ]
+
+[[package]]
+name = "triib-firmware"
+version = "1.4.0"
 
 [[package]]
 name = "triib-store"

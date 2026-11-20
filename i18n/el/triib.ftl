@@ -754,6 +754,9 @@ firmware-storing-percent = Αποθήκευση: { $percent }%
 firmware-storing = Αποθήκευση…
 firmware-restarting = Αποθηκεύτηκε. Επανεκκίνηση…
 firmware-updated = Ενημερώθηκε με το { $file }
+firmware-checking = Ενημερώθηκε με το { $file }. Έλεγχος ότι κρατά το νέο υλικολογισμικό…
+firmware-went-back = Επέστρεψε στο υλικολογισμικό που είχε, { $version }: το νέο υλικολογισμικό δεν συνέχισε να λειτουργεί.
+firmware-came-back-other = Επέστρεψε με το { $version } σε λειτουργία, όχι με το νέο υλικολογισμικό.
 firmware-stopped = Διακόπηκε. Κρατά το υλικολογισμικό που είχε.
 firmware-failed-size = Το αρχείο είναι μεγαλύτερο από όσο χωράει.
 firmware-failed-locked = Άλλος ελεγκτής την έχει κλειδώσει.
@@ -767,6 +770,15 @@ firmware-confirm-title = Να ενημερωθεί το υλικολογισμι
 firmware-confirm-body = Η οντότητα { $entity } θα εγκαταστήσει το { $file } ({ $size }) ως «{ $image }» και μετά θα επανεκκινηθεί με αυτό. Τρέχουσα έκδοση: { $version }. Οι ροές της θα σταματήσουν μέχρι να επανέλθει, οπότε κρατήστε τη σε λειτουργία και συνδεδεμένη.
 firmware-confirm-cancel = Ακύρωση
 firmware-confirm-update = Ενημέρωση
+firmware-confirm-anyway = Ενημέρωση ούτως ή άλλως
+firmware-file = Το αρχείο είναι το { $project } { $version } για { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = Ένας συνεπεξεργαστής μπορεί να μην κρατά αντίγραφο του υλικολογισμικού που είχε: αν αυτό το αρχείο δεν λειτουργήσει, η ανάκτηση της συσκευής μπορεί να απαιτήσει καλώδιο. Στείλτε μόνο αρχείο που έχει δοκιμαστεί σε αυτή τη συσκευή.
+firmware-doubt-coprocessor = Αυτό το αρχείο είναι για συνεπεξεργαστή, ενώ το «{ $image }» όχι.
+firmware-doubt-not-coprocessor = Αυτό το αρχείο δεν μοιάζει να είναι για συνεπεξεργαστή, ενώ το «{ $image }» είναι.
+firmware-doubt-learned = Την προηγούμενη φορά, το «{ $image }» δέχτηκε το { $project } για { $chip }.
+firmware-doubt-other = Αυτό το αρχείο μοιάζει με εκείνο που δέχτηκε το «{ $image }» την προηγούμενη φορά.
+firmware-unsigned = Το αρχείο δεν είναι υπογεγραμμένο: μια συσκευή που ελέγχει υπογραφές το απορρίπτει.
+firmware-runs-already = Λειτουργεί ήδη με αυτό το αρχείο.
 
 ## Log
 

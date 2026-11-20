@@ -17,3 +17,4 @@ path = "src/main.rs"
 [dependencies]
 atdecc = { workspace = true, features = ["std"] }
 avb-net = { workspace = true, features = ["std"] }
+triib-firmware.workspace = true

@@ -646,6 +646,9 @@ firmware-storing-percent = 저장 중: { $percent }%
 firmware-storing = 저장 중…
 firmware-restarting = 저장됨. 다시 시작 중…
 firmware-updated = { $file }(으)로 업데이트됨
+firmware-checking = { $file }(으)로 업데이트됨. 새 펌웨어가 유지되는지 확인 중…
+firmware-went-back = 기존 펌웨어({ $version })로 돌아갔습니다. 새 펌웨어가 계속 실행되지 못했습니다.
+firmware-came-back-other = 돌아왔지만 새 펌웨어가 아닌 { $version }을(를) 실행하고 있습니다.
 firmware-stopped = 중지됨. 기존 펌웨어를 유지합니다.
 firmware-failed-size = 파일이 받을 수 있는 크기보다 큽니다.
 firmware-failed-locked = 다른 컨트롤러가 잠갔습니다.
@@ -659,6 +662,15 @@ firmware-confirm-title = 펌웨어를 업데이트할까요?
 firmware-confirm-body = { $entity }은(는) { $file }({ $size })을(를) “{ $image }”(으)로 받은 다음, 새 펌웨어로 다시 시작합니다. 현재 버전: { $version }. 돌아올 때까지 스트림이 멈추므로 전원과 네트워크 연결을 유지하세요.
 firmware-confirm-cancel = 취소
 firmware-confirm-update = 업데이트
+firmware-confirm-anyway = 그래도 업데이트
+firmware-file = 이 파일은 { $chip }용 { $project } { $version }, ELF { $elf }입니다.
+firmware-confirm-coprocessor = 코프로세서는 기존 펌웨어의 사본을 남겨 두지 않을 수 있습니다. 이 파일이 실행되지 않으면 장치를 복구하는 데 케이블이 필요할 수 있습니다. 이 장치에서 테스트한 파일만 보내세요.
+firmware-doubt-coprocessor = 이 파일은 코프로세서용이지만 “{ $image }”은(는) 코프로세서용이 아닙니다.
+firmware-doubt-not-coprocessor = 이 파일은 코프로세서용이 아닌 것 같지만 “{ $image }”은(는) 코프로세서용입니다.
+firmware-doubt-learned = 지난번에 “{ $image }”은(는) { $chip }용 { $project }을(를) 받았습니다.
+firmware-doubt-other = 이 파일은 지난번에 “{ $image }”이(가) 받은 파일과 비슷합니다.
+firmware-unsigned = 파일이 서명되지 않았습니다. 서명을 확인하는 장치는 이 파일을 거부합니다.
+firmware-runs-already = 이미 이 파일을 실행하고 있습니다.
 
 ## Log
 

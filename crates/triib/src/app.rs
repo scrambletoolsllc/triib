@@ -540,7 +540,7 @@ impl Triib {
             add_stream_open: false,
             watched: Watch::default(),
             logos: crate::logos::Logos::default(),
-            firmware: crate::firmware::Firmware::default(),
+            firmware: crate::firmware::Firmware::load(),
         };
         triib.reload_omarchy();
         triib.apply_motion();
@@ -1571,6 +1571,13 @@ impl Triib {
                 if !rereading {
                     if model.state != atdecc::model::EnumerationState::Reading {
                         self.reconfiguring.remove(&entity_id);
+                    }
+                    // Its firmware, as after restarting on an update.
+                    if model.state == atdecc::model::EnumerationState::Complete
+                        && let Some(descriptor) = model.entity()
+                    {
+                        self.firmware
+                            .version_read(entity_id, descriptor.firmware_version);
                     }
                     self.models.insert(entity_id, *model);
                 }

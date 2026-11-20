@@ -740,6 +740,9 @@ firmware-storing-percent = Inahifadhi: { $percent }%
 firmware-storing = Inahifadhi…
 firmware-restarting = Imehifadhiwa. Inawasha upya…
 firmware-updated = Imesasishwa kwa { $file }
+firmware-checking = Imesasishwa kwa { $file }. Inakagua kama inabaki nayo…
+firmware-went-back = Ilirudi kwenye programu dhibiti iliyokuwa nayo, { $version }: programu dhibiti mpya haikuendelea kufanya kazi.
+firmware-came-back-other = Ilirudi ikiendesha { $version }, si programu dhibiti mpya.
 firmware-stopped = Imesimamishwa. Inabaki na programu dhibiti iliyokuwa nayo.
 firmware-failed-size = Faili ni kubwa kuliko inavyopokea.
 firmware-failed-locked = Controller nyingine imeifunga.
@@ -753,6 +756,15 @@ firmware-confirm-title = Sasisha programu dhibiti?
 firmware-confirm-body = { $entity } itapokea { $file } ({ $size }) kama "{ $image }" yake, kisha ijiwashe upya ikiitumia. Sasa inaendesha { $version }. Mitiririko yake itasimama hadi irudi, kwa hiyo iache ikiwa na umeme na imeunganishwa.
 firmware-confirm-cancel = Ghairi
 firmware-confirm-update = Sasisha
+firmware-confirm-anyway = Sasisha hata hivyo
+firmware-file = Faili ni { $project } { $version } ya { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = Kichakataji saidizi huenda kisibaki na nakala yoyote ya programu dhibiti ambayo kilikuwa nayo: faili hii isipofanya kazi, kurejesha kifaa kunaweza kuhitaji kebo. Tuma tu faili iliyojaribiwa kwenye kifaa hiki.
+firmware-doubt-coprocessor = Faili hii ni ya kichakataji saidizi, lakini "{ $image }" si ya kichakataji saidizi.
+firmware-doubt-not-coprocessor = Faili hii haionekani kuwa ya kichakataji saidizi, lakini "{ $image }" ni ya kichakataji saidizi.
+firmware-doubt-learned = Mara iliyopita, "{ $image }" ilipokea { $project } ya { $chip }.
+firmware-doubt-other = Faili hii inafanana na ile ambayo "{ $image }" ilipokea mara iliyopita.
+firmware-unsigned = Faili haijatiwa sahihi: kifaa kinachokagua sahihi kinaikataa.
+firmware-runs-already = Tayari inaendesha faili hii.
 
 ## Log
 

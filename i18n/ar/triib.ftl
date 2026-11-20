@@ -863,6 +863,9 @@ firmware-storing-percent = جارٍ التخزين: { $percent }%
 firmware-storing = جارٍ التخزين…
 firmware-restarting = خُزِّن. جارٍ إعادة التشغيل…
 firmware-updated = حُدِّث بـ{ $file }
+firmware-checking = حُدِّث بـ{ $file }. جارٍ التحقق من أنه يحتفظ به…
+firmware-went-back = عاد إلى البرنامج الثابت الذي كان لديه، { $version }: لم يواصل البرنامج الثابت الجديد العمل.
+firmware-came-back-other = عاد وهو يشغّل { $version }، لا البرنامج الثابت الجديد.
 firmware-stopped = أُوقف التحديث. يحتفظ بالبرنامج الثابت الذي كان لديه.
 firmware-failed-size = الملف أكبر مما يتسع له.
 firmware-failed-locked = تقفله وحدة تحكم أخرى.
@@ -876,6 +879,15 @@ firmware-confirm-title = هل تريد تحديث البرنامج الثابت�
 firmware-confirm-body = سيثبّت { $entity } الملف { $file } ({ $size }) بوصفه «{ $image }» الخاص به، ثم يعيد التشغيل به. الإصدار الحالي: { $version }. تتوقف تدفقاته حتى يعود، لذا أبقه موصولًا بالكهرباء وبالشبكة.
 firmware-confirm-cancel = إلغاء
 firmware-confirm-update = تحديث
+firmware-confirm-anyway = تحديث على أي حال
+firmware-file = الملف هو { $project } { $version } للشريحة { $chip }، ELF { $elf }.
+firmware-confirm-coprocessor = قد لا يحتفظ المعالج المساعد بأي نسخة من البرنامج الثابت الذي كان لديه: إن لم يعمل هذا الملف، فقد تتطلب استعادة الجهاز كبلًا. لا ترسل إلا ملفًا مُختبَرًا على هذا الجهاز.
+firmware-doubt-coprocessor = هذا الملف لمعالج مساعد، بينما «{ $image }» ليس كذلك.
+firmware-doubt-not-coprocessor = لا يبدو أن هذا الملف لمعالج مساعد، بينما «{ $image }» لمعالج مساعد.
+firmware-doubt-learned = في المرة السابقة، تلقّى «{ $image }» { $project } للشريحة { $chip }.
+firmware-doubt-other = يشبه هذا الملف الملف الذي تلقّاه «{ $image }» في المرة السابقة.
+firmware-unsigned = الملف غير موقَّع: الجهاز الذي يتحقق من التواقيع يرفضه.
+firmware-runs-already = يشغّل هذا الملف بالفعل.
 
 ## Log
 

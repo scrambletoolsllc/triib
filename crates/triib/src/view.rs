@@ -3027,6 +3027,15 @@ pub(crate) mod tests {
                 Size::new(1280.0, 1500.0),
             ),
             ("firmware-confirm", View::Entities, true, desktop),
+            // A coprocessor's file chosen for the device's own firmware.
+            ("firmware-confirm-doubts", View::Entities, true, desktop),
+            // Back on the firmware it had, the new one not kept.
+            (
+                "inspector-firmware-went-back",
+                View::Entities,
+                true,
+                Size::new(1280.0, 1500.0),
+            ),
             // One of this computer's entities, with a stream each way.
             (
                 "inspector-device",
@@ -3263,23 +3272,58 @@ pub(crate) mod tests {
                     .next()
                     .expect("its firmware image")
                     .index;
-                if suffix == "firmware-confirm" {
+                if suffix == "firmware-confirm-doubts" {
+                    let kind = Some(crate::firmware::FileKind {
+                        chip: "ESP32-C6".to_owned(),
+                        project: "avb_bridge_coprocessor".to_owned(),
+                        version: "c159fad-dirty".to_owned(),
+                        elf: "0804884a9".to_owned(),
+                        coprocessor: true,
+                        signatures: 1,
+                    });
+                    let doubts = crate::firmware::doubts(&triib, host, index, kind.as_ref());
+                    let notes = crate::firmware::notes(&triib, host, kind.as_ref());
+                    triib.firmware.chosen = Some(crate::firmware::Chosen {
+                        entity: host,
+                        index,
+                        file: "avb_bridge_coprocessor.bin".to_owned(),
+                        image: vec![0xe9; 1_217_472],
+                        kind,
+                        doubts,
+                        notes,
+                    });
+                } else if suffix == "inspector-firmware-went-back" {
+                    triib.firmware.updates.insert(
+                        (host, index),
+                        crate::firmware::Update {
+                            stage: atdecc::upload::Stage::Done,
+                            back: true,
+                            before: "1.4.0".to_owned(),
+                            after: Some("1.5.0".to_owned()),
+                            read_at: Some(std::time::Instant::now()),
+                            went_back: true,
+                            ..crate::firmware::Update::new("avb-endpoint-1.5.0.bin")
+                        },
+                    );
+                } else if suffix == "firmware-confirm" {
                     triib.firmware.chosen = Some(crate::firmware::Chosen {
                         entity: host,
                         index,
                         file: "avb-endpoint-1.1.0.bin".to_owned(),
                         image: vec![0xe9; 1_187_000],
+                        kind: None,
+                        doubts: Vec::new(),
+                        notes: Vec::new(),
                     });
                 } else if suffix == "inspector-firmware" {
                     triib.firmware.updates.insert(
                         (host, index),
                         crate::firmware::Update {
-                            file: "avb-endpoint-1.1.0.bin".to_owned(),
                             stage: atdecc::upload::Stage::Writing {
                                 sent: 534_150,
                                 total: 1_187_000,
                             },
-                            back: false,
+                            ..crate::firmware::Update::new("avb-endpoint-1.1.0.bin")
                         },
                     );
                 }

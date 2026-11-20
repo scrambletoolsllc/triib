@@ -741,6 +741,9 @@ firmware-storing-percent = Opslaan: { $percent }%
 firmware-storing = Opslaan…
 firmware-restarting = Opgeslagen. Opnieuw opstarten…
 firmware-updated = Bijgewerkt met { $file }
+firmware-checking = Bijgewerkt met { $file }. Controleren of de firmware behouden blijft…
+firmware-went-back = De entiteit is teruggegaan naar de firmware die hij had, { $version }: de nieuwe firmware bleef niet draaien.
+firmware-came-back-other = De entiteit is terug en draait { $version }, niet de nieuwe firmware.
 firmware-stopped = Gestopt. De bestaande firmware blijft behouden.
 firmware-failed-size = Het bestand is groter dan de entiteit accepteert.
 firmware-failed-locked = Een andere controller heeft de entiteit vergrendeld.
@@ -754,6 +757,15 @@ firmware-confirm-title = Firmware bijwerken?
 firmware-confirm-body = { $entity } laadt { $file } ({ $size }) als zijn “{ $image }” en start daarna daarmee opnieuw op. Nu draait hij { $version }. Zijn streams stoppen tot hij terug is, dus zorg dat hij stroom houdt en verbonden blijft.
 firmware-confirm-cancel = Annuleren
 firmware-confirm-update = Bijwerken
+firmware-confirm-anyway = Toch bijwerken
+firmware-file = Het bestand is { $project } { $version } voor { $chip }, ELF { $elf }.
+firmware-confirm-coprocessor = Een coprocessor behoudt mogelijk geen kopie van de firmware die hij had: als dit bestand niet draait, kan het herstellen van het apparaat een kabel vereisen. Verzend alleen een bestand dat op dit apparaat is getest.
+firmware-doubt-coprocessor = Dit bestand is voor een coprocessor, en “{ $image }” niet.
+firmware-doubt-not-coprocessor = Dit bestand lijkt niet voor een coprocessor te zijn, en “{ $image }” is dat wel.
+firmware-doubt-learned = De vorige keer accepteerde “{ $image }” { $project } voor { $chip }.
+firmware-doubt-other = Dit bestand lijkt op het bestand dat “{ $image }” de vorige keer accepteerde.
+firmware-unsigned = Het bestand is niet ondertekend: een apparaat dat handtekeningen controleert, weigert het.
+firmware-runs-already = De entiteit draait dit bestand al.
 
 ## Log
 

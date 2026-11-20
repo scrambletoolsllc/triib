@@ -646,6 +646,9 @@ firmware-storing-percent = 保存中：{ $percent }%
 firmware-storing = 保存中…
 firmware-restarting = 保存しました。再起動中…
 firmware-updated = { $file } で更新しました
+firmware-checking = { $file } で更新しました。新しいファームウェアが維持されるか確認中…
+firmware-went-back = 以前のファームウェア（{ $version }）に戻りました。新しいファームウェアは動作を続けられませんでした。
+firmware-came-back-other = 戻りましたが、新しいファームウェアではなく { $version } で動作しています。
 firmware-stopped = 中止しました。以前のファームウェアのままです。
 firmware-failed-size = ファイルが受け付けられるサイズを超えています。
 firmware-failed-locked = 別のコントローラーがロックしています。
@@ -659,6 +662,15 @@ firmware-confirm-title = ファームウェアを更新しますか？
 firmware-confirm-body = { $entity } は { $file }（{ $size }）を「{ $image }」として受け取り、新しいファームウェアで再起動します。現在のバージョン：{ $version }。戻るまでストリームは停止するため、電源とネットワークにつないだままにしてください。
 firmware-confirm-cancel = キャンセル
 firmware-confirm-update = 更新
+firmware-confirm-anyway = それでも更新
+firmware-file = このファイルは { $chip } 用の { $project } { $version }、ELF { $elf } です。
+firmware-confirm-coprocessor = コプロセッサーは以前のファームウェアのコピーを残さない場合があります。このファイルが動作しないと、デバイスの復旧にケーブルが必要になることがあります。このデバイスでテスト済みのファイルだけを送信してください。
+firmware-doubt-coprocessor = このファイルはコプロセッサー用ですが、「{ $image }」はコプロセッサー用ではありません。
+firmware-doubt-not-coprocessor = このファイルはコプロセッサー用ではないようですが、「{ $image }」はコプロセッサー用です。
+firmware-doubt-learned = 前回、「{ $image }」は { $chip } 用の { $project } を受け取りました。
+firmware-doubt-other = このファイルは、前回「{ $image }」が受け取ったファイルと似ています。
+firmware-unsigned = ファイルは署名されていません。署名を検証するデバイスはこのファイルを拒否します。
+firmware-runs-already = すでにこのファイルで動作しています。
 
 ## Log
 
