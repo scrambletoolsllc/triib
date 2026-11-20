@@ -618,6 +618,45 @@ wireless-alarm-not-locked = เวลา Wi-Fi ไม่ได้ล็อกก
 wireless-alarm-holdover = เวลา Wi-Fi อยู่ใน holdover หลุดล็อกจากแอคเซสพอยต์
 wireless-alarm-unserved = Listener { $count } ตัวบนพอร์ต Wi-Fi ไม่ได้รับบริการ เพราะเกินขีดจำกัดยูนิคาสต์
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = การอัปเดตเฟิร์มแวร์
+firmware-image = เฟิร์มแวร์
+firmware-takes = สูงสุด { $size }
+firmware-update = อัปเดตจากไฟล์…
+firmware-stop = หยุดการอัปเดต
+firmware-dismiss = ล้าง
+firmware-choose-title = เลือกไฟล์สำหรับ { $image }
+firmware-read-failed = อ่าน { $file } ไม่ได้: { $error }
+firmware-empty = { $file } ว่างเปล่า
+firmware-too-large = { $file } มีขนาด { $size } เกิน { $most } ที่ “{ $image }” รับได้
+firmware-no-network = triib ไม่ได้อยู่บนเครือข่าย
+firmware-busy = กำลังอัปเดตอยู่แล้ว
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = กำลังเริ่มด้วย { $file }…
+firmware-sending = กำลังส่ง { $file }: { $percent }%
+firmware-stopping = กำลังหยุด…
+firmware-storing-percent = กำลังบันทึก: { $percent }%
+firmware-storing = กำลังบันทึก…
+firmware-restarting = บันทึกแล้ว กำลังเริ่มใหม่…
+firmware-updated = อัปเดตด้วย { $file } แล้ว
+firmware-stopped = หยุดแล้ว ยังคงใช้เฟิร์มแวร์เดิม
+firmware-failed-size = ไฟล์ใหญ่กว่าที่รับได้
+firmware-failed-locked = คอนโทรลเลอร์อื่นล็อกไว้อยู่
+firmware-failed-no-response = หยุดตอบสนองไปแล้ว
+firmware-failed-gone = ออฟไลน์ไปแล้ว
+firmware-failed = อัปเดตไม่ได้: { $reason }
+firmware-failed-write = ปฏิเสธไฟล์ที่ไบต์ { $offset }: { $reason }
+firmware-failed-rejected = ตรวจสอบไฟล์แล้วปฏิเสธ ยังคงใช้เฟิร์มแวร์เดิม
+firmware-failed-no-status = ไม่ได้แจ้งว่าบันทึกไฟล์แล้วหรือไม่
+firmware-confirm-title = อัปเดตเฟิร์มแวร์หรือไม่
+firmware-confirm-body = { $entity } จะรับ { $file } ({ $size }) เป็น “{ $image }” ของตน แล้วเริ่มใหม่ด้วยเฟิร์มแวร์นั้น ตอนนี้ใช้ { $version } อยู่ สตรีมของเอนทิตีนี้จะหยุดจนกว่าจะกลับมา จึงควรเปิดเครื่องและเชื่อมต่อไว้ตลอด
+firmware-confirm-cancel = ยกเลิก
+firmware-confirm-update = อัปเดต
+
 ## Log
 
 log-all = ทั้งหมด

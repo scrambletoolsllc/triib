@@ -706,6 +706,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } Listener روی پورت Wi-Fi بدون سرویس، فراتر از حد تک‌پخشی
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = به‌روزرسانی‌های میان‌افزار
+firmware-image = میان‌افزار
+firmware-takes = تا { $size }
+firmware-update = به‌روزرسانی از پرونده…
+firmware-stop = توقف به‌روزرسانی
+firmware-dismiss = پاک کردن
+firmware-choose-title = پرونده را برای { $image } انتخاب کنید
+firmware-read-failed = خواندن { $file } ممکن نشد: { $error }
+firmware-empty = { $file } خالی است.
+firmware-too-large = حجم { $file } { $size } است، بیش از { $most } که «{ $image }» جا دارد.
+firmware-no-network = triib روی شبکه نیست.
+firmware-busy = یک به‌روزرسانی برای آن در جریان است.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = در حال شروع با { $file }…
+firmware-sending = در حال ارسال { $file }: { $percent }٪
+firmware-stopping = در حال توقف…
+firmware-storing-percent = در حال ذخیره: { $percent }٪
+firmware-storing = در حال ذخیره…
+firmware-restarting = ذخیره شد. در حال راه‌اندازی دوباره…
+firmware-updated = با { $file } به‌روز شد
+firmware-stopped = متوقف شد. میان‌افزار قبلی خود را نگه می‌دارد.
+firmware-failed-size = پرونده از گنجایش آن بزرگ‌تر است.
+firmware-failed-locked = کنترلر دیگری آن را قفل کرده است.
+firmware-failed-no-response = دیگر پاسخ نمی‌دهد.
+firmware-failed-gone = آفلاین شد.
+firmware-failed = به‌روزرسانی ممکن نشد: { $reason }.
+firmware-failed-write = پرونده را در بایت { $offset } رد کرد: { $reason }.
+firmware-failed-rejected = پرونده را بررسی کرد و رد کرد. میان‌افزار قبلی خود را نگه می‌دارد.
+firmware-failed-no-status = نگفت که پرونده را ذخیره کرده است یا نه.
+firmware-confirm-title = میان‌افزار به‌روز شود؟
+firmware-confirm-body = { $entity } پروندهٔ { $file } ({ $size }) را به‌عنوان «{ $image }» نصب می‌کند و سپس با آن دوباره راه‌اندازی می‌شود. نسخهٔ کنونی: { $version }. جریان‌هایش تا بازگشتش متوقف می‌مانند، پس آن را روشن و متصل نگه دارید.
+firmware-confirm-cancel = لغو
+firmware-confirm-update = به‌روزرسانی
+
 ## Log
 
 log-all = همه

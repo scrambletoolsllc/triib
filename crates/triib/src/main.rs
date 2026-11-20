@@ -11,6 +11,7 @@ mod describe;
 mod diagnostics_view;
 mod dialog;
 mod entity_table;
+mod firmware;
 mod header_band;
 mod heard;
 mod host;

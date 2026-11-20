@@ -765,6 +765,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } listeners al port Wi-Fi no atesos, per sobre del límit d’unicast
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Actualitzacions de firmware
+firmware-image = Firmware
+firmware-takes = Fins a { $size }
+firmware-update = Actualitza des d’un fitxer…
+firmware-stop = Atura l’actualització
+firmware-dismiss = Esborra
+firmware-choose-title = Tria el fitxer per a { $image }
+firmware-read-failed = No s’ha pogut llegir { $file }: { $error }
+firmware-empty = { $file } està buit.
+firmware-too-large = { $file } ocupa { $size }, més dels { $most } que admet «{ $image }».
+firmware-no-network = El triib no és a la xarxa.
+firmware-busy = Ja hi ha una actualització en curs.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = S’està iniciant amb { $file }…
+firmware-sending = S’està enviant { $file }: { $percent }{"\u00A0"}%
+firmware-stopping = S’està aturant…
+firmware-storing-percent = S’està desant: { $percent }{"\u00A0"}%
+firmware-storing = S’està desant…
+firmware-restarting = Desat. S’està reiniciant…
+firmware-updated = Actualitzat amb { $file }
+firmware-stopped = Actualització aturada. Conserva el firmware que tenia.
+firmware-failed-size = El fitxer és més gran del que admet.
+firmware-failed-locked = Un altre controlador la té bloquejada.
+firmware-failed-no-response = Ha deixat de respondre.
+firmware-failed-gone = Ha quedat fora de línia.
+firmware-failed = No s’ha pogut actualitzar: { $reason }.
+firmware-failed-write = Ha rebutjat el fitxer al byte { $offset }: { $reason }.
+firmware-failed-rejected = Ha comprovat el fitxer i l’ha rebutjat. Conserva el firmware que tenia.
+firmware-failed-no-status = No ha indicat si ha desat el fitxer.
+firmware-confirm-title = Voleu actualitzar el firmware?
+firmware-confirm-body = { $entity } instal·larà { $file } ({ $size }) com a «{ $image }» i després es reiniciarà amb aquest fitxer. Versió actual: { $version }. Els seus fluxos s’aturaran fins que torni, així que manteniu-la engegada i connectada.
+firmware-confirm-cancel = Cancel·la
+firmware-confirm-update = Actualitza
+
 ## Log
 
 log-all = Tot

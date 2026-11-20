@@ -40,6 +40,9 @@ pub struct Agents {
     shown_at: Option<Instant>,
     /// Actions agents asked for, answered once the network has done them.
     pub waits: Vec<(Action, Answer)>,
+    /// Firmware updates agents asked for, by entity and memory object,
+    /// answered once they end.
+    pub firmware_waits: Vec<((atdecc::EntityId, u16), Answer)>,
 }
 
 /// An agent waiting for the user's answer, with the calls it made
@@ -239,7 +242,13 @@ impl Triib {
 
     /// The network stopped: the changes agents wait on will not finish.
     pub fn agent_actions_dropped(&mut self) {
-        for (_, answer) in self.agents.waits.drain(..) {
+        let waits = self.agents.waits.drain(..).map(|(_, answer)| answer);
+        let updates = self
+            .agents
+            .firmware_waits
+            .drain(..)
+            .map(|(_, answer)| answer);
+        for answer in waits.chain(updates) {
             answer.send(Err(Error::new(
                 code::INTERNAL_ERROR,
                 "triib's network stopped before the device answered",

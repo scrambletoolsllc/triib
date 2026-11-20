@@ -838,6 +838,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } Listener على منفذ Wi-Fi بلا خدمة لتجاوز حد البث الأحادي
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = تحديثات البرنامج الثابت
+firmware-image = البرنامج الثابت
+firmware-takes = حتى { $size }
+firmware-update = تحديث من ملف…
+firmware-stop = إيقاف التحديث
+firmware-dismiss = مسح
+firmware-choose-title = اختر الملف لـ { $image }
+firmware-read-failed = تعذّرت قراءة { $file }: { $error }
+firmware-empty = { $file } فارغ.
+firmware-too-large = حجم { $file } هو { $size }، وهو أكثر من { $most } التي يتسع لها «{ $image }».
+firmware-no-network = ليس triib على الشبكة.
+firmware-busy = يجري تحديث له بالفعل.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = جارٍ البدء بـ{ $file }…
+firmware-sending = جارٍ إرسال { $file }: { $percent }%
+firmware-stopping = جارٍ الإيقاف…
+firmware-storing-percent = جارٍ التخزين: { $percent }%
+firmware-storing = جارٍ التخزين…
+firmware-restarting = خُزِّن. جارٍ إعادة التشغيل…
+firmware-updated = حُدِّث بـ{ $file }
+firmware-stopped = أُوقف التحديث. يحتفظ بالبرنامج الثابت الذي كان لديه.
+firmware-failed-size = الملف أكبر مما يتسع له.
+firmware-failed-locked = تقفله وحدة تحكم أخرى.
+firmware-failed-no-response = توقف عن الاستجابة.
+firmware-failed-gone = صار خارج الشبكة.
+firmware-failed = تعذّر التحديث: { $reason }.
+firmware-failed-write = رفض الملف عند البايت { $offset }: { $reason }.
+firmware-failed-rejected = فحص الملف ورفضه. يحتفظ بالبرنامج الثابت الذي كان لديه.
+firmware-failed-no-status = لم يُبلّغ عمّا إذا كان قد خزّن الملف.
+firmware-confirm-title = هل تريد تحديث البرنامج الثابت؟
+firmware-confirm-body = سيثبّت { $entity } الملف { $file } ({ $size }) بوصفه «{ $image }» الخاص به، ثم يعيد التشغيل به. الإصدار الحالي: { $version }. تتوقف تدفقاته حتى يعود، لذا أبقه موصولًا بالكهرباء وبالشبكة.
+firmware-confirm-cancel = إلغاء
+firmware-confirm-update = تحديث
+
 ## Log
 
 log-all = الكل

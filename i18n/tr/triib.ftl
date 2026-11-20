@@ -708,6 +708,45 @@ wireless-alarm-unserved = { $count ->
    *[other] Wi-Fi portunda { $count } listener hizmet almıyor, unicast sınırının üzerinde
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Ürün yazılımı güncellemeleri
+firmware-image = Ürün yazılımı
+firmware-takes = En fazla { $size }
+firmware-update = Dosyadan güncelle…
+firmware-stop = Güncellemeyi durdur
+firmware-dismiss = Temizle
+firmware-choose-title = { $image } için dosyayı seçin
+firmware-read-failed = { $file } dosyası okunamadı: { $error }
+firmware-empty = { $file } dosyası boş.
+firmware-too-large = { $file } dosyası { $size } boyutunda, “{ $image }” ise en fazla { $most } alır.
+firmware-no-network = triib ağda değil.
+firmware-busy = Bu varlık için bir güncelleme zaten sürüyor.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = { $file } dosyasıyla başlatılıyor…
+firmware-sending = { $file } dosyası gönderiliyor: %{ $percent }
+firmware-stopping = Durduruluyor…
+firmware-storing-percent = Kaydediliyor: %{ $percent }
+firmware-storing = Kaydediliyor…
+firmware-restarting = Kaydedildi. Yeniden başlıyor…
+firmware-updated = { $file } dosyasıyla güncellendi
+firmware-stopped = Durduruldu. Önceki ürün yazılımını korur.
+firmware-failed-size = Dosya, alabileceğinden büyük.
+firmware-failed-locked = Başka bir denetleyici bu varlığı kilitlemiş.
+firmware-failed-no-response = Yanıt vermeyi bıraktı.
+firmware-failed-gone = Çevrim dışı oldu.
+firmware-failed = Güncellenemedi: { $reason }.
+firmware-failed-write = Dosyayı bayt { $offset } konumunda reddetti: { $reason }.
+firmware-failed-rejected = Dosyayı denetledi ve reddetti. Önceki ürün yazılımını korur.
+firmware-failed-no-status = Dosyayı kaydedip kaydetmediğini bildirmedi.
+firmware-confirm-title = Ürün yazılımı güncellensin mi?
+firmware-confirm-body = { $entity }, { $file } dosyasını ({ $size }) “{ $image }” olarak alacak, ardından yeni ürün yazılımıyla yeniden başlayacak. Şu anda { $version } sürümünü çalıştırıyor. Geri gelene kadar akışları durur; bu yüzden gücünü ve bağlantısını kesmeyin.
+firmware-confirm-cancel = İptal
+firmware-confirm-update = Güncelle
+
 ## Log
 
 log-all = Tümü

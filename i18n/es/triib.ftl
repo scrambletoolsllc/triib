@@ -757,6 +757,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } listeners en el puerto Wi-Fi sin atender, por encima del límite de unicast
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Actualizaciones de firmware
+firmware-image = Firmware
+firmware-takes = Hasta { $size }
+firmware-update = Actualizar desde un archivo…
+firmware-stop = Detener la actualización
+firmware-dismiss = Borrar
+firmware-choose-title = Elige el archivo para { $image }
+firmware-read-failed = No se pudo leer { $file }: { $error }
+firmware-empty = { $file } está vacío.
+firmware-too-large = { $file } ocupa { $size }, más de los { $most } que admite «{ $image }».
+firmware-no-network = triib no está en la red.
+firmware-busy = Ya tiene una actualización en curso.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Iniciando con { $file }…
+firmware-sending = Enviando { $file }: { $percent } %
+firmware-stopping = Deteniendo…
+firmware-storing-percent = Guardando: { $percent } %
+firmware-storing = Guardando…
+firmware-restarting = Guardado. Reiniciando…
+firmware-updated = Actualizado con { $file }
+firmware-stopped = Actualización detenida. Conserva el firmware que tenía.
+firmware-failed-size = El archivo es más grande de lo que admite.
+firmware-failed-locked = Otro controlador la tiene bloqueada.
+firmware-failed-no-response = Ha dejado de responder.
+firmware-failed-gone = Se ha quedado fuera de línea.
+firmware-failed = No se pudo actualizar: { $reason }.
+firmware-failed-write = Ha rechazado el archivo en el byte { $offset }: { $reason }.
+firmware-failed-rejected = Ha comprobado el archivo y lo ha rechazado. Conserva el firmware que tenía.
+firmware-failed-no-status = No ha indicado si ha guardado el archivo.
+firmware-confirm-title = ¿Actualizar el firmware?
+firmware-confirm-body = { $entity } instalará { $file } ({ $size }) como su «{ $image }» y después se reiniciará con él. Versión actual: { $version }. Sus flujos se detendrán hasta que vuelva, así que mantenla encendida y conectada.
+firmware-confirm-cancel = Cancelar
+firmware-confirm-update = Actualizar
+
 ## Log
 
 log-all = Todo

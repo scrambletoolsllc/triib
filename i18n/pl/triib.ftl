@@ -782,6 +782,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } listenera na porcie Wi-Fi bez obsługi, ponad limit unicast
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Aktualizacje firmware
+firmware-image = Firmware
+firmware-takes = Do { $size }
+firmware-update = Aktualizuj z pliku…
+firmware-stop = Zatrzymaj aktualizację
+firmware-dismiss = Wyczyść
+firmware-choose-title = Wybierz plik dla { $image }
+firmware-read-failed = Nie udało się odczytać { $file }: { $error }
+firmware-empty = Plik { $file } jest pusty.
+firmware-too-large = Plik { $file } ma { $size }, a „{ $image }” przyjmuje najwyżej { $most }.
+firmware-no-network = triib nie jest połączony z siecią.
+firmware-busy = Aktualizacja encji już trwa.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Rozpoczynanie aktualizacji z pliku { $file }…
+firmware-sending = Wysyłanie { $file }: { $percent }%
+firmware-stopping = Zatrzymywanie…
+firmware-storing-percent = Zapisywanie: { $percent }%
+firmware-storing = Zapisywanie…
+firmware-restarting = Zapisano. Ponowne uruchamianie…
+firmware-updated = Zaktualizowano z pliku { $file }
+firmware-stopped = Zatrzymano. Encja zachowuje dotychczasowy firmware.
+firmware-failed-size = Plik jest większy, niż encja może przyjąć.
+firmware-failed-locked = Encja jest zablokowana przez inny kontroler.
+firmware-failed-no-response = Encja przestała odpowiadać.
+firmware-failed-gone = Encja przeszła w tryb offline.
+firmware-failed = Nie udało się zaktualizować: { $reason }.
+firmware-failed-write = Encja odrzuciła plik przy bajcie { $offset }: { $reason }.
+firmware-failed-rejected = Encja sprawdziła plik i go odrzuciła. Zachowuje dotychczasowy firmware.
+firmware-failed-no-status = Encja nie podała, czy zapisała plik.
+firmware-confirm-title = Zaktualizować firmware?
+firmware-confirm-body = Encja { $entity } przyjmie { $file } ({ $size }) jako „{ $image }”, a następnie uruchomi się ponownie z nowym firmware. Obecnie działa w wersji { $version }. Jej strumienie zatrzymają się do czasu jej powrotu, więc nie odłączaj jej od zasilania ani od sieci.
+firmware-confirm-cancel = Anuluj
+firmware-confirm-update = Aktualizuj
+
 ## Log
 
 log-all = Wszystkie

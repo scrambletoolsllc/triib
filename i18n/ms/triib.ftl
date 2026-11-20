@@ -626,6 +626,45 @@ wireless-alarm-not-locked = Masa Wi-Fi tidak terkunci pada titik capaian
 wireless-alarm-holdover = Masa Wi-Fi dalam holdover, terlepas kunci daripada titik capaian
 wireless-alarm-unserved = { $count } listener pada port Wi-Fi tidak dilayan, melebihi had unicast
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Kemas kini perisian tegar
+firmware-image = Perisian tegar
+firmware-takes = Sehingga { $size }
+firmware-update = Kemas kini daripada fail…
+firmware-stop = Hentikan kemas kini
+firmware-dismiss = Kosongkan
+firmware-choose-title = Pilih fail untuk { $image }
+firmware-read-failed = Gagal membaca { $file }: { $error }
+firmware-empty = { $file } kosong.
+firmware-too-large = { $file } bersaiz { $size }, melebihi { $most } yang diterima oleh "{ $image }".
+firmware-no-network = triib tidak disambungkan ke rangkaian.
+firmware-busy = Kemas kini untuknya sedang berjalan.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Memulakan kemas kini dengan { $file }…
+firmware-sending = Menghantar { $file }: { $percent }%
+firmware-stopping = Menghentikan…
+firmware-storing-percent = Menyimpan: { $percent }%
+firmware-storing = Menyimpan…
+firmware-restarting = Disimpan. Memulakan semula…
+firmware-updated = Dikemas kini dengan { $file }
+firmware-stopped = Dihentikan. Ia mengekalkan perisian tegar sedia ada.
+firmware-failed-size = Fail lebih besar daripada yang diterimanya.
+firmware-failed-locked = Pengawal lain telah menguncinya.
+firmware-failed-no-response = Ia berhenti memberi tindak balas.
+firmware-failed-gone = Ia kini di luar talian.
+firmware-failed = Gagal mengemas kini: { $reason }.
+firmware-failed-write = Ia menolak fail pada bait { $offset }: { $reason }.
+firmware-failed-rejected = Ia menyemak fail itu dan menolaknya. Ia mengekalkan perisian tegar sedia ada.
+firmware-failed-no-status = Ia tidak menyatakan sama ada fail itu telah disimpan.
+firmware-confirm-title = Kemas kini perisian tegar?
+firmware-confirm-body = { $entity } akan menerima { $file } ({ $size }) sebagai "{ $image }", kemudian dimulakan semula dengan perisian tegar baharu itu. Kini ia menjalankan { $version }. Strimnya berhenti sehingga ia kembali, jadi pastikan bekalan kuasa dan sambungannya tidak terputus.
+firmware-confirm-cancel = Batal
+firmware-confirm-update = Kemas kini
+
 ## Log
 
 log-all = Semua

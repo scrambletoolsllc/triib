@@ -270,8 +270,9 @@ pub fn listener_name(triib: &Triib, listener: (EntityId, u16)) -> String {
 }
 
 /// What went wrong with an action, in words, or `None` when it worked.
-pub fn outcome(triib: &Triib, action: Action, outcome: Outcome) -> Option<String> {
-    let reason = match outcome {
+/// Why a command did not succeed, in words, or `None` when it did.
+pub fn reason(outcome: Outcome) -> Option<String> {
+    Some(match outcome {
         Outcome::Done => return None,
         Outcome::Refused(Refusal::Acmp(status)) => status
             .name()
@@ -281,7 +282,11 @@ pub fn outcome(triib: &Triib, action: Action, outcome: Outcome) -> Option<String
             .map_or_else(|| fl!("outcome-status", status = status.0), flag_name),
         Outcome::NoResponse => fl!("outcome-no-response"),
         Outcome::NotPossible => fl!("outcome-not-possible"),
-    };
+    })
+}
+
+pub fn outcome(triib: &Triib, action: Action, outcome: Outcome) -> Option<String> {
+    let reason = reason(outcome)?;
     Some(match action {
         Action::Connect { talker, listener } => fl!(
             "outcome-connect",

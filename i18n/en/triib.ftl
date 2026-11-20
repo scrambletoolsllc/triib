@@ -926,6 +926,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } listeners on the Wi-Fi port not served, past the unicast limit
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Firmware updates
+firmware-image = Firmware
+firmware-takes = Up to { $size }
+firmware-update = Update from a file…
+firmware-stop = Stop the update
+firmware-dismiss = Clear
+firmware-choose-title = Choose the file for { $image }
+firmware-read-failed = Could not read { $file }: { $error }
+firmware-empty = { $file } is empty.
+firmware-too-large = { $file } is { $size }, more than the { $most } that "{ $image }" takes.
+firmware-no-network = triib is not on the network.
+firmware-busy = An update to it is under way.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Starting with { $file }…
+firmware-sending = Sending { $file }: { $percent }%
+firmware-stopping = Stopping…
+firmware-storing-percent = Storing: { $percent }%
+firmware-storing = Storing…
+firmware-restarting = Stored. Restarting…
+firmware-updated = Updated with { $file }
+firmware-stopped = Stopped. It keeps the firmware it had.
+firmware-failed-size = The file is larger than it takes.
+firmware-failed-locked = Another controller has it locked.
+firmware-failed-no-response = It stopped answering.
+firmware-failed-gone = It went offline.
+firmware-failed = Could not update: { $reason }.
+firmware-failed-write = It refused the file at byte { $offset }: { $reason }.
+firmware-failed-rejected = It checked the file and refused it. It keeps the firmware it had.
+firmware-failed-no-status = It did not say whether it stored the file.
+firmware-confirm-title = Update the firmware?
+firmware-confirm-body = { $entity } will take { $file } ({ $size }) as its "{ $image }", then restart on it. Its firmware now: { $version }. Its streams stop until it is back, so keep it powered and connected.
+firmware-confirm-cancel = Cancel
+firmware-confirm-update = Update
+
 ## Log
 # The ATDECC frames triib sends and hears. Each frame's summary stays in the
 # standards' words, as packet analyzers show them; ADP, AECP and ACMP are

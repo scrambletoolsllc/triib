@@ -706,6 +706,45 @@ wireless-alarm-unserved = { $count ->
    *[other] Wi-Fi port-இல் { $count } Listeners-க்குச் சேவை இல்லை, unicast வரம்பைத் தாண்டியது
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = ஃபர்ம்வேர் புதுப்பிப்புகள்
+firmware-image = ஃபர்ம்வேர்
+firmware-takes = { $size } வரை
+firmware-update = கோப்பிலிருந்து புதுப்பி…
+firmware-stop = புதுப்பிப்பை நிறுத்து
+firmware-dismiss = அழி
+firmware-choose-title = { $image }-க்கான கோப்பைத் தேர்வுசெய்
+firmware-read-failed = { $file }-ஐப் படிக்க முடியவில்லை: { $error }
+firmware-empty = { $file } காலியாக உள்ளது.
+firmware-too-large = { $file } { $size } அளவு கொண்டது; “{ $image }” ஏற்கும் { $most }-ஐ விட அதிகம்.
+firmware-no-network = triib நெட்வொர்க்கில் இல்லை.
+firmware-busy = இதற்கான ஒரு புதுப்பிப்பு ஏற்கனவே நடந்துகொண்டிருக்கிறது.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = { $file }-உடன் தொடங்குகிறது…
+firmware-sending = { $file }-ஐ அனுப்புகிறது: { $percent }%
+firmware-stopping = நிறுத்துகிறது…
+firmware-storing-percent = சேமிக்கிறது: { $percent }%
+firmware-storing = சேமிக்கிறது…
+firmware-restarting = சேமிக்கப்பட்டது. மீண்டும் தொடங்குகிறது…
+firmware-updated = { $file } மூலம் புதுப்பிக்கப்பட்டது
+firmware-stopped = நிறுத்தப்பட்டது. அது முன்பிருந்த ஃபர்ம்வேரையே வைத்திருக்கும்.
+firmware-failed-size = அது ஏற்கும் அளவை விடக் கோப்பு பெரியது.
+firmware-failed-locked = வேறொரு controller அதை lock செய்துள்ளது.
+firmware-failed-no-response = அது பதிலளிப்பதை நிறுத்திவிட்டது.
+firmware-failed-gone = அது ஆஃப்லைன் ஆகிவிட்டது.
+firmware-failed = புதுப்பிக்க முடியவில்லை: { $reason }.
+firmware-failed-write = அது பைட் { $offset }-இல் கோப்பை மறுத்தது: { $reason }.
+firmware-failed-rejected = அது கோப்பைச் சரிபார்த்து மறுத்துவிட்டது. அது முன்பிருந்த ஃபர்ம்வேரையே வைத்திருக்கும்.
+firmware-failed-no-status = கோப்பைச் சேமித்ததா என்று அது சொல்லவில்லை.
+firmware-confirm-title = ஃபர்ம்வேரைப் புதுப்பிக்கவா?
+firmware-confirm-body = { $entity }, { $file } ({ $size }) கோப்பைத் தனது “{ $image }” ஆக ஏற்று, பின்னர் அதைக் கொண்டு மீண்டும் தொடங்கும். இப்போது அது { $version }-இல் இயங்குகிறது. அது திரும்பும் வரை அதன் streams நிற்கும், எனவே அதன் மின்சாரத்தையும் இணைப்பையும் துண்டிக்க வேண்டாம்.
+firmware-confirm-cancel = ரத்துசெய்
+firmware-confirm-update = புதுப்பி
+
 ## Log
 
 log-all = அனைத்தும்

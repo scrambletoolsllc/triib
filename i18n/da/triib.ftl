@@ -716,6 +716,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } listenere på Wi-Fi-porten betjenes ikke, over unicast-grænsen
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Firmwareopdateringer
+firmware-image = Firmware
+firmware-takes = Op til { $size }
+firmware-update = Opdater fra en fil…
+firmware-stop = Stop opdateringen
+firmware-dismiss = Ryd
+firmware-choose-title = Vælg filen til { $image }
+firmware-read-failed = Kunne ikke læse { $file }: { $error }
+firmware-empty = { $file } er tom.
+firmware-too-large = { $file } fylder { $size }, mere end de { $most }, som »{ $image }« kan rumme.
+firmware-no-network = triib er ikke på netværket.
+firmware-busy = En opdatering af den er allerede i gang.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Starter med { $file }…
+firmware-sending = Sender { $file }: { $percent }{" "}%
+firmware-stopping = Stopper…
+firmware-storing-percent = Gemmer: { $percent }{" "}%
+firmware-storing = Gemmer…
+firmware-restarting = Gemt. Genstarter…
+firmware-updated = Opdateret med { $file }
+firmware-stopped = Stoppet. Den beholder sin hidtidige firmware.
+firmware-failed-size = Filen er større, end entiteten kan rumme.
+firmware-failed-locked = En anden controller har låst den.
+firmware-failed-no-response = Den holdt op med at svare.
+firmware-failed-gone = Den gik offline.
+firmware-failed = Kunne ikke opdatere: { $reason }.
+firmware-failed-write = Den afviste filen ved byte { $offset }: { $reason }.
+firmware-failed-rejected = Den kontrollerede filen og afviste den. Den beholder sin hidtidige firmware.
+firmware-failed-no-status = Den oplyste ikke, om den gemte filen.
+firmware-confirm-title = Vil du opdatere firmwaren?
+firmware-confirm-body = { $entity } installerer { $file } ({ $size }) som »{ $image }« og genstarter derefter med den. Nuværende version: { $version }. Dens streams stopper, indtil den er tilbage, så hold den tændt og forbundet.
+firmware-confirm-cancel = Annuller
+firmware-confirm-update = Opdater
+
 ## Log
 
 log-all = Alle

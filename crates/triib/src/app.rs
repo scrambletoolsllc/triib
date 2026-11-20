@@ -187,6 +187,8 @@ pub struct Triib {
     watched: Watch,
     /// The entities' logos, decoded as they show.
     pub logos: crate::logos::Logos,
+    /// The firmware file chosen for an entity, and the updates under way.
+    pub firmware: crate::firmware::Firmware,
 }
 
 /// What the network thread for the chosen interface is doing.
@@ -363,6 +365,8 @@ pub enum Message {
     StorageChoose(crate::storage::Storage),
     /// The folder the dialog gave, none when cancelled.
     StorageChosen(crate::storage::Storage, Result<Option<PathBuf>, String>),
+    /// Updating an entity's firmware.
+    Firmware(crate::firmware::Ask),
     Nothing,
 }
 
@@ -456,6 +460,7 @@ impl Triib {
             add_stream_open: false,
             watched: Watch::default(),
             logos: crate::logos::Logos::default(),
+            firmware: crate::firmware::Firmware::default(),
         }
     }
 
@@ -535,6 +540,7 @@ impl Triib {
             add_stream_open: false,
             watched: Watch::default(),
             logos: crate::logos::Logos::default(),
+            firmware: crate::firmware::Firmware::default(),
         };
         triib.reload_omarchy();
         triib.apply_motion();
@@ -1403,6 +1409,7 @@ impl Triib {
             Message::StorageChosen(_, Err(error)) => {
                 self.settings_error = Some(crate::fl!("app-file-dialog-failed", error = error));
             }
+            Message::Firmware(ask) => return crate::firmware::update(self, ask),
             Message::Nothing => {}
         }
         Task::none()
@@ -1477,6 +1484,7 @@ impl Triib {
     /// when `fresh` the entity models kept between runs too.
     fn start_network(&mut self, fresh: bool) {
         self.network = None;
+        self.firmware.network_stopped();
         self.entities.clear();
         self.heard.clear();
         self.models.clear();
@@ -1513,16 +1521,23 @@ impl Triib {
         self.network = Some(Network::start(interface, self.generation, false));
     }
 
+    /// The network thread, while it runs.
+    pub(crate) fn network(&self) -> Option<&Network> {
+        self.network.as_ref()
+    }
+
     fn network_report(&mut self, report: Report) {
         if report.generation != self.generation {
             return;
         }
+        let restarted = matches!(report.kind, ReportKind::Restarted(_));
         match report.kind {
             ReportKind::Started { controller } => {
                 self.network_state = NetworkState::Running { controller };
             }
             ReportKind::Failed(failure) => {
                 self.network = None;
+                self.firmware.network_stopped();
                 self.network_state = NetworkState::Failed(failure);
                 self.agent_actions_dropped();
             }
@@ -1532,6 +1547,10 @@ impl Triib {
                 // A controller heard that now advertises is listed as such.
                 self.heard.remove(&entity.entity_id());
                 let entity_id = entity.entity_id();
+                // Back, as after restarting on new firmware.
+                if restarted || !self.entities.contains_key(&entity_id) {
+                    self.firmware.entity_back(entity_id);
+                }
                 self.entities.insert(entity_id, entity);
                 if self.is_this_mac(entity_id) {
                     self.refresh_mac_audio_device(entity_id);
@@ -1555,6 +1574,13 @@ impl Triib {
                     }
                     self.models.insert(entity_id, *model);
                 }
+            }
+            ReportKind::Upload {
+                entity,
+                index,
+                stage,
+            } => {
+                crate::firmware::reported(self, entity, index, stage);
             }
             ReportKind::Peers(peers) => self.peers = peers,
             ReportKind::CannotListen(reason) => self.cannot_listen = Some(reason),

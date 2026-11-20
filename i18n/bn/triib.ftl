@@ -706,6 +706,45 @@ wireless-alarm-unserved = { $count ->
    *[other] Wi-Fi port-এ { $count }টি Listener সেবা পায়নি, unicast সীমা ছাড়িয়ে
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = ফার্মওয়্যার আপডেট
+firmware-image = ফার্মওয়্যার
+firmware-takes = সর্বোচ্চ { $size }
+firmware-update = ফাইল থেকে আপডেট করুন…
+firmware-stop = আপডেট থামান
+firmware-dismiss = সাফ করুন
+firmware-choose-title = { $image }-এর জন্য ফাইল বেছে নিন
+firmware-read-failed = { $file } পড়া যায়নি: { $error }
+firmware-empty = { $file } খালি।
+firmware-too-large = { $file }-এর আকার { $size }, যা “{ $image }”-এর নেওয়া সর্বোচ্চ { $most }-এর চেয়ে বেশি।
+firmware-no-network = triib নেটওয়ার্কে নেই।
+firmware-busy = এটির একটি আপডেট ইতিমধ্যে চলছে।
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = { $file } দিয়ে শুরু হচ্ছে…
+firmware-sending = { $file } পাঠানো হচ্ছে: { $percent }%
+firmware-stopping = থামানো হচ্ছে…
+firmware-storing-percent = সংরক্ষণ হচ্ছে: { $percent }%
+firmware-storing = সংরক্ষণ হচ্ছে…
+firmware-restarting = সংরক্ষিত। আবার চালু হচ্ছে…
+firmware-updated = { $file } দিয়ে আপডেট হয়েছে
+firmware-stopped = থামানো হয়েছে। এটি আগের ফার্মওয়্যারই রাখে।
+firmware-failed-size = ফাইলটি এর ধারণক্ষমতার চেয়ে বড়।
+firmware-failed-locked = অন্য একটি controller এটিকে লক করে রেখেছে।
+firmware-failed-no-response = এটি সাড়া দেওয়া বন্ধ করেছে।
+firmware-failed-gone = এটি অফলাইন হয়ে গেছে।
+firmware-failed = আপডেট করা যায়নি: { $reason }।
+firmware-failed-write = এটি বাইট { $offset }-এ ফাইলটি প্রত্যাখ্যান করেছে: { $reason }।
+firmware-failed-rejected = এটি ফাইলটি যাচাই করে প্রত্যাখ্যান করেছে। এটি আগের ফার্মওয়্যারই রাখে।
+firmware-failed-no-status = এটি ফাইলটি সংরক্ষণ করেছে কি না, তা জানায়নি।
+firmware-confirm-title = ফার্মওয়্যার আপডেট করবেন?
+firmware-confirm-body = { $entity } { $file } ({ $size }) ফাইলটিকে নিজের “{ $image }” হিসেবে ইনস্টল করবে, তারপর সেটি দিয়ে আবার চালু হবে। বর্তমান সংস্করণ: { $version }। ফিরে না আসা পর্যন্ত এর streams বন্ধ থাকবে, তাই এটিকে চালু ও সংযুক্ত রাখুন।
+firmware-confirm-cancel = বাতিল করুন
+firmware-confirm-update = আপডেট করুন
+
 ## Log
 
 log-all = সব

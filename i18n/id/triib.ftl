@@ -626,6 +626,45 @@ wireless-alarm-not-locked = Waktu Wi-Fi tidak terkunci ke access point
 wireless-alarm-holdover = Waktu Wi-Fi dalam holdover, lepas kunci dari access point
 wireless-alarm-unserved = { $count } listener di port Wi-Fi tidak dilayani, melewati batas unicast
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Pembaruan firmware
+firmware-image = Firmware
+firmware-takes = Hingga { $size }
+firmware-update = Perbarui dari berkas…
+firmware-stop = Hentikan pembaruan
+firmware-dismiss = Bersihkan
+firmware-choose-title = Pilih berkas untuk { $image }
+firmware-read-failed = Tidak dapat membaca { $file }: { $error }
+firmware-empty = { $file } kosong.
+firmware-too-large = { $file } berukuran { $size }, melebihi { $most } yang diterima "{ $image }".
+firmware-no-network = triib tidak berada di jaringan.
+firmware-busy = Pembaruan untuknya sedang berjalan.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Memulai dengan { $file }…
+firmware-sending = Mengirim { $file }: { $percent }%
+firmware-stopping = Menghentikan…
+firmware-storing-percent = Menyimpan: { $percent }%
+firmware-storing = Menyimpan…
+firmware-restarting = Tersimpan. Memulai ulang…
+firmware-updated = Diperbarui dengan { $file }
+firmware-stopped = Dihentikan. Firmware lamanya tetap terpasang.
+firmware-failed-size = Berkas lebih besar dari yang dapat diterimanya.
+firmware-failed-locked = Controller lain menguncinya.
+firmware-failed-no-response = Ia berhenti menjawab.
+firmware-failed-gone = Ia menjadi offline.
+firmware-failed = Gagal memperbarui: { $reason }.
+firmware-failed-write = Ia menolak berkas pada byte { $offset }: { $reason }.
+firmware-failed-rejected = Ia memeriksa berkas lalu menolaknya. Firmware lamanya tetap terpasang.
+firmware-failed-no-status = Ia tidak memberi tahu apakah berkas sudah disimpan.
+firmware-confirm-title = Perbarui firmware?
+firmware-confirm-body = { $entity } akan menerima { $file } ({ $size }) sebagai "{ $image }", lalu memulai ulang dengannya. Versi saat ini: { $version }. Stream-nya berhenti sampai ia kembali, jadi jaga agar tetap menyala dan terhubung.
+firmware-confirm-cancel = Batal
+firmware-confirm-update = Perbarui
+
 ## Log
 
 log-all = Semua

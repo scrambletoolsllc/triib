@@ -706,6 +706,45 @@ wireless-alarm-unserved = { $count ->
    *[other] Wi-Fi پورٹ پر { $count } Listener کو سروس نہیں ملی، یونی کاسٹ حد سے زیادہ
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = فرم ویئر اپ ڈیٹس
+firmware-image = فرم ویئر
+firmware-takes = { $size } تک
+firmware-update = فائل سے اپ ڈیٹ کریں…
+firmware-stop = اپ ڈیٹ روکیں
+firmware-dismiss = صاف کریں
+firmware-choose-title = { $image } کے لیے فائل منتخب کریں
+firmware-read-failed = { $file } پڑھی نہیں جا سکی: { $error }
+firmware-empty = { $file } خالی ہے۔
+firmware-too-large = { $file } کا سائز { $size } ہے، جو "{ $image }" کی حد { $most } سے زیادہ ہے۔
+firmware-no-network = triib نیٹ ورک پر نہیں ہے۔
+firmware-busy = اس کی ایک اپ ڈیٹ پہلے ہی جاری ہے۔
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = { $file } کے ساتھ شروع ہو رہا ہے…
+firmware-sending = { $file } بھیجی جا رہی ہے: { $percent }%
+firmware-stopping = روکا جا رہا ہے…
+firmware-storing-percent = محفوظ ہو رہا ہے: { $percent }%
+firmware-storing = محفوظ ہو رہا ہے…
+firmware-restarting = محفوظ ہو گیا۔ دوبارہ شروع ہو رہا ہے…
+firmware-updated = { $file } سے اپ ڈیٹ ہو گیا
+firmware-stopped = روک دیا گیا۔ اس کے پاس پہلے والا فرم ویئر ہی رہتا ہے۔
+firmware-failed-size = فائل اس سے بڑی ہے جتنی یہ لیتا ہے۔
+firmware-failed-locked = کسی اور کنٹرولر نے اسے لاک کر رکھا ہے۔
+firmware-failed-no-response = اس نے جواب دینا بند کر دیا۔
+firmware-failed-gone = یہ آف لائن ہو گیا۔
+firmware-failed = اپ ڈیٹ نہیں کیا جا سکا: { $reason }۔
+firmware-failed-write = اس نے بائٹ { $offset } پر فائل رد کر دی: { $reason }۔
+firmware-failed-rejected = اس نے فائل جانچی اور رد کر دی۔ اس کے پاس پہلے والا فرم ویئر ہی رہتا ہے۔
+firmware-failed-no-status = اس نے نہیں بتایا کہ فائل محفوظ ہوئی یا نہیں۔
+firmware-confirm-title = کیا فرم ویئر اپ ڈیٹ کریں؟
+firmware-confirm-body = { $entity } فائل { $file } ({ $size }) کو اپنے "{ $image }" کے طور پر لے گا، پھر نئے فرم ویئر پر دوبارہ شروع ہوگا۔ ابھی یہ { $version } چلا رہا ہے۔ واپس آنے تک اس کے اسٹریمز رکے رہیں گے، اس لیے اسے بجلی اور نیٹ ورک سے جڑا رہنے دیں۔
+firmware-confirm-cancel = منسوخ کریں
+firmware-confirm-update = اپ ڈیٹ کریں
+
 ## Log
 
 log-all = سب

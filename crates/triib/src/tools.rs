@@ -24,6 +24,7 @@ use crate::control::{Call, Error, code};
 use crate::describe;
 use crate::netmap::Status;
 use crate::network::{Action, Name, NameTarget, Remedy};
+use atdecc::upload::Stage;
 
 /// What a tool does, which MCP's hints tell clients.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -32,6 +33,8 @@ pub enum Kind {
     Read,
     /// Changes a device on the network.
     Change,
+    /// Replaces a device's firmware, which only another update undoes.
+    Update,
 }
 
 /// What a tool gives back.
@@ -217,6 +220,37 @@ struct On {
 
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+struct FirmwareOf {
+    /// An entity's ID from list_entities; every entity that takes firmware
+    /// updates when left out.
+    entity_id: Option<String>,
+}
+
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct UpdateFirmware {
+    /// The entity's ID.
+    entity_id: String,
+    /// The firmware image, by its name or index as firmware_status lists
+    /// them, such as "Firmware" or "Coprocessor firmware"; may be left out
+    /// where the entity has one.
+    image: Option<String>,
+    /// The file to send, by its full path on this computer.
+    file: String,
+}
+
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct StopFirmware {
+    /// The entity's ID.
+    entity_id: String,
+    /// The firmware image, by its name or index; may be left out where one
+    /// update to the entity is under way.
+    image: Option<String>,
+}
+
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 struct Connect {
     /// The talker's entity ID.
     talker_entity_id: String,
@@ -365,10 +399,12 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
             "describe_entity",
             "Describe an entity",
             Kind::Read,
-            "Describes one entity from its model: its names, firmware and serial number, its \
-             audio units with their sampling rates, its clock domains with their sources, and \
-             its stream inputs and outputs, each with its current format and the formats it \
-             takes, in hex and in words, and what it is bound to or sending.",
+            "Describes one entity from its model: its names, firmware and serial number, the \
+             firmware images it takes updates in (firmware_status tells more of them), \
+             its audio units with their sampling rates, its clock domains \
+             with their sources, and its stream inputs and outputs, each with its current \
+             format and the formats it takes, in hex and in words, and what it is bound to or \
+             sending.",
             |app, on: On, answer| {
                 let result = entity_id(&on.entity_id)
                     .and_then(|entity| describe(app, entity))
@@ -625,6 +661,113 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
             },
         ),
         tool(
+            "firmware_status",
+            "Firmware updates",
+            Kind::Read,
+            "Lists the firmware images an entity takes updates in, each a memory object \
+             such as \"Firmware\" for the device's own and \"Coprocessor firmware\" for its \
+             coprocessor's, with its index and the most it takes, the firmware the entity \
+             runs, and how an update to each goes or went: starting, sending with the \
+             octets sent of the file's, storing, restarting, updated, stopped or failed \
+             and why. Every entity that takes updates when no entity is named.",
+            |app, input: FirmwareOf, answer| {
+                let entities: Vec<EntityId> = match input.entity_id.as_deref().map(entity_id) {
+                    Some(Ok(entity)) => vec![entity],
+                    Some(Err(error)) => return reply(&answer, Err(error)),
+                    None => app
+                        .models
+                        .iter()
+                        .filter(|(_, model)| crate::firmware::images(model).next().is_some())
+                        .map(|(&entity, _)| entity)
+                        .collect(),
+                };
+                let found: Result<Vec<Value>, String> = entities
+                    .into_iter()
+                    .map(|entity| firmware_of(app, entity))
+                    .collect();
+                let result = found
+                    .map(|found| Output::Json(json!({ "entities": found })))
+                    .map_err(|message| Error::new(code::INVALID_PARAMS, message));
+                reply(&answer, result)
+            },
+        ),
+        tool(
+            "update_firmware",
+            "Update firmware",
+            Kind::Update,
+            "Sends a file on this computer to one of an entity's firmware images, as the \
+             inspector's Firmware updates do once the user confirms a file: triib locks \
+             the entity against other controllers, the entity stops its streams, takes \
+             the file, checks and stores it, and restarts on it. Answers once it is \
+             stored, or with why the entity refused it, which leaves the firmware it had; \
+             firmware_status then shows when the entity is back and the firmware it runs. \
+             Only for a file the user means for that device and image: the entity checks \
+             it, but a coprocessor's image has no way back.",
+            |app, input: UpdateFirmware, answer| match start_update(app, &input) {
+                Ok(key) => {
+                    app.agents.firmware_waits.push((key, answer));
+                    Task::none()
+                }
+                Err(error) => reply(&answer, Err(error)),
+            },
+        ),
+        tool(
+            "stop_firmware_update",
+            "Stop a firmware update",
+            Kind::Change,
+            "Stops a firmware update while it sends the file, before the entity stores \
+             it; the entity keeps the firmware it had. An update storing cannot be \
+             stopped. The update_firmware call waiting on it answers that it stopped.",
+            |app, input: StopFirmware, answer| {
+                let entity = match entity_id(&input.entity_id) {
+                    Ok(entity) => entity,
+                    Err(error) => return reply(&answer, Err(error)),
+                };
+                let under_way: Vec<u16> = app
+                    .firmware
+                    .updates
+                    .iter()
+                    .filter(|(key, update)| {
+                        key.0 == entity
+                            && matches!(
+                                update.stage,
+                                Stage::Locking | Stage::Starting | Stage::Writing { .. }
+                            )
+                    })
+                    .map(|(key, _)| key.1)
+                    .collect();
+                let index = match (&input.image, under_way.as_slice()) {
+                    (None, [index]) => Some(*index),
+                    (Some(image), _) => app
+                        .models
+                        .get(&entity)
+                        .and_then(|model| pick_image(model, Some(image)).ok())
+                        .filter(|index| under_way.contains(index)),
+                    _ => None,
+                };
+                let Some(index) = index else {
+                    return reply(
+                        &answer,
+                        Err(Error::new(
+                            code::INVALID_PARAMS,
+                            "no update that can be stopped is under way to that image; \
+                             firmware_status shows them",
+                        )),
+                    );
+                };
+                if let Some(network) = app.network() {
+                    network.abort_upload(entity, index);
+                }
+                reply(
+                    &answer,
+                    Ok(Output::Text(format!(
+                        "Stopping the update to {}.",
+                        app.entity_name_of(entity)
+                    ))),
+                )
+            },
+        ),
+        tool(
             "list_audio_devices",
             "List audio devices",
             Kind::Read,
@@ -720,6 +863,136 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
     ]
 });
 
+/// An entity's firmware images and how their updates go.
+fn firmware_of(app: &Triib, entity: EntityId) -> Result<Value, String> {
+    let model = app
+        .models
+        .get(&entity)
+        .ok_or_else(|| format!("triib knows no entity {entity}; list_entities gives them"))?;
+    let images: Vec<Value> = crate::firmware::images(model)
+        .map(|object| {
+            json!({
+                "index": object.index,
+                "name": object.object_name,
+                "maximum_length": object.maximum_length,
+                "update": app
+                    .firmware
+                    .updates
+                    .get(&(entity, object.index))
+                    .map(update_json),
+            })
+        })
+        .collect();
+    Ok(json!({
+        "entity_id": entity.to_string(),
+        "name": app.entity_name_of(entity),
+        "firmware": model.entity().map(|descriptor| descriptor.firmware_version.to_owned()),
+        "images": images,
+    }))
+}
+
+/// How an update goes, for agents.
+fn update_json(update: &crate::firmware::Update) -> Value {
+    let (stage, sent, total) = match update.stage {
+        Stage::Locking | Stage::Starting => ("starting", None, None),
+        Stage::Writing { sent, total } => ("sending", Some(sent), Some(total)),
+        Stage::Aborting => ("stopping", None, None),
+        Stage::Storing { .. } => ("storing", None, None),
+        Stage::Done if update.back => ("updated", None, None),
+        Stage::Done => ("restarting", None, None),
+        Stage::Aborted => ("stopped", None, None),
+        Stage::Failed(_) => ("failed", None, None),
+    };
+    json!({
+        "file": update.file,
+        "stage": stage,
+        "sent": sent,
+        "total": total,
+        "text": crate::firmware::stage_text(update),
+    })
+}
+
+/// The firmware image `image` names, by index or name, or the entity's
+/// only one where none is named.
+fn pick_image(model: &EntityModel, image: Option<&String>) -> Result<u16, String> {
+    let images: Vec<_> = crate::firmware::images(model).collect();
+    let names = || {
+        images
+            .iter()
+            .map(|object| format!("{} ({})", object.object_name, object.index))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    match image {
+        None if images.len() == 1 => Ok(images[0].index),
+        None if images.is_empty() => Err("the entity takes no firmware updates".to_owned()),
+        None => Err(format!("name the image, one of {}", names())),
+        Some(wanted) => images
+            .iter()
+            .find(|object| wanted.trim().parse::<u16>() == Ok(object.index))
+            .or_else(|| {
+                images
+                    .iter()
+                    .find(|object| object.object_name.eq_ignore_ascii_case(wanted.trim()))
+            })
+            .map(|object| object.index)
+            .ok_or_else(|| format!("the entity has no image {wanted}; it has {}", names())),
+    }
+}
+
+/// Starts the update an agent asked for: its entity and image, or why not.
+fn start_update(app: &mut Triib, input: &UpdateFirmware) -> Result<(EntityId, u16), Error> {
+    let invalid = |message: String| Error::new(code::INVALID_PARAMS, message);
+    if !matches!(app.network_state, NetworkState::Running { .. }) {
+        return Err(Error::new(
+            code::INTERNAL_ERROR,
+            "triib's network is not running; status says why",
+        ));
+    }
+    let entity = entity_id(&input.entity_id)?;
+    let model = app.models.get(&entity).ok_or_else(|| {
+        invalid(format!(
+            "triib knows no entity {entity}; list_entities gives them"
+        ))
+    })?;
+    let index = pick_image(model, input.image.as_ref()).map_err(invalid)?;
+    let path = std::path::Path::new(&input.file);
+    let image = std::fs::read(path).map_err(|error| invalid(format!("{}: {error}", input.file)))?;
+    let file = path.file_name().map_or_else(
+        || input.file.clone(),
+        |name| name.to_string_lossy().into_owned(),
+    );
+    crate::firmware::send(app, entity, index, file, image).map_err(invalid)?;
+    Ok((entity, index))
+}
+
+/// What an update an agent asked for came to, once it ended.
+pub fn firmware_finished(
+    app: &Triib,
+    entity: EntityId,
+    index: u16,
+    update: &crate::firmware::Update,
+) -> Result<Output, Error> {
+    match update.stage {
+        Stage::Done => Ok(Output::Json(json!({
+            "entity_id": entity.to_string(),
+            "image": index,
+            "file": update.file,
+            "stage": "restarting",
+            "text": format!(
+                "{} stored {} and restarts on it; firmware_status shows when it is back.",
+                app.entity_name_of(entity),
+                update.file
+            ),
+        }))),
+        // Stopped or failed, in the words the inspector shows.
+        _ => Err(Error::new(
+            code::INTERNAL_ERROR,
+            crate::firmware::stage_text(update),
+        )),
+    }
+}
+
 /// The audio monitor's settings and what it is doing.
 fn monitor(app: &Triib) -> Value {
     json!({
@@ -751,6 +1024,7 @@ fn annotations(kind: Kind) -> Value {
     match kind {
         Kind::Read => json!({ "readOnlyHint": true }),
         Kind::Change => json!({ "readOnlyHint": false, "destructiveHint": false }),
+        Kind::Update => json!({ "readOnlyHint": false, "destructiveHint": true }),
     }
 }
 
@@ -1027,6 +1301,13 @@ fn describe(app: &Triib, entity: EntityId) -> Result<Value, Error> {
         "vendor": descriptor.and_then(|entity| localized(entity.vendor_name)),
         "model": descriptor.and_then(|entity| localized(entity.model_name)),
         "firmware": descriptor.map(|entity| entity.firmware_version.to_owned()),
+        "firmware_images": crate::firmware::images(model)
+            .map(|object| json!({
+                "index": object.index,
+                "name": object.object_name,
+                "maximum_length": object.maximum_length,
+            }))
+            .collect::<Vec<_>>(),
         "serial_number": descriptor.map(|entity| entity.serial_number.to_owned()),
         "audio_units": audio_units,
         "clock_domains": clock_domains,
@@ -1598,6 +1879,129 @@ fn stream_diagnostics(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The bench with a host entity that takes firmware, and that entity.
+    fn taking_firmware() -> (Triib, EntityId) {
+        let (mut entities, mut models) = crate::view::tests::bench();
+        let (host, model) = crate::view::tests::host_entity_taking(
+            "Host entity 1",
+            &["Out 1"],
+            &["In 1"],
+            Some(4096),
+        );
+        let entity = host.entity_id();
+        entities.insert(entity, host);
+        models.insert(entity, model);
+        let interface = avb_net::Interface {
+            name: "enp6s0".to_owned(),
+            mac: avb_net::MacAddress([2, 0, 0, 0, 0, 1]),
+            up: true,
+            speed: None,
+            physical: true,
+            wireless: false,
+            hardware_clock: None,
+        };
+        let app = Triib::sample(
+            crate::settings::Settings::default(),
+            interface,
+            entities,
+            models,
+        );
+        (app, entity)
+    }
+
+    /// The firmware images an entity takes are listed, with how an update
+    /// to one goes; only entities that take updates when none is named.
+    #[test]
+    fn firmware_status_lists_the_images_and_their_updates() {
+        let (mut app, entity) = taking_firmware();
+        let index = crate::firmware::images(&app.models[&entity])
+            .next()
+            .unwrap()
+            .index;
+        app.firmware.updates.insert(
+            (entity, index),
+            crate::firmware::Update {
+                file: "avb-endpoint.bin".to_owned(),
+                stage: Stage::Writing {
+                    sent: 1004,
+                    total: 4000,
+                },
+                back: false,
+            },
+        );
+        let listed = call(&mut app, "firmware_status", json!({})).unwrap();
+        let entities = listed["structuredContent"]["entities"].as_array().unwrap();
+        assert_eq!(entities.len(), 1, "only the entity that takes updates");
+        assert_eq!(entities[0]["entity_id"], entity.to_string());
+        let image = &entities[0]["images"][0];
+        assert_eq!(image["index"], index);
+        assert_eq!(image["maximum_length"], 4096);
+        assert_eq!(image["update"]["stage"], "sending");
+        assert_eq!(image["update"]["sent"], 1004);
+        assert_eq!(image["update"]["total"], 4000);
+    }
+
+    /// An update goes only to an image the entity has, from a file that
+    /// fits it, while triib is on the network.
+    #[test]
+    fn update_firmware_says_why_it_cannot_go() {
+        let (mut app, entity) = taking_firmware();
+        let file = std::env::temp_dir().join(format!("triib-firmware-{}.bin", std::process::id()));
+        std::fs::write(&file, vec![0xe9; 64]).unwrap();
+        let path = file.to_string_lossy().into_owned();
+        let ask = |app: &mut Triib, image: Option<&str>, path: &str| {
+            call(
+                app,
+                "update_firmware",
+                json!({ "entity_id": entity.to_string(), "image": image, "file": path }),
+            )
+            .unwrap_err()
+            .message
+        };
+        app.network_state = NetworkState::Idle;
+        assert!(ask(&mut app, None, &path).contains("network is not running"));
+        app.network_state = NetworkState::Running {
+            controller: EntityId(1),
+        };
+        assert!(ask(&mut app, Some("Coprocessor firmware"), &path).contains("no image"));
+        assert!(ask(&mut app, None, "/nonexistent/image.bin").contains("/nonexistent/image.bin"));
+        // Too large for the 4096 octets the image takes, named by index.
+        let index = crate::firmware::images(&app.models[&entity])
+            .next()
+            .unwrap()
+            .index
+            .to_string();
+        std::fs::write(&file, vec![0xe9; 4097]).unwrap();
+        let name = file.file_name().unwrap().to_string_lossy().into_owned();
+        let message = ask(&mut app, Some(&index), &path);
+        assert!(
+            message.starts_with(&name) && message.contains("5"),
+            "{message}"
+        );
+        // It fits, but this sample has no network thread to send it.
+        std::fs::write(&file, vec![0xe9; 64]).unwrap();
+        let message = ask(&mut app, None, &path);
+        assert_eq!(message, crate::fl!("firmware-no-network"));
+        assert!(app.firmware.updates.is_empty());
+        let _ = std::fs::remove_file(&file);
+    }
+
+    /// Updating firmware is the one tool MCP clients hear is destructive.
+    #[test]
+    fn updating_firmware_is_destructive() {
+        let listed = list();
+        let tools = listed.as_array().unwrap();
+        for tool in tools {
+            let destructive = tool["annotations"]["destructiveHint"] == true;
+            assert_eq!(
+                destructive,
+                tool["name"] == "update_firmware",
+                "{}",
+                tool["name"]
+            );
+        }
+    }
 
     /// The audio monitor is set as the Listen controls would, what is left
     /// out kept, on a Mac its input the Mac's own AVB device, and read back.

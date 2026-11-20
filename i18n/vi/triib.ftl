@@ -621,6 +621,45 @@ wireless-alarm-not-locked = Thời gian Wi-Fi chưa khóa với điểm truy c�
 wireless-alarm-holdover = Thời gian Wi-Fi đang holdover, mất khóa với điểm truy cập
 wireless-alarm-unserved = { $count } Listener trên cổng Wi-Fi không được phục vụ, vượt giới hạn unicast
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Cập nhật firmware
+firmware-image = Firmware
+firmware-takes = Tối đa { $size }
+firmware-update = Cập nhật từ tệp…
+firmware-stop = Dừng cập nhật
+firmware-dismiss = Xóa
+firmware-choose-title = Chọn tệp cho { $image }
+firmware-read-failed = Không thể đọc { $file }: { $error }
+firmware-empty = { $file } trống.
+firmware-too-large = { $file } có dung lượng { $size }, vượt quá mức { $most } mà “{ $image }” nhận.
+firmware-no-network = triib không ở trên mạng.
+firmware-busy = Thực thể này đang được cập nhật.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Đang bắt đầu với { $file }…
+firmware-sending = Đang gửi { $file }: { $percent }%
+firmware-stopping = Đang dừng…
+firmware-storing-percent = Đang lưu: { $percent }%
+firmware-storing = Đang lưu…
+firmware-restarting = Đã lưu. Đang khởi động lại…
+firmware-updated = Đã cập nhật bằng { $file }
+firmware-stopped = Đã dừng. Thực thể vẫn giữ firmware cũ.
+firmware-failed-size = Tệp lớn hơn mức thực thể nhận được.
+firmware-failed-locked = Một bộ điều khiển khác đang khóa thực thể này.
+firmware-failed-no-response = Thực thể đã ngừng phản hồi.
+firmware-failed-gone = Thực thể đã ngoại tuyến.
+firmware-failed = Không thể cập nhật: { $reason }.
+firmware-failed-write = Thực thể từ chối tệp tại byte { $offset }: { $reason }.
+firmware-failed-rejected = Thực thể đã kiểm tra tệp và từ chối nó. Thực thể vẫn giữ firmware cũ.
+firmware-failed-no-status = Thực thể không cho biết đã lưu tệp hay chưa.
+firmware-confirm-title = Cập nhật firmware?
+firmware-confirm-body = { $entity } sẽ nhận { $file } ({ $size }) làm “{ $image }” của nó, rồi khởi động lại với firmware đó. Hiện nó đang chạy { $version }. Các luồng của nó sẽ dừng cho đến khi nó hoạt động trở lại, vì vậy hãy giữ cho nó được cấp nguồn và kết nối mạng.
+firmware-confirm-cancel = Hủy
+firmware-confirm-update = Cập nhật
+
 ## Log
 
 log-all = Tất cả

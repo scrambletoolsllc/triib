@@ -3,8 +3,8 @@
 //! renames entities, changes stream formats, sampling rates and clock
 //! sources, shows the media clock each entity follows, shows and changes
 //! how channels map to streams, shows and sets controls, connects and
-//! disconnects streams, reads what streams and descriptors hold, and
-//! shows how entities run AVB Lite.
+//! disconnects streams, reads what streams and descriptors hold, shows
+//! how entities run AVB Lite, and updates entities' firmware.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::process::ExitCode;
@@ -14,12 +14,15 @@ use atdecc::aem::{AudioMapping, AvbInfoFlags, MappingChange};
 use atdecc::blocking::Driver;
 use atdecc::control::{ControlDescriptor, Linear, Number, Selector, Shape, Unit, encode_values};
 use atdecc::controller::{CommandId, Controller, Outcome, Refusal};
-use atdecc::descriptor::{ClockSourceType, DescriptorType, LocalizedStringRef, SamplingRate};
+use atdecc::descriptor::{
+    ClockSourceType, DescriptorType, LocalizedStringRef, MemoryObjectType, SamplingRate,
+};
 use atdecc::lite::LiteFlags;
 use atdecc::media_clock::{Broken, ClockFrom, DomainClock, DomainId, media_clocks};
 use atdecc::model::{EntityModel, EnumerationState};
 use atdecc::neighbor::{NeighborListener, Peer, Plugged};
 use atdecc::stream_format::StreamFormat;
+use atdecc::upload::{Failure as UploadFailure, Stage, Upload};
 use atdecc::wireless::{AsCapableReason, Band, StationFlags, TimeMode, WirelessFlags};
 use atdecc::{
     AemStatus, ClockIdentity, ControllerCapabilities, DiscoveredEntity, EntityCapabilities,
@@ -107,6 +110,11 @@ commands:
                                      read index 0 of each descriptor type the
                                      entity has and print how long each took
   controls <interface> [entity-id]   print each control's values and ranges
+  firmware <interface> <entity-id> [<image> <file> [--no-restart]]
+                                     list the firmware images an entity takes,
+                                     or update one from a file, the image by
+                                     its index or name as listed; the entity
+                                     restarts on it unless --no-restart
   control <interface> <entity-id> <control> <value>...
                                      set a control by its index, each value in
                                      its unit, such as -12 for -12 dB, a
@@ -371,6 +379,20 @@ fn main() -> ExitCode {
                 return usage();
             };
             set(interface, entity, change).map_err(|error| format!("{interface}: {error}"))
+        }
+        Some("firmware") => {
+            let (Some(interface), Some(Ok(entity))) =
+                (argument(1), argument(2).map(str::parse::<EntityId>))
+            else {
+                return usage();
+            };
+            let update = match (argument(3), argument(4), argument(5)) {
+                (None, None, None) => None,
+                (Some(image), Some(file), None) => Some((image, file, true)),
+                (Some(image), Some(file), Some("--no-restart")) => Some((image, file, false)),
+                _ => return usage(),
+            };
+            firmware(interface, entity, update)
         }
         Some("help" | "--help" | "-h") => {
             println!("{USAGE}");
@@ -2809,4 +2831,161 @@ fn summary(entity: &DiscoveredEntity) -> String {
         clock,
         adp.entity_model_id,
     )
+}
+
+/// Lists the firmware images `entity` takes, or with `update` uploads a
+/// file to one, the image by its index or name, and with a restart waits
+/// for the entity to come back and prints its firmware.
+fn firmware(
+    interface: &str,
+    entity: EntityId,
+    update: Option<(&str, &str, bool)>,
+) -> Result<(), String> {
+    const RESTART: Duration = Duration::from_secs(120);
+    let fail = |error: std::io::Error| format!("{interface}: {error}");
+    // OPERATION_STATUS reports come only to a registered controller.
+    let mut driver = Driver::open_with(interface, |config| {
+        let mut octets = config.entity_id.0.to_be_bytes();
+        octets[4] = 0xfd;
+        config.entity_id = EntityId(u64::from_be_bytes(octets));
+    })
+    .map_err(fail)?;
+    driver.controller_mut().discover(Some(entity));
+    settle(&mut driver, Some(entity), Duration::from_secs(30)).map_err(fail)?;
+    let Some(model) = driver.controller().model(entity).cloned() else {
+        return Err(format!("{entity} did not answer"));
+    };
+    let images: Vec<_> = model
+        .memory_objects()
+        .filter(|object| object.memory_object_type == MemoryObjectType::FIRMWARE_IMAGE)
+        .collect();
+    let Some((wanted, file, restart)) = update else {
+        let version = model.entity().map_or("", |entity| entity.firmware_version);
+        println!("{entity} runs firmware {version}");
+        if images.is_empty() {
+            println!("it takes no firmware images");
+        }
+        for object in &images {
+            println!(
+                "  {:>3}  {:<24} up to {} octets",
+                object.index, object.object_name, object.maximum_length
+            );
+        }
+        return driver.close().map_err(fail);
+    };
+    let object = images
+        .iter()
+        .find(|object| wanted.parse::<u16>() == Ok(object.index))
+        .or_else(|| {
+            images
+                .iter()
+                .find(|object| object.object_name.eq_ignore_ascii_case(wanted))
+        })
+        .ok_or_else(|| format!("{entity} has no firmware image {wanted}"))?;
+    let image = std::fs::read(file).map_err(|error| format!("{file}: {error}"))?;
+    println!(
+        "sending {file} ({} octets) to {entity}'s \"{}\"",
+        image.len(),
+        object.object_name
+    );
+    let now = driver.now();
+    let mut upload = Upload::start(driver.controller_mut(), now, entity, object, image, restart);
+    let mut shown = String::new();
+    loop {
+        driver.turn(Duration::from_millis(100)).map_err(fail)?;
+        let now = driver.now();
+        while let Some(event) = driver.controller_mut().poll_event() {
+            match event {
+                Event::CommandFinished(command, outcome) => {
+                    upload.handle_finished(driver.controller_mut(), now, command, outcome);
+                }
+                Event::EntityOffline(gone, _) | Event::EntityRestarted(gone) => {
+                    upload.handle_gone(driver.controller_mut(), now, gone);
+                }
+                _ => {}
+            }
+        }
+        while let Some(status) = driver.controller_mut().poll_operation_status() {
+            upload.handle_status(driver.controller_mut(), now, &status);
+        }
+        if upload.poll_timeout().is_some_and(|due| due <= now) {
+            upload.handle_timeout(driver.controller_mut(), now);
+        }
+        let line = match upload.stage() {
+            Stage::Locking | Stage::Starting => "starting".to_owned(),
+            Stage::Writing { sent, total } => {
+                format!(
+                    "sending {}%",
+                    (sent * 100).checked_div(total).unwrap_or(0) / 10 * 10
+                )
+            }
+            Stage::Aborting => "stopping".to_owned(),
+            Stage::Storing {
+                progress: Some(progress),
+            } if progress <= 1000 => {
+                format!("storing {}%", progress / 10)
+            }
+            Stage::Storing { .. } => "storing".to_owned(),
+            Stage::Done | Stage::Aborted | Stage::Failed(_) => String::new(),
+        };
+        if !line.is_empty() && line != shown {
+            println!("  {line}");
+            shown = line;
+        }
+        if upload.is_over() {
+            break;
+        }
+    }
+    match upload.stage() {
+        Stage::Done if restart => {
+            println!("stored; {entity} restarts on it");
+            let started = Instant::now();
+            loop {
+                driver.turn(Duration::from_millis(250)).map_err(fail)?;
+                let back = std::iter::from_fn(|| driver.controller_mut().poll_event())
+                    .any(|event| event == Event::EntityEnumerated(entity));
+                if back {
+                    let model = driver.controller().model(entity);
+                    let version = model
+                        .and_then(EntityModel::entity)
+                        .map_or("", |entity| entity.firmware_version);
+                    println!("{entity} is back, running {version}");
+                    break;
+                }
+                if started.elapsed() >= RESTART {
+                    driver.close().map_err(fail)?;
+                    return Err(format!(
+                        "{entity} was not back within {} seconds",
+                        RESTART.as_secs()
+                    ));
+                }
+            }
+        }
+        Stage::Done => println!("stored; {entity} runs it from its next start"),
+        Stage::Aborted => println!("stopped"),
+        Stage::Failed(failure) => {
+            driver.close().map_err(fail)?;
+            return Err(upload_failure(failure));
+        }
+        _ => {}
+    }
+    driver.close().map_err(fail)
+}
+
+fn upload_failure(failure: UploadFailure) -> String {
+    match failure {
+        UploadFailure::DoesNotFit => "the file is empty or larger than the image takes".to_owned(),
+        UploadFailure::Locked => "another controller has the entity locked".to_owned(),
+        UploadFailure::Refused(step, outcome) => {
+            format!("{step:?} {}", outcome_text(Some(outcome)))
+        }
+        UploadFailure::Write { offset, status } => {
+            format!("the entity refused the octets at {offset}: {status:?}")
+        }
+        UploadFailure::Rejected => {
+            "the entity checked the image and refused it; it keeps its firmware".to_owned()
+        }
+        UploadFailure::Gone => "the entity went offline".to_owned(),
+        UploadFailure::NoStatus => "the entity did not say whether it stored the image".to_owned(),
+    }
 }

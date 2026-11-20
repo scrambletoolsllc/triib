@@ -732,6 +732,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } listeneriä Wi-Fi-portissa palvelematta, yli unicast-rajan
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Laiteohjelmistopäivitykset
+firmware-image = Laiteohjelmisto
+firmware-takes = Enintään { $size }
+firmware-update = Päivitä tiedostosta…
+firmware-stop = Keskeytä päivitys
+firmware-dismiss = Tyhjennä
+firmware-choose-title = Valitse tiedosto kohteelle { $image }
+firmware-read-failed = Tiedostoa { $file } ei voitu lukea: { $error }
+firmware-empty = Tiedosto { $file } on tyhjä.
+firmware-too-large = Tiedosto { $file } on { $size }, mutta ”{ $image }” ottaa vastaan enintään { $most }.
+firmware-no-network = triib ei ole verkossa.
+firmware-busy = Sen päivitys on jo käynnissä.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Aloitetaan tiedostolla { $file }…
+firmware-sending = Lähetetään tiedostoa { $file }: { $percent }{" "}%
+firmware-stopping = Keskeytetään…
+firmware-storing-percent = Tallennetaan: { $percent }{" "}%
+firmware-storing = Tallennetaan…
+firmware-restarting = Tallennettu. Käynnistyy uudelleen…
+firmware-updated = Päivitetty tiedostolla { $file }
+firmware-stopped = Keskeytetty. Aiempi laiteohjelmisto säilyy.
+firmware-failed-size = Tiedosto on suurempi kuin mitä se ottaa vastaan.
+firmware-failed-locked = Toinen ohjain on lukinnut sen.
+firmware-failed-no-response = Se lakkasi vastaamasta.
+firmware-failed-gone = Se poistui verkosta.
+firmware-failed = Päivittäminen ei onnistunut: { $reason }.
+firmware-failed-write = Se hylkäsi tiedoston tavun { $offset } kohdalla: { $reason }.
+firmware-failed-rejected = Se tarkisti tiedoston ja hylkäsi sen. Aiempi laiteohjelmisto säilyy.
+firmware-failed-no-status = Se ei kertonut, tallentuiko tiedosto.
+firmware-confirm-title = Päivitetäänkö laiteohjelmisto?
+firmware-confirm-body = { $entity } tallentaa tiedoston { $file } ({ $size }) kohteeseen ”{ $image }” ja käynnistyy sitten uudelleen uudella laiteohjelmistolla. Nykyinen versio: { $version }. Sen striimit pysähtyvät, kunnes se palaa, joten pidä sen virta päällä ja verkkoyhteys kytkettynä.
+firmware-confirm-cancel = Peruuta
+firmware-confirm-update = Päivitä
+
 ## Log
 
 log-all = Kaikki

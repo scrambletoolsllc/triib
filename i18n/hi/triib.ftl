@@ -706,6 +706,45 @@ wireless-alarm-unserved = { $count ->
    *[other] Wi-Fi port पर { $count } Listeners को सेवा नहीं मिली, unicast सीमा से ज़्यादा
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = फ़र्मवेयर अपडेट
+firmware-image = फ़र्मवेयर
+firmware-takes = { $size } तक
+firmware-update = फ़ाइल से अपडेट करें…
+firmware-stop = अपडेट रोकें
+firmware-dismiss = साफ़ करें
+firmware-choose-title = { $image } के लिए फ़ाइल चुनें
+firmware-read-failed = { $file } पढ़ी नहीं जा सकी: { $error }
+firmware-empty = { $file } खाली है।
+firmware-too-large = { $file } का आकार { $size } है, जो “{ $image }” की सीमा { $most } से ज़्यादा है।
+firmware-no-network = triib नेटवर्क पर नहीं है।
+firmware-busy = इसका एक अपडेट पहले से चल रहा है।
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = { $file } के साथ शुरू हो रहा है…
+firmware-sending = { $file } भेजी जा रही है: { $percent }%
+firmware-stopping = रोका जा रहा है…
+firmware-storing-percent = सहेजा जा रहा है: { $percent }%
+firmware-storing = सहेजा जा रहा है…
+firmware-restarting = सहेजा गया। फिर से शुरू हो रहा है…
+firmware-updated = { $file } से अपडेट किया गया
+firmware-stopped = रोका गया। इसमें पहले वाला फ़र्मवेयर बना रहता है।
+firmware-failed-size = फ़ाइल उससे बड़ी है जितनी यह ले सकता है।
+firmware-failed-locked = किसी दूसरे controller ने इसे lock किया हुआ है।
+firmware-failed-no-response = इसने जवाब देना बंद कर दिया।
+firmware-failed-gone = यह ऑफ़लाइन हो गया।
+firmware-failed = अपडेट नहीं किया जा सका: { $reason }।
+firmware-failed-write = इसने बाइट { $offset } पर फ़ाइल अस्वीकार कर दी: { $reason }।
+firmware-failed-rejected = इसने फ़ाइल जाँची और उसे अस्वीकार कर दिया। इसमें पहले वाला फ़र्मवेयर बना रहता है।
+firmware-failed-no-status = इसने नहीं बताया कि फ़ाइल सहेजी गई या नहीं।
+firmware-confirm-title = फ़र्मवेयर अपडेट करें?
+firmware-confirm-body = { $entity } { $file } ({ $size }) को अपने “{ $image }” के रूप में लेगा, फिर उसी से फिर से शुरू होगा। मौजूदा संस्करण: { $version }। इसके वापस आने तक इसकी streams रुकी रहेंगी, इसलिए इसे बिजली और नेटवर्क से जुड़ा रखें।
+firmware-confirm-cancel = रद्द करें
+firmware-confirm-update = अपडेट करें
+
 ## Log
 
 log-all = सभी

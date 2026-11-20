@@ -716,6 +716,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } listeners op de Wi-Fi-poort niet bediend, boven de unicastlimiet
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Firmware-updates
+firmware-image = Firmware
+firmware-takes = Tot { $size }
+firmware-update = Bijwerken vanuit een bestand…
+firmware-stop = Update stoppen
+firmware-dismiss = Wissen
+firmware-choose-title = Kies het bestand voor { $image }
+firmware-read-failed = Kon { $file } niet lezen: { $error }
+firmware-empty = { $file } is leeg.
+firmware-too-large = { $file } is { $size }, meer dan de { $most } die “{ $image }” accepteert.
+firmware-no-network = triib is niet verbonden met het netwerk.
+firmware-busy = Er loopt al een update van de entiteit.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Starten met { $file }…
+firmware-sending = { $file } verzenden: { $percent }%
+firmware-stopping = Stoppen…
+firmware-storing-percent = Opslaan: { $percent }%
+firmware-storing = Opslaan…
+firmware-restarting = Opgeslagen. Opnieuw opstarten…
+firmware-updated = Bijgewerkt met { $file }
+firmware-stopped = Gestopt. De bestaande firmware blijft behouden.
+firmware-failed-size = Het bestand is groter dan de entiteit accepteert.
+firmware-failed-locked = Een andere controller heeft de entiteit vergrendeld.
+firmware-failed-no-response = De entiteit antwoordt niet meer.
+firmware-failed-gone = De entiteit is offline gegaan.
+firmware-failed = Kon de firmware niet bijwerken: { $reason }.
+firmware-failed-write = De entiteit weigerde het bestand bij byte { $offset }: { $reason }.
+firmware-failed-rejected = De entiteit controleerde het bestand en weigerde het. De bestaande firmware blijft behouden.
+firmware-failed-no-status = De entiteit meldde niet of het bestand is opgeslagen.
+firmware-confirm-title = Firmware bijwerken?
+firmware-confirm-body = { $entity } laadt { $file } ({ $size }) als zijn “{ $image }” en start daarna daarmee opnieuw op. Nu draait hij { $version }. Zijn streams stoppen tot hij terug is, dus zorg dat hij stroom houdt en verbonden blijft.
+firmware-confirm-cancel = Annuleren
+firmware-confirm-update = Bijwerken
+
 ## Log
 
 log-all = Alle

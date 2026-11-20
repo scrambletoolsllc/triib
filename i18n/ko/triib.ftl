@@ -621,6 +621,45 @@ wireless-alarm-not-locked = Wi-Fi 시간이 액세스 포인트에 락되지 않
 wireless-alarm-holdover = Wi-Fi 시간 홀드오버 중, 액세스 포인트와 락 손실
 wireless-alarm-unserved = Wi-Fi 포트의 리스너 { $count }개가 서비스되지 않음, 유니캐스트 한도 초과
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = 펌웨어 업데이트
+firmware-image = 펌웨어
+firmware-takes = 최대 { $size }
+firmware-update = 파일에서 업데이트…
+firmware-stop = 업데이트 중지
+firmware-dismiss = 지우기
+firmware-choose-title = { $image }에 사용할 파일 선택
+firmware-read-failed = { $file }을(를) 읽을 수 없습니다: { $error }
+firmware-empty = { $file }이(가) 비어 있습니다.
+firmware-too-large = { $file }의 크기는 { $size }로, “{ $image }”이(가) 받을 수 있는 { $most }보다 큽니다.
+firmware-no-network = triib가 네트워크에 연결되어 있지 않습니다.
+firmware-busy = 이미 업데이트가 진행 중입니다.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = { $file }(으)로 시작 중…
+firmware-sending = { $file } 전송 중: { $percent }%
+firmware-stopping = 중지 중…
+firmware-storing-percent = 저장 중: { $percent }%
+firmware-storing = 저장 중…
+firmware-restarting = 저장됨. 다시 시작 중…
+firmware-updated = { $file }(으)로 업데이트됨
+firmware-stopped = 중지됨. 기존 펌웨어를 유지합니다.
+firmware-failed-size = 파일이 받을 수 있는 크기보다 큽니다.
+firmware-failed-locked = 다른 컨트롤러가 잠갔습니다.
+firmware-failed-no-response = 더 이상 응답하지 않습니다.
+firmware-failed-gone = 오프라인이 되었습니다.
+firmware-failed = 업데이트할 수 없습니다: { $reason }.
+firmware-failed-write = 바이트 { $offset }에서 파일을 거부했습니다: { $reason }.
+firmware-failed-rejected = 파일을 확인한 후 거부했습니다. 기존 펌웨어를 유지합니다.
+firmware-failed-no-status = 파일을 저장했는지 알려 주지 않았습니다.
+firmware-confirm-title = 펌웨어를 업데이트할까요?
+firmware-confirm-body = { $entity }은(는) { $file }({ $size })을(를) “{ $image }”(으)로 받은 다음, 새 펌웨어로 다시 시작합니다. 현재 버전: { $version }. 돌아올 때까지 스트림이 멈추므로 전원과 네트워크 연결을 유지하세요.
+firmware-confirm-cancel = 취소
+firmware-confirm-update = 업데이트
+
 ## Log
 
 log-all = 전체

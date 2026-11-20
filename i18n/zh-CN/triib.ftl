@@ -621,6 +621,45 @@ wireless-alarm-not-locked = Wi-Fi 时间未锁定到接入点
 wireless-alarm-holdover = Wi-Fi 时间处于保持状态，已与接入点失锁
 wireless-alarm-unserved = Wi-Fi 端口上有 { $count } 个接收端未获服务，超出单播上限
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = 固件更新
+firmware-image = 固件
+firmware-takes = 最多 { $size }
+firmware-update = 从文件更新…
+firmware-stop = 停止更新
+firmware-dismiss = 清除
+firmware-choose-title = 为 { $image } 选择文件
+firmware-read-failed = 无法读取 { $file }：{ $error }
+firmware-empty = { $file } 为空。
+firmware-too-large = { $file } 大小为 { $size }，超过“{ $image }”可接收的 { $most }。
+firmware-no-network = triib 未连接到网络。
+firmware-busy = 其更新已在进行中。
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = 正在使用 { $file } 开始更新…
+firmware-sending = 正在发送 { $file }：{ $percent }%
+firmware-stopping = 正在停止…
+firmware-storing-percent = 正在存储：{ $percent }%
+firmware-storing = 正在存储…
+firmware-restarting = 已存储。正在重新启动…
+firmware-updated = 已使用 { $file } 更新
+firmware-stopped = 已停止。它仍保留原有固件。
+firmware-failed-size = 文件超出了它可接收的大小。
+firmware-failed-locked = 另一个控制器已将其锁定。
+firmware-failed-no-response = 它已停止响应。
+firmware-failed-gone = 它已离线。
+firmware-failed = 无法更新：{ $reason }。
+firmware-failed-write = 它在字节 { $offset } 处拒绝了该文件：{ $reason }。
+firmware-failed-rejected = 它检查了该文件并拒绝接收。它仍保留原有固件。
+firmware-failed-no-status = 它没有说明是否已存储该文件。
+firmware-confirm-title = 更新固件？
+firmware-confirm-body = { $entity } 将接收 { $file }（{ $size }）作为其“{ $image }”，然后用新固件重新启动。它当前运行的是 { $version }。在它恢复之前，其流会停止，因此请保持它通电并连接网络。
+firmware-confirm-cancel = 取消
+firmware-confirm-update = 更新
+
 ## Log
 
 log-all = 全部

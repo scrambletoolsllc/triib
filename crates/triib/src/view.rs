@@ -91,6 +91,8 @@ pub fn window(triib: &Triib) -> Element<'_, Message> {
         crate::settings_view::dialog(triib)
     } else if triib.presets_open {
         crate::presets::dialog(triib)
+    } else if let Some(confirm) = crate::firmware::dialog(triib) {
+        confirm
     } else {
         space().into()
     };
@@ -780,7 +782,7 @@ pub(crate) fn field<'a>(label: impl Into<String>, value: Value<'a>) -> Element<'
 }
 
 /// A label and an element beside it, in the inspector.
-fn labeled<'a>(
+pub(crate) fn labeled<'a>(
     label: impl Into<String>,
     value: impl Into<Element<'a, Message>>,
 ) -> Element<'a, Message> {
@@ -1410,6 +1412,7 @@ fn entity_sections<'a>(
     }
     items.extend(crate::lite_view::entity_section(model));
     items.extend(crate::wireless_view::entity_section(triib, model));
+    items.extend(crate::firmware::entity_section(triib, entity_id, model));
     items
 }
 
@@ -2426,6 +2429,17 @@ pub(crate) mod tests {
         outputs: &[&str],
         inputs: &[&str],
     ) -> (DiscoveredEntity, EntityModel) {
+        host_entity_taking(name, outputs, inputs, None)
+    }
+
+    /// As [`host_entity`], taking firmware of up to `firmware` octets
+    /// where given.
+    pub(crate) fn host_entity_taking(
+        name: &str,
+        outputs: &[&str],
+        inputs: &[&str],
+        firmware: Option<u64>,
+    ) -> (DiscoveredEntity, EntityModel) {
         use std::time::Duration;
 
         use atdecc::entity::{ClockQuality, EndpointModel, Entity, Gptp, StreamModel};
@@ -2469,6 +2483,9 @@ pub(crate) mod tests {
             vendor_logo: Some(crate::logos::HOST_VENDOR_LOGO.to_vec()),
         };
         let mut entity = Entity::new(model, &[]);
+        if let Some(most) = firmware {
+            entity.keep_firmware(most);
+        }
         let mut controller = Controller::new(Config::new(EntityId(0x9c6b_00ff_fe30_9a2b)));
         let mut now = Instant::ZERO;
         entity.start(now);
@@ -3005,6 +3022,21 @@ pub(crate) mod tests {
                 Size::new(2200.0, 760.0),
             ),
             ("inspector-editing", View::Entities, true, desktop),
+            // An update on its way to the host entity's firmware.
+            (
+                "inspector-firmware",
+                View::Entities,
+                true,
+                Size::new(1280.0, 1500.0),
+            ),
+            // Its firmware image, with nothing on its way.
+            (
+                "inspector-firmware-ready",
+                View::Entities,
+                true,
+                Size::new(1280.0, 1500.0),
+            ),
+            ("firmware-confirm", View::Entities, true, desktop),
             // One of this computer's entities, with a stream each way.
             (
                 "inspector-device",
@@ -3207,11 +3239,13 @@ pub(crate) mod tests {
                 models.insert(WIRED_ESP, model);
             }
             let mut shown = entities.clone();
-            let host = ["host", "device", "logos"]
+            let host = ["host", "device", "logos", "firmware"]
                 .iter()
                 .any(|kind| suffix.contains(kind))
                 .then(|| {
-                    let (host, model) = host_entity("Host entity 1", &["Out 1"], &["In 1"]);
+                    let firmware = suffix.contains("firmware").then_some(3_145_728);
+                    let (host, model) =
+                        host_entity_taking("Host entity 1", &["Out 1"], &["In 1"], firmware);
                     shown.insert(host.entity_id(), host);
                     models.insert(host.entity_id(), model);
                     host.entity_id()
@@ -3224,13 +3258,42 @@ pub(crate) mod tests {
                 Some(WIRED_ESP)
             } else if suffix.contains("wireless") {
                 Some(WIFI_ESP)
-            } else if suffix.contains("device") || suffix.contains("logos") {
+            } else if ["device", "logos", "firmware"]
+                .iter()
+                .any(|kind| suffix.contains(kind))
+            {
                 host
             } else if suffix.contains("listen") || suffix.contains("mac-clock") {
                 Some(MAC_MINI)
             } else {
                 entities.keys().next().copied()
             };
+            if let Some(host) = host.filter(|_| suffix.contains("firmware")) {
+                let index = crate::firmware::images(&triib.models[&host])
+                    .next()
+                    .expect("its firmware image")
+                    .index;
+                if suffix == "firmware-confirm" {
+                    triib.firmware.chosen = Some(crate::firmware::Chosen {
+                        entity: host,
+                        index,
+                        file: "avb-endpoint-1.1.0.bin".to_owned(),
+                        image: vec![0xe9; 1_187_000],
+                    });
+                } else if suffix == "inspector-firmware" {
+                    triib.firmware.updates.insert(
+                        (host, index),
+                        crate::firmware::Update {
+                            file: "avb-endpoint-1.1.0.bin".to_owned(),
+                            stage: atdecc::upload::Stage::Writing {
+                                sent: 534_150,
+                                total: 1_187_000,
+                            },
+                            back: false,
+                        },
+                    );
+                }
+            }
             triib.inspector_tab = if suffix.contains("tree") {
                 InspectorTab::Descriptors
             } else if suffix.contains("diagnostics") || suffix.contains("alarms") {

@@ -23,7 +23,9 @@ Website: **[triib.run](https://triib.run)**, with
 > outputs' max transit times, lists a talker's listeners, shows and
 > changes how their channels map to streams, shows and sets their
 > controls, such as gain and mute, saves and recalls presets of all of
-> that and the connections, logs every ATDECC frame sent and heard,
+> that and the connections, updates the firmware of entities that take
+> it over ATDECC, a coprocessor's too where the entity offers it, logs
+> every ATDECC frame sent and heard,
 > marking those that break the rules, and shows how entities run AVB
 > Lite, what their streams take of each link and the alarms the AVB Lite
 > profile calls for, and what Wi-Fi stations and access points report
@@ -308,6 +310,7 @@ cargo run -p triib-cli -- wireless-config <interface> <entity-id> <avb-interface
 cargo run -p triib-cli -- transit <interface> <entity-id> <output> [nanoseconds]
 cargo run -p triib-cli -- descriptor <interface> <entity-id> <type:index>
 cargo run -p triib-cli -- harvest <interface> <entity-id> [repeat]
+cargo run -p triib-cli -- firmware <interface> <entity-id> [<image> <file> [--no-restart]]
 ```
 
 The daemon builds in the avb repository:

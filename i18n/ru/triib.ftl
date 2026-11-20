@@ -781,6 +781,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } Listener на порту Wi-Fi без обслуживания, сверх лимита unicast
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Обновление прошивки
+firmware-image = Прошивка
+firmware-takes = До { $size }
+firmware-update = Обновить из файла…
+firmware-stop = Остановить обновление
+firmware-dismiss = Очистить
+firmware-choose-title = Выберите файл: { $image }
+firmware-read-failed = Не удалось прочитать { $file }: { $error }
+firmware-empty = Файл { $file } пуст.
+firmware-too-large = Размер { $file } — { $size }, а «{ $image }» принимает не более { $most }.
+firmware-no-network = triib не подключён к сети.
+firmware-busy = Обновление сущности уже идёт.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Запуск обновления из { $file }…
+firmware-sending = Отправка { $file }: { $percent }{" "}%
+firmware-stopping = Остановка…
+firmware-storing-percent = Запись: { $percent }{" "}%
+firmware-storing = Запись…
+firmware-restarting = Записано. Перезапуск…
+firmware-updated = Обновлено из файла { $file }
+firmware-stopped = Остановлено. Сущность сохраняет прежнюю прошивку.
+firmware-failed-size = Файл больше, чем сущность может принять.
+firmware-failed-locked = Сущность заблокирована другим контроллером.
+firmware-failed-no-response = Сущность перестала отвечать.
+firmware-failed-gone = Сущность вышла из сети.
+firmware-failed = Не удалось обновить: { $reason }.
+firmware-failed-write = Сущность отклонила файл на байте { $offset }: { $reason }.
+firmware-failed-rejected = Сущность проверила файл и отклонила его. Она сохраняет прежнюю прошивку.
+firmware-failed-no-status = Сущность не сообщила, записала ли она файл.
+firmware-confirm-title = Обновить прошивку?
+firmware-confirm-body = Сущность { $entity } примет { $file } ({ $size }) как «{ $image }» и перезапустится с новой прошивкой. Текущая версия — { $version }. Её потоки будут остановлены, пока она не вернётся, поэтому не отключайте её от питания и сети.
+firmware-confirm-cancel = Отмена
+firmware-confirm-update = Обновить
+
 ## Log
 
 log-all = Все

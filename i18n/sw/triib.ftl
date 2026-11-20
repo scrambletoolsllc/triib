@@ -715,6 +715,45 @@ wireless-alarm-unserved = { $count ->
    *[other] listener { $count } kwenye mlango wa Wi-Fi hazihudumiwi, zaidi ya kikomo cha unicast
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Masasisho ya programu dhibiti
+firmware-image = Programu dhibiti
+firmware-takes = Hadi { $size }
+firmware-update = Sasisha kutoka kwa faili…
+firmware-stop = Simamisha sasisho
+firmware-dismiss = Safisha
+firmware-choose-title = Chagua faili ya { $image }
+firmware-read-failed = Imeshindwa kusoma { $file }: { $error }
+firmware-empty = { $file } ni tupu.
+firmware-too-large = { $file } ina ukubwa wa { $size }, zaidi ya { $most } ambazo "{ $image }" inapokea.
+firmware-no-network = triib haiko kwenye mtandao.
+firmware-busy = Sasisho lake tayari linaendelea.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Inaanza na { $file }…
+firmware-sending = Inatuma { $file }: { $percent }%
+firmware-stopping = Inasimamisha…
+firmware-storing-percent = Inahifadhi: { $percent }%
+firmware-storing = Inahifadhi…
+firmware-restarting = Imehifadhiwa. Inawasha upya…
+firmware-updated = Imesasishwa kwa { $file }
+firmware-stopped = Imesimamishwa. Inabaki na programu dhibiti iliyokuwa nayo.
+firmware-failed-size = Faili ni kubwa kuliko inavyopokea.
+firmware-failed-locked = Controller nyingine imeifunga.
+firmware-failed-no-response = Iliacha kujibu.
+firmware-failed-gone = Imetoka nje ya mtandao.
+firmware-failed = Imeshindwa kusasisha: { $reason }.
+firmware-failed-write = Ilikataa faili kwenye baiti { $offset }: { $reason }.
+firmware-failed-rejected = Ilikagua faili na ikaikataa. Inabaki na programu dhibiti iliyokuwa nayo.
+firmware-failed-no-status = Haikusema kama ilihifadhi faili.
+firmware-confirm-title = Sasisha programu dhibiti?
+firmware-confirm-body = { $entity } itapokea { $file } ({ $size }) kama "{ $image }" yake, kisha ijiwashe upya ikiitumia. Sasa inaendesha { $version }. Mitiririko yake itasimama hadi irudi, kwa hiyo iache ikiwa na umeme na imeunganishwa.
+firmware-confirm-cancel = Ghairi
+firmware-confirm-update = Sasisha
+
 ## Log
 
 log-all = Zote

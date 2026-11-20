@@ -773,6 +773,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } listener sulla porta Wi-Fi non serviti, oltre il limite unicast
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Aggiornamenti firmware
+firmware-image = Firmware
+firmware-takes = Fino a { $size }
+firmware-update = Aggiorna da un file…
+firmware-stop = Interrompi l’aggiornamento
+firmware-dismiss = Cancella
+firmware-choose-title = Scegli il file per { $image }
+firmware-read-failed = Impossibile leggere { $file }: { $error }
+firmware-empty = { $file } è vuoto.
+firmware-too-large = { $file } è di { $size }, più dei { $most } che “{ $image }” accetta.
+firmware-no-network = triib non è in rete.
+firmware-busy = Un aggiornamento è già in corso.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Avvio con { $file }…
+firmware-sending = Invio di { $file }: { $percent }%
+firmware-stopping = Interruzione…
+firmware-storing-percent = Salvataggio: { $percent }%
+firmware-storing = Salvataggio…
+firmware-restarting = Salvato. Riavvio…
+firmware-updated = Aggiornato con { $file }
+firmware-stopped = Interrotto. Mantiene il firmware che aveva.
+firmware-failed-size = Il file è più grande di quanto accetta.
+firmware-failed-locked = Un altro controller lo ha bloccato.
+firmware-failed-no-response = Ha smesso di rispondere.
+firmware-failed-gone = È andato offline.
+firmware-failed = Impossibile aggiornare: { $reason }.
+firmware-failed-write = Ha rifiutato il file al byte { $offset }: { $reason }.
+firmware-failed-rejected = Ha verificato il file e lo ha rifiutato. Mantiene il firmware che aveva.
+firmware-failed-no-status = Non ha detto se ha salvato il file.
+firmware-confirm-title = Aggiornare il firmware?
+firmware-confirm-body = { $entity } riceverà { $file } ({ $size }) come “{ $image }”, poi si riavvierà con esso. Versione attuale: { $version }. I suoi flussi si fermano finché non torna, quindi tienilo alimentato e connesso.
+firmware-confirm-cancel = Annulla
+firmware-confirm-update = Aggiorna
+
 ## Log
 
 log-all = Tutti

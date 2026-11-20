@@ -729,6 +729,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } Listener στη θύρα Wi-Fi δεν εξυπηρετούνται, πάνω από το όριο unicast
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Ενημερώσεις υλικολογισμικού
+firmware-image = Υλικολογισμικό
+firmware-takes = Έως { $size }
+firmware-update = Ενημέρωση από αρχείο…
+firmware-stop = Διακοπή ενημέρωσης
+firmware-dismiss = Εκκαθάριση
+firmware-choose-title = Επιλέξτε το αρχείο για το { $image }
+firmware-read-failed = Δεν ήταν δυνατή η ανάγνωση του { $file }: { $error }
+firmware-empty = Το { $file } είναι κενό.
+firmware-too-large = Το { $file } έχει μέγεθος { $size }, μεγαλύτερο από τα { $most } που χωράει το «{ $image }».
+firmware-no-network = Το triib δεν είναι στο δίκτυο.
+firmware-busy = Μια ενημέρωσή της είναι ήδη σε εξέλιξη.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Έναρξη με το { $file }…
+firmware-sending = Αποστολή του { $file }: { $percent }%
+firmware-stopping = Διακοπή…
+firmware-storing-percent = Αποθήκευση: { $percent }%
+firmware-storing = Αποθήκευση…
+firmware-restarting = Αποθηκεύτηκε. Επανεκκίνηση…
+firmware-updated = Ενημερώθηκε με το { $file }
+firmware-stopped = Διακόπηκε. Κρατά το υλικολογισμικό που είχε.
+firmware-failed-size = Το αρχείο είναι μεγαλύτερο από όσο χωράει.
+firmware-failed-locked = Άλλος ελεγκτής την έχει κλειδώσει.
+firmware-failed-no-response = Σταμάτησε να αποκρίνεται.
+firmware-failed-gone = Βγήκε εκτός σύνδεσης.
+firmware-failed = Δεν ήταν δυνατή η ενημέρωση: { $reason }.
+firmware-failed-write = Απέρριψε το αρχείο στο byte { $offset }: { $reason }.
+firmware-failed-rejected = Έλεγξε το αρχείο και το απέρριψε. Κρατά το υλικολογισμικό που είχε.
+firmware-failed-no-status = Δεν ανέφερε αν αποθήκευσε το αρχείο.
+firmware-confirm-title = Να ενημερωθεί το υλικολογισμικό;
+firmware-confirm-body = Η οντότητα { $entity } θα εγκαταστήσει το { $file } ({ $size }) ως «{ $image }» και μετά θα επανεκκινηθεί με αυτό. Τρέχουσα έκδοση: { $version }. Οι ροές της θα σταματήσουν μέχρι να επανέλθει, οπότε κρατήστε τη σε λειτουργία και συνδεδεμένη.
+firmware-confirm-cancel = Ακύρωση
+firmware-confirm-update = Ενημέρωση
+
 ## Log
 
 log-all = Όλα

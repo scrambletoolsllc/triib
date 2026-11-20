@@ -777,6 +777,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } de listenere pe portul Wi-Fi neservite, peste limita unicast
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Actualizări de firmware
+firmware-image = Firmware
+firmware-takes = Până la { $size }
+firmware-update = Actualizează dintr-un fișier…
+firmware-stop = Oprește actualizarea
+firmware-dismiss = Șterge
+firmware-choose-title = Alege fișierul pentru { $image }
+firmware-read-failed = Nu s-a putut citi { $file }: { $error }
+firmware-empty = Fișierul { $file } este gol.
+firmware-too-large = { $file } are { $size }, iar „{ $image }” acceptă cel mult { $most }.
+firmware-no-network = triib nu este conectat la rețea.
+firmware-busy = O actualizare a entității este deja în curs.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Se începe cu { $file }…
+firmware-sending = Se trimite { $file }: { $percent }{"\u00A0"}%
+firmware-stopping = Se oprește…
+firmware-storing-percent = Se stochează: { $percent }{"\u00A0"}%
+firmware-storing = Se stochează…
+firmware-restarting = Stocat. Se repornește…
+firmware-updated = Actualizat cu { $file }
+firmware-stopped = Oprit. Entitatea păstrează firmware-ul pe care îl avea.
+firmware-failed-size = Fișierul este mai mare decât acceptă entitatea.
+firmware-failed-locked = Entitatea este blocată de alt controler.
+firmware-failed-no-response = Entitatea nu mai răspunde.
+firmware-failed-gone = Entitatea a devenit offline.
+firmware-failed = Nu s-a putut actualiza: { $reason }.
+firmware-failed-write = Entitatea a refuzat fișierul la octetul { $offset }: { $reason }.
+firmware-failed-rejected = Entitatea a verificat fișierul și l-a refuzat. Își păstrează firmware-ul pe care îl avea.
+firmware-failed-no-status = Entitatea nu a spus dacă a stocat fișierul.
+firmware-confirm-title = Actualizezi firmware-ul?
+firmware-confirm-body = { $entity } va primi { $file } ({ $size }) ca „{ $image }”, apoi va reporni cu el. Acum rulează versiunea { $version }. Fluxurile sale se opresc până revine, așa că menține entitatea alimentată și conectată.
+firmware-confirm-cancel = Anulează
+firmware-confirm-update = Actualizează
+
 ## Log
 
 log-all = Toate

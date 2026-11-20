@@ -708,6 +708,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } kiszolgálatlan listener a Wi-Fi-porton, az unicast-korláton felül
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Firmware-frissítések
+firmware-image = Firmware
+firmware-takes = Max. { $size }
+firmware-update = Frissítés fájlból…
+firmware-stop = Frissítés leállítása
+firmware-dismiss = Törlés
+firmware-choose-title = Fájl kiválasztása ehhez: { $image }
+firmware-read-failed = A fájl beolvasása nem sikerült ({ $file }): { $error }
+firmware-empty = A fájl üres: { $file }.
+firmware-too-large = A fájl ({ $file }) mérete { $size }, de „{ $image }” legfeljebb { $most } méretet fogad.
+firmware-no-network = A triib nincs a hálózaton.
+firmware-busy = Már folyamatban van egy frissítése.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Indítás ezzel: { $file }…
+firmware-sending = { $file } küldése: { $percent }%
+firmware-stopping = Leállítás…
+firmware-storing-percent = Tárolás: { $percent }%
+firmware-storing = Tárolás…
+firmware-restarting = Tárolva. Újraindítás…
+firmware-updated = Frissítve ezzel: { $file }
+firmware-stopped = Leállítva. A korábbi firmware marad rajta.
+firmware-failed-size = A fájl nagyobb annál, amit fogad.
+firmware-failed-locked = Egy másik vezérlő zárolta.
+firmware-failed-no-response = Már nem válaszol.
+firmware-failed-gone = Offline lett.
+firmware-failed = A frissítés nem sikerült: { $reason }.
+firmware-failed-write = Elutasította a fájlt ({ $offset }. bájt): { $reason }.
+firmware-failed-rejected = Ellenőrizte a fájlt, és elutasította. A korábbi firmware marad rajta.
+firmware-failed-no-status = Nem jelezte, hogy tárolta-e a fájlt.
+firmware-confirm-title = Frissíti a firmware-t?
+firmware-confirm-body = { $entity } megkapja a fájlt ({ $file }, { $size }) „{ $image }”-ként, majd újraindul vele. Jelenlegi verzió: { $version }. A streamjei leállnak, amíg vissza nem tér, ezért tartsa áram alatt és a hálózatra csatlakoztatva.
+firmware-confirm-cancel = Mégse
+firmware-confirm-update = Frissítés
+
 ## Log
 
 log-all = Mind

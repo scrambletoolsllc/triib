@@ -783,6 +783,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } listenerů na portu Wi-Fi bez obsluhy, nad limit unicastu
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Aktualizace firmwaru
+firmware-image = Firmware
+firmware-takes = Až { $size }
+firmware-update = Aktualizovat ze souboru…
+firmware-stop = Zastavit aktualizaci
+firmware-dismiss = Vymazat
+firmware-choose-title = Vyberte soubor pro { $image }
+firmware-read-failed = Nepodařilo se přečíst soubor { $file }: { $error }
+firmware-empty = Soubor { $file } je prázdný.
+firmware-too-large = Soubor { $file } má { $size }, víc než { $most }, které pojme „{ $image }“.
+firmware-no-network = triib není v síti.
+firmware-busy = Aktualizace už probíhá.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Zahajování aktualizace ze souboru { $file }…
+firmware-sending = Odesílání souboru { $file }: { $percent }{" "}%
+firmware-stopping = Zastavování…
+firmware-storing-percent = Ukládání: { $percent }{" "}%
+firmware-storing = Ukládání…
+firmware-restarting = Uloženo. Restartování…
+firmware-updated = Aktualizováno ze souboru { $file }
+firmware-stopped = Zastaveno. Entita si ponechává dosavadní firmware.
+firmware-failed-size = Soubor je větší, než entita pojme.
+firmware-failed-locked = Jiný kontrolér ji má zamčenou.
+firmware-failed-no-response = Přestala odpovídat.
+firmware-failed-gone = Přešla do režimu offline.
+firmware-failed = Nepodařilo se aktualizovat: { $reason }.
+firmware-failed-write = Odmítla soubor na bajtu { $offset }: { $reason }.
+firmware-failed-rejected = Soubor zkontrolovala a odmítla. Ponechává si dosavadní firmware.
+firmware-failed-no-status = Neoznámila, zda soubor uložila.
+firmware-confirm-title = Aktualizovat firmware?
+firmware-confirm-body = Entita { $entity } převezme soubor { $file } ({ $size }) jako „{ $image }“ a pak se s ním restartuje. Aktuální verze: { $version }. Dokud nebude zpět, budou její streamy zastavené, proto ji nechte napájenou a připojenou.
+firmware-confirm-cancel = Zrušit
+firmware-confirm-update = Aktualizovat
+
 ## Log
 
 log-all = Vše

@@ -725,6 +725,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } listeners på Wi-Fi-porten betjänas inte, över unicastgränsen
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Firmwareuppdateringar
+firmware-image = Firmware
+firmware-takes = Upp till { $size }
+firmware-update = Uppdatera från en fil…
+firmware-stop = Stoppa uppdateringen
+firmware-dismiss = Rensa
+firmware-choose-title = Välj filen för { $image }
+firmware-read-failed = Kunde inte läsa { $file }: { $error }
+firmware-empty = { $file } är tom.
+firmware-too-large = { $file } är { $size }, mer än de { $most } som ”{ $image }” tar emot.
+firmware-no-network = triib är inte i nätverket.
+firmware-busy = En uppdatering av den pågår redan.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Startar med { $file }…
+firmware-sending = Skickar { $file }: { $percent }{" "}%
+firmware-stopping = Stoppar…
+firmware-storing-percent = Lagrar: { $percent }{" "}%
+firmware-storing = Lagrar…
+firmware-restarting = Lagrat. Startar om…
+firmware-updated = Uppdaterad med { $file }
+firmware-stopped = Stoppad. Den behåller den firmware den hade.
+firmware-failed-size = Filen är större än den tar emot.
+firmware-failed-locked = En annan controller har låst den.
+firmware-failed-no-response = Den slutade svara.
+firmware-failed-gone = Den gick offline.
+firmware-failed = Kunde inte uppdatera: { $reason }.
+firmware-failed-write = Den avvisade filen vid byte { $offset }: { $reason }.
+firmware-failed-rejected = Den kontrollerade filen och avvisade den. Den behåller den firmware den hade.
+firmware-failed-no-status = Den sa inte om den lagrade filen.
+firmware-confirm-title = Vill du uppdatera firmwaren?
+firmware-confirm-body = { $entity } tar emot { $file } ({ $size }) som ”{ $image }” och startar sedan om med den. Nu kör den { $version }. Dess streamar stoppas tills den är tillbaka, så se till att den har ström och är ansluten.
+firmware-confirm-cancel = Avbryt
+firmware-confirm-update = Uppdatera
+
 ## Log
 
 log-all = Alla

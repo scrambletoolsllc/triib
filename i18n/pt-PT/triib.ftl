@@ -757,6 +757,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } listeners na porta Wi-Fi não servidos, acima do limite de unicast
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Atualizações de firmware
+firmware-image = Firmware
+firmware-takes = Até { $size }
+firmware-update = Atualizar a partir de um ficheiro…
+firmware-stop = Parar a atualização
+firmware-dismiss = Limpar
+firmware-choose-title = Escolha o ficheiro para { $image }
+firmware-read-failed = Não foi possível ler { $file }: { $error }
+firmware-empty = { $file } está vazio.
+firmware-too-large = { $file } tem { $size }, mais do que os { $most } que «{ $image }» aceita.
+firmware-no-network = O triib não está na rede.
+firmware-busy = Já está em curso uma atualização da entidade.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = A iniciar com { $file }…
+firmware-sending = A enviar { $file }: { $percent }%
+firmware-stopping = A parar…
+firmware-storing-percent = A gravar: { $percent }%
+firmware-storing = A gravar…
+firmware-restarting = Ficheiro gravado. A reiniciar…
+firmware-updated = Atualizado com { $file }
+firmware-stopped = Atualização interrompida. A entidade mantém o firmware que tinha.
+firmware-failed-size = O ficheiro é maior do que a entidade aceita.
+firmware-failed-locked = A entidade está bloqueada por outro controlador.
+firmware-failed-no-response = A entidade deixou de responder.
+firmware-failed-gone = A entidade ficou offline.
+firmware-failed = Não foi possível atualizar: { $reason }.
+firmware-failed-write = A entidade recusou o ficheiro no byte { $offset }: { $reason }.
+firmware-failed-rejected = A entidade verificou o ficheiro e recusou-o. Mantém o firmware que tinha.
+firmware-failed-no-status = A entidade não indicou se gravou o ficheiro.
+firmware-confirm-title = Atualizar o firmware?
+firmware-confirm-body = { $entity } vai receber { $file } ({ $size }) como «{ $image }» e depois reiniciar com ele. A versão atual é { $version }. Os fluxos param até a entidade voltar, por isso mantenha-a ligada à corrente e à rede.
+firmware-confirm-cancel = Cancelar
+firmware-confirm-update = Atualizar
+
 ## Log
 
 log-all = Tudo

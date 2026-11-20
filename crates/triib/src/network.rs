@@ -18,6 +18,7 @@ pub use atdecc::neighbor::{Peer, Plugged};
 use atdecc::pdu::{self, Pdu};
 use atdecc::stream_format::StreamFormat;
 use atdecc::time::Instant;
+use atdecc::upload::{Failure as UploadFailure, Stage, Step as UploadStep, Upload};
 use atdecc::{
     AecpMessageType, AemStatus, DiscoveredEntity, EntityId, EntityModelId, Event, OfflineReason,
 };
@@ -67,6 +68,13 @@ pub enum ReportKind {
     /// ATDECC frames sent and received since the last report, oldest
     /// first.
     Frames(Vec<Frame>),
+    /// Where an upload to one of an entity's memory objects has got to,
+    /// sent as it moves on, a few times a second at most while it writes.
+    Upload {
+        entity: EntityId,
+        index: u16,
+        stage: Stage,
+    },
 }
 
 /// Something the app asks the network to do.
@@ -303,6 +311,17 @@ enum Command {
     Watch(Watch),
     /// Ask an entity again how one of its streams stands.
     RefreshStream(EntityId, DescriptorType, u16),
+    /// Upload an image to one of an entity's memory objects, as new
+    /// firmware, storing it at the end and with `restart` restarting the
+    /// entity on it.
+    Upload {
+        entity: EntityId,
+        index: u16,
+        image: Vec<u8>,
+        restart: bool,
+    },
+    /// Stop an upload before it stores.
+    AbortUpload(EntityId, u16),
 }
 
 /// What the window shows that entities can change unannounced: some, as
@@ -477,6 +496,23 @@ impl Network {
             .commands
             .send(Command::RefreshStream(entity, descriptor_type, index));
     }
+
+    /// Uploads `image` to the memory object `index` of `entity`, storing
+    /// it and with `restart` restarting the entity on it, reporting how it
+    /// goes in [`ReportKind::Upload`].
+    pub fn upload(&self, entity: EntityId, index: u16, image: Vec<u8>, restart: bool) {
+        let _ = self.commands.send(Command::Upload {
+            entity,
+            index,
+            image,
+            restart,
+        });
+    }
+
+    /// Stops an upload, unless it has begun storing.
+    pub fn abort_upload(&self, entity: EntityId, index: u16) {
+        let _ = self.commands.send(Command::AbortUpload(entity, index));
+    }
 }
 
 impl Drop for Network {
@@ -536,6 +572,7 @@ fn run(
     // The entities that sent this controller notifications, until they
     // go or restart, and must register again.
     let mut notifying: HashSet<EntityId> = HashSet::new();
+    let mut uploads = Uploads::new(generation);
     // Without it the network view only lacks this computer's place.
     let mut gptp = match NeighborListener::open(interface) {
         Ok(listener) => Some(listener),
@@ -566,6 +603,13 @@ fn run(
                     let command = send(driver.controller_mut(), now, step);
                     steps.insert(command, step);
                 }
+                Command::Upload {
+                    entity,
+                    index,
+                    image,
+                    restart,
+                } => uploads.start(&mut driver, entity, index, image, restart),
+                Command::AbortUpload(entity, index) => uploads.abort(&mut driver, entity, index),
             }
         }
         refresh(&mut driver, &watch, &notifying, &mut asked);
@@ -589,6 +633,9 @@ fn run(
             report(generation, ReportKind::Frames(frames));
         }
         while let Some(event) = driver.controller_mut().poll_event() {
+            if uploads.take(&mut driver, event) {
+                continue;
+            }
             if let Event::EntityRestarted(entity_id) | Event::EntityOffline(entity_id, _) = event {
                 notifying.remove(&entity_id);
             }
@@ -640,6 +687,165 @@ fn run(
             };
             if let Some(kind) = kind {
                 report(generation, kind);
+            }
+        }
+        uploads.turn(&mut driver);
+    }
+}
+
+/// How often an upload's progress is reported while it writes.
+const UPLOAD_REPORTS: Duration = Duration::from_millis(250);
+
+/// The uploads going on.
+struct Uploads {
+    generation: u64,
+    going: Vec<Going>,
+}
+
+/// An upload, what was last reported of it, and when.
+struct Going {
+    upload: Upload,
+    reported: Option<Stage>,
+    at: std::time::Instant,
+}
+
+impl Uploads {
+    fn new(generation: u64) -> Self {
+        Self {
+            generation,
+            going: Vec::new(),
+        }
+    }
+
+    fn start(
+        &mut self,
+        driver: &mut Driver,
+        entity: EntityId,
+        index: u16,
+        image: Vec<u8>,
+        restart: bool,
+    ) {
+        if self.find(entity, index).is_some() {
+            return;
+        }
+        let now = driver.now();
+        let controller = driver.controller_mut();
+        let model = controller.model(entity).cloned();
+        let object = model
+            .as_ref()
+            .and_then(|model| model.memory_objects().find(|object| object.index == index));
+        let Some(object) = object else {
+            // Gone, or not read: nothing goes to it.
+            let stage = Stage::Failed(UploadFailure::Refused(
+                UploadStep::Upload,
+                Outcome::NotPossible,
+            ));
+            report(
+                self.generation,
+                ReportKind::Upload {
+                    entity,
+                    index,
+                    stage,
+                },
+            );
+            return;
+        };
+        let upload = Upload::start(controller, now, entity, &object, image, restart);
+        self.going.push(Going {
+            upload,
+            reported: None,
+            at: std::time::Instant::now(),
+        });
+    }
+
+    fn find(&mut self, entity: EntityId, index: u16) -> Option<&mut Going> {
+        self.going
+            .iter_mut()
+            .find(|going| going.upload.entity_id() == entity && going.upload.index() == index)
+    }
+
+    fn abort(&mut self, driver: &mut Driver, entity: EntityId, index: u16) {
+        let now = driver.now();
+        if let Some(going) = self.find(entity, index) {
+            going.upload.abort(driver.controller_mut(), now);
+        }
+    }
+
+    /// Hands the uploads an event: whether it was theirs alone, a command
+    /// one of them sent.
+    fn take(&mut self, driver: &mut Driver, event: Event) -> bool {
+        let now = driver.now();
+        match event {
+            Event::CommandFinished(command, outcome) => self.going.iter_mut().any(|going| {
+                going
+                    .upload
+                    .handle_finished(driver.controller_mut(), now, command, outcome)
+            }),
+            Event::EntityOffline(entity_id, _) | Event::EntityRestarted(entity_id) => {
+                for going in &mut self.going {
+                    going
+                        .upload
+                        .handle_gone(driver.controller_mut(), now, entity_id);
+                }
+                // Before the entity's own report, which the app reads as
+                // the entity back from its restart.
+                self.report_moved();
+                false
+            }
+            _ => false,
+        }
+    }
+
+    /// Hands the uploads the OPERATION_STATUS reports and their timeouts,
+    /// reports how they have moved on, and lets go of those ended.
+    fn turn(&mut self, driver: &mut Driver) {
+        while let Some(status) = driver.controller_mut().poll_operation_status() {
+            let now = driver.now();
+            for going in &mut self.going {
+                if going
+                    .upload
+                    .handle_status(driver.controller_mut(), now, &status)
+                {
+                    break;
+                }
+            }
+        }
+        let now = driver.now();
+        for going in &mut self.going {
+            if going.upload.poll_timeout().is_some_and(|due| due <= now) {
+                going.upload.handle_timeout(driver.controller_mut(), now);
+            }
+        }
+        self.report_moved();
+        self.going.retain(|going| {
+            !(going.upload.is_over() && going.reported == Some(going.upload.stage()))
+        });
+    }
+
+    /// Reports the uploads that moved on, a few times a second at most
+    /// while they write.
+    fn report_moved(&mut self) {
+        let clock = std::time::Instant::now();
+        for going in &mut self.going {
+            let stage = going.upload.stage();
+            // While it writes, a few times a second.
+            let writing = matches!(
+                (stage, going.reported),
+                (Stage::Writing { .. }, Some(Stage::Writing { .. }))
+            );
+            if going.reported != Some(stage)
+                && (!writing || clock.duration_since(going.at) >= UPLOAD_REPORTS)
+            {
+                report(
+                    self.generation,
+                    ReportKind::Upload {
+                        entity: going.upload.entity_id(),
+                        index: going.upload.index(),
+                        stage,
+                    },
+                );
+                going.reported = Some(stage);
+                going.at = clock;
             }
         }
     }

@@ -765,6 +765,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } listeners non servis sur le port Wi-Fi, au-delà de la limite unicast
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Mises à jour du firmware
+firmware-image = Firmware
+firmware-takes = Jusqu’à { $size }
+firmware-update = Mettre à jour depuis un fichier…
+firmware-stop = Arrêter la mise à jour
+firmware-dismiss = Effacer
+firmware-choose-title = Choisir le fichier pour { $image }
+firmware-read-failed = Impossible de lire { $file } : { $error }
+firmware-empty = { $file } est vide.
+firmware-too-large = { $file } fait { $size }, plus que les { $most } qu’accepte « { $image } ».
+firmware-no-network = triib n’est pas sur le réseau.
+firmware-busy = Une mise à jour est déjà en cours.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Démarrage avec { $file }…
+firmware-sending = Envoi de { $file } : { $percent }{"\u202F"}%
+firmware-stopping = Arrêt en cours…
+firmware-storing-percent = Enregistrement : { $percent }{"\u202F"}%
+firmware-storing = Enregistrement…
+firmware-restarting = Enregistré. Redémarrage…
+firmware-updated = Mis à jour avec { $file }
+firmware-stopped = Arrêté. Il garde le firmware qu’il avait.
+firmware-failed-size = Le fichier est plus grand que ce qu’il accepte.
+firmware-failed-locked = Un autre contrôleur l’a verrouillé.
+firmware-failed-no-response = Il a cessé de répondre.
+firmware-failed-gone = Il est passé hors ligne.
+firmware-failed = Impossible de mettre à jour : { $reason }.
+firmware-failed-write = Il a refusé le fichier à l’octet { $offset } : { $reason }.
+firmware-failed-rejected = Il a vérifié le fichier et l’a refusé. Il garde le firmware qu’il avait.
+firmware-failed-no-status = Il n’a pas dit s’il avait enregistré le fichier.
+firmware-confirm-title = Mettre à jour le firmware ?
+firmware-confirm-body = { $entity } recevra { $file } ({ $size }) comme « { $image } », puis redémarrera dessus. Version actuelle : { $version }. Ses flux s’arrêtent jusqu’à son retour, gardez-le donc alimenté et connecté.
+firmware-confirm-cancel = Annuler
+firmware-confirm-update = Mettre à jour
+
 ## Log
 
 log-all = Tout

@@ -716,6 +716,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } Listener am Wi-Fi-Port nicht bedient, über dem Unicast-Limit
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = Firmware-Updates
+firmware-image = Firmware
+firmware-takes = Bis zu { $size }
+firmware-update = Aus Datei aktualisieren …
+firmware-stop = Update abbrechen
+firmware-dismiss = Ausblenden
+firmware-choose-title = Datei für { $image } auswählen
+firmware-read-failed = { $file } konnte nicht gelesen werden: { $error }
+firmware-empty = { $file } ist leer.
+firmware-too-large = { $file } ist { $size } groß, mehr als die { $most }, die „{ $image }“ fasst.
+firmware-no-network = triib ist nicht im Netzwerk.
+firmware-busy = Ein Update läuft bereits.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = Wird mit { $file } gestartet …
+firmware-sending = { $file } wird gesendet: { $percent }{" "}%
+firmware-stopping = Wird abgebrochen …
+firmware-storing-percent = Wird gespeichert: { $percent }{" "}%
+firmware-storing = Wird gespeichert …
+firmware-restarting = Gespeichert. Wird neu gestartet …
+firmware-updated = Mit { $file } aktualisiert
+firmware-stopped = Abgebrochen. Die bisherige Firmware bleibt erhalten.
+firmware-failed-size = Die Datei ist größer, als die Entität aufnehmen kann.
+firmware-failed-locked = Ein anderer Controller hat sie gesperrt.
+firmware-failed-no-response = Die Entität antwortet nicht mehr.
+firmware-failed-gone = Die Entität ist offline gegangen.
+firmware-failed = Die Firmware konnte nicht aktualisiert werden: { $reason }.
+firmware-failed-write = Die Entität hat die Datei bei Byte { $offset } abgelehnt: { $reason }.
+firmware-failed-rejected = Die Entität hat die Datei geprüft und abgelehnt. Die bisherige Firmware bleibt erhalten.
+firmware-failed-no-status = Die Entität hat nicht gemeldet, ob sie die Datei gespeichert hat.
+firmware-confirm-title = Firmware aktualisieren?
+firmware-confirm-body = { $entity } installiert { $file } ({ $size }) als „{ $image }“ und startet danach damit neu. Aktuelle Version: { $version }. Bis sie wieder da ist, stoppen ihre Streams; trennen Sie sie also nicht von Strom und Netzwerk.
+firmware-confirm-cancel = Abbrechen
+firmware-confirm-update = Aktualisieren
+
 ## Log
 
 log-all = Alle

@@ -741,6 +741,45 @@ wireless-alarm-unserved = { $count ->
    *[other] { $count } Listener בפורט ה-Wi-Fi לא מקבלים שירות, מעבר למגבלת היוניקאסט
 }
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = עדכוני קושחה
+firmware-image = קושחה
+firmware-takes = עד { $size }
+firmware-update = עדכון מקובץ…
+firmware-stop = עצירת העדכון
+firmware-dismiss = ניקוי
+firmware-choose-title = בחירת קובץ עבור { $image }
+firmware-read-failed = לא ניתן היה לקרוא את { $file }: { $error }
+firmware-empty = הקובץ { $file } ריק.
+firmware-too-large = הקובץ { $file } בגודל { $size }, ו-"{ $image }" מקבל עד { $most }.
+firmware-no-network = triib לא מחובר לרשת.
+firmware-busy = עדכון שלו כבר מתבצע.
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = מתחיל עם { $file }…
+firmware-sending = שולח את { $file }: { $percent }%
+firmware-stopping = עוצר…
+firmware-storing-percent = שומר: { $percent }%
+firmware-storing = שומר…
+firmware-restarting = נשמר. מופעל מחדש…
+firmware-updated = עודכן באמצעות { $file }
+firmware-stopped = נעצר. הקושחה הקודמת נשארת בו.
+firmware-failed-size = הקובץ גדול ממה שהוא מקבל.
+firmware-failed-locked = בקר אחר נעל אותו.
+firmware-failed-no-response = הוא הפסיק לענות.
+firmware-failed-gone = הוא עבר למצב לא מקוון.
+firmware-failed = לא ניתן היה לעדכן: { $reason }.
+firmware-failed-write = הוא דחה את הקובץ בבייט { $offset }: { $reason }.
+firmware-failed-rejected = הוא בדק את הקובץ ודחה אותו. הקושחה הקודמת נשארת בו.
+firmware-failed-no-status = הוא לא אמר אם שמר את הקובץ.
+firmware-confirm-title = לעדכן את הקושחה?
+firmware-confirm-body = { $entity } יקבל את { $file } ({ $size }) בתור "{ $image }" שלו, ואז יופעל מחדש איתו. הגרסה הנוכחית: { $version }. הזרמים שלו ייעצרו עד שיחזור, אז הקפידו שיישאר מחובר לחשמל ולרשת.
+firmware-confirm-cancel = ביטול
+firmware-confirm-update = עדכון
+
 ## Log
 
 log-all = הכול

@@ -3,6 +3,21 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Controller
+
+- triib updates the firmware of entities that take it over ATDECC, as
+  IEEE 1722.1-2021 Annex D has it, each firmware image an entity offers
+  a row of the inspector's Firmware updates: a device's own and, where
+  it offers one, its coprocessor's. The file chosen goes to the entity
+  once confirmed, which locks it against other controllers' changes,
+  stores it and restarts on it; triib shows how far it has got, stops it
+  on request until it stores, and says why the entity refused it.
+  `triib-cli firmware` lists an entity's images and updates one from a
+  file, and agents do the same through `firmware_status`,
+  `update_firmware` and `stop_firmware_update`.
+
 ## [1.4.0] - 2026-11-19
 
 Host entities on Linux run in avb-endpointd, the daemon plaa shares,

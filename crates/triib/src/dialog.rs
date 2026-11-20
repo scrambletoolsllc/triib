@@ -1,4 +1,4 @@
-//! Folder dialogs and links: through the XDG desktop portal on Linux,
+//! Folder and file dialogs and links: through the XDG desktop portal on Linux,
 //! and the system's own dialogs (through rfd) elsewhere, as prev has them.
 
 use std::path::PathBuf;
@@ -32,13 +32,26 @@ mod portal {
         scramble_ui::desktop::open_uri(uri).await
     }
 
+    /// Asks for a file to open. Cancelling yields `None`.
+    pub async fn choose_file(title: String) -> Result<Option<PathBuf>, String> {
+        ask(title, None, false).await
+    }
+
     async fn ask_folder(
         title: String,
         current: Option<PathBuf>,
     ) -> Result<Option<PathBuf>, String> {
+        ask(title, current, true).await
+    }
+
+    async fn ask(
+        title: String,
+        current: Option<PathBuf>,
+        folder: bool,
+    ) -> Result<Option<PathBuf>, String> {
         let request = SelectedFiles::open_file()
             .title(title.as_str())
-            .directory(true)
+            .directory(folder)
             .current_folder::<&std::path::Path>(current.as_deref())
             .map_err(|error| error.to_string())?
             .send()
@@ -82,6 +95,15 @@ mod native {
             .pick_folder()
             .await
             .map(|folder| folder.path().to_path_buf()))
+    }
+
+    /// Asks for a file to open. Cancelling yields `None`.
+    pub async fn choose_file(title: String) -> Result<Option<PathBuf>, String> {
+        Ok(AsyncFileDialog::new()
+            .set_title(title)
+            .pick_file()
+            .await
+            .map(|file| file.path().to_path_buf()))
     }
 
     /// Opens `uri` in the app the system picks for it.

@@ -621,6 +621,45 @@ wireless-alarm-not-locked = Wi-Fi の時刻がアクセスポイントに未ロ�
 wireless-alarm-holdover = Wi-Fi の時刻がホールドオーバー中、アクセスポイントとのロック外れ
 wireless-alarm-unserved = Wi-Fi ポートのリスナー { $count } 台に未配信、ユニキャストの上限を超過
 
+## Firmware updates, in the inspector: an entity's firmware images, each a
+## memory object it takes new firmware in, such as "Firmware" and
+## "Coprocessor firmware" named by the device
+
+firmware-section = ファームウェアの更新
+firmware-image = ファームウェア
+firmware-takes = 最大 { $size }
+firmware-update = ファイルから更新…
+firmware-stop = 更新を中止
+firmware-dismiss = クリア
+firmware-choose-title = { $image } のファイルを選択
+firmware-read-failed = { $file } を読み込めませんでした：{ $error }
+firmware-empty = { $file } は空です。
+firmware-too-large = { $file } は { $size } で、「{ $image }」が受け付ける { $most } を超えています。
+firmware-no-network = triib はネットワークに接続していません。
+firmware-busy = すでに更新中です。
+firmware-size-mb = { $size } MB
+firmware-size-kb = { $size } KB
+firmware-starting = { $file } で開始中…
+firmware-sending = { $file } を送信中：{ $percent }%
+firmware-stopping = 中止中…
+firmware-storing-percent = 保存中：{ $percent }%
+firmware-storing = 保存中…
+firmware-restarting = 保存しました。再起動中…
+firmware-updated = { $file } で更新しました
+firmware-stopped = 中止しました。以前のファームウェアのままです。
+firmware-failed-size = ファイルが受け付けられるサイズを超えています。
+firmware-failed-locked = 別のコントローラーがロックしています。
+firmware-failed-no-response = 応答しなくなりました。
+firmware-failed-gone = オフラインになりました。
+firmware-failed = 更新できませんでした：{ $reason }。
+firmware-failed-write = バイト { $offset } でファイルを拒否しました：{ $reason }。
+firmware-failed-rejected = ファイルを検証して拒否しました。以前のファームウェアのままです。
+firmware-failed-no-status = ファイルを保存したかどうか応答しませんでした。
+firmware-confirm-title = ファームウェアを更新しますか？
+firmware-confirm-body = { $entity } は { $file }（{ $size }）を「{ $image }」として受け取り、新しいファームウェアで再起動します。現在のバージョン：{ $version }。戻るまでストリームは停止するため、電源とネットワークにつないだままにしてください。
+firmware-confirm-cancel = キャンセル
+firmware-confirm-update = 更新
+
 ## Log
 
 log-all = すべて
