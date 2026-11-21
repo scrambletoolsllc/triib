@@ -23,10 +23,11 @@ pub fn install() {
     let default = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
         let thread = std::thread::current();
+        let message = info.payload_as_str().unwrap_or("a panic without a message");
         let mut text = report(
             thread.name().unwrap_or("unnamed"),
             info.location(),
-            info.payload_as_str().unwrap_or("a panic without a message"),
+            message,
             SystemTime::now(),
         );
         // Only where RUST_BACKTRACE asks: release builds carry no symbols.
@@ -34,8 +35,16 @@ pub fn install() {
         if backtrace.status() == std::backtrace::BacktraceStatus::Captured {
             text.push_str(&format!("{backtrace}\n"));
         }
+        // The GPU failing the window: triib goes on drawing in software.
+        let fell_back = crate::rendering::fall_back(message);
+        if fell_back {
+            text.push_str("triib started again, drawing in software.\n\n");
+        }
         if let Some(path) = file() {
             let _ = append(&path, &text);
+        }
+        if fell_back {
+            std::process::exit(0);
         }
         default(info);
     }));

@@ -16,6 +16,12 @@ All notable changes to triib. Versions follow
   set to another format than the output sends, as the matrix asks
   first, and say both formats with their codes; `--anyway` and
   `despite_formats` connect them all the same.
+- On a computer whose GPU cannot draw triib's window, as a virtual
+  machine without a usable one, where wgpu failed once the window's
+  surface was set up, triib no longer crashes: it starts again drawing
+  in software, with iced's tiny-skia renderer, and goes on doing so
+  there until a new version tries the GPU again. `crash.log` says so,
+  and `ICED_BACKEND` still picks a renderer.
 
 ## [1.5.0] - 2026-11-21
 

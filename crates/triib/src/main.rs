@@ -34,6 +34,7 @@ mod monitor;
 mod netmap;
 mod network;
 mod presets;
+mod rendering;
 mod settings;
 mod settings_view;
 mod storage;
@@ -118,6 +119,7 @@ fn main() -> iced::Result {
     prefer_vulkan();
     #[cfg(target_os = "linux")]
     use_netraw();
+    rendering::choose();
     scramble_ui::input::remember_interface_thread();
     let (sender, receiver) = mpsc::unbounded();
     let _ = EXTERNAL_SENDER.set(sender);

@@ -465,6 +465,8 @@ impl Triib {
     }
 
     pub fn boot(omarchy_dir: Option<PathBuf>) -> (Self, Task<Message>) {
+        #[cfg(debug_assertions)]
+        crate::rendering::fail_for_test();
         let (settings, settings_error) = Settings::load();
         crate::host::set_old_file(settings.entities_file.clone());
         crate::host::stop_old_daemon();
