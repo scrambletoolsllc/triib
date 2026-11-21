@@ -539,6 +539,7 @@ matrix-format-both = تغيير كليهما إلى
 matrix-format-talker-busy = يبث الـ Talker إلى Listener آخرين، لذا يبقى تنسيقه كما هو.
 matrix-format-anyway = التوصيل دون تغيير التنسيقات
 matrix-incompatible = لا يقبل المدخل { $sent }. إنه مضبوط على { $set }.
+format-samples-per-frame = { $format } ({ $count } عينة لكل إطار)
 matrix-other-domain = يتبعان نطاقَي ساعة مختلفين، فلا يمكن أن يمر بينهما أي دفق.
 matrix-group-none = غير متصل. وسّع لتوصيل التدفقات واحدًا تلو الآخر.
 matrix-group-connected = المتصلة: { $count }. وسّع لرؤية كل منها.

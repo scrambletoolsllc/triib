@@ -519,6 +519,7 @@ matrix-format-both = Zmień oba na
 matrix-format-talker-busy = Talker przesyła strumień do innych listenerów, więc jego format zostaje.
 matrix-format-anyway = Połącz bez zmiany formatów
 matrix-incompatible = Wejście nie przyjmuje { $sent }. Jest ustawione na { $set }.
+format-samples-per-frame = { $format } ({ $count } próbek na ramkę)
 matrix-other-domain = Utrzymują czas w różnych domenach zegara, więc żaden strumień nie może między nimi przejść.
 matrix-group-none = Nie połączono. Rozwiń, aby łączyć strumienie pojedynczo.
 matrix-group-connected = Połączono: { $count }. Rozwiń, aby zobaczyć każde połączenie.

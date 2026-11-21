@@ -499,6 +499,7 @@ matrix-format-both = Badilisha vyote viwili kuwa
 matrix-format-talker-busy = Talker inatiririsha kwa listener wengine, kwa hivyo muundo wake unabaki.
 matrix-format-anyway = Unganisha bila kubadilisha miundo
 matrix-incompatible = Ingizo halikubali { $sent }. Limewekwa kuwa { $set }.
+format-samples-per-frame = { $format } (sampuli { $count } kwa kila fremu)
 matrix-other-domain = Vinatunza muda katika vikoa tofauti vya saa, kwa hiyo hakuna mtiririko unaoweza kupita kati yao.
 matrix-group-none = Haijaunganishwa. Panua ili kuunganisha mitiririko mmoja mmoja.
 matrix-group-connected = { $count } imeunganishwa. Panua ili kuona kila mmoja.

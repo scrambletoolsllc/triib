@@ -472,6 +472,7 @@ matrix-format-both = 将两端都改为
 matrix-format-talker-busy = 发送端正在向其他接收端发送流，因此保持其格式不变。
 matrix-format-anyway = 不更改格式直接连接
 matrix-incompatible = 该输入不支持 { $sent }，当前设置为 { $set }。
+format-samples-per-frame = { $format }（每帧 { $count } 个采样）
 matrix-other-domain = 二者处于不同的时钟域，因此彼此之间无法传递任何流。
 matrix-group-none = 未连接。展开以逐一连接流。
 matrix-group-connected = 已连接 { $count } 个。展开以查看每个连接。

@@ -499,6 +499,7 @@ matrix-format-both = تغییر هر دو به
 matrix-format-talker-busy = Talker برای Listenerهای دیگر پخش می‌کند، پس قالبش تغییر نمی‌کند.
 matrix-format-anyway = اتصال بدون تغییر قالب‌ها
 matrix-incompatible = ورودی { $sent } را نمی‌پذیرد. روی { $set } تنظیم شده است.
+format-samples-per-frame = { $format } ({ $count } نمونه در هر قاب)
 matrix-other-domain = در دامنه‌های ساعت متفاوتی زمان را نگه می‌دارند، پس هیچ جریانی میان آن‌ها عبور نمی‌کند.
 matrix-group-none = متصل نیست. برای وصل کردن تک‌تک جریان‌ها باز کنید.
 matrix-group-connected = { $count } متصل. برای دیدن هرکدام باز کنید.

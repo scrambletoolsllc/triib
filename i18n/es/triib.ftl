@@ -520,6 +520,7 @@ matrix-format-both = Cambiar ambos a
 matrix-format-talker-busy = El talker transmite a otros listeners, así que su formato no cambia.
 matrix-format-anyway = Conectar sin cambiar los formatos
 matrix-incompatible = La entrada no admite { $sent }. Está configurada en { $set }.
+format-samples-per-frame = { $format } ({ $count } muestras por trama)
 matrix-other-domain = Siguen dominios de reloj distintos, así que ningún flujo puede pasar entre ellos.
 matrix-group-none = Sin conectar. Expande para conectar los flujos uno a uno.
 matrix-group-connected = { $count ->

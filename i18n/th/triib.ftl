@@ -469,6 +469,7 @@ matrix-format-both = เปลี่ยนทั้งสองเป็น
 matrix-format-talker-busy = Talker กำลังสตรีมไปยัง Listener อื่น จึงคงรูปแบบเดิมไว้
 matrix-format-anyway = เชื่อมต่อโดยไม่เปลี่ยนรูปแบบ
 matrix-incompatible = อินพุตไม่รับ { $sent } ขณะนี้ตั้งไว้ที่ { $set }
+format-samples-per-frame = { $format } ({ $count } แซมเปิลต่อเฟรม)
 matrix-other-domain = ทั้งสองรักษาเวลาในโดเมนคล็อกที่ต่างกัน จึงส่งสตรีมระหว่างกันไม่ได้
 matrix-group-none = ไม่ได้เชื่อมต่อ ขยายเพื่อเชื่อมต่อสตรีมทีละรายการ
 matrix-group-connected = เชื่อมต่อแล้ว { $count } รายการ ขยายเพื่อดูแต่ละรายการ

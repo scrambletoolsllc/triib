@@ -653,6 +653,10 @@ matrix-format-both = Change both to
 matrix-format-talker-busy = The talker streams to other listeners, so its format stays.
 matrix-format-anyway = Connect without changing formats
 matrix-incompatible = The input does not take { $sent }. It is set to { $set }.
+format-samples-per-frame = { $count ->
+    [one] { $format } ({ $count } sample per frame)
+   *[other] { $format } ({ $count } samples per frame)
+}
 matrix-other-domain = They keep time in different clock domains, so no stream can pass between them.
 # An entity's row or column folded into one cell.
 matrix-group-none = Not connected. Expand to connect streams one by one.

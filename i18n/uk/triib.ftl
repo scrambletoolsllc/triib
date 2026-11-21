@@ -519,6 +519,7 @@ matrix-format-both = Змінити обидва на
 matrix-format-talker-busy = Talker передає потік іншим Listener, тому його формат не змінюється.
 matrix-format-anyway = Підключити, не змінюючи формати
 matrix-incompatible = Вхід не приймає { $sent }. Його налаштовано на { $set }.
+format-samples-per-frame = { $format } (семплів у кадрі: { $count })
 matrix-other-domain = Вони ведуть час у різних доменах синхронізації, тому між ними не може пройти жоден потік.
 matrix-group-none = Не підключено. Розгорніть, щоб підключати потоки по одному.
 matrix-group-connected = Підключено: { $count }. Розгорніть, щоб побачити кожне підключення.

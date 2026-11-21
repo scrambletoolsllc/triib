@@ -509,6 +509,7 @@ matrix-format-both = שינוי שניהם אל
 matrix-format-talker-busy = ה-Talker משדר ל-Listeners אחרים, ולכן הפורמט שלו נשאר.
 matrix-format-anyway = חיבור בלי לשנות פורמטים
 matrix-incompatible = הכניסה לא מקבלת { $sent }. היא מוגדרת ל-{ $set }.
+format-samples-per-frame = { $format } ({ $count } דגימות למסגרת)
 matrix-other-domain = הם שומרים זמן בתחומי שעון שונים, ולכן שום זרם לא יכול לעבור ביניהם.
 matrix-group-none = לא מחובר. הרחיבו כדי לחבר זרמים אחד אחד.
 matrix-group-connected = { $count } מחוברים. הרחיבו כדי לראות כל אחד.

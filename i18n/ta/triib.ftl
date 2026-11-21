@@ -499,6 +499,7 @@ matrix-format-both = இரண்டையும் இதற்கு மாற
 matrix-format-talker-busy = Talker மற்ற listeners-க்கு stream செய்கிறது, எனவே அதன் format மாறாது.
 matrix-format-anyway = Format-களை மாற்றாமல் இணை
 matrix-incompatible = Input { $sent }-ஐ ஏற்காது. அது { $set } என அமைக்கப்பட்டுள்ளது.
+format-samples-per-frame = { $format } (ஒரு frame-க்கு { $count } மாதிரிகள்)
 matrix-other-domain = இவை வெவ்வேறு clock domain-களில் நேரத்தைப் பராமரிக்கின்றன, எனவே இவற்றுக்கிடையே எந்த stream-உம் செல்ல முடியாது.
 matrix-group-none = இணைக்கப்படவில்லை. Streams-ஐ ஒவ்வொன்றாக இணைக்க விரிவாக்கு.
 matrix-group-connected = { $count } இணைக்கப்பட்டுள்ளன. ஒவ்வொன்றையும் பார்க்க விரிவாக்கு.

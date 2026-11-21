@@ -501,6 +501,7 @@ matrix-format-both = Mindkettő módosítása erre
 matrix-format-talker-busy = A talker más listenereknek is streamel, ezért a formátuma marad.
 matrix-format-anyway = Csatlakoztatás a formátumok módosítása nélkül
 matrix-incompatible = A bemenet nem fogadja ezt: { $sent }. A beállítása: { $set }.
+format-samples-per-frame = { $format } (keretenként { $count } minta)
 matrix-other-domain = Különböző órajel-tartományban tartják az időt, így semmilyen stream nem juthat át közöttük.
 matrix-group-none = Nincs csatlakoztatva. Bontsa ki a streamek egyenkénti csatlakoztatásához.
 matrix-group-connected = { $count } csatlakoztatva. Bontsa ki az egyenkénti megtekintéshez.

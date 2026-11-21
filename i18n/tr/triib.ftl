@@ -501,6 +501,7 @@ matrix-format-both = İkisini de şuna değiştir
 matrix-format-talker-busy = Talker başka listener'lara yayın yapıyor, bu yüzden biçimi değişmez.
 matrix-format-anyway = Biçimleri değiştirmeden bağla
 matrix-incompatible = Giriş { $sent } biçimini kabul etmiyor. Ayarı: { $set }.
+format-samples-per-frame = { $format } (çerçeve başına { $count } örnek)
 matrix-other-domain = Farklı saat alanlarında zaman tutuyorlar, bu yüzden aralarından hiçbir akış geçemez.
 matrix-group-none = Bağlı değil. Akışları tek tek bağlamak için genişletin.
 matrix-group-connected = { $count } bağlı. Her birini görmek için genişletin.

@@ -472,6 +472,7 @@ matrix-format-both = Đổi cả hai thành
 matrix-format-talker-busy = Talker đang truyền tới các Listener khác nên giữ nguyên định dạng.
 matrix-format-anyway = Kết nối mà không đổi định dạng
 matrix-incompatible = Đầu vào không nhận { $sent }. Nó đang đặt là { $set }.
+format-samples-per-frame = { $format } ({ $count } mẫu mỗi khung)
 matrix-other-domain = Chúng giữ thời gian ở các miền đồng hồ khác nhau, nên không luồng nào có thể đi giữa chúng.
 matrix-group-none = Chưa kết nối. Mở rộng để kết nối từng luồng.
 matrix-group-connected = { $count } đã kết nối. Mở rộng để xem từng kết nối.

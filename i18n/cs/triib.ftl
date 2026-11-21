@@ -519,6 +519,7 @@ matrix-format-both = Změnit oba na
 matrix-format-talker-busy = Talker streamuje i dalším listenerům, takže jeho formát zůstane.
 matrix-format-anyway = Připojit beze změny formátů
 matrix-incompatible = Vstup nepřijímá { $sent }. Je nastaven na { $set }.
+format-samples-per-frame = { $format } ({ $count } vzorků na rámec)
 matrix-other-domain = Řídí se různými doménami hodin, takže mezi nimi nemůže projít žádný stream.
 matrix-group-none = Nepřipojeno. Rozbalte a připojujte streamy jeden po druhém.
 matrix-group-connected = Připojeno: { $count }. Rozbalením zobrazíte jednotlivá připojení.

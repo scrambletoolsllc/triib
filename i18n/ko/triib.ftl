@@ -472,6 +472,7 @@ matrix-format-both = 둘 다 다음으로 변경
 matrix-format-talker-busy = 토커가 다른 리스너에게도 스트리밍하고 있어 포맷은 그대로 둡니다.
 matrix-format-anyway = 포맷을 바꾸지 않고 연결
 matrix-incompatible = 입력이 { $sent } 포맷을 받을 수 없습니다. 현재 설정은 { $set } 포맷입니다.
+format-samples-per-frame = { $format }(프레임당 샘플 { $count }개)
 matrix-other-domain = 서로 다른 클럭 도메인에서 시간을 유지하므로 둘 사이에는 어떤 스트림도 지나갈 수 없습니다.
 matrix-group-none = 연결 안 됨. 펼쳐서 스트림을 하나씩 연결하세요.
 matrix-group-connected = { $count }개 연결됨. 펼쳐서 각각 확인하세요.

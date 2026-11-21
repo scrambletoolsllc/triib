@@ -519,6 +519,7 @@ matrix-format-both = Αλλαγή και των δύο σε
 matrix-format-talker-busy = Ο Talker μεταδίδει σε άλλους Listener, οπότε η μορφή του μένει ίδια.
 matrix-format-anyway = Σύνδεση χωρίς αλλαγή μορφών
 matrix-incompatible = Η είσοδος δεν δέχεται { $sent }. Έχει οριστεί σε { $set }.
+format-samples-per-frame = { $format } ({ $count } δείγματα ανά πλαίσιο)
 matrix-other-domain = Κρατούν χρόνο σε διαφορετικούς τομείς ρολογιού, οπότε καμία ροή δεν μπορεί να περάσει μεταξύ τους.
 matrix-group-none = Δεν υπάρχει σύνδεση. Αναπτύξτε για να συνδέσετε τις ροές μία προς μία.
 matrix-group-connected = { $count ->

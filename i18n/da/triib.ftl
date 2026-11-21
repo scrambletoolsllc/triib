@@ -501,6 +501,7 @@ matrix-format-both = Skift begge til
 matrix-format-talker-busy = Talkeren streamer til andre listeners, så dens format bevares.
 matrix-format-anyway = Forbind uden at ændre formater
 matrix-incompatible = Indgangen kan ikke tage { $sent }. Den er sat til { $set }.
+format-samples-per-frame = { $format } ({ $count } samples pr. frame)
 matrix-other-domain = De holder tid i forskellige clockdomæner, så ingen stream kan gå mellem dem.
 matrix-group-none = Ikke forbundet. Fold ud for at forbinde streams én ad gangen.
 matrix-group-connected = { $count } forbundet. Fold ud for at se hver enkelt.

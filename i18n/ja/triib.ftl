@@ -472,6 +472,7 @@ matrix-format-both = 両方を変更
 matrix-format-talker-busy = トーカーはほかのリスナーにもストリームしているため、フォーマットは変えません。
 matrix-format-anyway = フォーマットを変えずに接続
 matrix-incompatible = 入力は { $sent } を受けられません。{ $set } に設定されています。
+format-samples-per-frame = { $format }（フレームあたり { $count } サンプル）
 matrix-other-domain = 異なるクロックドメインで時刻を保っているため、両者の間ではストリームを流せません。
 matrix-group-none = 未接続。展開するとストリームを個別に接続できます。
 matrix-group-connected = { $count } 本接続済み。展開すると個別に表示します。

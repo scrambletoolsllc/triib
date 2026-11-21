@@ -507,6 +507,7 @@ matrix-format-both = Ändra båda till
 matrix-format-talker-busy = Talkern strömmar till andra listeners, så dess format behålls.
 matrix-format-anyway = Anslut utan att ändra format
 matrix-incompatible = Ingången tar inte { $sent }. Den är inställd på { $set }.
+format-samples-per-frame = { $format } ({ $count } sampel per ram)
 matrix-other-domain = De håller tid i olika klockdomäner, så ingen ström kan gå mellan dem.
 matrix-group-none = Inte ansluten. Fäll ut för att ansluta streamar en i taget.
 matrix-group-connected = { $count ->

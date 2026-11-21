@@ -21,7 +21,7 @@ use atdecc::lite::LiteFlags;
 use atdecc::media_clock::{Broken, ClockFrom, DomainClock, DomainId, media_clocks};
 use atdecc::model::{EntityModel, EnumerationState};
 use atdecc::neighbor::{NeighborListener, Peer, Plugged};
-use atdecc::stream_format::StreamFormat;
+use atdecc::stream_format::{Fit, StreamFormat, fit};
 use atdecc::upload::{Failure as UploadFailure, Stage, Upload};
 use atdecc::wireless::{AsCapableReason, Band, StationFlags, TimeMode, WirelessFlags};
 use atdecc::{
@@ -61,9 +61,11 @@ commands:
                                      the port as stream-port-input:0 and each
                                      mapping as stream:channel=cluster:channel,
                                      the cluster counted from the port's first
-  connect <interface> <talker-id>:<output> <listener-id>:<input>
+  connect <interface> <talker-id>:<output> <listener-id>:<input> [--anyway]
                                      bind a listener's stream input to a
-                                     talker's stream output
+                                     talker's stream output; an input set to
+                                     another format than the output sends is
+                                     refused unless --anyway
   disconnect <interface> <listener-id>:<input>
                                      unbind a listener's stream input
   disconnect-talker <interface> <talker-id>:<output> <listener-id>:<input>
@@ -212,9 +214,15 @@ fn main() -> ExitCode {
             ) else {
                 return usage();
             };
+            let anyway = match argument(4) {
+                None => false,
+                Some("--anyway") if argument(5).is_none() => true,
+                Some(_) => return usage(),
+            };
             let change = Change::Connect {
                 talker,
                 input: listener.1,
+                anyway,
             };
             set(interface, listener.0, change).map_err(|error| format!("{interface}: {error}"))
         }
@@ -630,10 +638,13 @@ enum Change {
         index: u16,
         values: Vec<String>,
     },
-    /// Bind the entity's stream input to a talker's stream output.
+    /// Bind the entity's stream input to a talker's stream output, even
+    /// where the input is set to another format than the output sends
+    /// when `anyway`.
     Connect {
         talker: (EntityId, u16),
         input: u16,
+        anyway: bool,
     },
     Disconnect {
         input: u16,
@@ -771,6 +782,47 @@ impl Change {
 /// A descriptor named as type:index, the type as the standard names it in
 /// lower case with dashes, such as stream-input:1.
 /// An entity and one of its streams, as `0xe8f60ae092200000:1`.
+/// Why a talker's stream output and a listener's stream input should not
+/// be connected as they are set, where both entities were read: the input
+/// set to another format than the output sends, or taking none like it.
+/// Each format is written with its code, which tells apart two whose
+/// words read the same, such as AAF ones that differ in samples per frame.
+fn formats_differ(
+    talker_model: Option<&EntityModel>,
+    talker: (EntityId, u16),
+    listener_model: Option<&EntityModel>,
+    input: u16,
+) -> Option<String> {
+    let sent = talker_model?
+        .streams(false)
+        .find(|stream| stream.index == talker.1)?
+        .current_format;
+    let stream = listener_model?
+        .streams(true)
+        .find(|stream| stream.index == input)?;
+    let set = stream.current_format;
+    let words = |format: StreamFormat| format!("{format} ({:#018x})", format.0);
+    match fit(sent, set, stream.formats()) {
+        Fit::Matches => None,
+        Fit::InputMustChange => Some(format!(
+            "input {input} is set to {}, and {} output {} sends {}: set the input's \
+             format first with triib-cli format, or connect anyway with --anyway",
+            words(set),
+            talker.0,
+            talker.1,
+            words(sent)
+        )),
+        Fit::Incompatible => Some(format!(
+            "input {input} does not take {}, which {} output {} sends; it is set to {}. \
+             --anyway connects them all the same",
+            words(sent),
+            talker.0,
+            talker.1,
+            words(set)
+        )),
+    }
+}
+
 fn stream_reference(text: &str) -> Option<(EntityId, u16)> {
     let (entity, index) = text.rsplit_once(':')?;
     Some((entity.parse().ok()?, index.parse().ok()?))
@@ -1388,10 +1440,27 @@ fn set(interface: &str, entity: EntityId, change: Change) -> std::io::Result<()>
         println!("{entity} not found");
         return driver.close();
     }
-    if let Change::Connect { talker, .. } = &change {
+    if let Change::Connect {
+        talker,
+        input,
+        anyway,
+    } = &change
+    {
         // The connect carries the talker's class, which reading it tells.
         driver.controller_mut().discover(Some(talker.0));
         settle(&mut driver, Some(talker.0), Duration::from_secs(6))?;
+        let controller = driver.controller();
+        if !anyway
+            && let Some(why) = formats_differ(
+                controller.model(talker.0),
+                *talker,
+                controller.model(entity),
+                *input,
+            )
+        {
+            println!("{why}");
+            return driver.close();
+        }
     }
     let control_values = match &change {
         Change::Control { index, values } => {
@@ -1443,7 +1512,7 @@ fn set(interface: &str, entity: EntityId, change: Change) -> std::io::Result<()>
         Change::Control { index, .. } => {
             controller.set_control(now, entity, *index, &control_values)
         }
-        Change::Connect { talker, input } => controller.connect(now, *talker, (entity, *input)),
+        Change::Connect { talker, input, .. } => controller.connect(now, *talker, (entity, *input)),
         Change::Disconnect { input } => controller.disconnect(now, (entity, *input)),
         Change::DisconnectTalker { output, listener } => {
             controller.disconnect_talker(now, (entity, *output), *listener)

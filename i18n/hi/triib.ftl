@@ -499,6 +499,7 @@ matrix-format-both = दोनों को इसमें बदलें
 matrix-format-talker-busy = Talker दूसरे listeners को stream कर रहा है, इसलिए उसका format नहीं बदलेगा।
 matrix-format-anyway = format बदले बिना कनेक्ट करें
 matrix-incompatible = Input { $sent } नहीं लेता। यह { $set } पर सेट है।
+format-samples-per-frame = { $format } (प्रति फ़्रेम { $count } सैंपल)
 matrix-other-domain = ये अलग-अलग clock domain में समय रखते हैं, इसलिए इनके बीच कोई stream नहीं जा सकती।
 matrix-group-none = कनेक्ट नहीं है। Streams को एक-एक करके कनेक्ट करने के लिए फैलाएँ।
 matrix-group-connected = { $count } कनेक्ट हैं। हर एक को देखने के लिए फैलाएँ।

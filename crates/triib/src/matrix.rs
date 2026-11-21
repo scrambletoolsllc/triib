@@ -6,7 +6,7 @@
 mod grid;
 
 use atdecc::model::EntityModel;
-use atdecc::stream_format::{Fit, fit};
+use atdecc::stream_format::{Fit, FormatKind, fit};
 use atdecc::{DescriptorType, DiscoveredEntity, EntityId, StreamFormat};
 use iced::widget::text::Wrapping;
 use iced::widget::{container, mouse_area, pin, space, stack};
@@ -532,6 +532,28 @@ pub(crate) fn short(format: StreamFormat) -> String {
     }
 }
 
+/// `format` written out, told apart from `other` where the two read the
+/// same but are not: by AAF's samples per frame, which the words leave
+/// out, else by the format's code.
+pub(crate) fn told_apart(format: StreamFormat, other: StreamFormat) -> String {
+    let words = format.to_string();
+    if format == other || words != other.to_string() {
+        return words;
+    }
+    match (format.kind(), other.kind()) {
+        (FormatKind::Aaf(one), FormatKind::Aaf(two))
+            if one.samples_per_frame != two.samples_per_frame =>
+        {
+            fl!(
+                "format-samples-per-frame",
+                format = words,
+                count = one.samples_per_frame
+            )
+        }
+        _ => format!("{words} ({:#018x})", format.0),
+    }
+}
+
 /// The streams one column or row stands for: one stream, or every stream
 /// of a collapsed talker or listener. `None` for an expanded one.
 type Members<'s, 'a> = Option<Vec<&'s Stream<'a>>>;
@@ -778,7 +800,10 @@ fn format_entries(triib: &Triib, menu: FormatMenu) -> Vec<Entry<Message>> {
             ));
         }
         steps.push(connect);
-        entries.push(Entry::item(format.to_string(), Message::ActInTurn(steps)));
+        entries.push(Entry::item(
+            told_apart(format, set),
+            Message::ActInTurn(steps),
+        ));
     }
     if held {
         entries.push(Entry::note(fl!("matrix-format-talker-busy")));
@@ -954,7 +979,10 @@ fn say(triib: &Triib, grid: &Grid, talkers: &[Group<'_>], listeners: &[Group<'_>
                 return info(route, fl!("matrix-own"));
             }
             let (state, action) = assess(triib, &Domains::of(triib), output, input);
-            let (sent, set) = (output.format.to_string(), input.format.to_string());
+            let (sent, set) = (
+                told_apart(output.format, input.format),
+                told_apart(input.format, output.format),
+            );
             let detail = match state {
                 State::Working => fl!("matrix-working"),
                 State::OtherDomain => fl!("matrix-other-domain"),
@@ -1444,6 +1472,31 @@ mod tests {
                 assert_eq!(steps.last(), Some(&connect));
             }
         }
+    }
+
+    /// Two AAF formats that differ only in samples per frame, each sending
+    /// a frame a class A interval or faster, read the same in words, so
+    /// each is told apart by its own; a format that reads otherwise, or
+    /// the same format, stays as it reads.
+    #[test]
+    fn formats_that_read_alike_are_told_apart() {
+        // AAF, 32-bit integer, 96 kHz, 2 channels of 32 bits: 12 and 6 per frame.
+        let twelve = StreamFormat(0x0207_0220_0080_c000);
+        let six = StreamFormat(0x0207_0220_0080_6000);
+        assert_eq!(six.to_string(), twelve.to_string());
+        let (one, two) = (told_apart(twelve, six), told_apart(six, twelve));
+        assert_ne!(one, two);
+        assert!(
+            one.contains(&twelve.to_string()) && one.contains("12"),
+            "{one}"
+        );
+        assert!(two.contains('6'), "{two}");
+        // At 48 kHz, class B's 12 a frame say so already.
+        let class_a = StreamFormat(0x0205_0220_0080_6000);
+        let class_b = StreamFormat(0x0205_0220_0080_c000);
+        assert_ne!(class_a.to_string(), class_b.to_string());
+        assert_eq!(told_apart(class_a, class_b), class_a.to_string());
+        assert_eq!(told_apart(twelve, twelve), twelve.to_string());
     }
 
     #[test]

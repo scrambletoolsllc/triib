@@ -3,6 +3,20 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Fixed
+
+- Two stream formats whose words read the same no longer look alike in
+  the matrix's tooltip and format menu, or in what agents hear of a
+  bound pair: AAF formats that differ only in samples per frame, each
+  sending a frame a class A interval or faster, such as 12 and 6 at
+  96 kHz, add each one's, and other formats their code.
+- `triib-cli connect` and the agents' `connect` tool refuse an input
+  set to another format than the output sends, as the matrix asks
+  first, and say both formats with their codes; `--anyway` and
+  `despite_formats` connect them all the same.
+
 ## [1.5.0] - 2026-11-21
 
 triib updates the firmware of entities that take it over ATDECC, a

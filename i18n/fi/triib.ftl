@@ -522,6 +522,7 @@ matrix-format-both = Vaihda molemmat muotoon
 matrix-format-talker-busy = Talker lähettää muille listenereille, joten sen muoto pysyy.
 matrix-format-anyway = Yhdistä muuttamatta muotoja
 matrix-incompatible = Tulo ei hyväksy muotoa { $sent }. Sen asetus on { $set }.
+format-samples-per-frame = { $format } ({ $count } näytettä kehystä kohden)
 matrix-other-domain = Ne pitävät aikaa eri kellotoimialueilla, joten mikään stream ei voi kulkea niiden välillä.
 matrix-group-none = Ei yhdistetty. Laajenna yhdistääksesi striimit yksitellen.
 matrix-group-connected = { $count ->

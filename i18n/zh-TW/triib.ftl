@@ -472,6 +472,7 @@ matrix-format-both = 將兩端都改為
 matrix-format-talker-busy = 發送端正在向其他接收端傳送串流，因此維持其格式不變。
 matrix-format-anyway = 不變更格式直接連線
 matrix-incompatible = 此輸入不支援 { $sent }，目前設定為 { $set }。
+format-samples-per-frame = { $format }（每訊框 { $count } 個取樣）
 matrix-other-domain = 兩者位於不同的時鐘域，因此彼此之間無法傳遞任何串流。
 matrix-group-none = 未連線。展開即可逐一連線串流。
 matrix-group-connected = 已連線 { $count } 個。展開即可查看每個連線。

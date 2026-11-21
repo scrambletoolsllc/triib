@@ -429,6 +429,10 @@ matrix-bound-formats-differ = Bound, but the formats differ: the talker sends { 
 matrix-formats-match = Formats match ({ $format }). Click to connect.
 matrix-format-must-change = The input takes { $sent } but is set to { $set }, so it may not play until its format changes. Click to choose a format.
 matrix-incompatible = The input does not take { $sent }. It is set to { $set }.
+format-samples-per-frame = { $count ->
+    [one] { $format } ({ $count } sample per frame)
+   *[other] { $format } ({ $count } samples per frame)
+}
 matrix-other-domain = They keep time in different clock domains, so no stream can pass between them.
 matrix-group-none = Not connected. Expand to connect streams one by one.
 matrix-group-connected = { $count } connected. Expand to see each one.

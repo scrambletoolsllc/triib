@@ -263,6 +263,9 @@ struct Connect {
     listener_entity_id: String,
     /// The listener's stream input, from 0.
     input: u16,
+    /// Connect even though the input is set to another format than the
+    /// output sends, as the user confirmed after hearing why.
+    despite_formats: Option<bool>,
 }
 
 #[derive(Deserialize, JsonSchema)]
@@ -488,7 +491,9 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
             Kind::Change,
             "Binds a listener's stream input to a talker's stream output (ACMP CONNECT_RX, \
              Milan's BIND_RX), so the listener receives the talker's stream. Answers once \
-             the listener has. Their formats should match: describe_entity lists them.",
+             the listener has. Refuses where the input is set to another format than the \
+             output sends, saying both: set_stream_format changes the input's first, or \
+             despite_formats connects them as they are once the user has heard why.",
             |app, input: Connect, answer| {
                 let (talker, listener) = match (
                     entity_id(&input.talker_entity_id),
@@ -497,12 +502,18 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
                     (Ok(talker), Ok(listener)) => (talker, listener),
                     (Err(error), _) | (_, Err(error)) => return reply(&answer, Err(error)),
                 };
+                let (output, input_index) = ((talker, input.output), (listener, input.input));
+                if input.despite_formats != Some(true)
+                    && let Some(why) = formats_differ(app, output, input_index)
+                {
+                    return reply(&answer, Err(Error::new(code::INVALID_PARAMS, why)));
+                }
                 act(
                     app,
                     answer,
                     Action::Connect {
-                        talker: (talker, input.output),
-                        listener: (listener, input.input),
+                        talker: output,
+                        listener: input_index,
                     },
                 )
             },
@@ -953,6 +964,49 @@ fn pick_image(model: &EntityModel, image: Option<&String>) -> Result<u16, String
             })
             .map(|object| object.index)
             .ok_or_else(|| format!("the entity has no image {wanted}; it has {}", names())),
+    }
+}
+
+/// Why a talker's stream output and a listener's stream input should not
+/// be connected as they are set, where triib knows both: the input set to
+/// another format than the output sends, or taking none like it.
+fn formats_differ(
+    app: &Triib,
+    talker: (EntityId, u16),
+    listener: (EntityId, u16),
+) -> Option<String> {
+    let sent = app
+        .models
+        .get(&talker.0)?
+        .streams(false)
+        .find(|stream| stream.index == talker.1)?
+        .current_format;
+    let input = app
+        .models
+        .get(&listener.0)?
+        .streams(true)
+        .find(|stream| stream.index == listener.1)?;
+    let set = input.current_format;
+    let words = |format: StreamFormat, other: StreamFormat| {
+        format!(
+            "{} ({:#018x})",
+            crate::matrix::told_apart(format, other),
+            format.0
+        )
+    };
+    let (sent_words, set_words) = (words(sent, set), words(set, sent));
+    match atdecc::stream_format::fit(sent, set, input.formats()) {
+        Fit::Matches => None,
+        Fit::InputMustChange => Some(format!(
+            "The output sends {sent_words} and the input is set to {set_words}, so it may \
+             not play. Set the input to the output's format with set_stream_format first; \
+             or tell the user, and pass despite_formats: true only if they still mean it."
+        )),
+        Fit::Incompatible => Some(format!(
+            "The input does not take {sent_words}, which the output sends; it is set to \
+             {set_words}. Tell the user, and pass despite_formats: true only if they \
+             still mean it."
+        )),
     }
 }
 
@@ -1452,8 +1506,8 @@ fn problems(app: &Triib) -> Vec<Value> {
                 "format_mismatch",
                 crate::fl!(
                     "matrix-bound-formats-differ",
-                    sent = sent.to_string(),
-                    set = set.to_string()
+                    sent = crate::matrix::told_apart(sent, set),
+                    set = crate::matrix::told_apart(set, sent)
                 ),
             ));
         }
@@ -1937,6 +1991,56 @@ mod tests {
             models,
         );
         (app, entity)
+    }
+
+    /// An agent's connect refuses an input set to another format than the
+    /// output sends, writing both with their codes, unless the user still
+    /// means it.
+    #[test]
+    fn connect_refuses_formats_that_differ() {
+        let (mut app, _) = taking_firmware();
+        let (talker, output, listener, input) = app
+            .models
+            .iter()
+            .flat_map(|(talker, model)| {
+                model
+                    .streams(false)
+                    .map(move |stream| (*talker, stream.index, stream.current_format))
+            })
+            .find_map(|(talker, output, sent)| {
+                app.models
+                    .iter()
+                    .filter(|(listener, _)| **listener != talker)
+                    .find_map(|(listener, model)| {
+                        model
+                            .streams(true)
+                            .find(|stream| {
+                                atdecc::stream_format::fit(
+                                    sent,
+                                    stream.current_format,
+                                    stream.formats(),
+                                ) == Fit::InputMustChange
+                            })
+                            .map(|stream| (talker, output, *listener, stream.index))
+                    })
+            })
+            .expect("the bench has an input that must change");
+        let refused = call(
+            &mut app,
+            "connect",
+            json!({
+                "talker_entity_id": talker.to_string(),
+                "output": output,
+                "listener_entity_id": listener.to_string(),
+                "input": input,
+            }),
+        )
+        .unwrap_err()
+        .message;
+        assert!(refused.contains("despite_formats"), "{refused}");
+        assert!(refused.contains("set_stream_format"), "{refused}");
+        assert!(refused.matches("0x").count() >= 2, "{refused}");
+        assert!(formats_differ(&app, (talker, output), (listener, input)).is_some());
     }
 
     /// The firmware images an entity takes are listed, with how an update

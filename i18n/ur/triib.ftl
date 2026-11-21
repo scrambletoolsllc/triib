@@ -499,6 +499,7 @@ matrix-format-both = دونوں کو اس میں بدلیں
 matrix-format-talker-busy = Talker دوسرے Listeners کو اسٹریم کر رہا ہے، اس لیے اس کا فارمیٹ وہی رہے گا۔
 matrix-format-anyway = فارمیٹ بدلے بغیر منسلک کریں
 matrix-incompatible = ان پٹ { $sent } نہیں لیتا۔ یہ { $set } پر سیٹ ہے۔
+format-samples-per-frame = { $format } (فی فریم { $count } نمونے)
 matrix-other-domain = یہ مختلف کلاک ڈومینز میں وقت رکھتے ہیں، اس لیے ان کے درمیان کوئی اسٹریم نہیں گزر سکتی۔
 matrix-group-none = منسلک نہیں۔ اسٹریمز ایک ایک کر کے منسلک کرنے کے لیے پھیلائیں۔
 matrix-group-connected = { $count } منسلک۔ ہر ایک دیکھنے کے لیے پھیلائیں۔

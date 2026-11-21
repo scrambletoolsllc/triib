@@ -469,6 +469,7 @@ matrix-format-both = Tukar kedua-duanya kepada
 matrix-format-talker-busy = Talker sedang menstrim kepada listener lain, jadi formatnya kekal.
 matrix-format-anyway = Sambung tanpa menukar format
 matrix-incompatible = Input tidak menerima { $sent }. Ia ditetapkan kepada { $set }.
+format-samples-per-frame = { $format } ({ $count } sampel setiap bingkai)
 matrix-other-domain = Kedua-duanya menjaga masa dalam domain jam yang berbeza, jadi tiada strim boleh melalui antara keduanya.
 matrix-group-none = Tidak disambungkan. Kembangkan untuk menyambung strim satu demi satu.
 matrix-group-connected = { $count } disambungkan. Kembangkan untuk melihat setiap satu.
