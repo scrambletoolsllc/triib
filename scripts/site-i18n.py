@@ -11,11 +11,13 @@ for search engines, and right to left where the language reads so.
 
   site-i18n.py extract           writes site/i18n/en.json, the source
   site-i18n.py check [LANG...]   says what each language lacks or breaks
-  site-i18n.py build OUT RELEASE writes the pages into OUT
+  site-i18n.py build OUT RELEASE PKGBUILD
+                                 writes the pages into OUT
 
 The build fills in the download table from RELEASE, the latest release
-as GitHub's API describes it: the release number the pages show, and
-each row's links from the files the release has. A row whose files the
+as GitHub's API describes it: the release number the pages show, each
+row's links from the files the release has, and the processors the Arch
+row names from PKGBUILD, the release's own. A row whose files the
 release lacks is left out.
 
 In the catalog, a tag with attributes stands as a short name, such as
@@ -408,6 +410,9 @@ PROCESSORS = {
 PROCESSOR_ORDER = ["x64", "x86_64", "amd64", "arm64", "aarch64", "riscv64"]
 MAC_PROCESSORS = {"arm64": "Apple Silicon", "x86_64": "Intel"}
 MAC_ORDER = ["arm64", "x86_64"]
+# The Arch port that runs on each processor the PKGBUILD names.
+ARCH_PORTS = {"x86_64": "Arch Linux", "aarch64": "Arch Linux ARM",
+              "riscv64": "Arch Linux RISC-V"}
 
 
 def page_version():
@@ -423,9 +428,24 @@ def page_version():
     return numbers.pop()
 
 
-def fill_release(out, release, shown):
-    """A built page with its download table filled in from the release,
-    and the release number SHOWN in its text made the release's."""
+def pkgbuild_processors(pkgbuild):
+    """The processors the Arch row names, from the PKGBUILD's arch=(),
+    each with the Arch port that runs on it."""
+    found = re.search(r"^arch=\(([^)]*)\)", pkgbuild, re.M)
+    if not found:
+        sys.exit("the release's PKGBUILD names no arch=()")
+    names = re.findall(r"[\w-]+", found.group(1))
+    unknown = [name for name in names if name not in ARCH_PORTS]
+    if unknown or not names:
+        sys.exit(f"no Arch port is named for {unknown or 'no processor'}")
+    names.sort(key=PROCESSOR_ORDER.index)
+    return " · ".join(f"{PROCESSORS[name]} ({ARCH_PORTS[name]})" for name in names)
+
+
+def fill_release(out, release, pkgbuild, shown):
+    """A built page with its download table filled in from the release
+    and its PKGBUILD, and the release number SHOWN in its text made the
+    release's."""
     version = release["tag_name"].removeprefix("v")
     files = {asset["name"]: asset["browser_download_url"] for asset in release["assets"]}
 
@@ -439,7 +459,11 @@ def fill_release(out, release, shown):
     def row(match):
         kind, body = match.group(1), match.group(2)
         if kind == "arch":
-            return f"<tr>{body}</tr>" if "PKGBUILD" in files else ""
+            if "PKGBUILD" not in files:
+                return ""
+            return "<tr>" + body.replace(
+                "<span data-release-links></span>", pkgbuild_processors(pkgbuild)
+            ) + "</tr>"
         if kind not in RELEASE_FILES:
             sys.exit(f"no files fill in a {kind} row")
         filled = links(kind)
@@ -550,9 +574,10 @@ def main(argv):
             else:
                 print(f"{language}: ok")
         sys.exit(1 if failed else 0)
-    elif command == "build" and len(argv) == 4:
+    elif command == "build" and len(argv) == 5:
         out = Path(argv[2])
         release = json.loads(Path(argv[3]).read_text())
+        pkgbuild = Path(argv[4]).read_text()
         shown = page_version()
         names = languages()
         texts = catalog()
@@ -561,7 +586,7 @@ def main(argv):
             folder.mkdir(parents=True, exist_ok=True)
             for page in PAGES:
                 built = build_page(page, language, names, texts)
-                (folder / page).write_text(fill_release(built, release, shown))
+                (folder / page).write_text(fill_release(built, release, pkgbuild, shown))
         print(f"Built {len(PAGES)} pages in {len(names)} languages, for {release['tag_name']}")
     else:
         sys.exit(__doc__)

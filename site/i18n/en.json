@@ -271,13 +271,13 @@
   "page": "index.html",
   "text": "Arch"
  },
- "9aafae0c79b5": {
+ "865a32268cc0": {
   "page": "index.html",
-  "text": "<a1>PKGBUILD</a1> and <a2>triib.install</a2>"
+  "text": "<a1>PKGBUILD</a1> and <a2>triib.install</a2>: <span1></span1>"
  },
- "70a4bfafdc84": {
+ "d9fed18bcac6": {
   "page": "index.html",
-  "text": "<code>makepkg -si</code> in a folder with both"
+  "text": "<code>makepkg -si</code> in a folder with both. It builds triib from source, as there is no prebuilt package"
  },
  "edce668491b6": {
   "page": "index.html",
@@ -291,9 +291,9 @@
   "page": "index.html",
   "text": "<code>sudo tar -C / -xzf triib-{v}-*-linux.tar.gz</code>, then <code>sudo setcap cap_net_raw+ep /usr/lib/avb-endpointd/avb-netraw</code> and <code>sudo systemd-sysusers gptpd.conf</code>"
  },
- "ebf1edd1d132": {
+ "3c1e21b7f870": {
   "page": "index.html",
-  "text": "The Linux packages need Debian 13, Ubuntu 24.04, Fedora 40 or later. As they install, they set <code>CAP_NET_RAW</code> on just one program, <code>avb-netraw</code>, which opens raw sockets for the others, and bring in what host entities need, gptpd among them, so nothing else needs installing. The Windows installer and programs are signed by Scramble Tools LLC. See the <a1>install notes</a1> for what differs between packages, or build it from source with Rust: <code>cargo run -p triib</code> in a clone of the repository."
+  "text": "The Linux packages need Debian 13, Ubuntu 24.04, Fedora 40 or later. As they install, they set <code>CAP_NET_RAW</code> on just one program, <code>avb-netraw</code>, which opens raw sockets for the others, and bring in what host entities need, gptpd among them, so nothing else needs installing. The Windows installer and programs are signed by Scramble Tools LLC. See the <a1>install notes</a1> for what differs between packages, or build it from source with Rust: <code>cargo run -p triib</code> in a clone of the repository. Before each release, triib's PKGBUILD is built and tested on x86_64 only."
  },
  "321062598d1b": {
   "page": "index.html",
