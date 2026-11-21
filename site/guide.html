@@ -30,6 +30,7 @@
 <li><a href="#connections">Connections</a></li>
 <li><a href="#entities">Entities</a></li>
 <li><a href="#inspector">Inspector</a></li>
+<li><a href="#firmware">Firmware updates</a></li>
 <li><a href="#network">Network</a></li>
 <li><a href="#avb-lite">AVB Lite</a></li>
 <li><a href="#avb-wireless">AVB Wireless</a></li>
@@ -87,6 +88,18 @@
 <li><strong>Descriptors:</strong> the entity model itself, descriptor by descriptor.</li>
 </ul>
 <figure class="panel"><img class="shot" src="screenshots/controls.png" alt="The Controls tab for Lectern, with sliders for Speaker Volume at 0.0 dB and Mic Gain at 36.0 dB" width="640" height="530" loading="lazy"></figure>
+
+<h2 id="firmware">Firmware updates</h2>
+<div class="gallery">
+<figure><img class="shot" src="screenshots/firmware-confirm.png" alt="The confirmation before an update: Host entity 1 will take avb_bridge_coprocessor.bin as its Firmware, a file for an ESP32-C6 coprocessor, so the button reads Update anyway" width="816" height="756" loading="lazy"></figure>
+<figure><img class="shot" src="screenshots/firmware.png" alt="The inspector's Firmware updates row while a file is sent, at 45%, and after the entity went back to the firmware it had" width="624" height="514" loading="lazy"></figure>
+</div>
+<p>An entity that takes new firmware over ATDECC, as IEEE 1722.1-2021 Annex D has it, lists each image it takes it in under <em>Firmware updates</em>, in the inspector's Entity tab: its own firmware and, where the device has one, its coprocessor's, such as a Wi-Fi chip's. <em>Update from a file…</em> picks the file for one.</p>
+<p>Before anything goes, triib asks you to confirm, with the file, its size and the firmware the entity runs now. For an ESP-IDF app image it says what the file is, its project, version and chip, and why it doubts the file suits the image: a coprocessor's file for the device's own firmware, or the other way round, or a file unlike the one the same model's image took last time, and then the button reads <em>Update anyway</em>. It notes a file that is not signed, which a device checking signatures refuses, and one the entity runs already.</p>
+<p>A coprocessor may keep no copy of the firmware it had, so if its new firmware does not run, recovering the device can take a cable: send it only a file tested on that device, as the confirmation reminds you.</p>
+<p>Once you confirm, triib locks the entity against other controllers' changes, and the image's row shows how far the update has got, from sending to storing and restarting. Until the entity stores the file, <em>Stop the update</em> stops it, and the entity keeps the firmware it had. Its streams stop until it is back, so keep it powered and connected; where it refuses the file, triib says why.</p>
+<p>Back on new firmware of its own, the entity is watched for 75 seconds. One that goes back to the firmware it had, as an ESP32 does when its new firmware does not keep running, shows it, and so does one that comes back on firmware other than the file sent: an ESP32's version ends with its firmware's ELF hash, which tells them apart.</p>
+<p><code>triib-cli firmware</code> lists an entity's images and updates one from a file, <code>--image</code> picking which where it has several; it refuses a file for the other processor unless <code>--anyway</code>, and watches for the entity going back for 75 seconds or <code>--settle</code>. AI agents do the same through <code>firmware_status</code>, <code>update_firmware</code> and <code>stop_firmware_update</code>, and stop at triib's doubts unless you still mean it once the agent has told you why.</p>
 
 <h2 id="network">Network</h2>
 <figure><img class="shot" src="screenshots/network.gif" alt="The network map of a show, its audio moving along the wires: a core bridge, a stage bridge and a front of house bridge, eighteen devices below them, and each audio stream as its own colored wire, with two failed reservations marked" width="1360" height="981" loading="lazy"></figure>
@@ -158,7 +171,8 @@
 triib-cli discover enp2s0
 triib-cli connect enp2s0 &lt;talker-id&gt;:0 &lt;listener-id&gt;:0
 triib-cli rate enp2s0 &lt;entity-id&gt; 0 96000
-triib-cli identify enp2s0 &lt;entity-id&gt;</code></pre>
+triib-cli identify enp2s0 &lt;entity-id&gt;
+triib-cli firmware enp2s0 &lt;entity-id&gt; firmware.bin</code></pre>
 <p>Run it with no arguments for every command; the <a href="https://github.com/scrambletoolsllc/triib#building">README</a> lists them too.</p>
 </main>
 

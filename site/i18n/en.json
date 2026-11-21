@@ -387,6 +387,10 @@
   "page": "guide.html",
   "text": "<a1>Inspector</a1>"
  },
+ "645cbfd77918": {
+  "page": "guide.html",
+  "text": "<a1>Firmware updates</a1>"
+ },
  "a5feb210b1af": {
   "page": "guide.html",
   "text": "<a1>Network</a1>"
@@ -562,6 +566,34 @@
  "ad14e487e9fd": {
   "page": "guide.html",
   "text": "<strong>Descriptors:</strong> the entity model itself, descriptor by descriptor."
+ },
+ "85b034f4d85f": {
+  "page": "guide.html",
+  "text": "Firmware updates"
+ },
+ "f675801151ba": {
+  "page": "guide.html",
+  "text": "An entity that takes new firmware over ATDECC, as IEEE 1722.1-2021 Annex D has it, lists each image it takes it in under <em>Firmware updates</em>, in the inspector's Entity tab: its own firmware and, where the device has one, its coprocessor's, such as a Wi-Fi chip's. <em>Update from a file…</em> picks the file for one."
+ },
+ "ac1f7e1cb8b8": {
+  "page": "guide.html",
+  "text": "Before anything goes, triib asks you to confirm, with the file, its size and the firmware the entity runs now. For an ESP-IDF app image it says what the file is, its project, version and chip, and why it doubts the file suits the image: a coprocessor's file for the device's own firmware, or the other way round, or a file unlike the one the same model's image took last time, and then the button reads <em>Update anyway</em>. It notes a file that is not signed, which a device checking signatures refuses, and one the entity runs already."
+ },
+ "f3c98cbf812c": {
+  "page": "guide.html",
+  "text": "A coprocessor may keep no copy of the firmware it had, so if its new firmware does not run, recovering the device can take a cable: send it only a file tested on that device, as the confirmation reminds you."
+ },
+ "72b812d71d2f": {
+  "page": "guide.html",
+  "text": "Once you confirm, triib locks the entity against other controllers' changes, and the image's row shows how far the update has got, from sending to storing and restarting. Until the entity stores the file, <em>Stop the update</em> stops it, and the entity keeps the firmware it had. Its streams stop until it is back, so keep it powered and connected; where it refuses the file, triib says why."
+ },
+ "64c1219107cc": {
+  "page": "guide.html",
+  "text": "Back on new firmware of its own, the entity is watched for 75 seconds. One that goes back to the firmware it had, as an ESP32 does when its new firmware does not keep running, shows it, and so does one that comes back on firmware other than the file sent: an ESP32's version ends with its firmware's ELF hash, which tells them apart."
+ },
+ "cd1eed07833b": {
+  "page": "guide.html",
+  "text": "<code>triib-cli firmware</code> lists an entity's images and updates one from a file, <code>--image</code> picking which where it has several; it refuses a file for the other processor unless <code>--anyway</code>, and watches for the entity going back for 75 seconds or <code>--settle</code>. AI agents do the same through <code>firmware_status</code>, <code>update_firmware</code> and <code>stop_firmware_update</code>, and stop at triib's doubts unless you still mean it once the agent has told you why."
  },
  "53ebc572b4a4": {
   "page": "guide.html",
@@ -750,6 +782,16 @@
  "dab5e87edefa": {
   "page": "guide.html",
   "text": "The Controls tab for Lectern, with sliders for Speaker Volume at 0.0 dB and Mic Gain at 36.0 dB",
+  "attribute": true
+ },
+ "a3bf3f177660": {
+  "page": "guide.html",
+  "text": "The confirmation before an update: Host entity 1 will take avb_bridge_coprocessor.bin as its Firmware, a file for an ESP32-C6 coprocessor, so the button reads Update anyway",
+  "attribute": true
+ },
+ "3aeed625402c": {
+  "page": "guide.html",
+  "text": "The inspector's Firmware updates row while a file is sent, at 45%, and after the entity went back to the firmware it had",
   "attribute": true
  },
  "67d8a25e059d": {

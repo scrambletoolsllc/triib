@@ -61,6 +61,18 @@ panel window-inspector-wireless-section wireless 810
 # view would have Linux's Add entity bar.
 panel window-inspector-device device 1100
 panel window-inspector-listen listen 1120
+# A firmware update: the inspector's Firmware updates row as a file goes
+# and after the entity went back, one above the other, without the
+# scrollbar; and the confirmation doubting a coprocessor's file, its
+# corners rounded as drawn.
+background=$(magick "$work/window-inspector-firmware-tiny-skia.png" -format '%[pixel:p{1930,1640}]' info:)
+magick "$work/window-inspector-firmware-tiny-skia.png" -crop 624x230+1920+1648 +repage \
+  \( -size 624x24 "xc:$background" \) \
+  \( "$work/window-inspector-firmware-went-back-tiny-skia.png" -crop 624x260+1920+1648 +repage \) \
+  -append -strip "$out/firmware.png"
+magick "$work/window-firmware-confirm-doubts-tiny-skia.png" -crop 816x756+872+422 +repage \
+  \( -size 816x756 xc:none -fill white -draw "roundrectangle 0,0 815,755 46,46" \) \
+  -alpha off -compose CopyOpacity -composite -strip "$out/firmware-confirm.png"
 shot window-settings-general settings
 shot window-presets-desktop presets
 shot window-log-desktop log
