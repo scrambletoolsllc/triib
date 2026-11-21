@@ -4109,7 +4109,7 @@ dependencies = [
 
 [[package]]
 name = "triib"
-version = "1.5.0"
+version = "1.5.1"
 dependencies = [
  "ashpd",
  "atdecc",
@@ -4146,7 +4146,7 @@ dependencies = [
 
 [[package]]
 name = "triib-cli"
-version = "1.5.0"
+version = "1.5.1"
 dependencies = [
  "atdecc",
  "avb-net",
@@ -4155,11 +4155,11 @@ dependencies = [
 
 [[package]]
 name = "triib-firmware"
-version = "1.5.0"
+version = "1.5.1"
 
 [[package]]
 name = "triib-store"
-version = "1.5.0"
+version = "1.5.1"
 dependencies = [
  "serde",
  "tempfile",

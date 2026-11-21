@@ -3,7 +3,13 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.5.1] - 2026-11-21
+
+triib-cli and agents check stream formats before they connect, as the
+matrix does, and triib draws in software where the GPU cannot draw its
+window, rather than crashing. The Linux packages carry avb-endpointd
+0.3.5, whose destinations connect again when their listener is unbound,
+with gptpd 0.2.1.
 
 ### Host entities (Linux)
 
