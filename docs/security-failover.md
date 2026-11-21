@@ -458,7 +458,7 @@ Milan 8.3's requirements, by crate:
 | avb-endpointd | Linux-AVB-Endpoint | avb-net 0.1.6 and avb-stream 0.4; S1 lock release; S2 allowlist; S4 sockets, claim holder report, unit options and avb-netraw as a system service; F4 redundant daemon; F5 interface return and waiting at start | breaking with atdecc 0.3, as its API carries atdecc::EntityId; again for F4 |
 | gptpd, raw-ether | gptp (decision 7) | raw-ether's broker transport for the avb-netraw service (S4); gptpd's F1 check; a `priority1 N` bridge option making the relay grandmaster-capable, for the secondary network's grandmaster or T2 on scrambox's network | patch |
 | Linux-AVB-Bridge | Linux-AVB-Bridge | T3 `avb-fault`; T4 two-bridge mode, an estimated 2 to 4 days; lanmind reading both instances | its own |
-| triib | triib | S1, S2 and S4 to S5 UI; packaging for the avb-netraw service; F1 to F3 UI; F4 setup | 1.4.0 for S, 1.5.0 for F3 and F4 |
+| triib | triib | S1, S2 and S4 to S5 UI; packaging for the avb-netraw service; F1 to F3 UI; F4 setup | 1.6.0 for S, F3 and F4 |
 | plaa | plaa | moves to atdecc 0.3 with the others | its own |
 
 How the updates move:

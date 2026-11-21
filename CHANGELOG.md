@@ -3,7 +3,16 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.5.0] - 2026-11-21
+
+triib updates the firmware of entities that take it over ATDECC, a
+coprocessor's too where the entity offers one, from the inspector,
+`triib-cli firmware` and agents alike. Before a file goes, it says what
+an ESP-IDF image is and why it doubts the file suits the entity, and
+afterwards it watches the entity come back and shows one that went back
+to the firmware it had. The Linux packages carry avb-endpointd 0.3.4
+and gptpd 0.2.1, and their host entities give the desktop playback and
+recording devices for the network's streams, as they have since 1.4.0.
 
 ### Controller
 

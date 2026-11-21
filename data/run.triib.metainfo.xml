@@ -67,6 +67,11 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="1.5.0" date="2026-11-21">
+      <description>
+        <p>triib updates the firmware of entities that take it over ATDECC, a coprocessor's too where the entity offers one, from the inspector, triib-cli firmware and agents alike. Before a file goes, it says what an ESP-IDF image is and why it doubts the file suits the entity, and afterwards it watches the entity come back and shows one that went back to the firmware it had. The Linux packages carry avb-endpointd 0.3.4 and gptpd 0.2.1, and their host entities give the desktop playback and recording devices for the network's streams, as they have since 1.4.0.</p>
+      </description>
+    </release>
     <release version="1.4.0" date="2026-11-19">
       <description>
         <p>Host entities on Linux run in avb-endpointd, the daemon plaa shares, from login whether triib is open or not, beside a default entity any app plays into and records from, and other devices' streams on the network get audio devices of their own. Their talkers leave out a frame that would arrive late rather than starting their media clock again, and their links keep a stream's frames in order and moving under memory load. Every Linux package carries gptpd 0.2.1 beside avb-endpointd 0.3.3, so installing it is all host entities take, macOS has an installer package for Intel Macs, and when triib panics it writes what happened to crash.log.</p>
