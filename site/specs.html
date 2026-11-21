@@ -96,7 +96,7 @@
 <tr><th>Clock</th><td>The internal clock, or any input: the clock recovered from a media clock's timestamps or an audio stream's presentation times</td></tr>
 <tr><th>Mappings</th><td>Dynamic on inputs, as Milan has them; fixed on outputs</td></tr>
 <tr><th>Scheduling</th><td>Real-time threads through RealtimeKit, as PipeWire asks for</td></tr>
-<tr><th>Program</th><td><code>triib-endpointd</code>, which reads <code>entities.toml</code> again whenever it changes, and shares its MSRP participant with other programs on this computer, such as plaa</td></tr>
+<tr><th>Program</th><td><code>avb-endpointd</code>, which reads <code>~/.config/avb-endpointd/&lt;interface&gt;.toml</code> again whenever it changes, and shares its MSRP participant with other programs on this computer, such as plaa</td></tr>
 </tbody></table>
 
 <h2 id="avb-lite">AVB Lite</h2>
@@ -148,7 +148,7 @@
 <tr><th>Settings</th><td><code>triib.toml</code>, in <code>~/.config</code> on Linux, <code>%APPDATA%\triib</code> on Windows and <code>~/Library/Application Support/triib</code> on macOS</td></tr>
 <tr><th>Entity models</th><td>Kept in triib's cache, so a device seen before shows in full at once</td></tr>
 <tr><th>Presets</th><td>TOML files in the presets folder, in triib's data folder unless Settings, Storage names another</td></tr>
-<tr><th>Host entities</th><td><code>entities.toml</code> in triib's data folder, <code>~/.local/share/triib</code> on Linux, unless Settings, Storage names another file</td></tr>
+<tr><th>Host entities</th><td><code>~/.config/avb-endpointd/&lt;interface&gt;.toml</code>, one for each interface</td></tr>
 </tbody></table>
 
 <h2 id="license">License and privacy</h2>
