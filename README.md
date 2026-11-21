@@ -59,6 +59,7 @@ send and receive raw Ethernet:
 | Linux | .deb, .rpm, PKGBUILD | `CAP_NET_RAW` for `/usr/lib/avb-endpointd/avb-netraw`, which opens raw sockets for `triib`, `triib-cli` and `avb-endpointd`; gptpd, with its unit and group, for host entities |
 | Linux | .tar.gz | nothing: once it is unpacked into / (`sudo tar -C / -xzf`), run `sudo setcap cap_net_raw+ep /usr/lib/avb-endpointd/avb-netraw` and `sudo systemd-sysusers gptpd.conf` |
 | macOS (Apple Silicon and Intel) | .pkg | access to `/dev/bpf*` for the user installing it, at every start, as Wireshark's ChmodBPF does; `triib-cli` in /usr/local/bin |
+| macOS, with Homebrew | `brew install --cask scrambletools/tap/triib` | the same .pkg; `brew upgrade` brings each release within a day, once the tap's daily check moves to it |
 | Windows | .msi, .zip | nothing itself: install [Npcap](https://npcap.com) first, which the installer and triib point to when it is missing |
 
 On macOS, triib reaches the Mac's own AVB entity through Apple's

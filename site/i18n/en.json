@@ -235,6 +235,14 @@
   "page": "index.html",
   "text": "Open it: it installs triib and gives you raw Ethernet (<code>/dev/bpf*</code>) from your next login, as Wireshark's ChmodBPF does."
  },
+ "909520594dc6": {
+  "page": "index.html",
+  "text": "With Homebrew"
+ },
+ "4f685aa66051": {
+  "page": "index.html",
+  "text": "<code>brew install --cask scrambletools/tap/triib</code>"
+ },
  "2d9dceb94637": {
   "page": "index.html",
   "text": "Debian, Ubuntu"
@@ -938,9 +946,9 @@
   "page": "specs.html",
   "text": "Apple Silicon and Intel"
  },
- "28fd51d4bba2": {
+ "62ec80679c0f": {
   "page": "specs.html",
-  "text": "Installer package (.pkg), signed and notarized"
+  "text": "Installer package (.pkg), signed and notarized; Homebrew"
  },
  "b550a2c6178e": {
   "page": "specs.html",
