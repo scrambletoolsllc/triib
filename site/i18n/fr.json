@@ -229,7 +229,7 @@
  "cd6fdcbf5a86": "macOS",
  "d6adcf4d46ee": "macOS 11 ou ultérieur",
  "86b0ddfafa0b": "Apple Silicon et Intel",
- "62ec80679c0f": "Paquet d’installation (.pkg), signé et notarisé; Homebrew",
+ "62ec80679c0f": "Paquet d’installation (.pkg), signé et notarisé ; Homebrew",
  "b550a2c6178e": "Une interface Ethernet filaire, via des sockets bruts sous Linux, ouverts par un petit programme auxiliaire qui détient <code>CAP_NET_RAW</code>, BPF sous macOS et Npcap sous Windows",
  "ab255c27aec8": "Rendu graphique",
  "92a99f7559b8": "Le GPU via Vulkan sous Linux, DirectX 12 ou Vulkan sous Windows, et Metal sous macOS ; le CPU quand aucun backend GPU ne démarre",
