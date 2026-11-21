@@ -7,7 +7,7 @@ pkgrel=1
 # has them for makepkg to install, and a split package would give them
 # triib's version. Their own packages can replace them.
 _gptpd=0.2.1
-_avb_endpointd=0.3.4
+_avb_endpointd=0.3.5
 pkgdesc='Discover, connect and set up AVB and Milan devices'
 arch=('x86_64' 'aarch64')
 url='https://github.com/scrambletoolsllc/triib'
@@ -26,7 +26,7 @@ source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
         "Linux-AVB-Endpoint-avb-endpointd-v$_avb_endpointd.tar.gz::https://github.com/scrambletools/Linux-AVB-Endpoint/archive/refs/tags/avb-endpointd-v$_avb_endpointd.tar.gz")
 sha256sums=('SKIP'
             'fd114beedf47d52dd4544559e8f1b33b94e8e9450b66ddc594b087b1ff22cd1e'
-            'a232a32a2a9939d587d2764f99f7392e9c199ce2b7bd617f88a115b2d1589355')
+            'b7929a7e19ae07803352ae0ad55712a709d4360fbef049ae089d4283e7ae9d7f')
 
 prepare() {
     export RUSTUP_TOOLCHAIN=stable

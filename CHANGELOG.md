@@ -5,6 +5,15 @@ All notable changes to triib. Versions follow
 
 ## [Unreleased]
 
+### Host entities (Linux)
+
+- The Linux packages carry avb-endpointd 0.3.5, and the app's library
+  moves to it too. A destination whose listener is unbound while apps
+  play into it is connected again, once. `new_stream_id_on_change`, off
+  by default, has a talker whose reservation changes go on under its
+  next stream ID, for bridges that keep the old one; triib's edits to
+  the entities file keep the setting, where 0.3.4's dropped it.
+
 ### Fixed
 
 - Two stream formats whose words read the same no longer look alike in
