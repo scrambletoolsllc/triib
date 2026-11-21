@@ -3,7 +3,12 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
-## Unreleased
+## [1.5.2] - 2026-11-21
+
+The PKGBUILD builds triib on Arch Linux RISC-V too, beside Arch Linux on
+x86_64 and Arch Linux ARM, as the .deb, .rpm and tarball already come
+for RISC-V. The Linux packages carry avb-endpointd 0.3.5 and gptpd
+0.2.1, as in 1.5.1.
 
 ### Added
 

@@ -1,6 +1,6 @@
 # Maintainer: Scramble Tools <https://github.com/scrambletools>
 pkgname=triib
-pkgver=1.5.1
+pkgver=1.5.2
 pkgrel=1
 # gptpd, which host entities keep the network's time with, and
 # avb-endpointd, which runs them, go in this package, as no repository
