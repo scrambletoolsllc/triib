@@ -1,8 +1,11 @@
 name: Site
 
 # Publishes triib's website, triib.run, from site/ to GitHub Pages
-# whenever it or what it shows changes on main.
+# whenever it or what it shows changes on main, and when a release is
+# published, whose files fill in the download table.
 on:
+  release:
+    types: [published]
   push:
     branches: [main]
     paths:
@@ -10,6 +13,8 @@ on:
       - site/.well-known/**
       - scripts/build-site.sh
       - scripts/site-i18n.py
+      # The language names come from the app's.
+      - i18n/*/triib.ftl
       - docs/screenshots/**
       - data/icons/**
       - .github/workflows/site.yml
@@ -20,19 +25,35 @@ permissions:
   pages: write
   id-token: write
 
-concurrency:
-  group: pages
-  cancel-in-progress: true
-
 jobs:
-  deploy:
+  # Pages takes deployments from main alone, so a published release starts
+  # this workflow again on main. A release published with a workflow's own
+  # token starts nothing; one published by a person, or with gh and their
+  # token, does.
+  release:
+    if: github.event_name == 'release'
     runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+    steps:
+      - run: gh workflow run site.yml --repo "$GITHUB_REPOSITORY" --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  deploy:
+    if: github.event_name != 'release'
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: pages
+      cancel-in-progress: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
       - run: scripts/build-site.sh "$RUNNER_TEMP/site"
+        env:
+          GH_TOKEN: ${{ github.token }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

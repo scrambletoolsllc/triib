@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Assembles triib's website (triib.run) into OUT: the pages in site/, in
-# every language the app speaks, plus the icon and the screenshots, from
-# the repository.
+# every language the app speaks, with the latest release's downloads,
+# plus the icon and the screenshots, from the repository.
 #
 #   scripts/build-site.sh [OUT]
 set -euo pipefail
@@ -16,7 +16,12 @@ mkdir -p "$out/screenshots"
 cp -r "$root"/site/. "$out/"
 # The translations go into the pages rather than beside them.
 rm -rf "$out/i18n"
-python3 "$root/scripts/site-i18n.py" build "$out"
+# The latest release, whose files fill in the download table; gh needs to
+# be signed in, as GH_TOKEN in CI.
+release=$(mktemp)
+trap 'rm -f "$release"' EXIT
+gh api repos/scrambletoolsllc/triib/releases/latest >"$release"
+python3 "$root/scripts/site-i18n.py" build "$out" "$release"
 # The icon as drawn, for the front page's large one, and the header's
 # small one rendered at each pixel density it shows at, as browsers
 # draw a vector or shrink a large image that small with jagged edges.

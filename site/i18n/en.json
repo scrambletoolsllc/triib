@@ -203,9 +203,9 @@
   "page": "index.html",
   "text": "Windows 10 and 11"
  },
- "304ebb08851b": {
+ "6c17be6fc87e": {
   "page": "index.html",
-  "text": "Installer (.msi): <a1>x64</a1> · <a2>ARM64</a2>"
+  "text": "Installer (.msi): <span1></span1>"
  },
  "36eec3ec7710": {
   "page": "index.html",
@@ -215,9 +215,9 @@
   "page": "index.html",
   "text": "Windows, portable"
  },
- "c6562b548a86": {
+ "ac9e045e513d": {
   "page": "index.html",
-  "text": ".zip: <a1>x64</a1> · <a2>ARM64</a2>"
+  "text": ".zip: <span1></span1>"
  },
  "362304f8808e": {
   "page": "index.html",
@@ -227,9 +227,9 @@
   "page": "index.html",
   "text": "macOS 11 and later"
  },
- "00fa64789ceb": {
+ "f2f8f511fff5": {
   "page": "index.html",
-  "text": "Installer package (.pkg): <a1>Apple Silicon</a1> · <a2>Intel</a2>"
+  "text": "Installer package (.pkg): <span1></span1>"
  },
  "5b49564634e2": {
   "page": "index.html",
@@ -239,9 +239,9 @@
   "page": "index.html",
   "text": "Debian, Ubuntu"
  },
- "d2d0a2426b0f": {
+ "5c2ceb011c6e": {
   "page": "index.html",
-  "text": ".deb: <a1>x86_64</a1> · <a2>ARM64</a2> · <a3>RISC-V</a3>"
+  "text": ".deb: <span1></span1>"
  },
  "3f99deb79bdf": {
   "page": "index.html",
@@ -251,9 +251,9 @@
   "page": "index.html",
   "text": "Fedora"
  },
- "c5cb99e1826e": {
+ "cce5a375a053": {
   "page": "index.html",
-  "text": ".rpm: <a1>x86_64</a1> · <a2>ARM64</a2> · <a3>RISC-V</a3>"
+  "text": ".rpm: <span1></span1>"
  },
  "ca193d70c978": {
   "page": "index.html",
@@ -275,9 +275,9 @@
   "page": "index.html",
   "text": "Any distribution"
  },
- "1702595f8b41": {
+ "899270b24cbc": {
   "page": "index.html",
-  "text": ".tar.gz: <a1>x86_64</a1> · <a2>ARM64</a2> · <a3>RISC-V</a3>"
+  "text": ".tar.gz: <span1></span1>"
  },
  "7a8cca40b75a": {
   "page": "index.html",
@@ -842,9 +842,9 @@
   "page": "specs.html",
   "text": "Specifications"
  },
- "f190666b5ab2": {
+ "4b67d089897f": {
   "page": "specs.html",
-  "text": "triib {v}, an ATDECC controller with Milan, AVB Lite and AVB Wireless support, released November 21, 2026. For what each feature does, see the <a1>tour</a1>."
+  "text": "triib {v}, an ATDECC controller with Milan, AVB Lite and AVB Wireless support. For what each feature does, see the <a1>tour</a1>."
  },
  "77df58244ee6": {
   "page": "specs.html",

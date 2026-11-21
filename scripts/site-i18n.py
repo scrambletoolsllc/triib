@@ -11,7 +11,12 @@ for search engines, and right to left where the language reads so.
 
   site-i18n.py extract           writes site/i18n/en.json, the source
   site-i18n.py check [LANG...]   says what each language lacks or breaks
-  site-i18n.py build OUT         writes the pages into OUT
+  site-i18n.py build OUT RELEASE writes the pages into OUT
+
+The build fills in the download table from RELEASE, the latest release
+as GitHub's API describes it: the release number the pages show, and
+each row's links from the files the release has. A row whose files the
+release lacks is left out.
 
 In the catalog, a tag with attributes stands as a short name, such as
 <a1>...</a1> for the block's first link, which the build puts back from
@@ -384,6 +389,83 @@ def redirect_script(names):
     return REDIRECT % json.dumps(table, sort_keys=True)
 
 
+# The download table's rows, by the files that fill them in: each pattern
+# takes the release number, and names the processor.
+RELEASE_FILES = {
+    "msi": r"triib-{v}-(?P<arch>[^-]+)\.msi",
+    "zip": r"triib-{v}-(?P<arch>[^-]+)-windows\.zip",
+    "pkg": r"triib-{v}-(?P<arch>[^-]+)\.pkg",
+    "deb": r"triib_{v}-\d+_(?P<arch>[^.]+)\.deb",
+    "rpm": r"triib-{v}-\d+\.(?P<arch>[^.]+)\.rpm",
+    "tar": r"triib-{v}-(?P<arch>[^-]+)-linux\.tar\.gz",
+}
+# What each processor is called, and in what order, in a row; a Mac's
+# by its kind of chip.
+PROCESSORS = {
+    "x64": "x64", "x86_64": "x86_64", "amd64": "x86_64",
+    "arm64": "ARM64", "aarch64": "ARM64", "riscv64": "RISC-V",
+}
+PROCESSOR_ORDER = ["x64", "x86_64", "amd64", "arm64", "aarch64", "riscv64"]
+MAC_PROCESSORS = {"arm64": "Apple Silicon", "x86_64": "Intel"}
+MAC_ORDER = ["arm64", "x86_64"]
+
+
+def page_version():
+    """The release number the English pages show, which the build
+    replaces with the latest release's."""
+    numbers = set()
+    for page in PAGES:
+        _, found = segments(page)
+        for _, _, content in found.blocks:
+            numbers.update(template(content)[2])
+    if len(numbers) != 1:
+        sys.exit(f"the pages should show one release number, not {sorted(numbers)}")
+    return numbers.pop()
+
+
+def fill_release(out, release, shown):
+    """A built page with its download table filled in from the release,
+    and the release number SHOWN in its text made the release's."""
+    version = release["tag_name"].removeprefix("v")
+    files = {asset["name"]: asset["browser_download_url"] for asset in release["assets"]}
+
+    def links(kind):
+        pattern = re.compile(RELEASE_FILES[kind].replace("{v}", re.escape(version)))
+        found = [(match["arch"], files[name]) for name in files if (match := pattern.fullmatch(name))]
+        names, order = (MAC_PROCESSORS, MAC_ORDER) if kind == "pkg" else (PROCESSORS, PROCESSOR_ORDER)
+        found.sort(key=lambda entry: (order.index(entry[0]) if entry[0] in order else len(order), entry[0]))
+        return " · ".join(f'<a href="{url}">{names.get(arch, arch)}</a>' for arch, url in found)
+
+    def row(match):
+        kind, body = match.group(1), match.group(2)
+        if kind == "arch":
+            return f"<tr>{body}</tr>" if "PKGBUILD" in files else ""
+        if kind not in RELEASE_FILES:
+            sys.exit(f"no files fill in a {kind} row")
+        filled = links(kind)
+        if not filled:
+            return ""
+        return "<tr>" + body.replace("<span data-release-links></span>", filled) + "</tr>"
+
+    out = re.sub(r'<tr data-release="([a-z]+)">(.*?)</tr>', row, out, flags=re.S)
+
+    def asset_link(match):
+        name = match.group(1)
+        if name not in files:
+            sys.exit(f"the latest release, {release['tag_name']}, has no {name}")
+        return f'href="{files[name]}"'
+
+    out = re.sub(r'href="[^"]*" data-asset="([^"]+)"', asset_link, out)
+    # The release number in the text, not in links or attributes.
+    return re.sub(
+        r">([^<]*)<",
+        lambda m: ">"
+        + VERSION.sub(lambda n: version if n.group(0) == shown else n.group(0), m.group(1))
+        + "<",
+        out,
+    )
+
+
 def build_page(page, language, names, source_texts):
     source, found = segments(page)
     found_translations = {} if language == "en" else translations(language)
@@ -468,16 +550,19 @@ def main(argv):
             else:
                 print(f"{language}: ok")
         sys.exit(1 if failed else 0)
-    elif command == "build" and len(argv) == 3:
+    elif command == "build" and len(argv) == 4:
         out = Path(argv[2])
+        release = json.loads(Path(argv[3]).read_text())
+        shown = page_version()
         names = languages()
         texts = catalog()
         for language in names:
             folder = out if language == "en" else out / language
             folder.mkdir(parents=True, exist_ok=True)
             for page in PAGES:
-                (folder / page).write_text(build_page(page, language, names, texts))
-        print(f"Built {len(PAGES)} pages in {len(names)} languages")
+                built = build_page(page, language, names, texts)
+                (folder / page).write_text(fill_release(built, release, shown))
+        print(f"Built {len(PAGES)} pages in {len(names)} languages, for {release['tag_name']}")
     else:
         sys.exit(__doc__)
 

@@ -16,7 +16,7 @@ Everything a release ships is built from this repository:
 | `packaging/macos/` | triib.app and its installer package, made by `bundle.sh --pkg` around `distribution.xml`, signed and notarized as [macOS signing](#macos-signing) says, with the capture access helper |
 | `.github/workflows/release.yml` | Builds all of them for a tag and drafts the GitHub release once the installer tests pass |
 | `packaging/tests/` | The installer tests: each package installed, upgraded, run and removed in a clean system, as [Installer tests](#installer-tests) says |
-| `site/`, `scripts/build-site.sh`, `.github/workflows/site.yml` | The website, published to GitHub Pages whenever it changes on main |
+| `site/`, `scripts/build-site.sh`, `.github/workflows/site.yml` | The website, published to GitHub Pages whenever it changes on main or a release is published, its download table filled in from the latest release |
 | `site/i18n/`, `scripts/site-i18n.py` | The website's text in every language, built into the pages; `docs/GLOSSARY.md` says how |
 | `scripts/site-screenshots.sh` | Renders the website's screenshots into `docs/screenshots` from the test bench |
 
@@ -121,11 +121,13 @@ triib sends and receives raw Ethernet, which each system guards:
    checks that the tag matches `Cargo.toml`, builds the packages and
    drafts a release with them, `SHA256SUMS`, and a `PKGBUILD` with the
    source checksum filled in, beside its `triib.install`. Check the draft
-   and publish it. Then point the website's download section
-   (`site/index.html`) at the version's packages, put the version on its
-   Download button, and update the version on `site/specs.html`; pushing
-   `site/` redeploys the website. A release number is `{v}` in the
-   translations, so they need nothing new; changed sentences do (see
+   and publish it, by hand or with `gh` signed in as yourself: publishing
+   rebuilds the website, whose download table, Download button and specs
+   take the version and the links from the latest release. A release
+   published with a workflow's own token starts nothing; then run
+   `gh workflow run site.yml --ref main`. A row whose files the release
+   lacks is left out. A release number is `{v}` in the translations, so
+   they need nothing new; changed sentences do (see
    `scripts/site-i18n.py check`).
 5. AUR: in a clone of `ssh://aur@aur.archlinux.org/triib.git`, replace
    `PKGBUILD` with the one from the release and copy
