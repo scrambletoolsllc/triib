@@ -800,9 +800,9 @@
   "page": "specs.html",
   "text": "Specifications"
  },
- "f9ec4a3020a2": {
+ "f190666b5ab2": {
   "page": "specs.html",
-  "text": "triib {v}, an ATDECC controller with Milan, AVB Lite and AVB Wireless support, released November 19, 2026. For what each feature does, see the <a1>tour</a1>."
+  "text": "triib {v}, an ATDECC controller with Milan, AVB Lite and AVB Wireless support, released November 21, 2026. For what each feature does, see the <a1>tour</a1>."
  },
  "77df58244ee6": {
   "page": "specs.html",
@@ -1028,6 +1028,14 @@
   "page": "specs.html",
   "text": "Names and groups, configurations, stream formats, sampling rates, clock sources, outputs' maximum transit times, channel maps, controls such as gain and mute, and identifying"
  },
+ "0dc5f6c7b538": {
+  "page": "specs.html",
+  "text": "Firmware"
+ },
+ "4794b151dfb8": {
+  "page": "specs.html",
+  "text": "Updated over ATDECC on entities that take it, a coprocessor's too, from the inspector, <code>triib-cli firmware</code> or an AI agent; triib checks the file before it goes and shows an entity that goes back to its old firmware"
+ },
  "6ad427ced43e": {
   "page": "specs.html",
   "text": "Meters"
@@ -1244,13 +1252,13 @@
   "page": "specs.html",
   "text": "triib asks before letting a new agent in, and remembers Allow; one not allowed is turned away until triib quits. Settings lists the agents allowed and forgets them, and outside control can be turned off"
  },
- "28499def4bad": {
+ "83b48d838710": {
   "page": "specs.html",
-  "text": "Tools (17)"
+  "text": "Tools (20)"
  },
- "76ceefdb9b26": {
+ "4309cc65e625": {
   "page": "specs.html",
-  "text": "Nine that read, <code>status</code>, <code>list_entities</code>, <code>describe_entity</code>, <code>list_connections</code>, <code>list_problems</code>, <code>stream_diagnostics</code>, <code>clock_tree</code>, <code>list_audio_devices</code> and <code>audio_monitor</code>; and eight that change, <code>connect</code>, <code>disconnect</code>, <code>set_stream_format</code>, <code>set_sampling_rate</code>, <code>set_clock_source</code>, <code>rename</code>, <code>identify</code> and <code>set_audio_monitor</code>; each marked for MCP clients as reading or changing"
+  "text": "Ten that read, <code>status</code>, <code>list_entities</code>, <code>describe_entity</code>, <code>list_connections</code>, <code>list_problems</code>, <code>stream_diagnostics</code>, <code>clock_tree</code>, <code>firmware_status</code>, <code>list_audio_devices</code> and <code>audio_monitor</code>; and ten that change, <code>connect</code>, <code>disconnect</code>, <code>set_stream_format</code>, <code>set_sampling_rate</code>, <code>set_clock_source</code>, <code>rename</code>, <code>identify</code>, <code>update_firmware</code>, <code>stop_firmware_update</code> and <code>set_audio_monitor</code>; each marked for MCP clients as reading or changing"
  },
  "cffa2af0a3a6": {
   "page": "specs.html",
