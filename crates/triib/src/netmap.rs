@@ -1175,15 +1175,13 @@ fn entity_of(topology: &Topology, node: NodeId) -> Option<EntityId> {
     }
 }
 
-/// A bridge's icon: an access point with one wired link is a Wi-Fi bridge,
-/// one with more a switch with Wi-Fi, and a bridge with no Wi-Fi a switch.
+/// A bridge's icon: a hub under Wi-Fi's arcs for one with Wi-Fi, an
+/// access point, whatever is plugged into it, and a hub for one without.
 fn bridge_icon(topology: &Topology, node: NodeId) -> Icon {
-    if !topology.nodes[node].access_point {
-        Icon::Hub
-    } else if topology.wired_links(node) > 1 {
-        Icon::Router
+    if topology.nodes[node].access_point {
+        Icon::HubWifi
     } else {
-        Icon::WifiTethering
+        Icon::Hub
     }
 }
 

@@ -25,7 +25,7 @@ triib-store = { path = "crates/triib-store", version = "1.5.2" }
 triib-firmware = { path = "crates/triib-firmware", version = "1.5.2" }
 # Pinned by revision, as prev pins it. A git-ignored .cargo/config.toml can
 # point it at a local checkout while changing both (see the README).
-scramble-ui = { git = "https://github.com/scrambletools/scramble-ui", rev = "891f44c6a70553c6a6ac094fab25e1b6945b95d0", version = "0.1.0" }
+scramble-ui = { git = "https://github.com/scrambletools/scramble-ui", rev = "44f04645e9593abe4ed12bc7c4fac463d9abe03b", version = "0.1.0" }
 
 [workspace.lints.rust]
 unsafe_code = "deny"
@@ -41,6 +41,6 @@ strip = true
 # Right to left text in text inputs and the keyboard layout in use; the
 # copies live with scramble-ui, see its vendor/PATCHES.md.
 [patch.crates-io]
-iced_graphics = { git = "https://github.com/scrambletools/scramble-ui", rev = "891f44c6a70553c6a6ac094fab25e1b6945b95d0" }
-iced_widget = { git = "https://github.com/scrambletools/scramble-ui", rev = "891f44c6a70553c6a6ac094fab25e1b6945b95d0" }
-winit = { git = "https://github.com/scrambletools/scramble-ui", rev = "891f44c6a70553c6a6ac094fab25e1b6945b95d0" }
+iced_graphics = { git = "https://github.com/scrambletools/scramble-ui", rev = "44f04645e9593abe4ed12bc7c4fac463d9abe03b" }
+iced_widget = { git = "https://github.com/scrambletools/scramble-ui", rev = "44f04645e9593abe4ed12bc7c4fac463d9abe03b" }
+winit = { git = "https://github.com/scrambletools/scramble-ui", rev = "44f04645e9593abe4ed12bc7c4fac463d9abe03b" }

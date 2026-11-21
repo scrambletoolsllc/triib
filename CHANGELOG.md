@@ -3,6 +3,15 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## Unreleased
+
+### Changed
+
+- The network view gives a bridge with Wi-Fi, an access point, one icon,
+  a hub under Wi-Fi's arcs, whatever is plugged into it, and a bridge
+  without Wi-Fi the hub alone: an access point no longer turns into a
+  router as a wired entity joins it.
+
 ## [1.5.2] - 2026-11-21
 
 The PKGBUILD builds triib on Arch Linux RISC-V too, beside Arch Linux on

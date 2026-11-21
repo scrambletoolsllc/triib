@@ -619,20 +619,6 @@ impl Topology {
         matches!(entry.kind, Kind::Switch { .. } | Kind::Clock) || entry.lite.is_some()
     }
 
-    /// The wired links seen at the node: up to its parent, and down to
-    /// each node under it that is no Wi-Fi station. A bridge's ports are
-    /// not reported, so this is as many as it is seen to use.
-    pub fn wired_links(&self, node: NodeId) -> usize {
-        let entry = &self.nodes[node];
-        let wired = |link: &Link| link.wireless.is_none();
-        usize::from(entry.parent.is_some() && wired(&entry.link))
-            + entry
-                .children
-                .iter()
-                .filter(|&&child| wired(&self.nodes[child].link))
-                .count()
-    }
-
     /// Makes the link up from a station's node its Wi-Fi hop, in sync while
     /// the station's time is locked.
     fn wireless_hop(&mut self, node: NodeId, interface: &InterfaceReport<'_>) {
@@ -1065,8 +1051,6 @@ mod tests {
         assert_eq!(topology.nodes[access_point].clock, Some(ACCESS_POINT));
         assert!(topology.nodes[access_point].access_point);
         assert!(!topology.nodes[talker].access_point);
-        // Its stations' hops are no wired links: it has one, to the switch.
-        assert_eq!(topology.wired_links(access_point), 1);
         let hop = |node: NodeId| topology.nodes[node].link;
         assert!(hop(talker).synced);
         assert_eq!(
@@ -1132,10 +1116,10 @@ mod tests {
         );
     }
 
-    /// An access point with an entity on a wired port as well as its
-    /// station has two wired links, as a switch with Wi-Fi does.
+    /// An entity on an access point's wired port hangs under it beside its
+    /// station, as under a switch with Wi-Fi.
     #[test]
-    fn wired_links_leave_out_wifi_hops() {
+    fn wired_entities_hang_under_an_access_point() {
         const ACCESS_POINT: ClockIdentity = ClockIdentity(0x30ed_a0ff_fe11_2233);
         const WIRED: EntityId = EntityId(0x0001_f2ff_0001_0001);
         const WIRED_CLOCK: ClockIdentity = ClockIdentity(0x0001_f2ff_fe01_0001);
@@ -1169,9 +1153,7 @@ mod tests {
             topology.nodes[topology.placed(WIRED).unwrap()].parent,
             Some(access_point)
         );
-        assert_eq!(topology.wired_links(access_point), 2);
-        // The switch heads the tree, its one link down to the access point.
-        assert_eq!(topology.wired_links(topology.roots[0]), 1);
+        assert_eq!(topology.nodes[access_point].parent, Some(topology.roots[0]));
     }
 
     /// Entities on one gPTP port, as this computer's talker and listener
