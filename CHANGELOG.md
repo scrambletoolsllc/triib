@@ -3,6 +3,13 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## Unreleased
+
+### Added
+
+- riscv64 in the PKGBUILD, for Arch's RISC-V port, beside x86_64 and
+  ARM64. Only its x86_64 build is tested before a release.
+
 ## [1.5.1] - 2026-11-21
 
 triib-cli and agents check stream formats before they connect, as the
