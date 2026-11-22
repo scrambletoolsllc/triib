@@ -27,7 +27,6 @@
 //! later boot, from `--restart-after`, begins for SW.
 
 use std::io::Write;
-use std::path::Path;
 use std::time::Duration;
 
 use atdecc::entity::{ClockQuality, EndpointModel, Entity};
@@ -169,7 +168,13 @@ fn main() {
             std::process::exit(2);
         }
     };
-    let _ = avb_net::broker::use_helper("avb-netraw", &[Path::new("/usr/lib/avb-endpointd")]);
+    // Raw sockets through avb-endpointd's helper where it is installed,
+    // Linux alone having one.
+    #[cfg(target_os = "linux")]
+    let _ = avb_net::broker::use_helper(
+        "avb-netraw",
+        &[std::path::Path::new("/usr/lib/avb-endpointd")],
+    );
     let Some(mac) = avb_net::interfaces()
         .into_iter()
         .find(|found| found.name == options.interface)
