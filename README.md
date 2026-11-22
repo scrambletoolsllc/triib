@@ -24,8 +24,9 @@ Website: **[triib.run](https://triib.run)**, with
 > changes how their channels map to streams, shows and sets their
 > controls, such as gain and mute, saves and recalls presets of all of
 > that and the connections, updates the firmware of entities that take
-> it over ATDECC, a coprocessor's too where the entity offers it, logs
-> every ATDECC frame sent and heard,
+> it over ATDECC, a coprocessor's too where the entity offers it, shows
+> the log a device keeps, such as an ESP32 board's console, and saves
+> its crash dump, logs every ATDECC frame sent and heard,
 > marking those that break the rules, and shows how entities run AVB
 > Lite, what their streams take of each link and the alarms the AVB Lite
 > profile calls for, and what Wi-Fi stations and access points report
@@ -312,7 +313,22 @@ cargo run -p triib-cli -- transit <interface> <entity-id> <output> [nanoseconds]
 cargo run -p triib-cli -- descriptor <interface> <entity-id> <type:index>
 cargo run -p triib-cli -- harvest <interface> <entity-id> [repeat]
 cargo run -p triib-cli -- firmware <interface> <entity-id> [<file> [--image <image>] [--anyway] [--no-restart] [--settle <seconds>]]
+cargo run -p triib-cli -- log <interface> <entity>... [--follow] [--stats] [--stats-json <file>] [--poll <ms>]
+cargo run -p triib-cli -- crash <interface> <entity> [-o <file>] [--erase]
 ```
+
+`log` prints the log a device keeps for controllers to read, such as
+an ESP32 board's console without its cable: a LOG_OBJECT memory object,
+read through Address Access, each device named by its entity ID or its
+entity name. Before a boot's lines it says the boot's ID, how long it
+has run, and, where the device tells, why it began and how many boots
+began unexpectedly. `--follow` keeps reading, `--stats` says what
+reading costs every 10 s on stderr, and `--stats-json` writes the same
+as JSON. `crash` saves the crash dump a device keeps the same way, a
+CRASH_DUMP memory object, to a file, and `--erase` erases it after. An
+ESP32 board's is ESP-IDF's core dump, which `esp-coredump` reads with the
+crashed firmware's ELF. A device is asked nothing unless one of them
+runs.
 
 The daemon builds in the avb repository:
 `cargo run -p avb-endpointd --features daemon -- --interface <interface>`.

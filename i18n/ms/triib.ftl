@@ -678,6 +678,48 @@ firmware-doubt-other = Fail ini serupa dengan fail yang diterima oleh "{ $image 
 firmware-unsigned = Fail ini tidak ditandatangani: peranti yang menyemak tandatangan akan menolaknya.
 firmware-runs-already = Ia sudah menjalankan fail ini.
 
+## Device log
+
+device-log-section = Log peranti
+device-log-log = Log
+device-log-show = Tunjukkan log
+device-log-title = Log { $entity }
+device-log-following = Mengikuti
+device-log-paused = Dijeda
+device-log-away = Di luar talian
+device-log-copy = Salin
+device-log-save = Simpan…
+device-log-empty = Log peranti muncul di sini semasa ia dibaca.
+device-log-boot = But { $boot }, berjalan { $seconds } s
+device-log-boot-reason = , tetapan semula { $reason }
+device-log-boot-resets = , { $count } tetapan semula tidak dijangka
+device-log-restarted = Peranti dimulakan semula.
+device-log-lost = { $count } bait hilang, ditulis lebih cepat daripada dibaca.
+device-log-dropped = Peranti menggugurkan { $count } baris.
+device-log-went-away = Peranti kini di luar talian.
+device-log-came-back = Peranti telah kembali.
+device-log-save-title = Simpan log { $entity }
+device-log-saved = Disimpan ke { $path }
+device-log-save-failed = Tidak dapat menyimpan ke { $path }: { $error }
+device-log-crash = Longgokan ranap
+device-log-crash-kept = { $size } bait
+device-log-crash-empty = Tiada
+device-log-crash-starting = Membaca…
+device-log-crash-reading = Membaca: { $done } daripada { $total } bait
+device-log-crash-saved = { $size } bait disimpan ke { $path }
+device-log-crash-erasing = Memadam…
+device-log-crash-erased = Dipadam
+device-log-crash-none = Ia tidak menyimpan longgokan ranap.
+device-log-crash-busy = Longgokan ranap lain sedang dibaca.
+device-log-crash-save = Simpan ke fail…
+device-log-crash-save-title = Simpan longgokan ranap { $entity }
+device-log-crash-erase = Padam
+device-log-erase-title = Padam longgokan ranap?
+device-log-erase-body = { $entity } tidak akan menyimpan lagi longgokan ranap yang ada padanya. Simpan dahulu untuk menyiasat ranap itu.
+device-log-erase-cancel = Batal
+device-log-erase-confirm = Padam
+device-log-network-stopped = Rangkaian triib telah berhenti.
+
 ## Log
 
 log-all = Semua

@@ -829,6 +829,72 @@ firmware-doubt-other = Acest fișier seamănă cu cel primit de „{ $image }”
 firmware-unsigned = Fișierul nu este semnat: un dispozitiv care verifică semnăturile îl refuză.
 firmware-runs-already = Entitatea rulează deja acest fișier.
 
+## Device log
+
+device-log-section = Jurnalul dispozitivului
+device-log-log = Jurnal
+device-log-show = Afișează jurnalul
+device-log-title = Jurnalul entității { $entity }
+device-log-following = Se urmărește
+device-log-paused = În pauză
+device-log-away = Offline
+device-log-copy = Copiază
+device-log-save = Salvează…
+device-log-empty = Jurnalul dispozitivului apare aici pe măsură ce este citit.
+device-log-boot = Pornirea { $boot }, { $seconds } s de funcționare
+device-log-boot-reason = , resetare { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } resetare neașteptată
+    [few] , { $count } resetări neașteptate
+   *[other] , { $count } de resetări neașteptate
+}
+device-log-restarted = Dispozitivul a repornit.
+device-log-lost = { $count ->
+    [one] { $count } octet pierdut, scris mai repede decât a fost citit.
+    [few] { $count } octeți pierduți, scriși mai repede decât au fost citiți.
+   *[other] { $count } de octeți pierduți, scriși mai repede decât au fost citiți.
+}
+device-log-dropped = { $count ->
+    [one] Dispozitivul a omis { $count } linie.
+    [few] Dispozitivul a omis { $count } linii.
+   *[other] Dispozitivul a omis { $count } de linii.
+}
+device-log-went-away = Dispozitivul a devenit offline.
+device-log-came-back = Dispozitivul a revenit.
+device-log-save-title = Salvează jurnalul entității { $entity }
+device-log-saved = Salvat în { $path }
+device-log-save-failed = Nu s-a putut salva în { $path }: { $error }
+device-log-crash = Crash dump
+device-log-crash-kept = { $size ->
+    [one] { $size } octet
+    [few] { $size } octeți
+   *[other] { $size } de octeți
+}
+device-log-crash-empty = Niciunul
+device-log-crash-starting = Se citește…
+device-log-crash-reading = { $total ->
+    [one] Se citește: { $done } din { $total } octet
+    [few] Se citește: { $done } din { $total } octeți
+   *[other] Se citește: { $done } din { $total } de octeți
+}
+device-log-crash-saved = { $size ->
+    [one] S-a salvat { $size } octet în { $path }
+    [few] S-au salvat { $size } octeți în { $path }
+   *[other] S-au salvat { $size } de octeți în { $path }
+}
+device-log-crash-erasing = Se șterge…
+device-log-crash-erased = Șters
+device-log-crash-none = Dispozitivul nu păstrează niciun crash dump.
+device-log-crash-busy = Se citește deja alt crash dump.
+device-log-crash-save = Salvează într-un fișier…
+device-log-crash-save-title = Salvează crash dump-ul entității { $entity }
+device-log-crash-erase = Șterge
+device-log-erase-title = Ștergi crash dump-ul?
+device-log-erase-body = { $entity } nu va mai păstra crash dump-ul pe care îl are. Salvează-l mai întâi ca să afli cauza crash-ului.
+device-log-erase-cancel = Anulează
+device-log-erase-confirm = Șterge
+device-log-network-stopped = Rețeaua triib s-a oprit.
+
 ## Log
 
 log-all = Toate

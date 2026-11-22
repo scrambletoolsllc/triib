@@ -838,6 +838,68 @@ firmware-doubt-other = Este arquivo é parecido com o que “{ $image }” receb
 firmware-unsigned = O arquivo não está assinado: um dispositivo que verifica assinaturas o recusa.
 firmware-runs-already = A entidade já executa este arquivo.
 
+## Device log
+
+device-log-section = Log do dispositivo
+device-log-log = Log
+device-log-show = Mostrar o log
+device-log-title = Log de { $entity }
+device-log-following = Acompanhando
+device-log-paused = Pausado
+device-log-away = Offline
+device-log-copy = Copiar
+device-log-save = Salvar…
+device-log-empty = O log do dispositivo aparece aqui à medida que é lido.
+device-log-boot = Inicialização { $boot }, { $seconds } s em execução
+device-log-boot-reason = , reinício por { $reason }
+device-log-boot-resets = { $count ->
+    [0] , { $count } reinícios inesperados
+    [one] , { $count } reinício inesperado
+    [many] , { $count } reinícios inesperados
+   *[other] , { $count } reinícios inesperados
+}
+device-log-restarted = O dispositivo reiniciou.
+device-log-lost = { $count ->
+    [0] { $count } bytes perdidos, escritos mais rápido do que eram lidos.
+    [one] { $count } byte perdido, escrito mais rápido do que era lido.
+    [many] { $count } bytes perdidos, escritos mais rápido do que eram lidos.
+   *[other] { $count } bytes perdidos, escritos mais rápido do que eram lidos.
+}
+device-log-dropped = { $count ->
+    [0] O dispositivo descartou { $count } linhas.
+    [one] O dispositivo descartou { $count } linha.
+    [many] O dispositivo descartou { $count } linhas.
+   *[other] O dispositivo descartou { $count } linhas.
+}
+device-log-went-away = O dispositivo ficou offline.
+device-log-came-back = O dispositivo voltou.
+device-log-save-title = Salvar o log de { $entity }
+device-log-saved = Salvo em { $path }
+device-log-save-failed = Não foi possível salvar em { $path }: { $error }
+device-log-crash = Dump de falha
+device-log-crash-kept = { $size ->
+    [0] { $size } bytes
+    [one] { $size } byte
+    [many] { $size } bytes
+   *[other] { $size } bytes
+}
+device-log-crash-empty = Nenhum
+device-log-crash-starting = Lendo…
+device-log-crash-reading = Lendo: { $done } de { $total } bytes
+device-log-crash-saved = { $size } bytes salvos em { $path }
+device-log-crash-erasing = Apagando…
+device-log-crash-erased = Apagado
+device-log-crash-none = O dispositivo não guarda nenhum dump de falha.
+device-log-crash-busy = Outro dump de falha já está sendo lido.
+device-log-crash-save = Salvar em um arquivo…
+device-log-crash-save-title = Salvar o dump de falha de { $entity }
+device-log-crash-erase = Apagar
+device-log-erase-title = Apagar o dump de falha?
+device-log-erase-body = { $entity } vai deixar de guardar o dump de falha que tem. Salve-o primeiro para investigar a falha.
+device-log-erase-cancel = Cancelar
+device-log-erase-confirm = Apagar
+device-log-network-stopped = A rede do triib parou.
+
 ## Log
 
 log-all = Tudo

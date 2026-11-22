@@ -758,6 +758,60 @@ firmware-doubt-other = یہ فائل اس فائل جیسی ہے جو پچھلی
 firmware-unsigned = فائل پر دستخط نہیں ہیں: جو ڈیوائس دستخط جانچتی ہے وہ اسے رد کر دیتی ہے۔
 firmware-runs-already = یہ پہلے ہی یہی فائل چلا رہا ہے۔
 
+## Device log
+
+device-log-section = ڈیوائس لاگ
+device-log-log = لاگ
+device-log-show = لاگ دکھائیں
+device-log-title = { $entity } کا لاگ
+device-log-following = براہ راست
+device-log-paused = رکا ہوا
+device-log-away = آف لائن
+device-log-copy = کاپی کریں
+device-log-save = محفوظ کریں…
+device-log-empty = ڈیوائس کا لاگ جیسے جیسے پڑھا جاتا ہے، یہاں نظر آتا ہے۔
+device-log-boot = بوٹ { $boot }، چلنے کا وقت { $seconds } سیکنڈ
+device-log-boot-reason = ، ری سیٹ کی وجہ { $reason }
+device-log-boot-resets = { $count ->
+    [one] ، { $count } غیر متوقع ری سیٹ
+   *[other] ، { $count } غیر متوقع ری سیٹس
+}
+device-log-restarted = ڈیوائس دوبارہ شروع ہو گئی۔
+device-log-lost = { $count ->
+    [one] { $count } بائٹ ضائع ہوا، پڑھنے سے زیادہ تیزی سے لکھا گیا۔
+   *[other] { $count } بائٹس ضائع ہوئے، پڑھنے سے زیادہ تیزی سے لکھے گئے۔
+}
+device-log-dropped = { $count ->
+    [one] ڈیوائس نے { $count } لائن چھوڑ دی۔
+   *[other] ڈیوائس نے { $count } لائنیں چھوڑ دیں۔
+}
+device-log-went-away = ڈیوائس آف لائن ہو گئی۔
+device-log-came-back = ڈیوائس واپس آ گئی۔
+device-log-save-title = { $entity } کا لاگ محفوظ کریں
+device-log-saved = { $path } میں محفوظ ہو گیا
+device-log-save-failed = { $path } میں محفوظ نہیں ہو سکا: { $error }
+device-log-crash = کریش ڈمپ
+device-log-crash-kept = { $size ->
+    [one] { $size } بائٹ
+   *[other] { $size } بائٹس
+}
+device-log-crash-empty = کوئی نہیں
+device-log-crash-starting = پڑھا جا رہا ہے…
+device-log-crash-reading = پڑھا جا رہا ہے: { $total } میں سے { $done } بائٹس
+device-log-crash-saved = { $size } بائٹس { $path } میں محفوظ ہو گئے
+device-log-crash-erasing = مٹایا جا رہا ہے…
+device-log-crash-erased = مٹا دیا گیا
+device-log-crash-none = یہ کوئی کریش ڈمپ نہیں رکھتا۔
+device-log-crash-busy = ایک اور کریش ڈمپ پڑھا جا رہا ہے۔
+device-log-crash-save = فائل میں محفوظ کریں…
+device-log-crash-save-title = { $entity } کا کریش ڈمپ محفوظ کریں
+device-log-crash-erase = مٹائیں
+device-log-erase-title = کیا کریش ڈمپ مٹائیں؟
+device-log-erase-body = { $entity } اپنے پاس موجود کریش ڈمپ مزید نہیں رکھے گا۔ کریش کی جانچ کے لیے پہلے اسے محفوظ کر لیں۔
+device-log-erase-cancel = منسوخ کریں
+device-log-erase-confirm = مٹائیں
+device-log-network-stopped = triib کا نیٹ ورک رک گیا۔
+
 ## Log
 
 log-all = سب

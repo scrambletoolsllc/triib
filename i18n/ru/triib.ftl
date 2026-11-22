@@ -833,6 +833,78 @@ firmware-doubt-other = Этот файл похож на тот, что в пр�
 firmware-unsigned = Файл не подписан: устройство, проверяющее подписи, его отклоняет.
 firmware-runs-already = На сущности уже работает этот файл.
 
+## Device log
+
+device-log-section = Журнал устройства
+device-log-log = Журнал
+device-log-show = Показать журнал
+device-log-title = Журнал сущности { $entity }
+device-log-following = Отслеживается
+device-log-paused = На паузе
+device-log-away = Не в сети
+device-log-copy = Скопировать
+device-log-save = Сохранить…
+device-log-empty = Журнал устройства появляется здесь по мере чтения.
+device-log-boot = Загрузка { $boot }, время работы { $seconds } с
+device-log-boot-reason = , сброс { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } неожиданный сброс
+    [few] , { $count } неожиданных сброса
+    [many] , { $count } неожиданных сбросов
+   *[other] , { $count } неожиданного сброса
+}
+device-log-restarted = Устройство перезапустилось.
+device-log-lost = { $count ->
+    [one] Потерян { $count } байт, запись шла быстрее чтения.
+    [few] Потеряно { $count } байта, запись шла быстрее чтения.
+    [many] Потеряно { $count } байт, запись шла быстрее чтения.
+   *[other] Потеряно { $count } байта, запись шла быстрее чтения.
+}
+device-log-dropped = { $count ->
+    [one] Устройство отбросило { $count } строку.
+    [few] Устройство отбросило { $count } строки.
+    [many] Устройство отбросило { $count } строк.
+   *[other] Устройство отбросило { $count } строки.
+}
+device-log-went-away = Устройство вышло из сети.
+device-log-came-back = Устройство снова в сети.
+device-log-save-title = Сохранить журнал сущности { $entity }
+device-log-saved = Сохранено в { $path }
+device-log-save-failed = Не удалось сохранить в { $path }: { $error }
+device-log-crash = Аварийный дамп
+device-log-crash-kept = { $size ->
+    [one] { $size } байт
+    [few] { $size } байта
+    [many] { $size } байт
+   *[other] { $size } байта
+}
+device-log-crash-empty = Нет
+device-log-crash-starting = Чтение…
+device-log-crash-reading = { $total ->
+    [one] Чтение: { $done } из { $total } байта
+    [few] Чтение: { $done } из { $total } байт
+    [many] Чтение: { $done } из { $total } байт
+   *[other] Чтение: { $done } из { $total } байта
+}
+device-log-crash-saved = { $size ->
+    [one] Сохранён { $size } байт в { $path }
+    [few] Сохранено { $size } байта в { $path }
+    [many] Сохранено { $size } байт в { $path }
+   *[other] Сохранено { $size } байта в { $path }
+}
+device-log-crash-erasing = Стирание…
+device-log-crash-erased = Стёрт
+device-log-crash-none = Устройство не хранит аварийный дамп.
+device-log-crash-busy = Уже идёт чтение другого аварийного дампа.
+device-log-crash-save = Сохранить в файл…
+device-log-crash-save-title = Сохранить аварийный дамп сущности { $entity }
+device-log-crash-erase = Стереть
+device-log-erase-title = Стереть аварийный дамп?
+device-log-erase-body = Сущность { $entity } больше не будет хранить свой аварийный дамп. Сначала сохраните его, чтобы разобраться в причине сбоя.
+device-log-erase-cancel = Отмена
+device-log-erase-confirm = Стереть
+device-log-network-stopped = Сеть triib остановлена.
+
 ## Log
 
 log-all = Все

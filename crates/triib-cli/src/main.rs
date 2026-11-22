@@ -30,6 +30,8 @@ use atdecc::{
 };
 use triib_firmware::esp_image;
 
+mod devicelog;
+
 const USAGE: &str = "\
 usage: triib-cli <command>
 
@@ -127,6 +129,16 @@ commands:
                                      set a control by its index, each value in
                                      its unit, such as -12 for -12 dB, a
                                      selector's as one of its options
+  log <interface> <entity>... [--follow] [--stats] [--stats-json <file>]
+      [--poll <ms>]                  print the log a device keeps, such as an
+                                     ESP32 board's console, each device by
+                                     its entity ID or name; --follow keeps
+                                     reading and --stats says what reading
+                                     costs, every 10 seconds on stderr
+  crash <interface> <entity> [-o <file>] [--erase]
+                                     save the crash dump a device keeps to a
+                                     file, crash-<entity-id>.core by
+                                     default, and with --erase erase it after
   help                               show this text";
 
 fn main() -> ExitCode {
@@ -405,6 +417,30 @@ fn main() -> ExitCode {
                 Err(()) => return usage(),
             };
             firmware(interface, entity, update.as_ref())
+        }
+        Some("log") => {
+            let Some(interface) = argument(1) else {
+                return usage();
+            };
+            match devicelog::LogOptions::parse(arguments.get(2..).unwrap_or_default()) {
+                Ok(options) => devicelog::log(interface, &options),
+                Err(error) => {
+                    eprintln!("triib-cli: {error}");
+                    return usage();
+                }
+            }
+        }
+        Some("crash") => {
+            let Some(interface) = argument(1) else {
+                return usage();
+            };
+            match devicelog::CrashOptions::parse(arguments.get(2..).unwrap_or_default()) {
+                Ok(options) => devicelog::crash(interface, &options),
+                Err(error) => {
+                    eprintln!("triib-cli: {error}");
+                    return usage();
+                }
+            }
         }
         Some("help" | "--help" | "-h") => {
             println!("{USAGE}");

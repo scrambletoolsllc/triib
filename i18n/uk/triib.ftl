@@ -833,6 +833,78 @@ firmware-doubt-other = Цей файл схожий на той, що минул
 firmware-unsigned = Файл не підписано: пристрій, що перевіряє підписи, його відхиляє.
 firmware-runs-already = На сутності вже працює цей файл.
 
+## Device log
+
+device-log-section = Журнал пристрою
+device-log-log = Журнал
+device-log-show = Показати журнал
+device-log-title = Журнал { $entity }
+device-log-following = Відстежується
+device-log-paused = Призупинено
+device-log-away = Не в мережі
+device-log-copy = Скопіювати
+device-log-save = Зберегти…
+device-log-empty = Журнал пристрою з'являється тут у міру читання.
+device-log-boot = Завантаження { $boot }, час роботи { $seconds } с
+device-log-boot-reason = , причина скидання { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } неочікуване скидання
+    [few] , { $count } неочікувані скидання
+    [many] , { $count } неочікуваних скидань
+   *[other] , { $count } неочікуваного скидання
+}
+device-log-restarted = Пристрій перезапустився.
+device-log-lost = { $count ->
+    [one] Втрачено { $count } байт, записано швидше, ніж прочитано.
+    [few] Втрачено { $count } байти, записано швидше, ніж прочитано.
+    [many] Втрачено { $count } байтів, записано швидше, ніж прочитано.
+   *[other] Втрачено { $count } байта, записано швидше, ніж прочитано.
+}
+device-log-dropped = { $count ->
+    [one] Пристрій відкинув { $count } рядок.
+    [few] Пристрій відкинув { $count } рядки.
+    [many] Пристрій відкинув { $count } рядків.
+   *[other] Пристрій відкинув { $count } рядка.
+}
+device-log-went-away = Пристрій вийшов з мережі.
+device-log-came-back = Пристрій повернувся.
+device-log-save-title = Зберегти журнал { $entity }
+device-log-saved = Збережено в { $path }
+device-log-save-failed = Не вдалося зберегти в { $path }: { $error }
+device-log-crash = Аварійний дамп
+device-log-crash-kept = { $size ->
+    [one] { $size } байт
+    [few] { $size } байти
+    [many] { $size } байтів
+   *[other] { $size } байта
+}
+device-log-crash-empty = Немає
+device-log-crash-starting = Читання…
+device-log-crash-reading = { $total ->
+    [one] Читання: { $done } з { $total } байта
+    [few] Читання: { $done } з { $total } байтів
+    [many] Читання: { $done } з { $total } байтів
+   *[other] Читання: { $done } з { $total } байта
+}
+device-log-crash-saved = { $size ->
+    [one] Збережено { $size } байт у { $path }
+    [few] Збережено { $size } байти в { $path }
+    [many] Збережено { $size } байтів у { $path }
+   *[other] Збережено { $size } байта в { $path }
+}
+device-log-crash-erasing = Стирання…
+device-log-crash-erased = Стерто
+device-log-crash-none = Пристрій не зберігає аварійного дампу.
+device-log-crash-busy = Уже читається інший аварійний дамп.
+device-log-crash-save = Зберегти у файл…
+device-log-crash-save-title = Зберегти аварійний дамп { $entity }
+device-log-crash-erase = Стерти
+device-log-erase-title = Стерти аварійний дамп?
+device-log-erase-body = Сутність { $entity } більше не зберігатиме свій аварійний дамп. Щоб дослідити збій, спершу збережіть його.
+device-log-erase-cancel = Скасувати
+device-log-erase-confirm = Стерти
+device-log-network-stopped = Мережа triib зупинилася.
+
 ## Log
 
 log-all = Усі

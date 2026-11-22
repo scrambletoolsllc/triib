@@ -670,6 +670,48 @@ firmware-doubt-other = ไฟล์นี้คล้ายกับไฟล์
 firmware-unsigned = ไฟล์นี้ไม่มีลายเซ็น อุปกรณ์ที่ตรวจสอบลายเซ็นจะปฏิเสธไฟล์นี้
 firmware-runs-already = ใช้ไฟล์นี้อยู่แล้ว
 
+## Device log
+
+device-log-section = บันทึกเหตุการณ์ของอุปกรณ์
+device-log-log = บันทึกเหตุการณ์
+device-log-show = แสดงบันทึกเหตุการณ์
+device-log-title = บันทึกเหตุการณ์ของ { $entity }
+device-log-following = กำลังติดตาม
+device-log-paused = หยุดชั่วคราวอยู่
+device-log-away = ออฟไลน์
+device-log-copy = คัดลอก
+device-log-save = บันทึก…
+device-log-empty = บันทึกเหตุการณ์ของอุปกรณ์จะปรากฏที่นี่ขณะที่อ่าน
+device-log-boot = บูต { $boot }, ทำงานมา { $seconds } วินาที
+device-log-boot-reason = , สาเหตุการรีเซ็ต { $reason }
+device-log-boot-resets = , รีเซ็ตโดยไม่คาดคิด { $count } ครั้ง
+device-log-restarted = อุปกรณ์เริ่มใหม่แล้ว
+device-log-lost = ข้อมูลหายไป { $count } ไบต์ เพราะเขียนเร็วกว่าที่อ่าน
+device-log-dropped = อุปกรณ์ทิ้งไป { $count } บรรทัด
+device-log-went-away = อุปกรณ์ออฟไลน์ไปแล้ว
+device-log-came-back = อุปกรณ์กลับมาแล้ว
+device-log-save-title = บันทึกไฟล์บันทึกเหตุการณ์ของ { $entity }
+device-log-saved = บันทึกไว้ที่ { $path } แล้ว
+device-log-save-failed = บันทึกไว้ที่ { $path } ไม่ได้: { $error }
+device-log-crash = แครชดัมพ์
+device-log-crash-kept = { $size } ไบต์
+device-log-crash-empty = ไม่มี
+device-log-crash-starting = กำลังอ่าน…
+device-log-crash-reading = กำลังอ่าน: { $done } จาก { $total } ไบต์
+device-log-crash-saved = บันทึก { $size } ไบต์ไว้ที่ { $path } แล้ว
+device-log-crash-erasing = กำลังลบ…
+device-log-crash-erased = ลบแล้ว
+device-log-crash-none = ไม่มีแครชดัมพ์เก็บไว้
+device-log-crash-busy = กำลังอ่านแครชดัมพ์อื่นอยู่
+device-log-crash-save = บันทึกเป็นไฟล์…
+device-log-crash-save-title = บันทึกแครชดัมพ์ของ { $entity }
+device-log-crash-erase = ลบ
+device-log-erase-title = ลบแครชดัมพ์หรือไม่
+device-log-erase-body = { $entity } จะไม่เก็บแครชดัมพ์ที่มีอยู่อีกต่อไป บันทึกไว้ก่อนเพื่อตรวจหาสาเหตุของการแครช
+device-log-erase-cancel = ยกเลิก
+device-log-erase-confirm = ลบ
+device-log-network-stopped = เครือข่ายของ triib หยุดทำงานแล้ว
+
 ## Log
 
 log-all = ทั้งหมด

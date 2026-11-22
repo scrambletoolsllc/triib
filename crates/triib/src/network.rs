@@ -11,7 +11,7 @@ use std::time::Duration;
 use atdecc::aem::{AudioMapping, MappingChange, NAME_LENGTH, aem_name};
 use atdecc::blocking::{Driver, Frame};
 use atdecc::controller::{Advertise, CommandId, Controller, Outcome, Refusal};
-use atdecc::descriptor::{DescriptorType, SamplingRate};
+use atdecc::descriptor::{DescriptorType, MemoryObjectOperation, SamplingRate};
 use atdecc::model::EntityModel;
 use atdecc::neighbor::NeighborListener;
 pub use atdecc::neighbor::{Peer, Plugged};
@@ -22,6 +22,8 @@ use atdecc::upload::{Failure as UploadFailure, Stage, Step as UploadStep, Upload
 use atdecc::{
     AecpMessageType, AemStatus, DiscoveredEntity, EntityId, EntityModelId, Event, OfflineReason,
 };
+use triib_devicelog::crash::{self as crash_dump, DumpRead};
+use triib_devicelog::log::{Entry, Reader};
 
 use crate::External;
 
@@ -75,6 +77,29 @@ pub enum ReportKind {
         index: u16,
         stage: Stage,
     },
+    /// What reading a followed entity's log brought.
+    DeviceLog(EntityId, Vec<Entry>),
+    /// How reading or erasing an entity's crash dump goes.
+    CrashDump(EntityId, CrashReport),
+}
+
+/// How reading or erasing an entity's crash dump goes.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CrashReport {
+    /// The entity keeps no crash dump, or was not read.
+    NoDump,
+    /// It keeps none now.
+    Empty,
+    /// Octets read so far, of how many.
+    Reading {
+        done: usize,
+        total: usize,
+    },
+    /// The dump, read whole.
+    Read(Vec<u8>),
+    /// It was erased.
+    Erased,
+    Failed(String),
 }
 
 /// Something the app asks the network to do.
@@ -322,6 +347,10 @@ enum Command {
     },
     /// Stop an upload before it stores.
     AbortUpload(EntityId, u16),
+    /// Follow an entity's log, or stop following it.
+    FollowLog(EntityId, bool),
+    /// Read an entity's crash dump, or erase it.
+    CrashDump(EntityId, bool),
 }
 
 /// What the window shows that entities can change unannounced: some, as
@@ -513,6 +542,19 @@ impl Network {
     pub fn abort_upload(&self, entity: EntityId, index: u16) {
         let _ = self.commands.send(Command::AbortUpload(entity, index));
     }
+
+    /// Follows an entity's log, reporting what it brings in
+    /// [`ReportKind::DeviceLog`], or stops following it; following again
+    /// goes on where it stopped.
+    pub fn follow_log(&self, entity: EntityId, follow: bool) {
+        let _ = self.commands.send(Command::FollowLog(entity, follow));
+    }
+
+    /// Reads an entity's crash dump, or with `erase` erases it, reporting
+    /// how it goes in [`ReportKind::CrashDump`].
+    pub fn crash_dump(&self, entity: EntityId, erase: bool) {
+        let _ = self.commands.send(Command::CrashDump(entity, erase));
+    }
 }
 
 impl Drop for Network {
@@ -573,6 +615,7 @@ fn run(
     // go or restart, and must register again.
     let mut notifying: HashSet<EntityId> = HashSet::new();
     let mut uploads = Uploads::new(generation);
+    let mut logs = Logs::new(generation);
     // Without it the network view only lacks this computer's place.
     let mut gptp = match NeighborListener::open(interface) {
         Ok(listener) => Some(listener),
@@ -610,6 +653,8 @@ fn run(
                     restart,
                 } => uploads.start(&mut driver, entity, index, image, restart),
                 Command::AbortUpload(entity, index) => uploads.abort(&mut driver, entity, index),
+                Command::FollowLog(entity, follow) => logs.follow(&mut driver, entity, follow),
+                Command::CrashDump(entity, erase) => logs.crash_dump(&mut driver, entity, erase),
             }
         }
         refresh(&mut driver, &watch, &notifying, &mut asked);
@@ -633,7 +678,7 @@ fn run(
             report(generation, ReportKind::Frames(frames));
         }
         while let Some(event) = driver.controller_mut().poll_event() {
-            if uploads.take(&mut driver, event) {
+            if uploads.take(&mut driver, event) || logs.take(&mut driver, event) {
                 continue;
             }
             if let Event::EntityRestarted(entity_id) | Event::EntityOffline(entity_id, _) = event {
@@ -690,6 +735,324 @@ fn run(
             }
         }
         uploads.turn(&mut driver);
+        logs.turn(&mut driver);
+    }
+}
+
+/// How often a crash dump's reading is reported.
+const CRASH_REPORTS: Duration = Duration::from_millis(250);
+
+/// The logs followed, and a crash dump being read or erased.
+struct Logs {
+    generation: u64,
+    logs: HashMap<EntityId, Followed>,
+    crash: Option<CrashJob>,
+}
+
+/// A log followed, or followed before and kept to go on where it stopped.
+struct Followed {
+    /// None until the entity's model says where its log is.
+    reader: Option<Reader>,
+    following: bool,
+    away: bool,
+    out: Option<CommandId>,
+}
+
+/// A crash dump read or erased: the entity, and the command out.
+struct CrashJob {
+    entity: EntityId,
+    index: u16,
+    step: CrashStep,
+    command: CommandId,
+    reported: std::time::Instant,
+}
+
+enum CrashStep {
+    /// Its length read afresh, before reading it.
+    Length,
+    Reading(DumpRead),
+    Erasing,
+    /// Its length read again after the erase.
+    Erased,
+}
+
+impl Logs {
+    fn new(generation: u64) -> Self {
+        Self {
+            generation,
+            logs: HashMap::new(),
+            crash: None,
+        }
+    }
+
+    fn report(&self, entity: EntityId, kind: impl FnOnce(EntityId) -> ReportKind) {
+        report(self.generation, kind(entity));
+    }
+
+    fn follow(&mut self, driver: &mut Driver, entity: EntityId, follow: bool) {
+        let now = driver.now();
+        let base = driver
+            .controller()
+            .model(entity)
+            .and_then(triib_devicelog::log::log_object);
+        let followed = self.logs.entry(entity).or_insert_with(|| Followed {
+            reader: None,
+            following: false,
+            away: false,
+            out: None,
+        });
+        followed.following = follow;
+        match (&mut followed.reader, follow) {
+            (Some(reader), true) => reader.resume(now),
+            (Some(reader), false) => {
+                reader.pause();
+                followed.out = None;
+            }
+            (None, true) => followed.reader = base.map(|base| Reader::new(base, now)),
+            (None, false) => {}
+        }
+    }
+
+    fn crash_dump(&mut self, driver: &mut Driver, entity: EntityId, erase: bool) {
+        if self.crash.is_some() {
+            return;
+        }
+        let object = driver
+            .controller()
+            .model(entity)
+            .and_then(crash_dump::crash_dump);
+        let Some(object) = object else {
+            self.report(entity, |entity| {
+                ReportKind::CrashDump(entity, CrashReport::NoDump)
+            });
+            return;
+        };
+        let now = driver.now();
+        let controller = driver.controller_mut();
+        let (step, command) = if erase {
+            let command = controller.start_operation(
+                now,
+                entity,
+                DescriptorType::MEMORY_OBJECT,
+                object.index,
+                MemoryObjectOperation::ERASE.0,
+                &[],
+            );
+            (CrashStep::Erasing, command)
+        } else {
+            let command = controller.read_descriptor(
+                now,
+                entity,
+                DescriptorType::MEMORY_OBJECT,
+                object.index,
+            );
+            (CrashStep::Length, command)
+        };
+        self.crash = Some(CrashJob {
+            entity,
+            index: object.index,
+            step,
+            command,
+            reported: std::time::Instant::now(),
+        });
+    }
+
+    /// Hands the logs an event: whether it was theirs alone, a command
+    /// they sent. They see entities come and go too, and their models
+    /// read.
+    fn take(&mut self, driver: &mut Driver, event: Event) -> bool {
+        let now = driver.now();
+        match event {
+            Event::CommandFinished(command, outcome) => {
+                if let Some((&entity, followed)) = self
+                    .logs
+                    .iter_mut()
+                    .find(|(_, followed)| followed.out == Some(command))
+                {
+                    followed.out = None;
+                    let answer = (outcome == Outcome::Done)
+                        .then(|| driver.controller_mut().take_memory_read(command))
+                        .flatten();
+                    let Some(reader) = &mut followed.reader else {
+                        return true;
+                    };
+                    let mut entries = Vec::new();
+                    match answer {
+                        Some(answer) => reader.handle_read(now, &answer, &mut entries),
+                        None => reader.handle_failure(now, outcome == Outcome::NoResponse),
+                    }
+                    if !entries.is_empty() {
+                        report(self.generation, ReportKind::DeviceLog(entity, entries));
+                    }
+                    return true;
+                }
+                if self
+                    .crash
+                    .as_ref()
+                    .is_some_and(|job| job.command == command)
+                {
+                    self.crash_finished(driver, outcome);
+                    return true;
+                }
+                false
+            }
+            Event::EntityOffline(entity, _) => {
+                if let Some(followed) = self.logs.get_mut(&entity) {
+                    followed.away = true;
+                    followed.out = None;
+                    if let Some(reader) = &mut followed.reader {
+                        reader.pause();
+                    }
+                }
+                if self.crash.as_ref().is_some_and(|job| job.entity == entity) {
+                    self.crash = None;
+                    report(
+                        self.generation,
+                        ReportKind::CrashDump(entity, CrashReport::Failed("gone".into())),
+                    );
+                }
+                false
+            }
+            Event::EntityOnline(entity) => {
+                if let Some(followed) = self.logs.get_mut(&entity) {
+                    followed.away = false;
+                    if followed.following
+                        && let Some(reader) = &mut followed.reader
+                    {
+                        reader.resume(now);
+                    }
+                }
+                false
+            }
+            Event::EntityEnumerated(entity) | Event::EntityModelChanged(entity) => {
+                if let Some(followed) = self.logs.get_mut(&entity)
+                    && followed.following
+                    && followed.reader.is_none()
+                    && let Some(base) = driver
+                        .controller()
+                        .model(entity)
+                        .and_then(triib_devicelog::log::log_object)
+                {
+                    followed.reader = Some(Reader::new(base, now));
+                }
+                false
+            }
+            _ => false,
+        }
+    }
+
+    fn crash_finished(&mut self, driver: &mut Driver, outcome: Outcome) {
+        let Some(mut job) = self.crash.take() else {
+            return;
+        };
+        let entity = job.entity;
+        let now = driver.now();
+        let failed = |what: &str| {
+            ReportKind::CrashDump(entity, CrashReport::Failed(format!("{what}: {outcome:?}")))
+        };
+        let length = |driver: &Driver| {
+            driver
+                .controller()
+                .model(entity)
+                .and_then(crash_dump::crash_dump)
+                .map(|object| object.length)
+        };
+        let next = match job.step {
+            CrashStep::Length => match (
+                outcome,
+                driver
+                    .controller()
+                    .model(entity)
+                    .and_then(crash_dump::crash_dump),
+            ) {
+                (Outcome::Done, Some(object)) if object.length == 0 => {
+                    Err(ReportKind::CrashDump(entity, CrashReport::Empty))
+                }
+                (Outcome::Done, Some(object)) => match DumpRead::new(object) {
+                    Ok(read) => Ok(CrashStep::Reading(read)),
+                    Err(failure) => Err(ReportKind::CrashDump(
+                        entity,
+                        CrashReport::Failed(failure.to_string()),
+                    )),
+                },
+                _ => Err(failed("its length")),
+            },
+            CrashStep::Reading(mut read) => {
+                let answer = (outcome == Outcome::Done)
+                    .then(|| driver.controller_mut().take_memory_read(job.command))
+                    .flatten();
+                match read.handle(outcome, answer.as_ref()) {
+                    Err(failure) => Err(ReportKind::CrashDump(
+                        entity,
+                        CrashReport::Failed(failure.to_string()),
+                    )),
+                    Ok(()) if read.done() => Err(ReportKind::CrashDump(
+                        entity,
+                        CrashReport::Read(read.into_octets()),
+                    )),
+                    Ok(()) => Ok(CrashStep::Reading(read)),
+                }
+            }
+            CrashStep::Erasing if outcome == Outcome::Done => Ok(CrashStep::Erased),
+            CrashStep::Erasing => Err(failed("erasing it")),
+            CrashStep::Erased => match (outcome, length(driver)) {
+                (Outcome::Done, Some(0)) => Err(ReportKind::CrashDump(entity, CrashReport::Erased)),
+                (Outcome::Done, Some(left)) => Err(ReportKind::CrashDump(
+                    entity,
+                    CrashReport::Failed(format!("{left} bytes left after the erase")),
+                )),
+                _ => Err(failed("its length after the erase")),
+            },
+        };
+        match next {
+            Err(kind) => report(self.generation, kind),
+            Ok(step) => {
+                let controller = driver.controller_mut();
+                job.command = match &step {
+                    CrashStep::Reading(read) => {
+                        let Some(part) = read.next() else {
+                            return;
+                        };
+                        controller.read_memory(now, entity, &[part])
+                    }
+                    CrashStep::Erased => controller.read_descriptor(
+                        now,
+                        entity,
+                        DescriptorType::MEMORY_OBJECT,
+                        job.index,
+                    ),
+                    CrashStep::Length | CrashStep::Erasing => return,
+                };
+                if let CrashStep::Reading(read) = &step
+                    && job.reported.elapsed() >= CRASH_REPORTS
+                {
+                    let (done, total) = read.progress();
+                    job.reported = std::time::Instant::now();
+                    report(
+                        self.generation,
+                        ReportKind::CrashDump(entity, CrashReport::Reading { done, total }),
+                    );
+                }
+                job.step = step;
+                self.crash = Some(job);
+            }
+        }
+    }
+
+    /// Sends each followed log's read when it is due.
+    fn turn(&mut self, driver: &mut Driver) {
+        let now = driver.now();
+        for (&entity, followed) in &mut self.logs {
+            if !followed.following || followed.away || followed.out.is_some() {
+                continue;
+            }
+            let Some(reader) = &mut followed.reader else {
+                continue;
+            };
+            if let Some(reads) = reader.poll_read(now) {
+                followed.out = Some(driver.controller_mut().read_memory(now, entity, &reads));
+            }
+        }
     }
 }
 

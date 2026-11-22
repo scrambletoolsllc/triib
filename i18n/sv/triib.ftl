@@ -777,6 +777,60 @@ firmware-doubt-other = Den här filen liknar den som ”{ $image }” tog emot f
 firmware-unsigned = Filen är inte signerad: en enhet som kontrollerar signaturer avvisar den.
 firmware-runs-already = Den kör redan den här filen.
 
+## Device log
+
+device-log-section = Enhetslogg
+device-log-log = Logg
+device-log-show = Visa loggen
+device-log-title = Logg för { $entity }
+device-log-following = Följer
+device-log-paused = Pausad
+device-log-away = Offline
+device-log-copy = Kopiera
+device-log-save = Spara…
+device-log-empty = Enhetens logg visas här allteftersom den läses.
+device-log-boot = Uppstart { $boot }, drifttid { $seconds } s
+device-log-boot-reason = , återställning { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } oväntad återställning
+   *[other] , { $count } oväntade återställningar
+}
+device-log-restarted = Enheten startade om.
+device-log-lost = { $count ->
+    [one] { $count } byte förlorad, skriven snabbare än den lästes.
+   *[other] { $count } byte förlorade, skrivna snabbare än de lästes.
+}
+device-log-dropped = { $count ->
+    [one] Enheten tappade { $count } rad.
+   *[other] Enheten tappade { $count } rader.
+}
+device-log-went-away = Enheten gick offline.
+device-log-came-back = Enheten är tillbaka.
+device-log-save-title = Spara loggen för { $entity }
+device-log-saved = Sparad i { $path }
+device-log-save-failed = Kunde inte spara i { $path }: { $error }
+device-log-crash = Kraschdump
+device-log-crash-kept = { $size ->
+    [one] { $size } byte
+   *[other] { $size } byte
+}
+device-log-crash-empty = Ingen
+device-log-crash-starting = Läser…
+device-log-crash-reading = Läser: { $done } av { $total } byte
+device-log-crash-saved = Sparade { $size } byte i { $path }
+device-log-crash-erasing = Raderar…
+device-log-crash-erased = Raderad
+device-log-crash-none = Den har ingen kraschdump.
+device-log-crash-busy = En annan kraschdump läses redan.
+device-log-crash-save = Spara till en fil…
+device-log-crash-save-title = Spara kraschdumpen för { $entity }
+device-log-crash-erase = Radera
+device-log-erase-title = Vill du radera kraschdumpen?
+device-log-erase-body = { $entity } behåller inte längre den kraschdump den har. Spara den först för att undersöka kraschen.
+device-log-erase-cancel = Avbryt
+device-log-erase-confirm = Radera
+device-log-network-stopped = Nätverket i triib stoppades.
+
 ## Log
 
 log-all = Alla

@@ -673,6 +673,48 @@ firmware-doubt-other = Tệp này giống tệp mà “{ $image }” đã nhận
 firmware-unsigned = Tệp chưa được ký: thiết bị có kiểm tra chữ ký sẽ từ chối tệp này.
 firmware-runs-already = Thực thể đang chạy tệp này rồi.
 
+## Device log
+
+device-log-section = Nhật ký thiết bị
+device-log-log = Nhật ký
+device-log-show = Hiện nhật ký
+device-log-title = Nhật ký của { $entity }
+device-log-following = Đang theo dõi
+device-log-paused = Đã tạm dừng
+device-log-away = Ngoại tuyến
+device-log-copy = Sao chép
+device-log-save = Lưu…
+device-log-empty = Nhật ký của thiết bị hiện ở đây khi được đọc.
+device-log-boot = Lần khởi động { $boot }, đã chạy { $seconds } giây
+device-log-boot-reason = , lý do đặt lại { $reason }
+device-log-boot-resets = , { $count } lần đặt lại bất ngờ
+device-log-restarted = Thiết bị đã khởi động lại.
+device-log-lost = Mất { $count } byte, do ghi nhanh hơn đọc.
+device-log-dropped = Thiết bị đã bỏ { $count } dòng.
+device-log-went-away = Thiết bị đã ngoại tuyến.
+device-log-came-back = Thiết bị đã hoạt động trở lại.
+device-log-save-title = Lưu nhật ký của { $entity }
+device-log-saved = Đã lưu vào { $path }
+device-log-save-failed = Không thể lưu vào { $path }: { $error }
+device-log-crash = Bản kết xuất sự cố
+device-log-crash-kept = { $size } byte
+device-log-crash-empty = Không có
+device-log-crash-starting = Đang đọc…
+device-log-crash-reading = Đang đọc: { $done } trên { $total } byte
+device-log-crash-saved = Đã lưu { $size } byte vào { $path }
+device-log-crash-erasing = Đang xóa…
+device-log-crash-erased = Đã xóa
+device-log-crash-none = Thực thể không giữ bản kết xuất sự cố nào.
+device-log-crash-busy = Đang đọc một bản kết xuất sự cố khác.
+device-log-crash-save = Lưu vào tệp…
+device-log-crash-save-title = Lưu bản kết xuất sự cố của { $entity }
+device-log-crash-erase = Xóa
+device-log-erase-title = Xóa bản kết xuất sự cố?
+device-log-erase-body = { $entity } sẽ không còn giữ bản kết xuất sự cố hiện có. Hãy lưu nó trước để tìm hiểu sự cố.
+device-log-erase-cancel = Hủy
+device-log-erase-confirm = Xóa
+device-log-network-stopped = Mạng của triib đã dừng.
+
 ## Log
 
 log-all = Tất cả

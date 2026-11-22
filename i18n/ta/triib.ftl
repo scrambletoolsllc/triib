@@ -758,6 +758,60 @@ firmware-doubt-other = இந்தக் கோப்பு, கடந்த �
 firmware-unsigned = கோப்பு கையொப்பமிடப்படவில்லை: கையொப்பங்களைச் சரிபார்க்கும் சாதனம் அதை மறுக்கும்.
 firmware-runs-already = அது ஏற்கனவே இந்தக் கோப்பில் இயங்குகிறது.
 
+## Device log
+
+device-log-section = சாதனப் பதிவு
+device-log-log = பதிவு
+device-log-show = பதிவைக் காட்டு
+device-log-title = { $entity }-இன் பதிவு
+device-log-following = பின்தொடர்கிறது
+device-log-paused = இடைநிறுத்தப்பட்டது
+device-log-away = ஆஃப்லைன்
+device-log-copy = நகலெடு
+device-log-save = சேமி…
+device-log-empty = சாதனத்தின் பதிவு படிக்கப்படும்போது இங்கே தோன்றும்.
+device-log-boot = Boot { $boot }, இயக்க நேரம் { $seconds } விநாடி
+device-log-boot-reason = , { $reason } காரணமாக reset
+device-log-boot-resets = { $count ->
+    [one] , { $count } எதிர்பாராத reset
+   *[other] , { $count } எதிர்பாராத resets
+}
+device-log-restarted = சாதனம் மீண்டும் தொடங்கியது.
+device-log-lost = { $count ->
+    [one] { $count } பைட் இழக்கப்பட்டது, படிப்பதைவிட வேகமாக எழுதப்பட்டது.
+   *[other] { $count } பைட்டுகள் இழக்கப்பட்டன, படிப்பதைவிட வேகமாக எழுதப்பட்டன.
+}
+device-log-dropped = { $count ->
+    [one] சாதனம் { $count } வரியைக் கைவிட்டது.
+   *[other] சாதனம் { $count } வரிகளைக் கைவிட்டது.
+}
+device-log-went-away = சாதனம் ஆஃப்லைன் ஆகிவிட்டது.
+device-log-came-back = சாதனம் திரும்பிவிட்டது.
+device-log-save-title = { $entity }-இன் பதிவைச் சேமி
+device-log-saved = { $path }-இல் சேமிக்கப்பட்டது
+device-log-save-failed = { $path }-இல் சேமிக்க முடியவில்லை: { $error }
+device-log-crash = Crash dump
+device-log-crash-kept = { $size ->
+    [one] { $size } பைட்
+   *[other] { $size } பைட்டுகள்
+}
+device-log-crash-empty = எதுவுமில்லை
+device-log-crash-starting = படிக்கிறது…
+device-log-crash-reading = படிக்கிறது: { $total }-இல் { $done } பைட்டுகள்
+device-log-crash-saved = { $size } பைட்டுகள் { $path }-இல் சேமிக்கப்பட்டன
+device-log-crash-erasing = அழிக்கிறது…
+device-log-crash-erased = அழிக்கப்பட்டது
+device-log-crash-none = அது crash dump எதையும் வைத்திருக்கவில்லை.
+device-log-crash-busy = வேறொரு crash dump படிக்கப்படுகிறது.
+device-log-crash-save = கோப்பில் சேமி…
+device-log-crash-save-title = { $entity }-இன் crash dump-ஐச் சேமி
+device-log-crash-erase = அழி
+device-log-erase-title = Crash dump-ஐ அழிக்கவா?
+device-log-erase-body = { $entity } தன்னிடம் உள்ள crash dump-ஐ இனி வைத்திருக்காது. Crash-இன் காரணத்தை ஆராய, முதலில் அதைச் சேமி.
+device-log-erase-cancel = ரத்துசெய்
+device-log-erase-confirm = அழி
+device-log-network-stopped = triib-இன் நெட்வொர்க் நின்றுவிட்டது.
+
 ## Log
 
 log-all = அனைத்தும்

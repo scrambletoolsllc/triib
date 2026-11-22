@@ -37,6 +37,25 @@ mod portal {
         ask(title, None, false).await
     }
 
+    /// Asks where to save a file, offering `name`. Cancelling yields
+    /// `None`.
+    pub async fn choose_save_file(title: String, name: String) -> Result<Option<PathBuf>, String> {
+        let request = SelectedFiles::save_file()
+            .title(title.as_str())
+            .current_name(name.as_str())
+            .send()
+            .await
+            .map_err(|error| error.to_string())?;
+        match request.response() {
+            Ok(selected) => Ok(selected
+                .uris()
+                .first()
+                .and_then(|uri| file_uri_to_path(uri.as_str()))),
+            Err(ashpd::Error::Response(_)) => Ok(None),
+            Err(error) => Err(error.to_string()),
+        }
+    }
+
     async fn ask_folder(
         title: String,
         current: Option<PathBuf>,
@@ -102,6 +121,17 @@ mod native {
         Ok(AsyncFileDialog::new()
             .set_title(title)
             .pick_file()
+            .await
+            .map(|file| file.path().to_path_buf()))
+    }
+
+    /// Asks where to save a file, offering `name`. Cancelling yields
+    /// `None`.
+    pub async fn choose_save_file(title: String, name: String) -> Result<Option<PathBuf>, String> {
+        Ok(AsyncFileDialog::new()
+            .set_title(title)
+            .set_file_name(name)
+            .save_file()
             .await
             .map(|file| file.path().to_path_buf()))
     }

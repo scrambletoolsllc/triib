@@ -673,6 +673,48 @@ firmware-doubt-other = 此文件与“{ $image }”上次接收的文件相似�
 firmware-unsigned = 该文件未签名：会检查签名的设备将拒绝它。
 firmware-runs-already = 它已在运行此文件。
 
+## Device log
+
+device-log-section = 设备日志
+device-log-log = 日志
+device-log-show = 显示日志
+device-log-title = { $entity } 的日志
+device-log-following = 实时
+device-log-paused = 已暂停
+device-log-away = 离线
+device-log-copy = 复制
+device-log-save = 保存…
+device-log-empty = 读取到的设备日志会显示在这里。
+device-log-boot = 启动 { $boot }，已运行 { $seconds } 秒
+device-log-boot-reason = ，重置原因 { $reason }
+device-log-boot-resets = ，意外重置 { $count } 次
+device-log-restarted = 设备已重新启动。
+device-log-lost = 丢失 { $count } 字节，写入快于读取。
+device-log-dropped = 设备丢弃了 { $count } 行。
+device-log-went-away = 设备已离线。
+device-log-came-back = 设备已重新上线。
+device-log-save-title = 保存 { $entity } 的日志
+device-log-saved = 已保存到 { $path }
+device-log-save-failed = 无法保存到 { $path }：{ $error }
+device-log-crash = 崩溃转储
+device-log-crash-kept = { $size } 字节
+device-log-crash-empty = 无
+device-log-crash-starting = 正在读取…
+device-log-crash-reading = 正在读取：{ $done } / { $total } 字节
+device-log-crash-saved = 已将 { $size } 字节保存到 { $path }
+device-log-crash-erasing = 正在擦除…
+device-log-crash-erased = 已擦除
+device-log-crash-none = 它未保留崩溃转储。
+device-log-crash-busy = 正在读取另一个崩溃转储。
+device-log-crash-save = 保存到文件…
+device-log-crash-save-title = 保存 { $entity } 的崩溃转储
+device-log-crash-erase = 擦除
+device-log-erase-title = 擦除崩溃转储？
+device-log-erase-body = { $entity } 将不再保留其现有的崩溃转储。如需调查崩溃原因，请先保存。
+device-log-erase-cancel = 取消
+device-log-erase-confirm = 擦除
+device-log-network-stopped = triib 的网络已停止。
+
 ## Log
 
 log-all = 全部

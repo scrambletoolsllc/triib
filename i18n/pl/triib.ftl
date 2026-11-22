@@ -834,6 +834,78 @@ firmware-doubt-other = Ten plik przypomina plik, który ostatnio wgrano do „{ 
 firmware-unsigned = Plik nie jest podpisany: urządzenie, które sprawdza podpisy, go odrzuca.
 firmware-runs-already = Na encji już działa ten plik.
 
+## Device log
+
+device-log-section = Dziennik urządzenia
+device-log-log = Dziennik
+device-log-show = Pokaż dziennik
+device-log-title = Dziennik encji { $entity }
+device-log-following = Na bieżąco
+device-log-paused = Wstrzymano
+device-log-away = Offline
+device-log-copy = Kopiuj
+device-log-save = Zapisz…
+device-log-empty = Dziennik urządzenia pojawia się tutaj w miarę odczytywania.
+device-log-boot = Rozruch { $boot }, czas pracy { $seconds } s
+device-log-boot-reason = , reset { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } nieoczekiwany reset
+    [few] , { $count } nieoczekiwane resety
+    [many] , { $count } nieoczekiwanych resetów
+   *[other] , { $count } nieoczekiwanego resetu
+}
+device-log-restarted = Urządzenie uruchomiło się ponownie.
+device-log-lost = { $count ->
+    [one] Utracono { $count } bajt: zapis był szybszy niż odczyt.
+    [few] Utracono { $count } bajty: zapis był szybszy niż odczyt.
+    [many] Utracono { $count } bajtów: zapis był szybszy niż odczyt.
+   *[other] Utracono { $count } bajtu: zapis był szybszy niż odczyt.
+}
+device-log-dropped = { $count ->
+    [one] Urządzenie odrzuciło { $count } wiersz.
+    [few] Urządzenie odrzuciło { $count } wiersze.
+    [many] Urządzenie odrzuciło { $count } wierszy.
+   *[other] Urządzenie odrzuciło { $count } wiersza.
+}
+device-log-went-away = Urządzenie przeszło w tryb offline.
+device-log-came-back = Urządzenie wróciło.
+device-log-save-title = Zapisz dziennik encji { $entity }
+device-log-saved = Zapisano w { $path }
+device-log-save-failed = Nie udało się zapisać w { $path }: { $error }
+device-log-crash = Zrzut awaryjny
+device-log-crash-kept = { $size ->
+    [one] { $size } bajt
+    [few] { $size } bajty
+    [many] { $size } bajtów
+   *[other] { $size } bajtu
+}
+device-log-crash-empty = Brak
+device-log-crash-starting = Odczytywanie…
+device-log-crash-reading = { $total ->
+    [one] Odczytywanie: { $done } z { $total } bajtu
+    [few] Odczytywanie: { $done } z { $total } bajtów
+    [many] Odczytywanie: { $done } z { $total } bajtów
+   *[other] Odczytywanie: { $done } z { $total } bajtu
+}
+device-log-crash-saved = { $size ->
+    [one] Zapisano { $size } bajt w { $path }
+    [few] Zapisano { $size } bajty w { $path }
+    [many] Zapisano { $size } bajtów w { $path }
+   *[other] Zapisano { $size } bajtu w { $path }
+}
+device-log-crash-erasing = Wymazywanie…
+device-log-crash-erased = Wymazano
+device-log-crash-none = Urządzenie nie przechowuje zrzutu awaryjnego.
+device-log-crash-busy = Trwa odczyt innego zrzutu awaryjnego.
+device-log-crash-save = Zapisz do pliku…
+device-log-crash-save-title = Zapisz zrzut awaryjny encji { $entity }
+device-log-crash-erase = Wymaż
+device-log-erase-title = Wymazać zrzut awaryjny?
+device-log-erase-body = Encja { $entity } nie będzie już przechowywać obecnego zrzutu awaryjnego. Najpierw go zapisz, aby zbadać awarię.
+device-log-erase-cancel = Anuluj
+device-log-erase-confirm = Wymaż
+device-log-network-stopped = Sieć triib zatrzymała się.
+
 ## Log
 
 log-all = Wszystkie

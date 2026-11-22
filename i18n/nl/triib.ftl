@@ -768,6 +768,60 @@ firmware-doubt-other = Dit bestand lijkt op het bestand dat “{ $image }” de 
 firmware-unsigned = Het bestand is niet ondertekend: een apparaat dat handtekeningen controleert, weigert het.
 firmware-runs-already = De entiteit draait dit bestand al.
 
+## Device log
+
+device-log-section = Apparaatlog
+device-log-log = Log
+device-log-show = Log tonen
+device-log-title = Log van { $entity }
+device-log-following = Wordt gevolgd
+device-log-paused = Gepauzeerd
+device-log-away = Offline
+device-log-copy = Kopiëren
+device-log-save = Opslaan…
+device-log-empty = Het log van het apparaat verschijnt hier terwijl het wordt gelezen.
+device-log-boot = Opstart { $boot }, { $seconds } s actief
+device-log-boot-reason = , reset door { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } onverwachte reset
+   *[other] , { $count } onverwachte resets
+}
+device-log-restarted = Het apparaat is opnieuw opgestart.
+device-log-lost = { $count ->
+    [one] { $count } byte verloren, sneller geschreven dan gelezen.
+   *[other] { $count } bytes verloren, sneller geschreven dan gelezen.
+}
+device-log-dropped = { $count ->
+    [one] Het apparaat heeft { $count } regel verworpen.
+   *[other] Het apparaat heeft { $count } regels verworpen.
+}
+device-log-went-away = Het apparaat is offline gegaan.
+device-log-came-back = Het apparaat is terug.
+device-log-save-title = Log van { $entity } opslaan
+device-log-saved = Opgeslagen in { $path }
+device-log-save-failed = Kon niet opslaan in { $path }: { $error }
+device-log-crash = Crashdump
+device-log-crash-kept = { $size ->
+    [one] { $size } byte
+   *[other] { $size } bytes
+}
+device-log-crash-empty = Geen
+device-log-crash-starting = Lezen…
+device-log-crash-reading = Lezen: { $done } van { $total } bytes
+device-log-crash-saved = { $size } bytes opgeslagen in { $path }
+device-log-crash-erasing = Wissen…
+device-log-crash-erased = Gewist
+device-log-crash-none = Het apparaat bewaart geen crashdump.
+device-log-crash-busy = Er wordt al een andere crashdump gelezen.
+device-log-crash-save = Opslaan in een bestand…
+device-log-crash-save-title = Crashdump van { $entity } opslaan
+device-log-crash-erase = Wissen
+device-log-erase-title = Crashdump wissen?
+device-log-erase-body = { $entity } bewaart de huidige crashdump daarna niet meer. Sla hem eerst op om de crash te onderzoeken.
+device-log-erase-cancel = Annuleren
+device-log-erase-confirm = Wissen
+device-log-network-stopped = Het netwerk van triib is gestopt.
+
 ## Log
 
 log-all = Alle

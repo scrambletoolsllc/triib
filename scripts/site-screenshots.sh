@@ -76,6 +76,7 @@ magick "$work/window-firmware-confirm-doubts-tiny-skia.png" -crop 816x756+872+42
 shot window-settings-general settings
 shot window-presets-desktop presets
 shot window-log-desktop log
+shot window-board-log device-log
 animated net-show network 1360
 animated net-show-clock network-clock 1360
 # As wide for its height as the clock tree beside it on the front page.

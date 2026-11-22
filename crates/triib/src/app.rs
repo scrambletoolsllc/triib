@@ -189,6 +189,8 @@ pub struct Triib {
     pub logos: crate::logos::Logos,
     /// The firmware file chosen for an entity, and the updates under way.
     pub firmware: crate::firmware::Firmware,
+    /// Devices' logs read, the one shown, and their crash dumps.
+    pub device_logs: crate::device_log::DeviceLogs,
 }
 
 /// What the network thread for the chosen interface is doing.
@@ -355,6 +357,8 @@ pub enum Message {
     /// The next step of an agent's look at how a stream fares, once the
     /// entity has had time to answer.
     StreamSampled(crate::tools::Sampling),
+    /// A device_log call has read for its seconds.
+    DeviceLogRead(crate::tools::LogRead),
     OutsideControlToggled(bool),
     ForgetAgents,
     /// A storage place, as typed in Settings.
@@ -367,6 +371,7 @@ pub enum Message {
     StorageChosen(crate::storage::Storage, Result<Option<PathBuf>, String>),
     /// Updating an entity's firmware.
     Firmware(crate::firmware::Ask),
+    DeviceLog(crate::device_log::Ask),
     Nothing,
 }
 
@@ -414,6 +419,7 @@ impl Triib {
             format_menu: None,
             entity_list_offset: (0.0, 0.0),
             notice: None,
+            device_logs: crate::device_log::DeviceLogs::default(),
             hover: Hover::default(),
             peers: Vec::new(),
             cannot_listen: None,
@@ -496,6 +502,7 @@ impl Triib {
             format_menu: None,
             entity_list_offset: (0.0, 0.0),
             notice: None,
+            device_logs: crate::device_log::DeviceLogs::default(),
             hover: Hover::default(),
             peers: Vec::new(),
             cannot_listen: None,
@@ -952,7 +959,13 @@ impl Triib {
                 }
             }
             Message::LogToggled => {
-                self.settings.log = !self.settings.log;
+                // A device's log in the panel gives way to the frames.
+                if self.device_logs.shown.is_some() {
+                    let _ = crate::device_log::update(self, crate::device_log::Ask::Close);
+                    self.settings.log = true;
+                } else {
+                    self.settings.log = !self.settings.log;
+                }
                 self.save_settings();
             }
             Message::LogResized(drag, shown, most) => match drag {
@@ -1376,6 +1389,7 @@ impl Triib {
             Message::AgentAnswered(allow) => return self.agent_answered(allow),
             Message::AgentPromptReady => {}
             Message::StreamSampled(sampling) => return crate::tools::sampled(self, sampling),
+            Message::DeviceLogRead(read) => return crate::tools::log_read(self, read),
             Message::OutsideControlToggled(on) => {
                 self.settings.outside_control = on;
                 self.save_settings();
@@ -1412,6 +1426,7 @@ impl Triib {
                 self.settings_error = Some(crate::fl!("app-file-dialog-failed", error = error));
             }
             Message::Firmware(ask) => return crate::firmware::update(self, ask),
+            Message::DeviceLog(ask) => return crate::device_log::update(self, ask),
             Message::Nothing => {}
         }
         Task::none()
@@ -1487,6 +1502,7 @@ impl Triib {
     fn start_network(&mut self, fresh: bool) {
         self.network = None;
         self.firmware.network_stopped();
+        self.device_logs.network_stopped();
         self.entities.clear();
         self.heard.clear();
         self.models.clear();
@@ -1536,10 +1552,15 @@ impl Triib {
         match report.kind {
             ReportKind::Started { controller } => {
                 self.network_state = NetworkState::Running { controller };
+                // The log shown, followed again on the new network.
+                if let (Some(shown), Some(network)) = (self.device_logs.shown, &self.network) {
+                    network.follow_log(shown, true);
+                }
             }
             ReportKind::Failed(failure) => {
                 self.network = None;
                 self.firmware.network_stopped();
+                self.device_logs.network_stopped();
                 self.network_state = NetworkState::Failed(failure);
                 self.agent_actions_dropped();
             }
@@ -1553,12 +1574,16 @@ impl Triib {
                 if restarted || !self.entities.contains_key(&entity_id) {
                     self.firmware.entity_back(entity_id);
                 }
+                if !self.entities.contains_key(&entity_id) {
+                    self.device_logs.away(entity_id, false);
+                }
                 self.entities.insert(entity_id, entity);
                 if self.is_this_mac(entity_id) {
                     self.refresh_mac_audio_device(entity_id);
                 }
             }
             ReportKind::Offline(entity_id, _) => {
+                self.device_logs.away(entity_id, true);
                 self.entities.remove(&entity_id);
                 self.models.remove(&entity_id);
             }
@@ -1582,6 +1607,8 @@ impl Triib {
                             .version_read(entity_id, descriptor.firmware_version);
                     }
                     self.models.insert(entity_id, *model);
+                    #[cfg(debug_assertions)]
+                    crate::device_log::show_for_test(self, entity_id);
                 }
             }
             ReportKind::Upload {
@@ -1590,6 +1617,10 @@ impl Triib {
                 stage,
             } => {
                 crate::firmware::reported(self, entity, index, stage);
+            }
+            ReportKind::DeviceLog(entity, entries) => self.device_logs.read(entity, entries),
+            ReportKind::CrashDump(entity, report) => {
+                crate::device_log::reported(self, entity, report);
             }
             ReportKind::Peers(peers) => self.peers = peers,
             ReportKind::CannotListen(reason) => self.cannot_listen = Some(reason),

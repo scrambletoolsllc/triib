@@ -758,6 +758,60 @@ firmware-doubt-other = यह फ़ाइल उस फ़ाइल जैस�
 firmware-unsigned = फ़ाइल साइन की हुई नहीं है: जो डिवाइस सिग्नेचर जाँचता है, वह इसे अस्वीकार कर देता है।
 firmware-runs-already = यह पहले से यही फ़ाइल चला रहा है।
 
+## Device log
+
+device-log-section = डिवाइस लॉग
+device-log-log = लॉग
+device-log-show = लॉग दिखाएँ
+device-log-title = { $entity } का लॉग
+device-log-following = लाइव
+device-log-paused = रुका हुआ
+device-log-away = ऑफ़लाइन
+device-log-copy = कॉपी करें
+device-log-save = सहेजें…
+device-log-empty = डिवाइस का लॉग पढ़े जाने के साथ-साथ यहाँ दिखता है।
+device-log-boot = बूट { $boot }, { $seconds } s चला
+device-log-boot-reason = , { $reason } से रीसेट
+device-log-boot-resets = { $count ->
+    [one] , { $count } अनपेक्षित रीसेट
+   *[other] , { $count } अनपेक्षित रीसेट
+}
+device-log-restarted = डिवाइस फिर से शुरू हुआ।
+device-log-lost = { $count ->
+    [one] { $count } बाइट खो गया, पढ़े जाने से तेज़ लिखा गया।
+   *[other] { $count } बाइट खो गए, पढ़े जाने से तेज़ लिखे गए।
+}
+device-log-dropped = { $count ->
+    [one] डिवाइस ने { $count } पंक्ति छोड़ दी।
+   *[other] डिवाइस ने { $count } पंक्तियाँ छोड़ दीं।
+}
+device-log-went-away = डिवाइस ऑफ़लाइन हो गया।
+device-log-came-back = डिवाइस वापस आ गया।
+device-log-save-title = { $entity } का लॉग सहेजें
+device-log-saved = { $path } में सहेजा गया
+device-log-save-failed = { $path } में सहेजा नहीं जा सका: { $error }
+device-log-crash = क्रैश डंप
+device-log-crash-kept = { $size ->
+    [one] { $size } बाइट
+   *[other] { $size } बाइट
+}
+device-log-crash-empty = कोई नहीं
+device-log-crash-starting = पढ़ा जा रहा है…
+device-log-crash-reading = पढ़ा जा रहा है: { $total } में से { $done } बाइट
+device-log-crash-saved = { $size } बाइट { $path } में सहेजे गए
+device-log-crash-erasing = मिटाया जा रहा है…
+device-log-crash-erased = मिटाया गया
+device-log-crash-none = यह कोई क्रैश डंप नहीं रखता।
+device-log-crash-busy = कोई दूसरा क्रैश डंप पढ़ा जा रहा है।
+device-log-crash-save = फ़ाइल में सहेजें…
+device-log-crash-save-title = { $entity } का क्रैश डंप सहेजें
+device-log-crash-erase = मिटाएँ
+device-log-erase-title = क्रैश डंप मिटाएँ?
+device-log-erase-body = { $entity } अपने पास रखा क्रैश डंप अब नहीं रखेगा। क्रैश की जाँच करने के लिए पहले उसे सहेज लें।
+device-log-erase-cancel = रद्द करें
+device-log-erase-confirm = मिटाएँ
+device-log-network-stopped = triib का नेटवर्क रुक गया।
+
 ## Log
 
 log-all = सभी

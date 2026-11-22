@@ -768,6 +768,60 @@ firmware-doubt-other = Diese Datei ähnelt der, die „{ $image }“ beim letzte
 firmware-unsigned = Die Datei ist nicht signiert: Ein Gerät, das Signaturen prüft, lehnt sie ab.
 firmware-runs-already = Die Entität führt diese Datei bereits aus.
 
+## Device log
+
+device-log-section = Geräte-Log
+device-log-log = Log
+device-log-show = Log anzeigen
+device-log-title = Log von { $entity }
+device-log-following = Wird mitgelesen
+device-log-paused = Angehalten
+device-log-away = Offline
+device-log-copy = Kopieren
+device-log-save = Speichern …
+device-log-empty = Das Log des Geräts erscheint hier, sobald es gelesen wird.
+device-log-boot = Boot { $boot }, Laufzeit { $seconds } s
+device-log-boot-reason = , Reset durch { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } unerwarteter Reset
+   *[other] , { $count } unerwartete Resets
+}
+device-log-restarted = Das Gerät wurde neu gestartet.
+device-log-lost = { $count ->
+    [one] { $count } Byte verloren, schneller geschrieben als gelesen.
+   *[other] { $count } Bytes verloren, schneller geschrieben als gelesen.
+}
+device-log-dropped = { $count ->
+    [one] Das Gerät hat { $count } Zeile verworfen.
+   *[other] Das Gerät hat { $count } Zeilen verworfen.
+}
+device-log-went-away = Das Gerät ist offline gegangen.
+device-log-came-back = Das Gerät ist wieder da.
+device-log-save-title = Log von { $entity } speichern
+device-log-saved = Gespeichert unter { $path }
+device-log-save-failed = Speichern unter { $path } fehlgeschlagen: { $error }
+device-log-crash = Crash-Dump
+device-log-crash-kept = { $size ->
+    [one] { $size } Byte
+   *[other] { $size } Bytes
+}
+device-log-crash-empty = Keiner
+device-log-crash-starting = Wird gelesen …
+device-log-crash-reading = Wird gelesen: { $done } von { $total } Bytes
+device-log-crash-saved = { $size } Bytes unter { $path } gespeichert
+device-log-crash-erasing = Wird gelöscht …
+device-log-crash-erased = Gelöscht
+device-log-crash-none = Das Gerät speichert keinen Crash-Dump.
+device-log-crash-busy = Ein anderer Crash-Dump wird gerade gelesen.
+device-log-crash-save = In Datei speichern …
+device-log-crash-save-title = Crash-Dump von { $entity } speichern
+device-log-crash-erase = Löschen
+device-log-erase-title = Crash-Dump löschen?
+device-log-erase-body = { $entity } behält den gespeicherten Crash-Dump dann nicht mehr. Speichern Sie ihn zuerst, um den Absturz zu untersuchen.
+device-log-erase-cancel = Abbrechen
+device-log-erase-confirm = Löschen
+device-log-network-stopped = Das Netzwerk von triib wurde gestoppt.
+
 ## Log
 
 log-all = Alle

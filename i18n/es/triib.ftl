@@ -809,6 +809,64 @@ firmware-doubt-other = Este archivo se parece al que «{ $image }» recibió la 
 firmware-unsigned = El archivo no está firmado: un dispositivo que comprueba las firmas lo rechaza.
 firmware-runs-already = Ya ejecuta este archivo.
 
+## Device log
+
+device-log-section = Registro del dispositivo
+device-log-log = Registro
+device-log-show = Mostrar el registro
+device-log-title = Registro de { $entity }
+device-log-following = Siguiendo
+device-log-paused = En pausa
+device-log-away = Fuera de línea
+device-log-copy = Copiar
+device-log-save = Guardar…
+device-log-empty = El registro del dispositivo aparece aquí a medida que se lee.
+device-log-boot = Arranque { $boot }, { $seconds } s en marcha
+device-log-boot-reason = , reinicio por { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } reinicio inesperado
+    [many] , { $count } reinicios inesperados
+   *[other] , { $count } reinicios inesperados
+}
+device-log-restarted = El dispositivo se ha reiniciado.
+device-log-lost = { $count ->
+    [one] Se perdió { $count } byte, escrito más rápido de lo que se leía.
+    [many] Se perdieron { $count } bytes, escritos más rápido de lo que se leían.
+   *[other] Se perdieron { $count } bytes, escritos más rápido de lo que se leían.
+}
+device-log-dropped = { $count ->
+    [one] El dispositivo descartó { $count } línea.
+    [many] El dispositivo descartó { $count } líneas.
+   *[other] El dispositivo descartó { $count } líneas.
+}
+device-log-went-away = El dispositivo se ha quedado fuera de línea.
+device-log-came-back = El dispositivo ha vuelto.
+device-log-save-title = Guardar el registro de { $entity }
+device-log-saved = Guardado en { $path }
+device-log-save-failed = No se pudo guardar en { $path }: { $error }
+device-log-crash = Volcado de fallo
+device-log-crash-kept = { $size ->
+    [one] { $size } byte
+    [many] { $size } bytes
+   *[other] { $size } bytes
+}
+device-log-crash-empty = Ninguno
+device-log-crash-starting = Leyendo…
+device-log-crash-reading = Leyendo: { $done } de { $total } bytes
+device-log-crash-saved = Se guardaron { $size } bytes en { $path }
+device-log-crash-erasing = Borrando…
+device-log-crash-erased = Borrado
+device-log-crash-none = No conserva ningún volcado de fallo.
+device-log-crash-busy = Ya se está leyendo otro volcado de fallo.
+device-log-crash-save = Guardar en un archivo…
+device-log-crash-save-title = Guardar el volcado de fallo de { $entity }
+device-log-crash-erase = Borrar
+device-log-erase-title = ¿Borrar el volcado de fallo?
+device-log-erase-body = { $entity } dejará de conservar el volcado de fallo que tiene. Guárdalo antes para investigar el fallo.
+device-log-erase-cancel = Cancelar
+device-log-erase-confirm = Borrar
+device-log-network-stopped = La red de triib se ha detenido.
+
 ## Log
 
 log-all = Todo

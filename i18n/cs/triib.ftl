@@ -835,6 +835,68 @@ firmware-doubt-other = Tento soubor se podobá tomu, který se minule nahrál do
 firmware-unsigned = Soubor není podepsaný: zařízení, které kontroluje podpisy, ho odmítá.
 firmware-runs-already = Tento soubor už má spuštěný.
 
+## Device log
+
+device-log-section = Protokol zařízení
+device-log-log = Protokol
+device-log-show = Zobrazit protokol
+device-log-title = Protokol entity { $entity }
+device-log-following = Sleduje se
+device-log-paused = Pozastaveno
+device-log-away = Offline
+device-log-copy = Kopírovat
+device-log-save = Uložit…
+device-log-empty = Zde se objevuje protokol zařízení, jak se načítá.
+device-log-boot = Spuštění { $boot }, v provozu { $seconds } s
+device-log-boot-reason = , příčina resetu { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } neočekávaný reset
+    [few] , { $count } neočekávané resety
+    [many] , { $count } neočekávaného resetu
+   *[other] , { $count } neočekávaných resetů
+}
+device-log-restarted = Zařízení se restartovalo.
+device-log-lost = { $count ->
+    [one] { $count } bajt ztracen, zápis byl rychlejší než čtení.
+    [few] { $count } bajty ztraceny, zápis byl rychlejší než čtení.
+    [many] { $count } bajtu ztraceno, zápis byl rychlejší než čtení.
+   *[other] { $count } bajtů ztraceno, zápis byl rychlejší než čtení.
+}
+device-log-dropped = { $count ->
+    [one] Zařízení zahodilo { $count } řádek.
+    [few] Zařízení zahodilo { $count } řádky.
+    [many] Zařízení zahodilo { $count } řádku.
+   *[other] Zařízení zahodilo { $count } řádků.
+}
+device-log-went-away = Zařízení přešlo do režimu offline.
+device-log-came-back = Zařízení je zpět.
+device-log-save-title = Uložit protokol entity { $entity }
+device-log-saved = Uloženo do { $path }
+device-log-save-failed = Nelze uložit do { $path }: { $error }
+device-log-crash = Výpis pádu
+device-log-crash-kept = { $size ->
+    [one] { $size } bajt
+    [few] { $size } bajty
+    [many] { $size } bajtu
+   *[other] { $size } bajtů
+}
+device-log-crash-empty = Žádný
+device-log-crash-starting = Načítání…
+device-log-crash-reading = Načítání: { $done } z { $total } bajtů
+device-log-crash-saved = Uloženo { $size } bajtů do { $path }
+device-log-crash-erasing = Mazání…
+device-log-crash-erased = Smazáno
+device-log-crash-none = Neuchovává žádný výpis pádu.
+device-log-crash-busy = Načítá se jiný výpis pádu.
+device-log-crash-save = Uložit do souboru…
+device-log-crash-save-title = Uložit výpis pádu entity { $entity }
+device-log-crash-erase = Smazat
+device-log-erase-title = Smazat výpis pádu?
+device-log-erase-body = Entita { $entity } už nebude uchovávat výpis pádu, který má. Chcete-li pád prozkoumat, nejprve ho uložte.
+device-log-erase-cancel = Zrušit
+device-log-erase-confirm = Smazat
+device-log-network-stopped = Síť aplikace triib se zastavila.
+
 ## Log
 
 log-all = Vše

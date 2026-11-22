@@ -93,6 +93,8 @@ pub fn window(triib: &Triib) -> Element<'_, Message> {
         crate::presets::dialog(triib)
     } else if let Some(confirm) = crate::firmware::dialog(triib) {
         confirm
+    } else if let Some(confirm) = crate::device_log::dialog(triib) {
+        confirm
     } else {
         space().into()
     };
@@ -111,7 +113,7 @@ fn panels(triib: &Triib, size: iced::Size) -> Element<'_, Message> {
     } else {
         container(content(triib)).width(Fill).height(Fill).into()
     };
-    let main = if triib.settings.log {
+    let main = if triib.settings.log || triib.device_logs.shown.is_some() {
         let width = if beside {
             size.width - component::SIDE_SHEET_WIDTH
         } else {
@@ -123,7 +125,12 @@ fn panels(triib: &Triib, size: iced::Size) -> Element<'_, Message> {
             .settings
             .log_height
             .clamp(crate::log_view::LEAST_HEIGHT, most);
-        iced::widget::column![main, crate::log_view::panel(triib, width, height, most)].into()
+        let panel = if triib.device_logs.shown.is_some() {
+            crate::device_log::panel(triib, width, height, most)
+        } else {
+            crate::log_view::panel(triib, width, height, most)
+        };
+        iced::widget::column![main, panel].into()
     } else {
         main
     };
@@ -1413,6 +1420,7 @@ fn entity_sections<'a>(
     items.extend(crate::lite_view::entity_section(model));
     items.extend(crate::wireless_view::entity_section(triib, model));
     items.extend(crate::firmware::entity_section(triib, entity_id, model));
+    items.extend(crate::device_log::entity_section(triib, entity_id, model));
     items
 }
 
@@ -2430,6 +2438,18 @@ pub(crate) mod tests {
         inputs: &[&str],
         firmware: Option<u64>,
     ) -> (DiscoveredEntity, EntityModel) {
+        host_entity_keeping(name, outputs, inputs, firmware, false)
+    }
+
+    /// The same, keeping a log and a crash dump too where `log`, as an
+    /// ESP32 board does.
+    pub(crate) fn host_entity_keeping(
+        name: &str,
+        outputs: &[&str],
+        inputs: &[&str],
+        firmware: Option<u64>,
+        log: bool,
+    ) -> (DiscoveredEntity, EntityModel) {
         use std::time::Duration;
 
         use atdecc::entity::{ClockQuality, EndpointModel, Entity, Gptp, StreamModel};
@@ -2475,6 +2495,11 @@ pub(crate) mod tests {
         let mut entity = Entity::new(model, &[]);
         if let Some(most) = firmware {
             entity.keep_firmware(most);
+        }
+        if log {
+            entity.keep_log(Instant::ZERO, 16_384, 0x812c_21f8);
+            entity.set_log_reset(4, 3);
+            entity.keep_crash_dump(262_144, vec![0x45; 34_816]);
         }
         let mut controller = Controller::new(Config::new(EntityId(0x9c6b_00ff_fe30_9a2b)));
         let mut now = Instant::ZERO;
@@ -3036,6 +3061,15 @@ pub(crate) mod tests {
                 true,
                 Size::new(1280.0, 1500.0),
             ),
+            // An ESP board's log in the panel under the view.
+            ("board-log", View::Entities, true, desktop),
+            // Its log and crash dump in the inspector.
+            (
+                "inspector-board-log",
+                View::Entities,
+                true,
+                Size::new(1280.0, 1500.0),
+            ),
             // One of this computer's entities, with a stream each way.
             (
                 "inspector-device",
@@ -3238,13 +3272,14 @@ pub(crate) mod tests {
                 models.insert(WIRED_ESP, model);
             }
             let mut shown = entities.clone();
-            let host = ["host", "device", "logos", "firmware"]
+            let host = ["host", "device", "logos", "firmware", "board-log"]
                 .iter()
                 .any(|kind| suffix.contains(kind))
                 .then(|| {
                     let firmware = suffix.contains("firmware").then_some(3_145_728);
+                    let log = suffix.contains("board-log");
                     let (host, model) =
-                        host_entity_taking("Host entity 1", &["Out 1"], &["In 1"], firmware);
+                        host_entity_keeping("Host entity 1", &["Out 1"], &["In 1"], firmware, log);
                     shown.insert(host.entity_id(), host);
                     models.insert(host.entity_id(), model);
                     host.entity_id()
@@ -3257,7 +3292,7 @@ pub(crate) mod tests {
                 Some(WIRED_ESP)
             } else if suffix.contains("wireless") {
                 Some(WIFI_ESP)
-            } else if ["device", "logos", "firmware"]
+            } else if ["device", "logos", "firmware", "board-log"]
                 .iter()
                 .any(|kind| suffix.contains(kind))
             {
@@ -3370,6 +3405,16 @@ pub(crate) mod tests {
                 triib.presets_open = true;
                 triib.preset_name = "Matinee".to_owned();
                 triib.preset_report = Some("Recalling \"Rehearsal\": 3 changes.".to_owned());
+            }
+            if let Some(host) = host.filter(|_| suffix.contains("board-log")) {
+                triib
+                    .device_logs
+                    .read(host, crate::device_log::tests::board_lines());
+                if suffix == "board-log" {
+                    triib.device_logs.shown = Some(host);
+                    // Tall enough for the boot and every line after it.
+                    triib.settings.log_height = 320.0;
+                }
             }
             if suffix.starts_with("log") {
                 let frames = crate::log_view::tests::bench_frames(&triib);

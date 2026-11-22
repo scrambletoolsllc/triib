@@ -399,6 +399,10 @@
   "page": "guide.html",
   "text": "<a1>Firmware updates</a1>"
  },
+ "c9909790c3ca": {
+  "page": "guide.html",
+  "text": "<a1>Device log and crash dump</a1>"
+ },
  "a5feb210b1af": {
   "page": "guide.html",
   "text": "<a1>Network</a1>"
@@ -603,6 +607,22 @@
   "page": "guide.html",
   "text": "<code>triib-cli firmware</code> lists an entity's images and updates one from a file, <code>--image</code> picking which where it has several; it refuses a file for the other processor unless <code>--anyway</code>, and watches for the entity going back for 75 seconds or <code>--settle</code>. AI agents do the same through <code>firmware_status</code>, <code>update_firmware</code> and <code>stop_firmware_update</code>, and stop at triib's doubts unless you still mean it once the agent has told you why."
  },
+ "a05af3ca493d": {
+  "page": "guide.html",
+  "text": "Device log and crash dump"
+ },
+ "2265cb7bb59d": {
+  "page": "guide.html",
+  "text": "A device that keeps a log for controllers to read, as an ESP32 board keeps its console, has a <em>Device log</em> section in the inspector's Entity tab. <em>Show the log</em> opens it in a panel under the view, where the frame log goes, and follows it as the device writes it: its lines as written, an error's in red, and between them each boot, with how long it had run, why it began and how many boots began unexpectedly where the device says, a restart, and lines lost when the device wrote faster than triib read. <em>Pause</em> holds the lines shown, and <em>Copy</em> and <em>Save…</em> take the log as text. Closing the panel stops reading; showing the log again goes on where it stopped."
+ },
+ "ec22be8d5775": {
+  "page": "guide.html",
+  "text": "A device that keeps a crash dump shows how large it is. <em>Save to a file…</em> reads it and saves it, and reading never clears it; <em>Erase</em> clears it, once you confirm. An ESP32 board's crash dump is ESP-IDF's core dump, which <code>esp-coredump</code> reads with the ELF of the firmware that crashed."
+ },
+ "b5afea84dfff": {
+  "page": "guide.html",
+  "text": "triib reads both over ATDECC, from the LOG_OBJECT and CRASH_DUMP memory objects the device keeps, through Address Access, and asks the device nothing unless one is shown or saved. <code>triib-cli log</code> prints a device's log, named by its entity ID or its name, <code>--follow</code> keeping on and <code>--stats</code> saying what reading costs; <code>triib-cli crash</code> saves a crash dump and with <code>--erase</code> erases it. AI agents read logs through <code>device_log</code> and save crash dumps through <code>save_crash_dump</code>."
+ },
  "53ebc572b4a4": {
   "page": "guide.html",
   "text": "Network"
@@ -800,6 +820,11 @@
  "3aeed625402c": {
   "page": "guide.html",
   "text": "The inspector's Firmware updates row while a file is sent, at 45%, and after the entity went back to the firmware it had",
+  "attribute": true
+ },
+ "11af2dd52785": {
+  "page": "guide.html",
+  "text": "The device log panel under the view: Host entity 1's log, following, its boot line saying it began after a panic with 3 unexpected resets, then its lines in a fixed width font, an error in red, and buttons to pause, copy, save and clear",
   "attribute": true
  },
  "67d8a25e059d": {
@@ -1086,6 +1111,14 @@
   "page": "specs.html",
   "text": "Updated over ATDECC on entities that take it, a coprocessor's too, from the inspector, <code>triib-cli firmware</code> or an AI agent; triib checks the file before it goes and shows an entity that goes back to its old firmware"
  },
+ "94d63856cbb2": {
+  "page": "specs.html",
+  "text": "Device log"
+ },
+ "a09886db9d19": {
+  "page": "specs.html",
+  "text": "The log a device keeps, such as an ESP32 board's console, followed in a panel, with each boot and restart marked, and its crash dump saved or erased, from the inspector, <code>triib-cli log</code> and <code>triib-cli crash</code> or an AI agent"
+ },
  "6ad427ced43e": {
   "page": "specs.html",
   "text": "Meters"
@@ -1114,9 +1147,9 @@
   "page": "specs.html",
   "text": "Each Wi-Fi station's role, time mode, link and access point, each access point's stations and the frames a second it delivers, stations under their access point on the map, and the profile's alarms"
  },
- "95e1546b695b": {
+ "9946e49cd03d": {
   "page": "specs.html",
-  "text": "<code>triib-cli</code>: discover, describe, connect and disconnect, name, configurations, formats, rates, clocks, channel maps, controls, maximum transit times, identify, the network and the stream state"
+  "text": "<code>triib-cli</code>: discover, describe, connect and disconnect, name, configurations, formats, rates, clocks, channel maps, controls, maximum transit times, identify, the network and the stream state, firmware, devices' logs and crash dumps"
  },
  "fca749ecc167": {
   "page": "specs.html",
@@ -1302,13 +1335,13 @@
   "page": "specs.html",
   "text": "triib asks before letting a new agent in, and remembers Allow; one not allowed is turned away until triib quits. Settings lists the agents allowed and forgets them, and outside control can be turned off"
  },
- "83b48d838710": {
+ "814a8bb81560": {
   "page": "specs.html",
-  "text": "Tools (20)"
+  "text": "Tools (22)"
  },
- "4309cc65e625": {
+ "6db34713fe44": {
   "page": "specs.html",
-  "text": "Ten that read, <code>status</code>, <code>list_entities</code>, <code>describe_entity</code>, <code>list_connections</code>, <code>list_problems</code>, <code>stream_diagnostics</code>, <code>clock_tree</code>, <code>firmware_status</code>, <code>list_audio_devices</code> and <code>audio_monitor</code>; and ten that change, <code>connect</code>, <code>disconnect</code>, <code>set_stream_format</code>, <code>set_sampling_rate</code>, <code>set_clock_source</code>, <code>rename</code>, <code>identify</code>, <code>update_firmware</code>, <code>stop_firmware_update</code> and <code>set_audio_monitor</code>; each marked for MCP clients as reading or changing"
+  "text": "Twelve that read, <code>status</code>, <code>list_entities</code>, <code>describe_entity</code>, <code>list_connections</code>, <code>list_problems</code>, <code>stream_diagnostics</code>, <code>clock_tree</code>, <code>firmware_status</code>, <code>device_log</code>, <code>save_crash_dump</code>, <code>list_audio_devices</code> and <code>audio_monitor</code>; and ten that change, <code>connect</code>, <code>disconnect</code>, <code>set_stream_format</code>, <code>set_sampling_rate</code>, <code>set_clock_source</code>, <code>rename</code>, <code>identify</code>, <code>update_firmware</code>, <code>stop_firmware_update</code> and <code>set_audio_monitor</code>; each marked for MCP clients as reading or changing"
  },
  "cffa2af0a3a6": {
   "page": "specs.html",

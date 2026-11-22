@@ -981,6 +981,67 @@ firmware-doubt-other = This file is like the one "{ $image }" took last time.
 firmware-unsigned = The file is not signed: a device that checks signatures refuses it.
 firmware-runs-already = It runs this file already.
 
+## Device log
+# The log a device keeps for controllers to read, such as an ESP32 board's
+# console, and the crash dump it keeps after a crash. A boot is one run of
+# the device from its start; ESP-IDF's reset reasons (PANIC, BROWNOUT and
+# such) stay as written.
+
+device-log-section = Device log
+device-log-log = Log
+device-log-show = Show the log
+device-log-title = { $entity }'s log
+device-log-following = Following
+device-log-paused = Paused
+device-log-away = Offline
+device-log-copy = Copy
+device-log-save = Save…
+device-log-empty = The device's log appears here as it is read.
+# $boot is the boot's ID in hex, $seconds how long the device had run.
+device-log-boot = Boot { $boot }, up { $seconds } s
+# Follows device-log-boot. $reason is ESP-IDF's name and number, such as PANIC (4).
+device-log-boot-reason = , reset { $reason }
+# Follows device-log-boot: boots that began after a panic, a watchdog or a brownout.
+device-log-boot-resets = { $count ->
+    [one] , { $count } unexpected reset
+   *[other] , { $count } unexpected resets
+}
+device-log-restarted = The device restarted.
+device-log-lost = { $count ->
+    [one] { $count } byte lost, written faster than read.
+   *[other] { $count } bytes lost, written faster than read.
+}
+device-log-dropped = { $count ->
+    [one] The device dropped { $count } line.
+   *[other] The device dropped { $count } lines.
+}
+device-log-went-away = The device went offline.
+device-log-came-back = The device is back.
+device-log-save-title = Save { $entity }'s log
+device-log-saved = Saved to { $path }
+device-log-save-failed = Could not save to { $path }: { $error }
+device-log-crash = Crash dump
+device-log-crash-kept = { $size ->
+    [one] { $size } byte
+   *[other] { $size } bytes
+}
+device-log-crash-empty = None
+device-log-crash-starting = Reading…
+device-log-crash-reading = Reading: { $done } of { $total } bytes
+device-log-crash-saved = Saved { $size } bytes to { $path }
+device-log-crash-erasing = Erasing…
+device-log-crash-erased = Erased
+device-log-crash-none = It keeps no crash dump.
+device-log-crash-busy = Another crash dump is being read.
+device-log-crash-save = Save to a file…
+device-log-crash-save-title = Save { $entity }'s crash dump
+device-log-crash-erase = Erase
+device-log-erase-title = Erase the crash dump?
+device-log-erase-body = { $entity } will no longer keep the crash dump it holds. Save it first to look into the crash.
+device-log-erase-cancel = Cancel
+device-log-erase-confirm = Erase
+device-log-network-stopped = triib's network stopped.
+
 ## Log
 # The ATDECC frames triib sends and hears. Each frame's summary stays in the
 # standards' words, as packet analyzers show them; ADP, AECP and ACMP are

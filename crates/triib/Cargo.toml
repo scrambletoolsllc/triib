@@ -19,6 +19,7 @@ atdecc = { workspace = true, features = ["std"] }
 avb-mrp.workspace = true
 avb-net = { workspace = true, features = ["std"] }
 triib-store.workspace = true
+triib-devicelog.workspace = true
 triib-firmware.workspace = true
 avb-endpointd.workspace = true
 avb-stream.workspace = true

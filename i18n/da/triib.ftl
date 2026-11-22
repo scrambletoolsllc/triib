@@ -768,6 +768,60 @@ firmware-doubt-other = Denne fil ligner den, »{ $image }« tog imod sidste gang
 firmware-unsigned = Filen er ikke signeret: en enhed, der kontrollerer signaturer, afviser den.
 firmware-runs-already = Den kører allerede denne fil.
 
+## Device log
+
+device-log-section = Enhedslog
+device-log-log = Log
+device-log-show = Vis loggen
+device-log-title = Log fra { $entity }
+device-log-following = Følger med
+device-log-paused = På pause
+device-log-away = Offline
+device-log-copy = Kopier
+device-log-save = Gem…
+device-log-empty = Enhedens log vises her, efterhånden som den læses.
+device-log-boot = Opstart { $boot }, oppetid { $seconds } s
+device-log-boot-reason = , nulstillet af { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } uventet nulstilling
+   *[other] , { $count } uventede nulstillinger
+}
+device-log-restarted = Enheden genstartede.
+device-log-lost = { $count ->
+    [one] { $count } byte tabt, skrevet hurtigere end læst.
+   *[other] { $count } bytes tabt, skrevet hurtigere end læst.
+}
+device-log-dropped = { $count ->
+    [one] Enheden kasserede { $count } linje.
+   *[other] Enheden kasserede { $count } linjer.
+}
+device-log-went-away = Enheden gik offline.
+device-log-came-back = Enheden er tilbage.
+device-log-save-title = Gem loggen fra { $entity }
+device-log-saved = Gemt i { $path }
+device-log-save-failed = Kunne ikke gemme i { $path }: { $error }
+device-log-crash = Crashdump
+device-log-crash-kept = { $size ->
+    [one] { $size } byte
+   *[other] { $size } bytes
+}
+device-log-crash-empty = Intet
+device-log-crash-starting = Læser…
+device-log-crash-reading = Læser: { $done } af { $total } bytes
+device-log-crash-saved = Gemte { $size } bytes i { $path }
+device-log-crash-erasing = Sletter…
+device-log-crash-erased = Slettet
+device-log-crash-none = Den gemmer ikke noget crashdump.
+device-log-crash-busy = Et andet crashdump er ved at blive læst.
+device-log-crash-save = Gem i en fil…
+device-log-crash-save-title = Gem crashdumpet fra { $entity }
+device-log-crash-erase = Slet
+device-log-erase-title = Vil du slette crashdumpet?
+device-log-erase-body = { $entity } beholder ikke længere det crashdump, den har. Gem det først for at undersøge nedbruddet.
+device-log-erase-cancel = Annuller
+device-log-erase-confirm = Slet
+device-log-network-stopped = Netværket i triib stoppede.
+
 ## Log
 
 log-all = Alle

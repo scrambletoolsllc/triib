@@ -825,6 +825,64 @@ firmware-doubt-other = Questo file è simile a quello che “{ $image }” ha ri
 firmware-unsigned = Il file non è firmato: un dispositivo che verifica le firme lo rifiuta.
 firmware-runs-already = Esegue già questo file.
 
+## Device log
+
+device-log-section = Log del dispositivo
+device-log-log = Log
+device-log-show = Mostra il log
+device-log-title = Log di { $entity }
+device-log-following = In diretta
+device-log-paused = In pausa
+device-log-away = Offline
+device-log-copy = Copia
+device-log-save = Salva…
+device-log-empty = Il log del dispositivo compare qui man mano che viene letto.
+device-log-boot = Avvio { $boot }, attivo da { $seconds } s
+device-log-boot-reason = , reset per { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } reset imprevisto
+    [many] , { $count } reset imprevisti
+   *[other] , { $count } reset imprevisti
+}
+device-log-restarted = Il dispositivo si è riavviato.
+device-log-lost = { $count ->
+    [one] { $count } byte perso, scritto più in fretta di quanto venisse letto.
+    [many] { $count } byte persi, scritti più in fretta di quanto venissero letti.
+   *[other] { $count } byte persi, scritti più in fretta di quanto venissero letti.
+}
+device-log-dropped = { $count ->
+    [one] Il dispositivo ha scartato { $count } riga.
+    [many] Il dispositivo ha scartato { $count } righe.
+   *[other] Il dispositivo ha scartato { $count } righe.
+}
+device-log-went-away = Il dispositivo è andato offline.
+device-log-came-back = Il dispositivo è tornato.
+device-log-save-title = Salva il log di { $entity }
+device-log-saved = Salvato in { $path }
+device-log-save-failed = Impossibile salvare in { $path }: { $error }
+device-log-crash = Crash dump
+device-log-crash-kept = { $size ->
+    [one] { $size } byte
+    [many] { $size } byte
+   *[other] { $size } byte
+}
+device-log-crash-empty = Nessuno
+device-log-crash-starting = Lettura…
+device-log-crash-reading = Lettura: { $done } di { $total } byte
+device-log-crash-saved = Salvati { $size } byte in { $path }
+device-log-crash-erasing = Cancellazione…
+device-log-crash-erased = Cancellato
+device-log-crash-none = Non conserva alcun crash dump.
+device-log-crash-busy = È in corso la lettura di un altro crash dump.
+device-log-crash-save = Salva in un file…
+device-log-crash-save-title = Salva il crash dump di { $entity }
+device-log-crash-erase = Cancella
+device-log-erase-title = Cancellare il crash dump?
+device-log-erase-body = { $entity } non conserverà più il crash dump che contiene. Salvalo prima, per esaminare il crash.
+device-log-erase-cancel = Annulla
+device-log-erase-confirm = Cancella
+device-log-network-stopped = La rete di triib si è fermata.
+
 ## Log
 
 log-all = Tutti

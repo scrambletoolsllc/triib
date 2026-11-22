@@ -678,6 +678,48 @@ firmware-doubt-other = Berkas ini mirip dengan yang diterima "{ $image }" terakh
 firmware-unsigned = Berkas tidak ditandatangani: perangkat yang memeriksa tanda tangan akan menolaknya.
 firmware-runs-already = Ia sudah menjalankan berkas ini.
 
+## Device log
+
+device-log-section = Log perangkat
+device-log-log = Log
+device-log-show = Tampilkan log
+device-log-title = Log { $entity }
+device-log-following = Mengikuti
+device-log-paused = Dijeda
+device-log-away = Offline
+device-log-copy = Salin
+device-log-save = Simpan…
+device-log-empty = Log perangkat muncul di sini saat dibaca.
+device-log-boot = Boot { $boot }, berjalan { $seconds } s
+device-log-boot-reason = , reset karena { $reason }
+device-log-boot-resets = , { $count } reset tak terduga
+device-log-restarted = Perangkat dimulai ulang.
+device-log-lost = { $count } byte hilang, ditulis lebih cepat daripada dibaca.
+device-log-dropped = Perangkat membuang { $count } baris.
+device-log-went-away = Perangkat menjadi offline.
+device-log-came-back = Perangkat sudah kembali.
+device-log-save-title = Simpan log { $entity }
+device-log-saved = Disimpan ke { $path }
+device-log-save-failed = Tidak dapat menyimpan ke { $path }: { $error }
+device-log-crash = Crash dump
+device-log-crash-kept = { $size } byte
+device-log-crash-empty = Tidak ada
+device-log-crash-starting = Membaca…
+device-log-crash-reading = Membaca: { $done } dari { $total } byte
+device-log-crash-saved = { $size } byte disimpan ke { $path }
+device-log-crash-erasing = Menghapus…
+device-log-crash-erased = Terhapus
+device-log-crash-none = Ia tidak menyimpan crash dump.
+device-log-crash-busy = Crash dump lain sedang dibaca.
+device-log-crash-save = Simpan ke berkas…
+device-log-crash-save-title = Simpan crash dump { $entity }
+device-log-crash-erase = Hapus
+device-log-erase-title = Hapus crash dump?
+device-log-erase-body = { $entity } tidak akan lagi menyimpan crash dump yang dimilikinya. Simpan terlebih dahulu untuk menyelidiki crash tersebut.
+device-log-erase-cancel = Batal
+device-log-erase-confirm = Hapus
+device-log-network-stopped = Jaringan triib berhenti.
+
 ## Log
 
 log-all = Semua

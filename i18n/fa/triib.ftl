@@ -758,6 +758,60 @@ firmware-doubt-other = این پرونده شبیه پرونده‌ای است �
 firmware-unsigned = پرونده امضا نشده است: دستگاهی که امضاها را بررسی می‌کند، آن را رد می‌کند.
 firmware-runs-already = هم‌اکنون همین پرونده را اجرا می‌کند.
 
+## Device log
+
+device-log-section = لاگ دستگاه
+device-log-log = لاگ
+device-log-show = نمایش لاگ
+device-log-title = لاگ { $entity }
+device-log-following = در حال دنبال کردن
+device-log-paused = در حالت مکث
+device-log-away = آفلاین
+device-log-copy = کپی
+device-log-save = ذخیره…
+device-log-empty = لاگ دستگاه هم‌زمان با خوانده شدن، اینجا نمایش داده می‌شود.
+device-log-boot = راه‌اندازی { $boot }، زمان کارکرد { $seconds } ثانیه
+device-log-boot-reason = ، بازنشانی { $reason }
+device-log-boot-resets = { $count ->
+    [one] ، { $count } بازنشانی غیرمنتظره
+   *[other] ، { $count } بازنشانی غیرمنتظره
+}
+device-log-restarted = دستگاه دوباره راه‌اندازی شد.
+device-log-lost = { $count ->
+    [one] { $count } بایت از دست رفت، سریع‌تر از آنکه خوانده شود نوشته شد.
+   *[other] { $count } بایت از دست رفت، سریع‌تر از آنکه خوانده شود نوشته شد.
+}
+device-log-dropped = { $count ->
+    [one] دستگاه { $count } خط را دور انداخت.
+   *[other] دستگاه { $count } خط را دور انداخت.
+}
+device-log-went-away = دستگاه آفلاین شد.
+device-log-came-back = دستگاه بازگشت.
+device-log-save-title = ذخیرهٔ لاگ { $entity }
+device-log-saved = در { $path } ذخیره شد
+device-log-save-failed = ذخیره در { $path } ممکن نشد: { $error }
+device-log-crash = دامپ خرابی
+device-log-crash-kept = { $size ->
+    [one] { $size } بایت
+   *[other] { $size } بایت
+}
+device-log-crash-empty = هیچ
+device-log-crash-starting = در حال خواندن…
+device-log-crash-reading = در حال خواندن: { $done } از { $total } بایت
+device-log-crash-saved = { $size } بایت در { $path } ذخیره شد
+device-log-crash-erasing = در حال پاک کردن…
+device-log-crash-erased = پاک شد
+device-log-crash-none = هیچ دامپ خرابی‌ای نگه نمی‌دارد.
+device-log-crash-busy = دامپ خرابی دیگری در حال خوانده شدن است.
+device-log-crash-save = ذخیره در پرونده…
+device-log-crash-save-title = ذخیرهٔ دامپ خرابی { $entity }
+device-log-crash-erase = پاک کردن
+device-log-erase-title = دامپ خرابی پاک شود؟
+device-log-erase-body = { $entity } دیگر دامپ خرابی‌ای را که دارد نگه نمی‌دارد. برای بررسی خرابی، اول آن را ذخیره کنید.
+device-log-erase-cancel = لغو
+device-log-erase-confirm = پاک کردن
+device-log-network-stopped = شبکهٔ triib متوقف شد.
+
 ## Log
 
 log-all = همه

@@ -758,6 +758,60 @@ firmware-doubt-other = এই ফাইলটি গতবার “{ $image }�
 firmware-unsigned = ফাইলটি স্বাক্ষরিত নয়: যে ডিভাইস স্বাক্ষর যাচাই করে, সেটি ফাইলটি প্রত্যাখ্যান করে।
 firmware-runs-already = এটি ইতিমধ্যে এই ফাইলটি চালাচ্ছে।
 
+## Device log
+
+device-log-section = ডিভাইস লগ
+device-log-log = লগ
+device-log-show = লগ দেখান
+device-log-title = { $entity }-এর লগ
+device-log-following = অনুসরণ করা হচ্ছে
+device-log-paused = থামানো
+device-log-away = অফলাইন
+device-log-copy = কপি করুন
+device-log-save = সংরক্ষণ করুন…
+device-log-empty = ডিভাইসের লগ পড়ার সঙ্গে সঙ্গে এখানে দেখা যায়।
+device-log-boot = বুট { $boot }, চালু { $seconds } সেকেন্ড
+device-log-boot-reason = , reset-এর কারণ { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count }টি অপ্রত্যাশিত reset
+   *[other] , { $count }টি অপ্রত্যাশিত reset
+}
+device-log-restarted = ডিভাইসটি আবার চালু হয়েছে।
+device-log-lost = { $count ->
+    [one] { $count } বাইট হারিয়ে গেছে, পড়ার চেয়ে দ্রুত লেখা হয়েছিল।
+   *[other] { $count } বাইট হারিয়ে গেছে, পড়ার চেয়ে দ্রুত লেখা হয়েছিল।
+}
+device-log-dropped = { $count ->
+    [one] ডিভাইসটি { $count }টি লাইন বাদ দিয়েছে।
+   *[other] ডিভাইসটি { $count }টি লাইন বাদ দিয়েছে।
+}
+device-log-went-away = ডিভাইসটি অফলাইন হয়ে গেছে।
+device-log-came-back = ডিভাইসটি ফিরে এসেছে।
+device-log-save-title = { $entity }-এর লগ সংরক্ষণ করুন
+device-log-saved = { $path }-এ সংরক্ষিত
+device-log-save-failed = { $path }-এ সংরক্ষণ করা যায়নি: { $error }
+device-log-crash = ক্র্যাশ ডাম্প
+device-log-crash-kept = { $size ->
+    [one] { $size } বাইট
+   *[other] { $size } বাইট
+}
+device-log-crash-empty = নেই
+device-log-crash-starting = পড়া হচ্ছে…
+device-log-crash-reading = পড়া হচ্ছে: { $total } বাইটের মধ্যে { $done }
+device-log-crash-saved = { $size } বাইট { $path }-এ সংরক্ষিত
+device-log-crash-erasing = মোছা হচ্ছে…
+device-log-crash-erased = মোছা হয়েছে
+device-log-crash-none = এটি কোনো ক্র্যাশ ডাম্প রাখে না।
+device-log-crash-busy = অন্য একটি ক্র্যাশ ডাম্প পড়া হচ্ছে।
+device-log-crash-save = ফাইলে সংরক্ষণ করুন…
+device-log-crash-save-title = { $entity }-এর ক্র্যাশ ডাম্প সংরক্ষণ করুন
+device-log-crash-erase = মুছুন
+device-log-erase-title = ক্র্যাশ ডাম্প মুছবেন?
+device-log-erase-body = { $entity } তার রাখা ক্র্যাশ ডাম্পটি আর রাখবে না। ক্র্যাশটি খতিয়ে দেখতে আগে এটি সংরক্ষণ করুন।
+device-log-erase-cancel = বাতিল করুন
+device-log-erase-confirm = মুছুন
+device-log-network-stopped = triib-এর নেটওয়ার্ক বন্ধ হয়ে গেছে।
+
 ## Log
 
 log-all = সব

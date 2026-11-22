@@ -784,6 +784,60 @@ firmware-doubt-other = Tämä tiedosto on samanlainen kuin se, jonka ”{ $image
 firmware-unsigned = Tiedostoa ei ole allekirjoitettu: allekirjoitukset tarkistava laite hylkää sen.
 firmware-runs-already = Tämä tiedosto on siinä jo käynnissä.
 
+## Device log
+
+device-log-section = Laitteen loki
+device-log-log = Loki
+device-log-show = Näytä loki
+device-log-title = Entiteetin { $entity } loki
+device-log-following = Seurataan
+device-log-paused = Tauolla
+device-log-away = Ei verkossa
+device-log-copy = Kopioi
+device-log-save = Tallenna…
+device-log-empty = Laitteen loki näkyy tässä sitä mukaa kuin sitä luetaan.
+device-log-boot = Käynnistys { $boot }, käynnissä { $seconds } s
+device-log-boot-reason = , nollauksen syy { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } odottamaton nollaus
+   *[other] , { $count } odottamatonta nollausta
+}
+device-log-restarted = Laite käynnistyi uudelleen.
+device-log-lost = { $count ->
+    [one] { $count } tavu hävisi, kirjoitus oli lukemista nopeampaa.
+   *[other] { $count } tavua hävisi, kirjoitus oli lukemista nopeampaa.
+}
+device-log-dropped = { $count ->
+    [one] Laite pudotti { $count } rivin.
+   *[other] Laite pudotti { $count } riviä.
+}
+device-log-went-away = Laite poistui verkosta.
+device-log-came-back = Laite on taas verkossa.
+device-log-save-title = Tallenna entiteetin { $entity } loki
+device-log-saved = Tallennettu tiedostoon { $path }
+device-log-save-failed = Tiedostoon { $path } ei voitu tallentaa: { $error }
+device-log-crash = Kaatumisvedos
+device-log-crash-kept = { $size ->
+    [one] { $size } tavu
+   *[other] { $size } tavua
+}
+device-log-crash-empty = Ei mitään
+device-log-crash-starting = Luetaan…
+device-log-crash-reading = Luetaan: { $done } / { $total } tavua
+device-log-crash-saved = { $size } tavua tallennettu tiedostoon { $path }
+device-log-crash-erasing = Poistetaan…
+device-log-crash-erased = Poistettu
+device-log-crash-none = Siinä ei ole kaatumisvedosta.
+device-log-crash-busy = Toista kaatumisvedosta luetaan jo.
+device-log-crash-save = Tallenna tiedostoon…
+device-log-crash-save-title = Tallenna entiteetin { $entity } kaatumisvedos
+device-log-crash-erase = Poista
+device-log-erase-title = Poistetaanko kaatumisvedos?
+device-log-erase-body = Entiteetti { $entity } ei enää säilytä kaatumisvedosta, joka siinä nyt on. Tallenna se ensin, jotta voit tutkia kaatumista.
+device-log-erase-cancel = Peruuta
+device-log-erase-confirm = Poista
+device-log-network-stopped = triib-sovelluksen verkkoyhteys katkesi.
+
 ## Log
 
 log-all = Kaikki

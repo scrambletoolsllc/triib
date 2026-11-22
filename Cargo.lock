@@ -4139,6 +4139,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "triib-devicelog",
  "triib-firmware",
  "triib-store",
  "windows-sys 0.61.2",
@@ -4150,7 +4151,16 @@ version = "1.5.2"
 dependencies = [
  "atdecc",
  "avb-net",
+ "triib-devicelog",
  "triib-firmware",
+]
+
+[[package]]
+name = "triib-devicelog"
+version = "1.5.2"
+dependencies = [
+ "atdecc",
+ "avb-net",
 ]
 
 [[package]]

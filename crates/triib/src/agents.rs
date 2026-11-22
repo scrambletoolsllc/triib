@@ -43,6 +43,8 @@ pub struct Agents {
     /// Firmware updates agents asked for, by entity and memory object,
     /// answered once they end.
     pub firmware_waits: Vec<((atdecc::EntityId, u16), Answer)>,
+    /// Crash dumps agents asked to save, by entity, answered once read.
+    pub crash_waits: Vec<(atdecc::EntityId, Answer)>,
 }
 
 /// An agent waiting for the user's answer, with the calls it made
@@ -248,7 +250,8 @@ impl Triib {
             .firmware_waits
             .drain(..)
             .map(|(_, answer)| answer);
-        for answer in waits.chain(updates) {
+        let crashes = self.agents.crash_waits.drain(..).map(|(_, answer)| answer);
+        for answer in waits.chain(updates).chain(crashes) {
             answer.send(Err(Error::new(
                 code::INTERNAL_ERROR,
                 "triib's network stopped before the device answered",

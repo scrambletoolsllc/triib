@@ -817,6 +817,64 @@ firmware-doubt-other = Aquest fitxer s’assembla al que «{ $image }» va rebre
 firmware-unsigned = El fitxer no està signat: un dispositiu que comprova les signatures el rebutja.
 firmware-runs-already = Ja executa aquest fitxer.
 
+## Device log
+
+device-log-section = Registre del dispositiu
+device-log-log = Registre
+device-log-show = Mostra el registre
+device-log-title = Registre de { $entity }
+device-log-following = En seguiment
+device-log-paused = En pausa
+device-log-away = Fora de línia
+device-log-copy = Copia
+device-log-save = Desa…
+device-log-empty = El registre del dispositiu apareix aquí a mesura que es llegeix.
+device-log-boot = Arrencada { $boot }, { $seconds } s en marxa
+device-log-boot-reason = , reinici per { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } reinici inesperat
+    [many] , { $count } reinicis inesperats
+   *[other] , { $count } reinicis inesperats
+}
+device-log-restarted = El dispositiu s’ha reiniciat.
+device-log-lost = { $count ->
+    [one] S’ha perdut { $count } byte, escrit més de pressa del que es llegia.
+    [many] S’han perdut { $count } bytes, escrits més de pressa del que es llegien.
+   *[other] S’han perdut { $count } bytes, escrits més de pressa del que es llegien.
+}
+device-log-dropped = { $count ->
+    [one] El dispositiu ha descartat { $count } línia.
+    [many] El dispositiu ha descartat { $count } línies.
+   *[other] El dispositiu ha descartat { $count } línies.
+}
+device-log-went-away = El dispositiu ha quedat fora de línia.
+device-log-came-back = El dispositiu ha tornat.
+device-log-save-title = Desa el registre de { $entity }
+device-log-saved = Desat a { $path }
+device-log-save-failed = No s’ha pogut desar a { $path }: { $error }
+device-log-crash = Bolcat de fallada
+device-log-crash-kept = { $size ->
+    [one] { $size } byte
+    [many] { $size } bytes
+   *[other] { $size } bytes
+}
+device-log-crash-empty = Cap
+device-log-crash-starting = S’està llegint…
+device-log-crash-reading = S’està llegint: { $done } de { $total } bytes
+device-log-crash-saved = S’han desat { $size } bytes a { $path }
+device-log-crash-erasing = S’està esborrant…
+device-log-crash-erased = Esborrat
+device-log-crash-none = No conserva cap bolcat de fallada.
+device-log-crash-busy = S’està llegint un altre bolcat de fallada.
+device-log-crash-save = Desa en un fitxer…
+device-log-crash-save-title = Desa el bolcat de fallada de { $entity }
+device-log-crash-erase = Esborra
+device-log-erase-title = Voleu esborrar el bolcat de fallada?
+device-log-erase-body = { $entity } deixarà de conservar el bolcat de fallada que té. Deseu-lo abans per investigar la fallada.
+device-log-erase-cancel = Cancel·la
+device-log-erase-confirm = Esborra
+device-log-network-stopped = La xarxa del triib s’ha aturat.
+
 ## Log
 
 log-all = Tot

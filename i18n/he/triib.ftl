@@ -793,6 +793,68 @@ firmware-doubt-other = הקובץ הזה דומה לקובץ ש-"{ $image }" ק�
 firmware-unsigned = הקובץ לא חתום: התקן שבודק חתימות דוחה אותו.
 firmware-runs-already = הוא כבר מריץ את הקובץ הזה.
 
+## Device log
+
+device-log-section = יומן ההתקן
+device-log-log = יומן
+device-log-show = הצגת היומן
+device-log-title = היומן של { $entity }
+device-log-following = במעקב
+device-log-paused = נעצר
+device-log-away = לא מקוון
+device-log-copy = העתקה
+device-log-save = שמירה…
+device-log-empty = היומן של ההתקן מופיע כאן תוך כדי קריאתו.
+device-log-boot = אתחול { $boot }, פועל { $seconds ->
+    [one] שנייה אחת
+    [two] { $seconds } שניות
+   *[other] { $seconds } שניות
+}
+device-log-boot-reason = , איפוס { $reason }
+device-log-boot-resets = { $count ->
+    [one] , איפוס בלתי צפוי אחד
+    [two] , { $count } איפוסים בלתי צפויים
+   *[other] , { $count } איפוסים בלתי צפויים
+}
+device-log-restarted = ההתקן הופעל מחדש.
+device-log-lost = { $count ->
+    [one] בייט אחד אבד, נכתב מהר יותר משנקרא.
+    [two] { $count } בייטים אבדו, נכתבו מהר יותר משנקראו.
+   *[other] { $count } בייטים אבדו, נכתבו מהר יותר משנקראו.
+}
+device-log-dropped = { $count ->
+    [one] ההתקן השמיט שורה אחת.
+    [two] ההתקן השמיט { $count } שורות.
+   *[other] ההתקן השמיט { $count } שורות.
+}
+device-log-went-away = ההתקן עבר למצב לא מקוון.
+device-log-came-back = ההתקן חזר.
+device-log-save-title = שמירת היומן של { $entity }
+device-log-saved = נשמר ב-{ $path }
+device-log-save-failed = לא ניתן היה לשמור ב-{ $path }: { $error }
+device-log-crash = תמונת קריסה
+device-log-crash-kept = { $size ->
+    [one] בייט אחד
+    [two] { $size } בייטים
+   *[other] { $size } בייטים
+}
+device-log-crash-empty = אין
+device-log-crash-starting = קורא…
+device-log-crash-reading = קורא: { $done } מתוך { $total } בייטים
+device-log-crash-saved = נשמרו { $size } בייטים ב-{ $path }
+device-log-crash-erasing = מוחק…
+device-log-crash-erased = נמחקה
+device-log-crash-none = אין בו תמונת קריסה.
+device-log-crash-busy = תמונת קריסה אחרת נקראת כעת.
+device-log-crash-save = שמירה לקובץ…
+device-log-crash-save-title = שמירת תמונת הקריסה של { $entity }
+device-log-crash-erase = מחיקה
+device-log-erase-title = למחוק את תמונת הקריסה?
+device-log-erase-body = { $entity } לא ישמור עוד את תמונת הקריסה שיש בו. שמרו אותה קודם כדי לבדוק את הקריסה.
+device-log-erase-cancel = ביטול
+device-log-erase-confirm = מחיקה
+device-log-network-stopped = הרשת של triib נעצרה.
+
 ## Log
 
 log-all = הכול

@@ -254,6 +254,29 @@ struct StopFirmware {
 
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
+struct DeviceLogOf {
+    /// The entity's ID.
+    entity_id: String,
+    /// The most lines to give, the newest; 200 when left out, 2000 at
+    /// most.
+    lines: Option<u32>,
+    /// Seconds to read the log for, unless the user is following it in
+    /// triib; 3 when left out, 30 at most.
+    read_seconds: Option<u16>,
+}
+
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct SaveCrashDump {
+    /// The entity's ID.
+    entity_id: String,
+    /// Where to save it, by its full path on this computer;
+    /// crash-<entity ID>.core in the Downloads folder when left out.
+    file: Option<String>,
+}
+
+#[derive(Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
 struct Connect {
     /// The talker's entity ID.
     talker_entity_id: String,
@@ -789,6 +812,66 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
             },
         ),
         tool(
+            "device_log",
+            "Device log",
+            Kind::Read,
+            "Reads the log an entity keeps for controllers, such as an ESP32 board's \
+             console, as the inspector's Device log shows it, through Address Access, \
+             for read_seconds, unless the user is following it in triib: its newest \
+             lines, and between them, in brackets, each boot read (its ID, how long it had \
+             run, why it began and how many boots began unexpectedly, where the entity \
+             says), restarts, octets lost to a log written faster than read, and the \
+             entity going away and coming back. Each call goes on where the last stopped. \
+             Only for an entity that keeps a log, as describe_entity says.",
+            start_log_read,
+        ),
+        tool(
+            "save_crash_dump",
+            "Save a crash dump",
+            Kind::Read,
+            "Saves the crash dump an entity keeps, such as an ESP32 board's ESP-IDF core \
+             dump, to a file on this computer, reading it through Address Access; reading \
+             never clears it, and only the user erases it, from the inspector. Answers \
+             once it is saved, with the file and its size, or that the entity keeps no \
+             crash now. An ESP-IDF core dump reads with esp-coredump and the ELF of the \
+             firmware that crashed.",
+            |app, input: SaveCrashDump, answer| {
+                let entity = match entity_id(&input.entity_id) {
+                    Ok(entity) => entity,
+                    Err(error) => return reply(&answer, Err(error)),
+                };
+                let keeps = app
+                    .models
+                    .get(&entity)
+                    .and_then(|model| crate::device_log::keeps(model).1);
+                if keeps.is_none() {
+                    return reply(
+                        &answer,
+                        Err(Error::new(
+                            code::INVALID_PARAMS,
+                            format!(
+                                "{} keeps no crash dump, or has not been read",
+                                app.entity_name_of(entity)
+                            ),
+                        )),
+                    );
+                }
+                let file = input.file.map(std::path::PathBuf::from).unwrap_or_else(|| {
+                    let home = triib_store::paths::home().unwrap_or_default();
+                    let downloads = home.join("Downloads");
+                    let folder = if downloads.is_dir() { downloads } else { home };
+                    folder.join(triib_devicelog::crash::file_name(entity))
+                });
+                match crate::device_log::read_crash(app, entity, file) {
+                    Ok(()) => {
+                        app.agents.crash_waits.push((entity, answer));
+                        Task::none()
+                    }
+                    Err(why) => reply(&answer, Err(Error::new(code::INTERNAL_ERROR, why))),
+                }
+            },
+        ),
+        tool(
             "list_audio_devices",
             "List audio devices",
             Kind::Read,
@@ -1073,6 +1156,145 @@ pub fn firmware_finished(
             code::INTERNAL_ERROR,
             crate::firmware::stage_text(update),
         )),
+    }
+}
+
+/// How long device_log reads by default, and at most.
+const LOG_SECONDS: u16 = 3;
+const LONGEST_LOG_READ: u16 = 30;
+/// How many lines device_log gives by default, and at most.
+const LOG_LINES: u32 = 200;
+const MOST_LOG_LINES: u32 = 2000;
+
+/// A device_log call reading an entity's log, answered once it has read
+/// for its seconds.
+#[derive(Debug, Clone)]
+pub struct LogRead {
+    answer: Answer,
+    entity: EntityId,
+    lines: usize,
+}
+
+/// Starts device_log: follows the entity's log for the seconds asked,
+/// unless the user follows it already, whose lines are given at once.
+fn start_log_read(app: &mut Triib, input: DeviceLogOf, answer: Answer) -> Task<Message> {
+    let entity = match entity_id(&input.entity_id) {
+        Ok(entity) => entity,
+        Err(error) => return reply(&answer, Err(error)),
+    };
+    let keeps = app
+        .models
+        .get(&entity)
+        .is_some_and(|model| crate::device_log::keeps(model).0);
+    if !keeps {
+        return reply(
+            &answer,
+            Err(Error::new(
+                code::INVALID_PARAMS,
+                format!(
+                    "{} keeps no log, or has not been read",
+                    app.entity_name_of(entity)
+                ),
+            )),
+        );
+    }
+    let Some(network) = app.network() else {
+        return reply(
+            &answer,
+            Err(Error::new(
+                code::INTERNAL_ERROR,
+                "triib's network is not running; status says why",
+            )),
+        );
+    };
+    let read = LogRead {
+        answer,
+        entity,
+        lines: input.lines.unwrap_or(LOG_LINES).clamp(1, MOST_LOG_LINES) as usize,
+    };
+    if app.device_logs.shown == Some(entity) {
+        return log_read(app, read);
+    }
+    network.follow_log(entity, true);
+    app.device_logs.start(entity);
+    let seconds = input
+        .read_seconds
+        .unwrap_or(LOG_SECONDS)
+        .clamp(1, LONGEST_LOG_READ);
+    after(
+        Duration::from_secs(u64::from(seconds)),
+        Message::DeviceLogRead(read),
+    )
+}
+
+/// Answers device_log with the log's newest lines, no longer following it
+/// unless the user is.
+pub fn log_read(app: &mut Triib, read: LogRead) -> Task<Message> {
+    if app.device_logs.shown != Some(read.entity)
+        && let Some(network) = app.network()
+    {
+        network.follow_log(read.entity, false);
+    }
+    let name = app.entity_name_of(read.entity);
+    let all: Vec<String> = app
+        .device_logs
+        .lines(read.entity)
+        .map(|line| line.text(&name))
+        .collect();
+    let skip = all.len().saturating_sub(read.lines);
+    let following = app.device_logs.shown == Some(read.entity);
+    let result = Output::Json(json!({
+        "entity_id": read.entity.to_string(),
+        "name": name,
+        "followed_by_user": following,
+        "lines_kept": all.len(),
+        "lines": &all[skip..],
+    }));
+    reply(&read.answer, Ok(result))
+}
+
+/// Answers the save_crash_dump calls waiting on an entity's crash dump,
+/// once reading it ended.
+pub fn crash_finished(app: &mut Triib, entity: EntityId) {
+    let waits = std::mem::take(&mut app.agents.crash_waits);
+    let name = app.entity_name_of(entity);
+    for (waiting, answer) in waits {
+        if waiting != entity {
+            app.agents.crash_waits.push((waiting, answer));
+            continue;
+        }
+        let result = match app.device_logs.crash.get(&entity) {
+            Some(crate::device_log::Crash::Saved { path, octets }) => {
+                let firmware = app
+                    .models
+                    .get(&entity)
+                    .and_then(EntityModel::entity)
+                    .map(|descriptor| descriptor.firmware_version.to_owned())
+                    .unwrap_or_default();
+                Ok(Output::Json(json!({
+                    "entity_id": entity.to_string(),
+                    "file": path.display().to_string(),
+                    "bytes": octets,
+                    "firmware_now": firmware,
+                    "text": format!(
+                        "Saved {name}'s crash dump, {octets} bytes, to {}. Read it with: {}",
+                        path.display(),
+                        triib_devicelog::crash::decode_hint(path)
+                    ),
+                })))
+            }
+            Some(crate::device_log::Crash::Empty | crate::device_log::Crash::Erased) => {
+                Ok(Output::Text(format!("{name} keeps no crash dump now.")))
+            }
+            Some(crate::device_log::Crash::Failed(why)) => {
+                Err(Error::new(code::INTERNAL_ERROR, why.clone()))
+            }
+            _ => Err(Error::new(
+                code::INTERNAL_ERROR,
+                format!("reading {name}'s crash dump stopped"),
+            )),
+        };
+        answer.send(result);
     }
 }
 

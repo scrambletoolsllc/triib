@@ -31,6 +31,7 @@
 <li><a href="#entities">Entities</a></li>
 <li><a href="#inspector">Inspector</a></li>
 <li><a href="#firmware">Firmware updates</a></li>
+<li><a href="#device-log">Device log and crash dump</a></li>
 <li><a href="#network">Network</a></li>
 <li><a href="#avb-lite">AVB Lite</a></li>
 <li><a href="#avb-wireless">AVB Wireless</a></li>
@@ -100,6 +101,12 @@
 <p>Once you confirm, triib locks the entity against other controllers' changes, and the image's row shows how far the update has got, from sending to storing and restarting. Until the entity stores the file, <em>Stop the update</em> stops it, and the entity keeps the firmware it had. Its streams stop until it is back, so keep it powered and connected; where it refuses the file, triib says why.</p>
 <p>Back on new firmware of its own, the entity is watched for 75 seconds. One that goes back to the firmware it had, as an ESP32 does when its new firmware does not keep running, shows it, and so does one that comes back on firmware other than the file sent: an ESP32's version ends with its firmware's ELF hash, which tells them apart.</p>
 <p><code>triib-cli firmware</code> lists an entity's images and updates one from a file, <code>--image</code> picking which where it has several; it refuses a file for the other processor unless <code>--anyway</code>, and watches for the entity going back for 75 seconds or <code>--settle</code>. AI agents do the same through <code>firmware_status</code>, <code>update_firmware</code> and <code>stop_firmware_update</code>, and stop at triib's doubts unless you still mean it once the agent has told you why.</p>
+
+<h2 id="device-log">Device log and crash dump</h2>
+<figure><img class="shot" src="screenshots/device-log.png" alt="The device log panel under the view: Host entity 1's log, following, its boot line saying it began after a panic with 3 unexpected resets, then its lines in a fixed width font, an error in red, and buttons to pause, copy, save and clear" width="1360" height="850" loading="lazy"></figure>
+<p>A device that keeps a log for controllers to read, as an ESP32 board keeps its console, has a <em>Device log</em> section in the inspector's Entity tab. <em>Show the log</em> opens it in a panel under the view, where the frame log goes, and follows it as the device writes it: its lines as written, an error's in red, and between them each boot, with how long it had run, why it began and how many boots began unexpectedly where the device says, a restart, and lines lost when the device wrote faster than triib read. <em>Pause</em> holds the lines shown, and <em>Copy</em> and <em>Save…</em> take the log as text. Closing the panel stops reading; showing the log again goes on where it stopped.</p>
+<p>A device that keeps a crash dump shows how large it is. <em>Save to a file…</em> reads it and saves it, and reading never clears it; <em>Erase</em> clears it, once you confirm. An ESP32 board's crash dump is ESP-IDF's core dump, which <code>esp-coredump</code> reads with the ELF of the firmware that crashed.</p>
+<p>triib reads both over ATDECC, from the LOG_OBJECT and CRASH_DUMP memory objects the device keeps, through Address Access, and asks the device nothing unless one is shown or saved. <code>triib-cli log</code> prints a device's log, named by its entity ID or its name, <code>--follow</code> keeping on and <code>--stats</code> saying what reading costs; <code>triib-cli crash</code> saves a crash dump and with <code>--erase</code> erases it. AI agents read logs through <code>device_log</code> and save crash dumps through <code>save_crash_dump</code>.</p>
 
 <h2 id="network">Network</h2>
 <figure><img class="shot" src="screenshots/network.gif" alt="The network map of a show, its audio moving along the wires: a core bridge, a stage bridge and a front of house bridge, eighteen devices below them, and each audio stream as its own colored wire, with two failed reservations marked" width="1360" height="981" loading="lazy"></figure>
@@ -172,7 +179,8 @@ triib-cli discover enp2s0
 triib-cli connect enp2s0 &lt;talker-id&gt;:0 &lt;listener-id&gt;:0
 triib-cli rate enp2s0 &lt;entity-id&gt; 0 96000
 triib-cli identify enp2s0 &lt;entity-id&gt;
-triib-cli firmware enp2s0 &lt;entity-id&gt; firmware.bin</code></pre>
+triib-cli firmware enp2s0 &lt;entity-id&gt; firmware.bin
+triib-cli log enp2s0 esp-mic --follow</code></pre>
 <p>Run it with no arguments for every command; the <a href="https://github.com/scrambletoolsllc/triib#building">README</a> lists them too.</p>
 </main>
 

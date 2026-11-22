@@ -5,6 +5,20 @@ All notable changes to triib. Versions follow
 
 ## Unreleased
 
+### Added
+
+- A device's log, such as an ESP32 board's console without its cable,
+  and its crash dump, read over ATDECC from the LOG_OBJECT and
+  CRASH_DUMP memory objects it keeps, as avb-endpointd's `log` and
+  `crash` read them until now, on every system triib runs on. The
+  inspector's Device log section shows the log in a panel under the
+  view, following it as it is written, with each boot, restart and
+  octets lost marked, and saves the crash dump to a file or erases it.
+  `triib-cli log` prints logs, `--follow` keeps reading and `--stats`
+  says what reading costs, and `triib-cli crash` saves and erases crash
+  dumps. Agents read logs with `device_log` and save crash dumps with
+  `save_crash_dump`.
+
 ### Changed
 
 - The network view gives a bridge with Wi-Fi, an access point, one icon,

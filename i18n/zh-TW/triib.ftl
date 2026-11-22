@@ -673,6 +673,48 @@ firmware-doubt-other = 此檔案與「{ $image }」上次接收的檔案相似�
 firmware-unsigned = 該檔案未簽署：會檢查簽章的裝置將拒絕它。
 firmware-runs-already = 它已在執行此檔案。
 
+## Device log
+
+device-log-section = 裝置記錄
+device-log-log = 記錄
+device-log-show = 顯示記錄
+device-log-title = { $entity } 的記錄
+device-log-following = 即時
+device-log-paused = 已暫停
+device-log-away = 離線
+device-log-copy = 複製
+device-log-save = 儲存…
+device-log-empty = 讀取到的裝置記錄會顯示於此。
+device-log-boot = 啟動 { $boot }，已運作 { $seconds } 秒
+device-log-boot-reason = ，重設原因 { $reason }
+device-log-boot-resets = ，意外重設 { $count } 次
+device-log-restarted = 裝置已重新啟動。
+device-log-lost = 遺失 { $count } 位元組，寫入快於讀取。
+device-log-dropped = 裝置捨棄了 { $count } 行。
+device-log-went-away = 裝置已離線。
+device-log-came-back = 裝置已重新上線。
+device-log-save-title = 儲存 { $entity } 的記錄
+device-log-saved = 已儲存至 { $path }
+device-log-save-failed = 無法儲存至 { $path }：{ $error }
+device-log-crash = 當機傾印
+device-log-crash-kept = { $size } 位元組
+device-log-crash-empty = 無
+device-log-crash-starting = 正在讀取…
+device-log-crash-reading = 正在讀取：{ $done } / { $total } 位元組
+device-log-crash-saved = 已將 { $size } 位元組儲存至 { $path }
+device-log-crash-erasing = 正在抹除…
+device-log-crash-erased = 已抹除
+device-log-crash-none = 它未保留當機傾印。
+device-log-crash-busy = 正在讀取另一個當機傾印。
+device-log-crash-save = 儲存至檔案…
+device-log-crash-save-title = 儲存 { $entity } 的當機傾印
+device-log-crash-erase = 抹除
+device-log-erase-title = 要抹除當機傾印嗎？
+device-log-erase-body = { $entity } 將不再保留其現有的當機傾印。如需調查當機原因，請先儲存。
+device-log-erase-cancel = 取消
+device-log-erase-confirm = 抹除
+device-log-network-stopped = triib 的網路已停止。
+
 ## Log
 
 log-all = 全部

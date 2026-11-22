@@ -781,6 +781,60 @@ firmware-doubt-other = Αυτό το αρχείο μοιάζει με εκείν
 firmware-unsigned = Το αρχείο δεν είναι υπογεγραμμένο: μια συσκευή που ελέγχει υπογραφές το απορρίπτει.
 firmware-runs-already = Λειτουργεί ήδη με αυτό το αρχείο.
 
+## Device log
+
+device-log-section = Αρχείο καταγραφής συσκευής
+device-log-log = Αρχείο καταγραφής
+device-log-show = Εμφάνιση αρχείου καταγραφής
+device-log-title = Αρχείο καταγραφής: { $entity }
+device-log-following = Σε παρακολούθηση
+device-log-paused = Σε παύση
+device-log-away = Εκτός σύνδεσης
+device-log-copy = Αντιγραφή
+device-log-save = Αποθήκευση…
+device-log-empty = Το αρχείο καταγραφής της συσκευής εμφανίζεται εδώ καθώς διαβάζεται.
+device-log-boot = Εκκίνηση { $boot }, χρόνος λειτουργίας { $seconds } s
+device-log-boot-reason = , επαναφορά { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } απρόσμενη επαναφορά
+   *[other] , { $count } απρόσμενες επαναφορές
+}
+device-log-restarted = Η συσκευή επανεκκινήθηκε.
+device-log-lost = { $count ->
+    [one] Χάθηκε { $count } byte, γράφτηκε πιο γρήγορα από όσο διαβαζόταν.
+   *[other] Χάθηκαν { $count } byte, γράφτηκαν πιο γρήγορα από όσο διαβάζονταν.
+}
+device-log-dropped = { $count ->
+    [one] Η συσκευή απέρριψε { $count } γραμμή.
+   *[other] Η συσκευή απέρριψε { $count } γραμμές.
+}
+device-log-went-away = Η συσκευή βγήκε εκτός σύνδεσης.
+device-log-came-back = Η συσκευή επανήλθε.
+device-log-save-title = Αποθήκευση αρχείου καταγραφής της οντότητας { $entity }
+device-log-saved = Αποθηκεύτηκε στο { $path }
+device-log-save-failed = Δεν ήταν δυνατή η αποθήκευση στο { $path }: { $error }
+device-log-crash = Crash dump
+device-log-crash-kept = { $size ->
+    [one] { $size } byte
+   *[other] { $size } byte
+}
+device-log-crash-empty = Κανένα
+device-log-crash-starting = Ανάγνωση…
+device-log-crash-reading = Ανάγνωση: { $done } από { $total } byte
+device-log-crash-saved = Αποθηκεύτηκαν { $size } byte στο { $path }
+device-log-crash-erasing = Διαγραφή…
+device-log-crash-erased = Διαγράφηκε
+device-log-crash-none = Δεν κρατά crash dump.
+device-log-crash-busy = Διαβάζεται ήδη άλλο crash dump.
+device-log-crash-save = Αποθήκευση σε αρχείο…
+device-log-crash-save-title = Αποθήκευση του crash dump της οντότητας { $entity }
+device-log-crash-erase = Διαγραφή
+device-log-erase-title = Να διαγραφεί το crash dump;
+device-log-erase-body = Η οντότητα { $entity } δεν θα κρατά πια το crash dump που έχει. Αποθηκεύστε το πρώτα για να διερευνήσετε την κατάρρευση.
+device-log-erase-cancel = Ακύρωση
+device-log-erase-confirm = Διαγραφή
+device-log-network-stopped = Το δίκτυο του triib σταμάτησε.
+
 ## Log
 
 log-all = Όλα

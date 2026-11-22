@@ -817,6 +817,64 @@ firmware-doubt-other = Ce fichier ressemble à celui que « { $image } » a re
 firmware-unsigned = Le fichier n’est pas signé : un appareil qui vérifie les signatures le refuse.
 firmware-runs-already = Il exécute déjà ce fichier.
 
+## Device log
+
+device-log-section = Journal de l’appareil
+device-log-log = Journal
+device-log-show = Afficher le journal
+device-log-title = Journal de { $entity }
+device-log-following = Suivi en cours
+device-log-paused = En pause
+device-log-away = Hors ligne
+device-log-copy = Copier
+device-log-save = Enregistrer…
+device-log-empty = Le journal de l’appareil s’affiche ici au fil de sa lecture.
+device-log-boot = Démarrage { $boot }, en marche depuis { $seconds } s
+device-log-boot-reason = , réinitialisation { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } réinitialisation inattendue
+    [many] , { $count } réinitialisations inattendues
+   *[other] , { $count } réinitialisations inattendues
+}
+device-log-restarted = L’appareil a redémarré.
+device-log-lost = { $count ->
+    [one] { $count } octet perdu, écrit plus vite que lu.
+    [many] { $count } octets perdus, écrits plus vite que lus.
+   *[other] { $count } octets perdus, écrits plus vite que lus.
+}
+device-log-dropped = { $count ->
+    [one] L’appareil a abandonné { $count } ligne.
+    [many] L’appareil a abandonné { $count } lignes.
+   *[other] L’appareil a abandonné { $count } lignes.
+}
+device-log-went-away = L’appareil est passé hors ligne.
+device-log-came-back = L’appareil est de retour.
+device-log-save-title = Enregistrer le journal de { $entity }
+device-log-saved = Enregistré dans { $path }
+device-log-save-failed = Impossible d’enregistrer dans { $path } : { $error }
+device-log-crash = Vidage de plantage
+device-log-crash-kept = { $size ->
+    [one] { $size } octet
+    [many] { $size } octets
+   *[other] { $size } octets
+}
+device-log-crash-empty = Aucun
+device-log-crash-starting = Lecture…
+device-log-crash-reading = Lecture : { $done } sur { $total } octets
+device-log-crash-saved = { $size } octets enregistrés dans { $path }
+device-log-crash-erasing = Effacement…
+device-log-crash-erased = Effacé
+device-log-crash-none = Il ne garde aucun vidage de plantage.
+device-log-crash-busy = Un autre vidage de plantage est en cours de lecture.
+device-log-crash-save = Enregistrer dans un fichier…
+device-log-crash-save-title = Enregistrer le vidage de plantage de { $entity }
+device-log-crash-erase = Effacer
+device-log-erase-title = Effacer le vidage de plantage ?
+device-log-erase-body = { $entity } ne gardera plus le vidage de plantage qu’il contient. Enregistrez-le d’abord pour étudier le plantage.
+device-log-erase-cancel = Annuler
+device-log-erase-confirm = Effacer
+device-log-network-stopped = Le réseau de triib s’est arrêté.
+
 ## Log
 
 log-all = Tout

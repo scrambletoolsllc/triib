@@ -760,6 +760,60 @@ firmware-doubt-other = Ez a fájl olyan, mint az, amelyet „{ $image }” legut
 firmware-unsigned = A fájl nincs aláírva: az aláírásokat ellenőrző eszköz elutasítja.
 firmware-runs-already = Már ez a fájl fut rajta.
 
+## Device log
+
+device-log-section = Eszköznapló
+device-log-log = Napló
+device-log-show = Napló megjelenítése
+device-log-title = { $entity } naplója
+device-log-following = Követés
+device-log-paused = Szüneteltetve
+device-log-away = Offline
+device-log-copy = Másolás
+device-log-save = Mentés…
+device-log-empty = Az eszköz naplója olvasás közben itt jelenik meg.
+device-log-boot = Indítás { $boot }, üzemidő { $seconds } s
+device-log-boot-reason = , újraindulás oka: { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } váratlan újraindulás
+   *[other] , { $count } váratlan újraindulás
+}
+device-log-restarted = Az eszköz újraindult.
+device-log-lost = { $count ->
+    [one] { $count } bájt elveszett, gyorsabban íródott, mint ahogy beolvasták.
+   *[other] { $count } bájt elveszett, gyorsabban íródott, mint ahogy beolvasták.
+}
+device-log-dropped = { $count ->
+    [one] Az eszköz { $count } sort eldobott.
+   *[other] Az eszköz { $count } sort eldobott.
+}
+device-log-went-away = Az eszköz offline lett.
+device-log-came-back = Az eszköz újra elérhető.
+device-log-save-title = { $entity } naplójának mentése
+device-log-saved = Mentve ide: { $path }
+device-log-save-failed = A mentés nem sikerült ({ $path }): { $error }
+device-log-crash = Összeomlási memóriakép
+device-log-crash-kept = { $size ->
+    [one] { $size } bájt
+   *[other] { $size } bájt
+}
+device-log-crash-empty = Nincs
+device-log-crash-starting = Olvasás…
+device-log-crash-reading = Olvasás: { $done } / { $total } bájt
+device-log-crash-saved = { $size } bájt mentve ide: { $path }
+device-log-crash-erasing = Törlés…
+device-log-crash-erased = Törölve
+device-log-crash-none = Nem tárol összeomlási memóriaképet.
+device-log-crash-busy = Egy másik összeomlási memóriakép olvasása van folyamatban.
+device-log-crash-save = Mentés fájlba…
+device-log-crash-save-title = { $entity } összeomlási memóriaképének mentése
+device-log-crash-erase = Törlés
+device-log-erase-title = Törli az összeomlási memóriaképet?
+device-log-erase-body = { $entity } nem őrzi meg tovább a tárolt összeomlási memóriaképet. Az összeomlás kivizsgálásához előbb mentse el.
+device-log-erase-cancel = Mégse
+device-log-erase-confirm = Törlés
+device-log-network-stopped = A triib hálózata leállt.
+
 ## Log
 
 log-all = Mind

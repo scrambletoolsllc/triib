@@ -8,6 +8,7 @@ mod control;
 mod controls_view;
 mod crash;
 mod describe;
+mod device_log;
 mod diagnostics_view;
 mod dialog;
 mod entity_table;

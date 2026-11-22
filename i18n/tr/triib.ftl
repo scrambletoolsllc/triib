@@ -760,6 +760,60 @@ firmware-doubt-other = Bu dosya, geçen sefer “{ $image }” için alınan dos
 firmware-unsigned = Dosya imzalı değil: imzaları denetleyen bir cihaz onu reddeder.
 firmware-runs-already = Bu dosyayı zaten çalıştırıyor.
 
+## Device log
+
+device-log-section = Cihaz günlüğü
+device-log-log = Günlük
+device-log-show = Günlüğü göster
+device-log-title = { $entity } varlığının günlüğü
+device-log-following = İzleniyor
+device-log-paused = Duraklatıldı
+device-log-away = Çevrim dışı
+device-log-copy = Kopyala
+device-log-save = Kaydet…
+device-log-empty = Cihazın günlüğü okundukça burada görünür.
+device-log-boot = Önyükleme { $boot }, çalışma süresi { $seconds } sn
+device-log-boot-reason = , sıfırlama nedeni { $reason }
+device-log-boot-resets = { $count ->
+    [one] , { $count } beklenmedik sıfırlama
+   *[other] , { $count } beklenmedik sıfırlama
+}
+device-log-restarted = Cihaz yeniden başladı.
+device-log-lost = { $count ->
+    [one] { $count } bayt kayboldu, okunduğundan hızlı yazıldı.
+   *[other] { $count } bayt kayboldu, okunduğundan hızlı yazıldı.
+}
+device-log-dropped = { $count ->
+    [one] Cihaz { $count } satır düşürdü.
+   *[other] Cihaz { $count } satır düşürdü.
+}
+device-log-went-away = Cihaz çevrim dışı oldu.
+device-log-came-back = Cihaz geri geldi.
+device-log-save-title = { $entity } varlığının günlüğünü kaydet
+device-log-saved = { $path } konumuna kaydedildi
+device-log-save-failed = { $path } konumuna kaydedilemedi: { $error }
+device-log-crash = Çökme dökümü
+device-log-crash-kept = { $size ->
+    [one] { $size } bayt
+   *[other] { $size } bayt
+}
+device-log-crash-empty = Yok
+device-log-crash-starting = Okunuyor…
+device-log-crash-reading = Okunuyor: { $done } / { $total } bayt
+device-log-crash-saved = { $size } bayt, { $path } konumuna kaydedildi
+device-log-crash-erasing = Siliniyor…
+device-log-crash-erased = Silindi
+device-log-crash-none = Çökme dökümü saklamıyor.
+device-log-crash-busy = Başka bir çökme dökümü okunuyor.
+device-log-crash-save = Dosyaya kaydet…
+device-log-crash-save-title = { $entity } varlığının çökme dökümünü kaydet
+device-log-crash-erase = Sil
+device-log-erase-title = Çökme dökümü silinsin mi?
+device-log-erase-body = { $entity }, elindeki çökme dökümünü artık saklamayacak. Çökmeyi incelemek için önce dökümü kaydedin.
+device-log-erase-cancel = İptal
+device-log-erase-confirm = Sil
+device-log-network-stopped = triib'in ağı durdu.
+
 ## Log
 
 log-all = Tümü

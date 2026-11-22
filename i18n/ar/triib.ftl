@@ -890,6 +890,76 @@ firmware-doubt-other = يشبه هذا الملف الملف الذي تلقّا
 firmware-unsigned = الملف غير موقَّع: الجهاز الذي يتحقق من التواقيع يرفضه.
 firmware-runs-already = يشغّل هذا الملف بالفعل.
 
+## Device log
+
+device-log-section = سجل الجهاز
+device-log-log = السجل
+device-log-show = عرض السجل
+device-log-title = سجل { $entity }
+device-log-following = قيد المتابعة
+device-log-paused = متوقف مؤقتًا
+device-log-away = خارج الشبكة
+device-log-copy = نسخ
+device-log-save = حفظ…
+device-log-empty = يظهر سجل الجهاز هنا أثناء قراءته.
+device-log-boot = الإقلاع { $boot }، مدة التشغيل { $seconds } ث
+device-log-boot-reason = ، إعادة الضبط بسبب { $reason }
+device-log-boot-resets = { $count ->
+    [zero] ، { $count } عملية إعادة ضبط غير متوقعة
+    [one] ، عملية إعادة ضبط واحدة غير متوقعة
+    [two] ، عمليتا إعادة ضبط غير متوقعتين
+    [few] ، { $count } عمليات إعادة ضبط غير متوقعة
+    [many] ، { $count } عملية إعادة ضبط غير متوقعة
+   *[other] ، { $count } عملية إعادة ضبط غير متوقعة
+}
+device-log-restarted = أُعيد تشغيل الجهاز.
+device-log-lost = { $count ->
+    [zero] فُقد { $count } بايت، إذ كانت الكتابة أسرع من القراءة.
+    [one] فُقد بايت واحد، إذ كانت الكتابة أسرع من القراءة.
+    [two] فُقد بايتان، إذ كانت الكتابة أسرع من القراءة.
+    [few] فُقدت { $count } بايتات، إذ كانت الكتابة أسرع من القراءة.
+    [many] فُقد { $count } بايتًا، إذ كانت الكتابة أسرع من القراءة.
+   *[other] فُقد { $count } بايت، إذ كانت الكتابة أسرع من القراءة.
+}
+device-log-dropped = { $count ->
+    [zero] أسقط الجهاز { $count } سطر.
+    [one] أسقط الجهاز سطرًا واحدًا.
+    [two] أسقط الجهاز سطرين.
+    [few] أسقط الجهاز { $count } أسطر.
+    [many] أسقط الجهاز { $count } سطرًا.
+   *[other] أسقط الجهاز { $count } سطر.
+}
+device-log-went-away = صار الجهاز خارج الشبكة.
+device-log-came-back = عاد الجهاز.
+device-log-save-title = حفظ سجل { $entity }
+device-log-saved = حُفظ في { $path }
+device-log-save-failed = تعذّر الحفظ في { $path }: { $error }
+device-log-crash = تفريغ التعطل
+device-log-crash-kept = { $size ->
+    [zero] { $size } بايت
+    [one] بايت واحد
+    [two] بايتان
+    [few] { $size } بايتات
+    [many] { $size } بايتًا
+   *[other] { $size } بايت
+}
+device-log-crash-empty = لا يوجد
+device-log-crash-starting = جارٍ القراءة…
+device-log-crash-reading = جارٍ القراءة: { $done } من { $total } بايت
+device-log-crash-saved = حُفظ { $size } بايت في { $path }
+device-log-crash-erasing = جارٍ المسح…
+device-log-crash-erased = مُسح
+device-log-crash-none = لا يحتفظ بتفريغ تعطل.
+device-log-crash-busy = تجري قراءة تفريغ تعطل آخر.
+device-log-crash-save = حفظ في ملف…
+device-log-crash-save-title = حفظ تفريغ تعطل { $entity }
+device-log-crash-erase = مسح
+device-log-erase-title = هل تريد مسح تفريغ التعطل؟
+device-log-erase-body = لن يحتفظ { $entity } بعد الآن بتفريغ التعطل الذي لديه. احفظه أولًا لتتحقق من التعطل.
+device-log-erase-cancel = إلغاء
+device-log-erase-confirm = مسح
+device-log-network-stopped = توقفت شبكة triib.
+
 ## Log
 
 log-all = الكل

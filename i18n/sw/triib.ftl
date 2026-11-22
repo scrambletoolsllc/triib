@@ -767,6 +767,60 @@ firmware-doubt-other = Faili hii inafanana na ile ambayo "{ $image }" ilipokea m
 firmware-unsigned = Faili haijatiwa sahihi: kifaa kinachokagua sahihi kinaikataa.
 firmware-runs-already = Tayari inaendesha faili hii.
 
+## Device log
+
+device-log-section = Kumbukumbu ya kifaa
+device-log-log = Kumbukumbu
+device-log-show = Onyesha kumbukumbu
+device-log-title = Kumbukumbu ya { $entity }
+device-log-following = Inafuatilia
+device-log-paused = Imesitishwa
+device-log-away = Nje ya mtandao
+device-log-copy = Nakili
+device-log-save = Hifadhi…
+device-log-empty = Kumbukumbu ya kifaa inaonekana hapa inaposomwa.
+device-log-boot = Uwashaji { $boot }, imefanya kazi sekunde { $seconds }
+device-log-boot-reason = , uwekaji upya { $reason }
+device-log-boot-resets = { $count ->
+    [one] , mara { $count } ya kuwekwa upya bila kutarajiwa
+   *[other] , mara { $count } za kuwekwa upya bila kutarajiwa
+}
+device-log-restarted = Kifaa kimejiwasha upya.
+device-log-lost = { $count ->
+    [one] Baiti { $count } imepotea, iliandikwa haraka kuliko ilivyosomwa.
+   *[other] Baiti { $count } zimepotea, ziliandikwa haraka kuliko zilivyosomwa.
+}
+device-log-dropped = { $count ->
+    [one] Kifaa kilidondosha mstari { $count }.
+   *[other] Kifaa kilidondosha mistari { $count }.
+}
+device-log-went-away = Kifaa kimetoka nje ya mtandao.
+device-log-came-back = Kifaa kimerudi.
+device-log-save-title = Hifadhi kumbukumbu ya { $entity }
+device-log-saved = Imehifadhiwa kwenye { $path }
+device-log-save-failed = Imeshindwa kuhifadhi kwenye { $path }: { $error }
+device-log-crash = Crash dump
+device-log-crash-kept = { $size ->
+    [one] baiti { $size }
+   *[other] baiti { $size }
+}
+device-log-crash-empty = Hakuna
+device-log-crash-starting = Inasoma…
+device-log-crash-reading = Inasoma: baiti { $done } kati ya { $total }
+device-log-crash-saved = Imehifadhi baiti { $size } kwenye { $path }
+device-log-crash-erasing = Inafuta…
+device-log-crash-erased = Imefutwa
+device-log-crash-none = Haihifadhi crash dump yoyote.
+device-log-crash-busy = Crash dump nyingine inasomwa.
+device-log-crash-save = Hifadhi kwenye faili…
+device-log-crash-save-title = Hifadhi crash dump ya { $entity }
+device-log-crash-erase = Futa
+device-log-erase-title = Futa crash dump?
+device-log-erase-body = { $entity } haitaendelea kuhifadhi crash dump iliyo nayo. Ihifadhi kwanza ili uchunguze hitilafu hiyo.
+device-log-erase-cancel = Ghairi
+device-log-erase-confirm = Futa
+device-log-network-stopped = Mtandao wa triib umesimama.
+
 ## Log
 
 log-all = Zote

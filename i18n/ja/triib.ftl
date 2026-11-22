@@ -673,6 +673,48 @@ firmware-doubt-other = このファイルは、前回「{ $image }」が受け�
 firmware-unsigned = ファイルは署名されていません。署名を検証するデバイスはこのファイルを拒否します。
 firmware-runs-already = すでにこのファイルで動作しています。
 
+## Device log
+
+device-log-section = デバイスログ
+device-log-log = ログ
+device-log-show = ログを表示
+device-log-title = { $entity } のログ
+device-log-following = 追従中
+device-log-paused = 一時停止中
+device-log-away = オフライン
+device-log-copy = コピー
+device-log-save = 保存…
+device-log-empty = デバイスのログを、読み込みながらここに表示します。
+device-log-boot = 起動 { $boot }、稼働 { $seconds } 秒
+device-log-boot-reason = 、リセット要因 { $reason }
+device-log-boot-resets = 、予期しないリセット { $count } 回
+device-log-restarted = デバイスが再起動しました。
+device-log-lost = { $count } バイトが失われました。読み込みより速く書き込まれました。
+device-log-dropped = デバイスが { $count } 行を破棄しました。
+device-log-went-away = デバイスがオフラインになりました。
+device-log-came-back = デバイスが復帰しました。
+device-log-save-title = { $entity } のログを保存
+device-log-saved = { $path } に保存しました
+device-log-save-failed = { $path } に保存できませんでした：{ $error }
+device-log-crash = クラッシュダンプ
+device-log-crash-kept = { $size } バイト
+device-log-crash-empty = なし
+device-log-crash-starting = 読み込み中…
+device-log-crash-reading = 読み込み中：{ $done } / { $total } バイト
+device-log-crash-saved = { $size } バイトを { $path } に保存しました
+device-log-crash-erasing = 消去中…
+device-log-crash-erased = 消去しました
+device-log-crash-none = クラッシュダンプを保持していません。
+device-log-crash-busy = 別のクラッシュダンプを読み込み中です。
+device-log-crash-save = ファイルに保存…
+device-log-crash-save-title = { $entity } のクラッシュダンプを保存
+device-log-crash-erase = 消去
+device-log-erase-title = クラッシュダンプを消去しますか？
+device-log-erase-body = { $entity } が保持しているクラッシュダンプは失われます。クラッシュを調べるには、先に保存してください。
+device-log-erase-cancel = キャンセル
+device-log-erase-confirm = 消去
+device-log-network-stopped = triib のネットワークが停止しました。
+
 ## Log
 
 log-all = すべて

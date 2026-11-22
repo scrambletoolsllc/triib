@@ -673,6 +673,48 @@ firmware-doubt-other = 이 파일은 지난번에 “{ $image }”이(가) 받�
 firmware-unsigned = 파일이 서명되지 않았습니다. 서명을 확인하는 장치는 이 파일을 거부합니다.
 firmware-runs-already = 이미 이 파일을 실행하고 있습니다.
 
+## Device log
+
+device-log-section = 장치 로그
+device-log-log = 로그
+device-log-show = 로그 보기
+device-log-title = { $entity }의 로그
+device-log-following = 실시간
+device-log-paused = 일시 중지됨
+device-log-away = 오프라인
+device-log-copy = 복사
+device-log-save = 저장…
+device-log-empty = 장치의 로그를 읽는 대로 여기에 표시됩니다.
+device-log-boot = 부팅 { $boot }, 가동 { $seconds }초
+device-log-boot-reason = , 리셋 원인 { $reason }
+device-log-boot-resets = , 예기치 않은 리셋 { $count }회
+device-log-restarted = 장치가 다시 시작되었습니다.
+device-log-lost = 읽는 속도보다 빠르게 기록되어 { $count }바이트가 손실되었습니다.
+device-log-dropped = 장치가 { $count }줄을 버렸습니다.
+device-log-went-away = 장치가 오프라인이 되었습니다.
+device-log-came-back = 장치가 돌아왔습니다.
+device-log-save-title = { $entity }의 로그 저장
+device-log-saved = { $path }에 저장됨
+device-log-save-failed = { $path }에 저장할 수 없습니다: { $error }
+device-log-crash = 크래시 덤프
+device-log-crash-kept = { $size }바이트
+device-log-crash-empty = 없음
+device-log-crash-starting = 읽는 중…
+device-log-crash-reading = 읽는 중: { $total }바이트 중 { $done }바이트
+device-log-crash-saved = { $path }에 { $size }바이트 저장됨
+device-log-crash-erasing = 삭제 중…
+device-log-crash-erased = 삭제됨
+device-log-crash-none = 크래시 덤프를 보관하지 않습니다.
+device-log-crash-busy = 다른 크래시 덤프를 읽는 중입니다.
+device-log-crash-save = 파일로 저장…
+device-log-crash-save-title = { $entity }의 크래시 덤프 저장
+device-log-crash-erase = 삭제
+device-log-erase-title = 크래시 덤프를 삭제할까요?
+device-log-erase-body = { $entity }은(는) 보관 중인 크래시 덤프를 더 이상 보관하지 않게 됩니다. 크래시를 살펴보려면 먼저 저장하세요.
+device-log-erase-cancel = 취소
+device-log-erase-confirm = 삭제
+device-log-network-stopped = triib 네트워크가 중지되었습니다.
+
 ## Log
 
 log-all = 전체

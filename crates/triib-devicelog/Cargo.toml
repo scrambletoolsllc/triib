@@ -1,0 +1,17 @@
+[package]
+name = "triib-devicelog"
+description = "A device's log and crash dump, as triib and triib-cli read them over ATDECC"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+atdecc = { workspace = true, features = ["std"] }
+
+[dev-dependencies]
+avb-net = { workspace = true, features = ["std"] }
+
+[lints]
+workspace = true
