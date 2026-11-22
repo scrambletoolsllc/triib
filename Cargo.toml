@@ -3,7 +3,7 @@ resolver = "3"
 members = ["crates/*"]
 
 [workspace.package]
-version = "1.5.2"
+version = "1.5.3"
 edition = "2024"
 rust-version = "1.95"
 license = "MIT OR Apache-2.0"
@@ -21,9 +21,9 @@ gptp = "0.2.0"
 # This computer's entities run in avb-endpointd, shared with plaa: its
 # files, status and meters, from crates.io.
 avb-endpointd = "0.3.5"
-triib-store = { path = "crates/triib-store", version = "1.5.2" }
-triib-firmware = { path = "crates/triib-firmware", version = "1.5.2" }
-triib-devicelog = { path = "crates/triib-devicelog", version = "1.5.2" }
+triib-store = { path = "crates/triib-store", version = "1.5.3" }
+triib-firmware = { path = "crates/triib-firmware", version = "1.5.3" }
+triib-devicelog = { path = "crates/triib-devicelog", version = "1.5.3" }
 # Pinned by revision, as prev pins it. A git-ignored .cargo/config.toml can
 # point it at a local checkout while changing both (see the README).
 scramble-ui = { git = "https://github.com/scrambletools/scramble-ui", rev = "44f04645e9593abe4ed12bc7c4fac463d9abe03b", version = "0.1.0" }

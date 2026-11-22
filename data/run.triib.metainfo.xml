@@ -67,6 +67,11 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="1.5.3" date="2026-11-22">
+      <description>
+        <p>triib reads a device's log and crash dump itself, in the app, in triib-cli and through agents' tools, as avb-endpointd's log and crash did until now, and the network view gives a bridge with Wi-Fi an icon of its own. The Linux packages carry avb-endpointd 0.3.5 and gptpd 0.2.1, as in 1.5.2.</p>
+      </description>
+    </release>
     <release version="1.5.2" date="2026-11-21">
       <description>
         <p>The PKGBUILD builds triib on Arch Linux RISC-V too, beside Arch Linux on x86_64 and Arch Linux ARM, as the .deb, .rpm and tarball already come for RISC-V. The Linux packages carry avb-endpointd 0.3.5 and gptpd 0.2.1, as in 1.5.1.</p>

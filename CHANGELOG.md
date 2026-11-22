@@ -3,7 +3,13 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
-## Unreleased
+## [1.5.3] - 2026-11-22
+
+triib reads a device's log and crash dump itself, in the app, in
+triib-cli and through agents' tools, as avb-endpointd's `log` and
+`crash` did until now, and the network view gives a bridge with Wi-Fi
+an icon of its own. The Linux packages carry avb-endpointd 0.3.5 and
+gptpd 0.2.1, as in 1.5.2.
 
 ### Added
 
