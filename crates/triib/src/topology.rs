@@ -596,6 +596,11 @@ impl Topology {
     fn reported(&mut self, node: NodeId, interface: &InterfaceReport<'_>) {
         self.nodes[node].link.delay = interface.info.map(|info| info.propagation_delay);
         self.nodes[node].domain = interface.info.map(|info| info.gptp_domain_number);
+        // An entity that says it is an access point bridges its stations,
+        // whether or not one has joined yet.
+        if interface.wireless.is_some_and(WirelessStatus::access_point) {
+            self.nodes[node].access_point = true;
+        }
         self.wireless_hop(node, interface);
     }
 
@@ -1001,6 +1006,32 @@ mod tests {
         assert_eq!(topology.roots[1], wifi);
         assert!(topology.nodes[wifi].children.is_empty());
         assert!(!topology.is_ptp(wifi));
+    }
+
+    /// An entity that says it is an access point is one, a bridge for its
+    /// stations, before any has joined it.
+    #[test]
+    fn an_entity_saying_it_is_an_access_point_is_one() {
+        let path = [SWITCH, WIFI_CLOCK];
+        let access_point = test_station(WIFI_CLOCK, WirelessFlags::ACCESS_POINT);
+        let info = info(SWITCH, 12_000);
+        let entities = [EntityReport {
+            entity_id: WIFI,
+            name: "AVB Bridge",
+            interfaces: vec![InterfaceReport {
+                index: 0,
+                clock: WIFI_CLOCK,
+                path: Some(&path),
+                info: Some(&info),
+                wireless: Some(&access_point),
+                lite: None,
+                gptp: true,
+            }],
+        }];
+        let topology = Topology::build(&entities, None);
+        let node = topology.placed(WIFI).unwrap();
+        assert!(topology.nodes[node].access_point);
+        assert!(topology.nodes[node].children.is_empty());
     }
 
     /// A station that reports its path hangs under its access point, and

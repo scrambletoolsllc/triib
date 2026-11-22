@@ -8,8 +8,9 @@ All notable changes to triib. Versions follow
 The network view's panel beside the map gives way to the inspector: a
 click on the map opens what it picks there, a device with its clock
 path by name, and with nothing picked the inspector gives the map's
-overview. The Linux packages carry avb-endpointd 0.3.5 and gptpd
-0.2.1, as in 1.5.3.
+overview. An entity that is a Wi-Fi access point, as an ESP32 AVB
+bridge is, shows on the map with the icon of a bridge with Wi-Fi. The
+Linux packages carry avb-endpointd 0.3.5 and gptpd 0.2.1, as in 1.5.3.
 
 ### Changed
 
@@ -23,6 +24,15 @@ overview. The Linux packages carry avb-endpointd 0.3.5 and gptpd
   and its clock path by name; a bound stream input shows the path the
   network takes it by, and an output each listener's. How to read the
   map is behind a button over it.
+
+### Fixed
+
+- An entity that is a Wi-Fi access point, as an ESP32 AVB bridge is,
+  shows on the network map with the icon of a bridge with Wi-Fi, a hub
+  under Wi-Fi's arcs, as other bridges with Wi-Fi do, rather than an
+  icon of the roles it advertises, which for one with no streams was the
+  icon of a switch taking no part in AVB. It counts as an access point
+  before any station joins it.
 
 ## [1.5.3] - 2026-11-22
 

@@ -1205,7 +1205,8 @@ fn entity_of(topology: &Topology, node: NodeId) -> Option<EntityId> {
 }
 
 /// A bridge's icon: a hub under Wi-Fi's arcs for one with Wi-Fi, an
-/// access point, whatever is plugged into it, and a hub for one without.
+/// access point, whatever is plugged into it, an entity that is one among
+/// them, and a hub for one without.
 fn bridge_icon(topology: &Topology, node: NodeId) -> Icon {
     if topology.nodes[node].access_point {
         Icon::HubWifi
@@ -1338,14 +1339,18 @@ fn cards(
                 NodeKind::Switch { .. } => (Icon::Lan, String::new()),
                 NodeKind::Entity { entity_id, .. } => {
                     let found = triib.entities.get(&entity_id);
-                    (
+                    // An entity that is an access point is a bridge, and
+                    // looks like one, whatever roles it advertises.
+                    let glyph = if entry.access_point {
+                        bridge_icon(topology, node)
+                    } else {
                         triib.host_icon(entity_id).unwrap_or_else(|| {
                             found.map_or(Icon::GraphicEq, |entity| {
                                 crate::describe::glyph(&entity.adp)
                             })
-                        }),
-                        found.map(tag).unwrap_or_default(),
-                    )
+                        })
+                    };
+                    (glyph, found.map(tag).unwrap_or_default())
                 }
             };
             let mut border = Paint::Plain;
@@ -2230,6 +2235,7 @@ fn node_details(topology: &Topology, streams: &[Stream], paints: &[Paint], node:
     let bridge = entity.is_none() || !entry.children.is_empty();
     let glyph = match entry.kind {
         NodeKind::Bridge => bridge_icon(topology, node),
+        NodeKind::Entity { .. } if entry.access_point => bridge_icon(topology, node),
         NodeKind::Host => Icon::Computer,
         NodeKind::Entity { .. } => Icon::GraphicEq,
         NodeKind::Clock => Icon::Schedule,
@@ -2715,6 +2721,38 @@ mod tests {
             ..crate::settings::Settings::default()
         };
         Triib::sample(settings, interface, entities, models)
+    }
+
+    /// An entity that says it is an access point shows on the map as a
+    /// bridge with Wi-Fi, whatever roles it advertises; the others keep
+    /// theirs.
+    #[test]
+    fn an_access_point_entity_looks_like_a_bridge() {
+        use atdecc::wireless::WirelessFlags;
+
+        use crate::view::tests::{WIFI_ESP, WIRED_ESP, bench_then, wireless_frames};
+
+        let (entities, models) = bench_then(&wireless_frames(WirelessFlags::ACCESS_POINT));
+        let interface = avb_net::Interface {
+            name: "enp6s0".to_owned(),
+            mac: avb_net::MacAddress([0x9c, 0x6b, 0x00, 0x30, 0x9a, 0x2b]),
+            up: true,
+            speed: None,
+            physical: true,
+            wireless: false,
+            hardware_clock: None,
+        };
+        let triib = Triib::sample(
+            crate::settings::Settings::default(),
+            interface,
+            entities,
+            models,
+        );
+        let topology = topology_of(&triib);
+        let cards = cards(&triib, &topology, NetworkShows::Audio, &[], &[], &[], None);
+        let icon = |entity| cards[find(&topology, NodeKey::Entity(entity)).unwrap()].icon;
+        assert_eq!(icon(WIFI_ESP), Icon::HubWifi.codepoint());
+        assert_ne!(icon(WIRED_ESP), Icon::HubWifi.codepoint());
     }
 
     /// What is brought forward goes beside the header's chips where its row

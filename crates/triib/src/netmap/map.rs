@@ -1920,6 +1920,10 @@ mod tests {
                     ),
                     Kind::Bridge => (Icon::Hub, node.name.clone()),
                     Kind::Host => (Icon::Computer, crate::fl!("netmap-this-computer")),
+                    Kind::Entity { .. } if node.access_point => (
+                        crate::netmap::bridge_icon(&topology, place),
+                        node.name.clone(),
+                    ),
                     Kind::Entity { .. } => (Icon::GraphicEq, node.name.clone()),
                     Kind::Clock => (Icon::Schedule, node.name.clone()),
                     Kind::Switch { .. } => (Icon::Lan, crate::fl!("netmap-plain-switch")),
