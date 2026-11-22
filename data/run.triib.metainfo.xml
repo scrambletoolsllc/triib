@@ -67,6 +67,11 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="1.5.4" date="2026-11-22">
+      <description>
+        <p>The network view's panel beside the map gives way to the inspector: a click on the map opens what it picks there, a device with its clock path by name, and with nothing picked the inspector gives the map's overview. The Linux packages carry avb-endpointd 0.3.5 and gptpd 0.2.1, as in 1.5.3.</p>
+      </description>
+    </release>
     <release version="1.5.3" date="2026-11-22">
       <description>
         <p>triib reads a device's log and crash dump itself, in the app, in triib-cli and through agents' tools, as avb-endpointd's log and crash did until now, and the network view gives a bridge with Wi-Fi an icon of its own. The Linux packages carry avb-endpointd 0.3.5 and gptpd 0.2.1, as in 1.5.2.</p>

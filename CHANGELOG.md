@@ -3,7 +3,13 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
-## Unreleased
+## [1.5.4] - 2026-11-22
+
+The network view's panel beside the map gives way to the inspector: a
+click on the map opens what it picks there, a device with its clock
+path by name, and with nothing picked the inspector gives the map's
+overview. The Linux packages carry avb-endpointd 0.3.5 and gptpd
+0.2.1, as in 1.5.3.
 
 ### Changed
 
