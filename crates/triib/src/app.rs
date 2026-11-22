@@ -146,8 +146,8 @@ pub struct Triib {
     /// the one given could not be used.
     pub storage_drafts: [String; 1],
     pub storage_errors: [Option<String>; 1],
-    /// On a narrow window, the network view shows its list instead of the map.
-    pub network_list: bool,
+    /// The network view says how to read its map, above it.
+    pub network_help: bool,
     /// The name being edited in the inspector, and its text so far.
     pub editing: Option<(NameTarget, String)>,
     /// The descriptor types opened in the inspector's tree, by entity.
@@ -313,7 +313,7 @@ pub enum Message {
     MatrixFormatsClosed,
     NetworkShows(NetworkShows),
     OverflowToggled,
-    NetworkListToggled,
+    NetworkHelpToggled,
     OverflowClosed,
     /// Close the window, which quits triib.
     CloseWindow,
@@ -446,7 +446,7 @@ impl Triib {
             matrix_filters_open: false,
             storage_drafts: Default::default(),
             storage_errors: Default::default(),
-            network_list: false,
+            network_help: false,
             editing: None,
             tree_open: BTreeSet::new(),
             control_drag: None,
@@ -529,7 +529,7 @@ impl Triib {
             matrix_filters_open: false,
             storage_drafts: Default::default(),
             storage_errors: Default::default(),
-            network_list: false,
+            network_help: false,
             editing: None,
             tree_open: BTreeSet::new(),
             control_drag: None,
@@ -994,6 +994,7 @@ impl Triib {
                     self.editing = None;
                 }
                 self.selected = Some(entity_id);
+                self.network_focus = Some(Focus::Node(NodeKey::Entity(entity_id)));
                 if !self.settings.inspector {
                     self.settings.inspector = true;
                     self.save_settings();
@@ -1014,6 +1015,7 @@ impl Triib {
             }
             Message::AlarmOpened(entity_id) => {
                 self.selected = Some(entity_id);
+                self.network_focus = Some(Focus::Node(NodeKey::Entity(entity_id)));
                 self.inspector_tab = InspectorTab::Diagnostics;
                 if !self.settings.inspector {
                     self.settings.inspector = true;
@@ -1130,15 +1132,17 @@ impl Triib {
             Message::NetworkShows(shows) => {
                 self.settings.network_shows = shows;
                 self.save_settings();
-                self.network_focus = None;
-            }
-            Message::NetworkFocused(focus) => {
-                // A device brought forward is the one the inspector shows.
-                if let Some(Focus::Node(NodeKey::Entity(entity_id))) = focus {
-                    self.selected = Some(entity_id);
+                // A node stays brought forward, its clock path or its
+                // streams shown instead; a stream is not on the other maps.
+                match self.network_focus {
+                    Some(Focus::Node(NodeKey::Entity(_))) => {
+                        self.inspector_tab = network_tab(shows);
+                    }
+                    Some(Focus::Node(_)) => {}
+                    _ => self.network_focus = None,
                 }
-                self.network_focus = focus;
             }
+            Message::NetworkFocused(focus) => self.network_focused(focus),
             Message::EditName(target) => {
                 self.editing = Some((target, self.current_name(target)));
                 let field = iced::widget::Id::new(crate::view::NAME_FIELD);
@@ -1286,7 +1290,7 @@ impl Triib {
                 }
             }
             Message::OverflowToggled => self.overflow_open = !self.overflow_open,
-            Message::NetworkListToggled => self.network_list = !self.network_list,
+            Message::NetworkHelpToggled => self.network_help = !self.network_help,
             Message::OverflowClosed => self.overflow_open = false,
             Message::CloseWindow => {
                 return iced::window::oldest().and_then(iced::window::close);
@@ -1968,6 +1972,44 @@ impl Triib {
         self.settings_error = self.settings.save().err();
     }
 
+    /// Brings `focus` forward on the map, and shows it in the inspector,
+    /// opening it: an entity on the tab of what the map shows, its clock
+    /// path or its streams; a stream on its listener's Streams tab, and a
+    /// talker's stream to all its listeners on its talker's. Anything else,
+    /// or nothing, the inspector shows from the map.
+    fn network_focused(&mut self, focus: Option<Focus>) {
+        let picked = match focus {
+            Some(Focus::Node(NodeKey::Entity(entity_id))) => {
+                Some((entity_id, network_tab(self.settings.network_shows)))
+            }
+            Some(Focus::Stream(listener, input)) => {
+                self.stream_selected = Some((listener, true, input));
+                Some((listener, InspectorTab::Streams))
+            }
+            Some(Focus::Output(talker, output)) => {
+                self.stream_selected = Some((talker, false, output));
+                Some((talker, InspectorTab::Streams))
+            }
+            _ => None,
+        };
+        if let Some((entity_id, tab)) = picked {
+            if self
+                .editing
+                .as_ref()
+                .is_some_and(|(target, _)| target.entity != entity_id)
+            {
+                self.editing = None;
+            }
+            self.selected = Some(entity_id);
+            self.inspector_tab = tab;
+        }
+        if focus.is_some() && !self.settings.inspector {
+            self.settings.inspector = true;
+            self.save_settings();
+        }
+        self.network_focus = focus;
+    }
+
     /// Does what the menu bar's `item` asks, as its toolbar tool would. A
     /// dialog opened from it takes the place of the other, as the window
     /// shows one at a time.
@@ -2027,6 +2069,15 @@ impl Triib {
 
     fn apply_motion(&self) {
         motion::set_reduced(!self.settings.animations || !self.system_animations);
+    }
+}
+
+/// The inspector's tab for an entity brought forward on the map showing
+/// `shows`: its clock path, under Diagnostics, or its streams.
+fn network_tab(shows: NetworkShows) -> InspectorTab {
+    match shows {
+        NetworkShows::Clock => InspectorTab::Diagnostics,
+        NetworkShows::Audio | NetworkShows::MediaClock => InspectorTab::Streams,
     }
 }
 

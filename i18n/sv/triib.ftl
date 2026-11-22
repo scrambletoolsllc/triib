@@ -388,8 +388,7 @@ netmap-bridges = { $count ->
     [one] { $count } switch
    *[other] { $count } switchar
 }
-netmap-show-map = Visa kartan
-netmap-show-details = Visa detaljerna
+netmap-help-toggle = Så läser du kartan
 stream-numbered = Stream { $index }
 netmap-bridge = Switch
 netmap-access-point = Åtkomstpunkt
@@ -471,8 +470,6 @@ netmap-passing-through = Passerar
 netmap-sending = Skickar
 netmap-receiving = Tar emot
 netmap-problems = Problem
-netmap-help-back = Klicka på bakgrunden för att gå tillbaka till översikten.
-netmap-help-stream = Klicka på en stream för att inspektera den, eller på bakgrunden för att gå tillbaka till översikten.
 netmap-help-clock = Klockan går från grandmastern via varje switch till varje nod i trädet. En streckad grå linje är en länk där gPTP inte körs. Klicka på en enhet eller dess ledning för att inspektera dess klockväg; klicka på bakgrunden för att avmarkera.
 netmap-help-domains = Varje område är en klockdomän. I en gPTP-domän går klockan från grandmastern nedåt via AVB-switcharna. I en PTP-domän kör enheterna AVB Lite och följer sin grandmaster från ände till ände, synkroniserade inom 50 µs; ett streckat kort står för switcharna utan AVB som några av dem föll tillbaka på AVB Lite bakom. En enhet som inte delar sin domän med någon annan har ett eget område.
 netmap-help-media-clock = Endast mediaklockstreamar (CRF), ritade på samma sätt som ljud: en ledning för varje streams ramar på varje länk, färgad efter talker. Klicka på en ledning för att inspektera dess stream, eller på en enhet för att se dess streamar; klicka på bakgrunden för att avmarkera.

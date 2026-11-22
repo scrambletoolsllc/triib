@@ -394,8 +394,7 @@ netmap-bridges = { $count ->
     [one] { $count } silta
    *[other] { $count } siltaa
 }
-netmap-show-map = Näytä kartta
-netmap-show-details = Näytä tiedot
+netmap-help-toggle = Kartan lukuohje
 stream-numbered = Striimi { $index }
 netmap-bridge = Silta
 netmap-access-point = Tukiasema
@@ -486,8 +485,6 @@ netmap-passing-through = Kulkee läpi
 netmap-sending = Lähtevät
 netmap-receiving = Saapuvat
 netmap-problems = Ongelmat
-netmap-help-back = Palaa yleiskuvaan napsauttamalla taustaa.
-netmap-help-stream = Napsauta striimiä tarkastellaksesi sitä tai taustaa palataksesi yleiskuvaan.
 netmap-help-clock = Kello kulkee grandmasterista kunkin sillan kautta puun jokaiseen solmuun. Katkoviivainen harmaa viiva on linkki, jolla gPTP ei ole käytössä. Napsauta laitetta tai sen johdinta tarkastellaksesi sen kellopolkua; tyhjennä valinta napsauttamalla taustaa.
 netmap-help-domains = Jokainen alue on kellotoimialue. gPTP-toimialueella kello kulkee grandmasterista alaspäin AVB-siltojen kautta. PTP-toimialueella laitteet käyttävät AVB Lite -profiilia ja seuraavat grandmasteriaan päästä päähän, synkronissa 50 µs:n sisällä; katkoviivainen kortti edustaa kytkimiä, jotka eivät osallistu AVB:hen ja joiden takana osa laitteista siirtyi AVB Lite -profiiliin. Laitteella, joka ei jaa toimialuettaan muiden kanssa, on oma alueensa.
 netmap-help-media-clock = Vain mediakellostriimit (CRF), piirrettynä samoin kuin ääni: yksi johdin kunkin striimin kehyksille kullakin linkillä, väritettynä talkerin mukaan. Napsauta johdinta tarkastellaksesi sen striimiä tai laitetta nähdäksesi sen striimit; tyhjennä valinta napsauttamalla taustaa.

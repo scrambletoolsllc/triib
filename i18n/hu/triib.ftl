@@ -388,8 +388,7 @@ netmap-bridges = { $count ->
     [one] { $count } híd
    *[other] { $count } híd
 }
-netmap-show-map = Térkép megjelenítése
-netmap-show-details = Részletek megjelenítése
+netmap-help-toggle = A térkép olvasása
 stream-numbered = Stream { $index }
 netmap-bridge = Híd
 netmap-access-point = Hozzáférési pont
@@ -465,8 +464,6 @@ netmap-passing-through = Áthalad
 netmap-sending = Küldés
 netmap-receiving = Vétel
 netmap-problems = Problémák
-netmap-help-back = Kattintson a háttérre az áttekintéshez való visszatéréshez.
-netmap-help-stream = Kattintson egy streamre a vizsgálatához, vagy a háttérre az áttekintéshez való visszatéréshez.
 netmap-help-clock = Az órajel a grandmastertől minden hídon át eljut a fa minden csomópontjához. A szaggatott szürke vonal olyan link, amelyen nem fut gPTP. Kattintson egy eszközre vagy a vezetékére az órajelútja vizsgálatához; a háttérre kattintva megszüntetheti a kijelölést.
 netmap-help-domains = Minden terület egy órajel-tartomány. A gPTP-tartományban az órajel a grandmastertől lefelé halad az AVB-hidakon át. A PTP-tartományban az eszközök AVB Lite-ot futtatnak, és végponttól végpontig követik a grandmasterüket, 50 µs-on belül szinkronban; a szaggatott kártya azokat az AVB-ben részt nem vevő switcheket jelöli, amelyek mögött néhányuk AVB Lite-ra állt vissza. Az az eszköz, amely senkivel sem osztozik a tartományán, saját területet kap.
 netmap-help-media-clock = Csak a médiaórajel-streamek (CRF), az audióval azonos módon rajzolva: minden stream kereteinek minden linken egy-egy vezeték, talkerenként színezve. Kattintson egy vezetékre a streamje vizsgálatához, vagy egy eszközre a streamjei megtekintéséhez; a háttérre kattintva megszüntetheti a kijelölést.

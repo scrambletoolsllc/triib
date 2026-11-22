@@ -394,8 +394,7 @@ netmap-bridges = { $count ->
     [two] { $count } גשרים
    *[other] { $count } גשרים
 }
-netmap-show-map = הצגת המפה
-netmap-show-details = הצגת הפרטים
+netmap-help-toggle = איך לקרוא את המפה
 stream-numbered = זרם { $index }
 netmap-bridge = גשר
 netmap-access-point = נקודת גישה
@@ -472,8 +471,6 @@ netmap-passing-through = עובר דרך
 netmap-sending = שולח
 netmap-receiving = קולט
 netmap-problems = בעיות
-netmap-help-back = לחצו על הרקע כדי לחזור לסקירה הכללית.
-netmap-help-stream = לחצו על זרם כדי לבדוק אותו, או על הרקע כדי לחזור לסקירה הכללית.
 netmap-help-clock = השעון זורם מה-Grandmaster דרך כל גשר לכל צומת בעץ. קו אפור מקווקו הוא קישור שבו gPTP לא פועל. לחצו על התקן או על החוט שלו כדי לבדוק את נתיב השעון שלו; לחצו על הרקע כדי לנקות.
 netmap-help-domains = כל אזור הוא תחום שעון. בתחום gPTP השעון יורד מה-Grandmaster דרך גשרי ה-AVB. בתחום PTP ההתקנים מריצים AVB Lite ועוקבים אחר ה-Grandmaster שלהם מקצה לקצה, מסונכרנים בטווח 50 µs; כרטיס מקווקו מייצג את המתגים שאינם משתתפים ב-AVB, שמאחוריהם חלק מההתקנים עברו ל-AVB Lite. להתקן שאינו חולק את התחום שלו עם אף התקן אחר יש אזור משלו.
 netmap-help-media-clock = זרמי שעון מדיה (CRF) בלבד, מצוירים כמו אודיו: חוט אחד למסגרות של כל זרם בכל קישור, בצבע לפי ה-Talker. לחצו על חוט כדי לבדוק את הזרם שלו, או על התקן כדי לראות את הזרמים שלו; לחצו על הרקע כדי לנקות.

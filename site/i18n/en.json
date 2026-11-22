@@ -627,9 +627,9 @@
   "page": "guide.html",
   "text": "Network"
  },
- "2fd9a09e53b4": {
+ "51743d70cea2": {
   "page": "guide.html",
-  "text": "The network view draws the network from each entity's gPTP path, each clock domain in an area of its own: bridges at the top, the devices behind each of them below, and those connected straight to the grandmaster's bridge in the middle. A panel beside the map counts what it shows and lists what needs attention. The chips switch what is drawn on the map:"
+  "text": "The network view draws the network from each entity's gPTP path, each clock domain in an area of its own: bridges at the top, the devices behind each of them below, and those connected straight to the grandmaster's bridge in the middle. With nothing picked on the map, the inspector counts what it shows and lists what needs attention. The chips switch what is drawn on the map:"
  },
  "278059221828": {
   "page": "guide.html",
@@ -643,9 +643,9 @@
   "page": "guide.html",
   "text": "<strong>CRF:</strong> the media clock streams, the same way."
  },
- "d06312a1d272": {
+ "1efeac149e89": {
   "page": "guide.html",
-  "text": "Click a wire to inspect its stream, or a device to see its streams alone, until you clear it with the button above the map or click the background. Controllers are left out, as they take no part in the clock or the streams, and the local host shows as its host entities. Where this computer runs none of its own, the map shows what it is plugged into: an AVB bridge's port, or a switch that takes no part in AVB. On a narrow window the map and the panel take turns."
+  "text": "Click a wire, a device or a bridge to bring it forward on the map and open it in the inspector: a stream on its listener's Streams tab, a device on its Streams tab or, on the Sync map, under Diagnostics with its clock path by name and why it is out of sync where it is, and a bridge with the streams passing through it or the devices in sync below it. It stays forward until you clear it with the button above the map or click the background; the book button beside it says how to read the map. Controllers are left out, as they take no part in the clock or the streams, and the local host shows as its host entities. Where this computer runs none of its own, the map shows what it is plugged into: an AVB bridge's port, or a switch that takes no part in AVB."
  },
  "d5354bee5ff8": {
   "page": "guide.html",

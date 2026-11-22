@@ -386,8 +386,7 @@ netmap-bridges = { $count ->
     [one] { $count } bridge
    *[other] { $count } bridges
 }
-netmap-show-map = नक्शा दिखाएँ
-netmap-show-details = विवरण दिखाएँ
+netmap-help-toggle = नक्शा कैसे पढ़ें
 stream-numbered = Stream { $index }
 netmap-bridge = Bridge
 netmap-access-point = Access point
@@ -463,8 +462,6 @@ netmap-passing-through = आर-पार जा रही streams
 netmap-sending = भेज रहा है
 netmap-receiving = प्राप्त कर रहा है
 netmap-problems = समस्याएँ
-netmap-help-back = पूरे नक्शे पर लौटने के लिए खाली जगह पर क्लिक करें।
-netmap-help-stream = किसी stream को जाँचने के लिए उस पर क्लिक करें, या पूरे नक्शे पर लौटने के लिए खाली जगह पर।
 netmap-help-clock = Clock, Grandmaster से हर bridge से होकर tree के हर node तक जाती है। टूटी हुई स्लेटी रेखा ऐसा link है जिस पर gPTP नहीं चलता। किसी डिवाइस या उसके तार पर क्लिक करके उसका clock path जाँचें; चुनाव हटाने के लिए खाली जगह पर क्लिक करें।
 netmap-help-domains = हर क्षेत्र एक clock domain है। gPTP domain में clock, Grandmaster से AVB bridges से होकर नीचे जाती है। PTP domain में डिवाइस AVB Lite चलाते हैं और शुरू से अंत तक अपने Grandmaster का अनुसरण करते हैं, 50 µs के भीतर रहने पर सिंक रहते हैं; टूटी रेखा वाला कार्ड AVB में भाग न लेने वाले उन switches को दर्शाता है, जिनके पीछे उनमें से कुछ AVB Lite पर चले गए। जो डिवाइस अपना domain किसी और के साथ साझा नहीं करता, उसका अपना क्षेत्र होता है।
 netmap-help-media-clock = केवल media clock (CRF) streams, ऑडियो की तरह ही बनी हुई: हर link पर हर stream के frames का एक तार, Talker के हिसाब से रंगा हुआ। किसी तार पर क्लिक करके उसकी stream जाँचें, या किसी डिवाइस पर क्लिक करके उसकी streams देखें; चुनाव हटाने के लिए खाली जगह पर क्लिक करें।

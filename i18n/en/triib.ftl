@@ -505,8 +505,8 @@ netmap-bridges = { $count ->
     [one] { $count } bridge
    *[other] { $count } bridges
 }
-netmap-show-map = Show the map
-netmap-show-details = Show the details
+# The button over the network map that says how to read it.
+netmap-help-toggle = How to read the map
 # A stream with no name, by its number.
 stream-numbered = Stream { $index }
 # An AVB switch with no vendor known.
@@ -608,8 +608,6 @@ netmap-passing-through = Passing through
 netmap-sending = Sending
 netmap-receiving = Receiving
 netmap-problems = Problems
-netmap-help-back = Click the background to go back to the overview.
-netmap-help-stream = Click a stream to inspect it, or the background to go back to the overview.
 netmap-help-clock = The clock flows from the grandmaster through each bridge to every node on the tree. A broken gray line is a link gPTP does not run on. Click a device or its wire to inspect its clock path; click the background to clear.
 netmap-help-domains = Each area is a clock domain. In a gPTP domain the clock passes from the grandmaster down through the AVB bridges. In a PTP domain the devices run AVB Lite and follow their grandmaster end to end, in sync within 50 µs; a dashed card stands for the switches taking no part in AVB that some of them fell back to AVB Lite behind. A device that shares its domain with no other has an area of its own.
 netmap-help-media-clock = Media clock (CRF) streams only, drawn the same way as audio: a wire for each stream's frames on each link, colored by talker. Click a wire to inspect its stream, or a device to see its streams; click the background to clear.

@@ -388,8 +388,7 @@ netmap-bridges = { $count ->
     [one] { $count } switch
    *[other] { $count } switche
 }
-netmap-show-map = Vis kortet
-netmap-show-details = Vis detaljerne
+netmap-help-toggle = Sådan læser du kortet
 stream-numbered = Stream { $index }
 netmap-bridge = Switch
 netmap-access-point = Adgangspunkt
@@ -465,8 +464,6 @@ netmap-passing-through = Går igennem
 netmap-sending = Sender
 netmap-receiving = Modtager
 netmap-problems = Problemer
-netmap-help-back = Klik på baggrunden for at gå tilbage til oversigten.
-netmap-help-stream = Klik på en stream for at inspicere den, eller på baggrunden for at gå tilbage til oversigten.
 netmap-help-clock = Clocken går fra grandmasteren gennem hver switch til hver knude i træet. En stiplet grå linje er et link, som gPTP ikke kører på. Klik på en enhed eller dens ledning for at inspicere dens clocksti; klik på baggrunden for at fjerne markeringen.
 netmap-help-domains = Hvert område er et clockdomæne. I et gPTP-domæne går clocken fra grandmasteren ned gennem AVB-switchene. I et PTP-domæne kører enhederne AVB Lite og følger deres grandmaster fra ende til ende, synkroniseret inden for 50 µs; et stiplet kort står for de switche uden AVB, som nogle af dem faldt tilbage til AVB Lite bag. En enhed, der ikke deler sit domæne med andre, har sit eget område.
 netmap-help-media-clock = Kun medieclock-streams (CRF), tegnet på samme måde som lyd: én ledning for hver streams rammer på hvert link, farvet efter talker. Klik på en ledning for at inspicere dens stream, eller på en enhed for at se dens streams; klik på baggrunden for at fjerne markeringen.

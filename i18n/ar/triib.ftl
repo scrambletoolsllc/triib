@@ -418,8 +418,7 @@ netmap-bridges = { $count ->
     [many] { $count } جسرًا
    *[other] { $count } جسر
 }
-netmap-show-map = إظهار الخريطة
-netmap-show-details = إظهار التفاصيل
+netmap-help-toggle = كيفية قراءة الخريطة
 stream-numbered = التدفق { $index }
 netmap-bridge = جسر
 netmap-access-point = نقطة وصول
@@ -499,8 +498,6 @@ netmap-passing-through = عابر
 netmap-sending = يُرسل
 netmap-receiving = يستقبل
 netmap-problems = مشكلات
-netmap-help-back = انقر على الخلفية للعودة إلى النظرة العامة.
-netmap-help-stream = انقر على تدفق لفحصه، أو على الخلفية للعودة إلى النظرة العامة.
 netmap-help-clock = تتدفق الساعة من Grandmaster عبر كل جسر إلى كل عقدة في الشجرة. الخط الرمادي المتقطع وصلة لا يعمل عليها gPTP. انقر على جهاز أو على سلكه لفحص مسار ساعته؛ وانقر على الخلفية لإلغاء التحديد.
 netmap-help-domains = كل منطقة نطاق ساعة. في نطاق gPTP تنتقل الساعة من Grandmaster نزولًا عبر جسور AVB. وفي نطاق PTP تشغّل الأجهزة AVB Lite وتتبع Grandmaster الخاص بها من طرف إلى طرف، وتكون متزامنة ضمن 50 µs؛ وتمثّل البطاقة المتقطعة المحوّلات التي لا تشارك في AVB والتي لجأ بعض هذه الأجهزة خلفها إلى AVB Lite. والجهاز الذي لا يشارك نطاقه مع أي جهاز آخر تكون له منطقة خاصة به.
 netmap-help-media-clock = تدفقات ساعة الوسائط (CRF) فقط، مرسومة بالطريقة نفسها كالصوت: سلك لإطارات كل تدفق على كل وصلة، ملوّن حسب Talker. انقر على سلك لفحص تدفقه، أو على جهاز لرؤية تدفقاته؛ وانقر على الخلفية لإلغاء التحديد.

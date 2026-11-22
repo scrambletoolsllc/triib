@@ -386,8 +386,7 @@ netmap-bridges = { $count ->
     [one] { $count } bridge
    *[other] { $count } bridges
 }
-netmap-show-map = வரைபடத்தைக் காட்டு
-netmap-show-details = விவரங்களைக் காட்டு
+netmap-help-toggle = வரைபடத்தை எப்படிப் படிப்பது
 stream-numbered = Stream { $index }
 netmap-bridge = Bridge
 netmap-access-point = Access point
@@ -463,8 +462,6 @@ netmap-passing-through = கடந்து செல்லும் streams
 netmap-sending = அனுப்புகிறது
 netmap-receiving = பெறுகிறது
 netmap-problems = சிக்கல்கள்
-netmap-help-back = முழு வரைபடத்துக்குத் திரும்ப வெற்றிடத்தில் கிளிக் செய்.
-netmap-help-stream = ஒரு stream-ஐ ஆய்வு செய்ய அதைக் கிளிக் செய், அல்லது முழு வரைபடத்துக்குத் திரும்ப வெற்றிடத்தில் கிளிக் செய்.
 netmap-help-clock = Clock, Grandmaster-இலிருந்து ஒவ்வொரு bridge வழியாகவும் tree-இன் ஒவ்வொரு node-க்கும் செல்கிறது. உடைந்த சாம்பல் கோடு என்பது gPTP இயங்காத link. ஒரு சாதனத்தை அல்லது அதன் கம்பியைக் கிளிக் செய்து அதன் clock path-ஐ ஆய்வு செய்; தேர்வை அழிக்க வெற்றிடத்தில் கிளிக் செய்.
 netmap-help-domains = ஒவ்வொரு பகுதியும் ஒரு clock domain. gPTP domain-இல் clock, Grandmaster-இலிருந்து AVB bridge-கள் வழியாகக் கீழே செல்கிறது. PTP domain-இல் சாதனங்கள் AVB Lite-ஐ இயக்கி, தங்கள் Grandmaster-ஐ முனையிலிருந்து முனை வரை பின்பற்றுகின்றன; 50 µs-க்குள் இருந்தால் ஒத்திசைந்தவை. உடைந்த கோட்டு அட்டை AVB-இல் பங்கேற்காத switch-களைக் குறிக்கிறது; அவற்றின் பின்னால் சில சாதனங்கள் AVB Lite-க்கு மாறின. தன் domain-ஐ வேறு எதனுடனும் பகிராத சாதனத்துக்கு அதற்கென்று தனிப் பகுதி உண்டு.
 netmap-help-media-clock = Media clock (CRF) streams மட்டும், ஆடியோ போலவே வரையப்பட்டவை: ஒவ்வொரு link-இலும் ஒவ்வொரு stream-இன் frames-க்கும் ஒரு கம்பி, Talker வாரியாக வண்ணம். ஒரு கம்பியைக் கிளிக் செய்து அதன் stream-ஐ ஆய்வு செய், அல்லது ஒரு சாதனத்தைக் கிளிக் செய்து அதன் streams-ஐப் பார்; தேர்வை அழிக்க வெற்றிடத்தில் கிளிக் செய்.

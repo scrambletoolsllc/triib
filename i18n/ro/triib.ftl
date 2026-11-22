@@ -397,8 +397,7 @@ netmap-bridges = { $count ->
     [few] { $count } switch-uri
    *[other] { $count } de switch-uri
 }
-netmap-show-map = Afișează harta
-netmap-show-details = Afișează detaliile
+netmap-help-toggle = Cum se citește harta
 stream-numbered = Flux { $index }
 netmap-bridge = Switch
 netmap-access-point = Punct de acces
@@ -491,8 +490,6 @@ netmap-passing-through = În tranzit
 netmap-sending = Trimitere
 netmap-receiving = Recepție
 netmap-problems = Probleme
-netmap-help-back = Dă clic pe fundal pentru a reveni la vederea de ansamblu.
-netmap-help-stream = Dă clic pe un flux pentru a-l inspecta sau pe fundal pentru a reveni la vederea de ansamblu.
 netmap-help-clock = Ceasul pornește de la grandmaster și trece prin fiecare switch până la fiecare nod din arbore. O linie gri întreruptă este o legătură pe care nu rulează gPTP. Dă clic pe un dispozitiv sau pe firul lui pentru a-i inspecta calea ceasului; dă clic pe fundal pentru a anula selecția.
 netmap-help-domains = Fiecare zonă este un domeniu de ceas. Într-un domeniu gPTP, ceasul coboară de la grandmaster prin switch-urile AVB. Într-un domeniu PTP, dispozitivele rulează AVB Lite și își urmează grandmasterul cap la cap, sincronizate în limita a 50 µs; un card cu contur întrerupt reprezintă switch-urile fără AVB în spatele cărora unele dintre ele au recurs la AVB Lite. Un dispozitiv care nu își împarte domeniul cu niciun altul are o zonă proprie.
 netmap-help-media-clock = Doar fluxuri de ceas media (CRF), desenate la fel ca audio: un fir pentru cadrele fiecărui flux pe fiecare legătură, colorat după talker. Dă clic pe un fir pentru a-i inspecta fluxul sau pe un dispozitiv pentru a-i vedea fluxurile; dă clic pe fundal pentru a anula selecția.

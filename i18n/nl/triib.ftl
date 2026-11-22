@@ -388,8 +388,7 @@ netmap-bridges = { $count ->
     [one] { $count } switch
    *[other] { $count } switches
 }
-netmap-show-map = Kaart tonen
-netmap-show-details = Details tonen
+netmap-help-toggle = Zo lees je de kaart
 stream-numbered = Stream { $index }
 netmap-bridge = Switch
 netmap-access-point = Access point
@@ -465,8 +464,6 @@ netmap-passing-through = Doorgeleide streams
 netmap-sending = Verzendt
 netmap-receiving = Ontvangt
 netmap-problems = Problemen
-netmap-help-back = Klik op de achtergrond om terug te gaan naar het overzicht.
-netmap-help-stream = Klik op een stream om hem te inspecteren, of op de achtergrond om terug te gaan naar het overzicht.
 netmap-help-clock = De klok loopt van de grandmaster via elke switch naar elk knooppunt in de boom. Een gestreepte grijze lijn is een link waarop gPTP niet draait. Klik op een apparaat of zijn draad om zijn klokpad te inspecteren; klik op de achtergrond om de selectie op te heffen.
 netmap-help-domains = Elk vak is een klokdomein. In een gPTP-domein loopt de klok van de grandmaster omlaag via de AVB-switches. In een PTP-domein draaien de apparaten AVB Lite en volgen ze hun grandmaster van begin tot eind, gesynchroniseerd binnen 50 µs; een gestreepte kaart staat voor de switches zonder AVB waarachter sommige van hen terugvielen op AVB Lite. Een apparaat dat zijn domein met geen ander deelt, heeft een eigen vak.
 netmap-help-media-clock = Alleen mediaklokstreams (CRF), getekend zoals audio: één draad voor de frames van elke stream op elke link, gekleurd per talker. Klik op een draad om de stream te inspecteren, of op een apparaat om zijn streams te zien; klik op de achtergrond om de selectie op te heffen.

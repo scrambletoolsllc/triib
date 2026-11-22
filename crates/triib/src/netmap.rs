@@ -1,8 +1,8 @@
 //! The network view: the gPTP tree with each bridge's devices in a column
 //! under it, showing the clock, the audio streams or the media clock
 //! streams, each stream on a wire colored by its talker that branches
-//! where its listeners' paths part, and beside it the details of what is
-//! brought forward. Devices that fell back to AVB Lite hang under a card
+//! where its listeners' paths part, what is brought forward shown in the
+//! inspector. Devices that fell back to AVB Lite hang under a card
 //! for the switches that take no part in AVB in front of them; devices set
 //! apart by design, on another gPTP domain or running AVB Lite only, sit
 //! apart from those set apart by a fault.
@@ -33,14 +33,6 @@ use crate::topology::{
     Topology, WirelessLink,
 };
 use crate::view::VIEW_MARGIN;
-
-const PANEL_WIDTH: f32 = 360.0;
-const NARROW_PANEL_WIDTH: f32 = 300.0;
-/// Below this width the side panel gives way to the map, a button in the
-/// header switching between the two.
-const WIDE: f32 = 880.0;
-/// From this width the side panel takes its full width.
-const ROOMY: f32 = 1200.0;
 
 /// What the view brings forward: a stream, or a node with its streams or
 /// its clock path.
@@ -217,43 +209,99 @@ pub fn view(triib: &Triib) -> Element<'_, Message> {
     iced::widget::responsive(move |size| view_at(triib, size.width)).into()
 }
 
-/// The view for `width` pixels: the map with the side panel beside it, or
-/// on narrow windows one of the two at a time.
+/// What the map draws: the topology, and the streams of what it shows, each
+/// with its paint.
+struct Drawn {
+    shows: NetworkShows,
+    topology: Topology,
+    streams: Vec<Stream>,
+    paints: Vec<Paint>,
+}
+
+impl Drawn {
+    fn of(triib: &Triib) -> Self {
+        let shows = triib.settings.network_shows;
+        let topology = topology_of(triib);
+        let streams: Vec<Stream> = match shows {
+            NetworkShows::Clock => Vec::new(),
+            _ => streams(triib, &topology)
+                .into_iter()
+                .filter(|stream| stream.media_clock == (shows == NetworkShows::MediaClock))
+                .collect(),
+        };
+        let paints = paints(
+            &streams
+                .iter()
+                .map(|stream| (stream.key(), stream.status))
+                .collect::<Vec<_>>(),
+        );
+        Self {
+            shows,
+            topology,
+            streams,
+            paints,
+        }
+    }
+
+    /// What is brought forward, as long as it is still there.
+    fn focus(&self, focus: Option<Focus>) -> Option<Focus> {
+        focus.filter(|focus| match focus {
+            Focus::Stream(..) => self.streams.iter().any(|stream| stream.focus() == *focus),
+            Focus::Output(talker, output) => self
+                .streams
+                .iter()
+                .any(|stream| stream.key() == (*talker, *output)),
+            Focus::Node(key) => find(&self.topology, *key).is_some(),
+        })
+    }
+
+    /// How to read the map, for its help.
+    fn help(&self) -> String {
+        with_domain_help(
+            &self.topology,
+            match self.shows {
+                NetworkShows::Clock => fl!("netmap-help-clock"),
+                NetworkShows::Audio => fl!("netmap-help-audio"),
+                NetworkShows::MediaClock => fl!("netmap-help-media-clock"),
+            },
+        )
+    }
+}
+
+/// The view for `width` pixels: the map, with what it brings forward in
+/// the inspector.
 fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
-    let wide = width >= WIDE;
-    let list_open = !wide && triib.network_list;
-    let shows = triib.settings.network_shows;
-    let topology = topology_of(triib);
-    let streams: Vec<Stream> = match shows {
-        NetworkShows::Clock => Vec::new(),
-        _ => streams(triib, &topology)
-            .into_iter()
-            .filter(|stream| stream.media_clock == (shows == NetworkShows::MediaClock))
-            .collect(),
-    };
-    let paints = paints(
-        &streams
-            .iter()
-            .map(|stream| (stream.key(), stream.status))
-            .collect::<Vec<_>>(),
-    );
-    // What is brought forward, as long as it is still there.
-    let focus = triib.network_focus.filter(|focus| match focus {
-        Focus::Stream(..) => streams.iter().any(|stream| stream.focus() == *focus),
-        Focus::Output(talker, output) => streams
-            .iter()
-            .any(|stream| stream.key() == (*talker, *output)),
-        Focus::Node(key) => find(&topology, *key).is_some(),
-    });
-    let (header, focused) = header(&topology, shows, &streams, focus, width, list_open);
+    let drawn = Drawn::of(triib);
+    let focus = drawn.focus(triib.network_focus);
+    let Drawn {
+        shows,
+        topology,
+        streams,
+        paints,
+    } = &drawn;
+    let (header, focused) = header(topology, *shows, streams, focus, width, triib.network_help);
     // The chips a view's margin from the toolbar and 16 from what is below,
-    // as the other views' are. On narrow windows the list's toggle makes
-    // their row 8 taller.
+    // as the other views' are, the help's toggle making their row 8
+    // taller.
     let padding = iced::Padding {
-        top: if wide { VIEW_MARGIN } else { VIEW_MARGIN - 4.0 },
+        top: VIEW_MARGIN - 4.0,
         ..iced::Padding::new(VIEW_MARGIN)
     };
-    let below = if wide { 16.0 } else { 12.0 };
+    let below = 12.0;
+    let help = triib.network_help.then(|| {
+        container(
+            styled(drawn.help(), Type::BodyMedium)
+                .style(style::on_surface_variant)
+                .align_x(dir::text_start()),
+        )
+        .padding([12, 16])
+        .width(Fill)
+        .style(|theme: &Theme| container::Style {
+            background: Some(Scheme::of(theme).surface_container_low.into()),
+            border: iced::border::rounded(shape::LARGE),
+            ..container::Style::default()
+        })
+    });
 
     if topology.nodes.is_empty() {
         return column![
@@ -265,8 +313,8 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
         .into();
     }
 
-    let lines = lines(&topology, shows, &streams, &paints, focus);
-    let cards = cards(triib, &topology, shows, &streams, &paints, &lines, focus);
+    let lines = lines(topology, *shows, streams, paints, focus);
+    let cards = cards(triib, topology, *shows, streams, paints, &lines, focus);
     let data = Map {
         topology: topology.clone(),
         cards,
@@ -296,15 +344,7 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
         }),
     )
     .on_press(Message::SelectionCleared);
-    let panel_width = if !wide {
-        Length::Fill
-    } else if width >= ROOMY {
-        Length::Fixed(PANEL_WIDTH)
-    } else {
-        Length::Fixed(NARROW_PANEL_WIDTH)
-    };
-    let panel = || details(triib, &topology, shows, &streams, &paints, focus).view(panel_width);
-    let mut body: Element<'_, Message> = if list_open { panel() } else { canvas.into() };
+    let mut body: Element<'_, Message> = canvas.into();
     // What is brought forward when the header has no room for it: below
     // the map, which stays where it is as it comes and goes.
     if let Some(focused) = focused {
@@ -313,10 +353,9 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
             .align_x(dir::horizontal_start());
         body = column![body, focused].spacing(16).height(Fill).into();
     }
-    if wide {
-        body = row![body, panel()].spacing(16).height(Fill).into();
-    }
-    column![header, body]
+    column![header]
+        .push(help)
+        .push(body)
         .spacing(below)
         .padding(padding)
         .width(Fill)
@@ -324,19 +363,17 @@ fn view_at(triib: &Triib, width: f32) -> Element<'_, Message> {
         .into()
 }
 
-/// The title, the choice of what to show, a summary and what is brought
-/// forward, with on narrow windows the list's toggle; and what is brought
-/// forward on its own instead, for below the map, when the header's row has
-/// no room for it.
+/// The title, the choice of what to show, a summary, what is brought
+/// forward and the help's toggle; and what is brought forward on its own
+/// instead, for below the map, when the header's row has no room for it.
 fn header<'a>(
     topology: &Topology,
     shows: NetworkShows,
     streams: &[Stream],
     focus: Option<Focus>,
     width: f32,
-    list_open: bool,
+    help_open: bool,
 ) -> (Element<'a, Message>, Option<Element<'a, Message>>) {
-    let wide = width >= WIDE;
     // A labelled button's width: its label, its padding, its icon and the
     // gap between.
     let labelled = |label: &str| {
@@ -386,12 +423,10 @@ fn header<'a>(
         };
         fl!("netmap-showing", what = what)
     });
-    // The space before what ends the row, and the list's toggle, an icon
+    // The space before what ends the row, and the help's toggle, an icon
     // button.
     used.push(0.0);
-    if !wide {
-        used.push(40.0);
-    }
+    used.push(40.0);
     let room = width - 2.0 * VIEW_MARGIN;
     // Whether the row has room for one more of `across` pixels, and the gap
     // before it.
@@ -437,18 +472,12 @@ fn header<'a>(
     if let Some(label) = beside {
         header = header.push(focused(label));
     }
-    if !wide {
-        header = header.push(component::toggle_tool(
-            Icon::ViewList,
-            if list_open {
-                fl!("netmap-show-map")
-            } else {
-                fl!("netmap-show-details")
-            },
-            list_open,
-            Message::NetworkListToggled,
-        ));
-    }
+    header = header.push(component::toggle_tool(
+        Icon::AutoStories,
+        fl!("netmap-help-toggle"),
+        help_open,
+        Message::NetworkHelpToggled,
+    ));
     (header.into(), below.map(|label| focused(label).into()))
 }
 
@@ -1497,45 +1526,6 @@ struct Page {
     state_paint: Paint,
     facts: Vec<(String, String)>,
     sections: Vec<(String, Vec<Item>)>,
-    help: String,
-}
-
-/// The panel beside the map: an overview, or the details of the stream or
-/// node brought forward.
-fn details(
-    triib: &Triib,
-    topology: &Topology,
-    shows: NetworkShows,
-    streams: &[Stream],
-    paints: &[Paint],
-    focus: Option<Focus>,
-) -> Page {
-    let focused = match focus {
-        Some(Focus::Node(key)) => find(topology, key),
-        _ => None,
-    };
-    match (shows, focus, focused) {
-        (NetworkShows::Clock, _, Some(node)) => clock_details(triib, topology, node),
-        (NetworkShows::Clock, ..) => clock_overview(topology),
-        (_, Some(Focus::Stream(..)), _) => {
-            let index = streams
-                .iter()
-                .position(|stream| Some(stream.focus()) == focus)
-                .unwrap_or_default();
-            stream_details(topology, shows, &streams[index], paints[index])
-        }
-        (_, Some(Focus::Output(talker, output)), _) => {
-            let group: Vec<(&Stream, Paint)> = streams
-                .iter()
-                .zip(paints)
-                .filter(|(stream, _)| stream.key() == (talker, output))
-                .map(|(stream, &paint)| (stream, paint))
-                .collect();
-            output_details(shows, &group)
-        }
-        (_, _, Some(node)) => node_details(topology, streams, paints, node),
-        _ => stream_overview(topology, shows, streams, paints),
-    }
 }
 
 /// A stream's state in a word, and the paint it is written in.
@@ -1774,7 +1764,6 @@ fn lite_details(
         },
         facts,
         sections: Vec::new(),
-        help: fl!("netmap-help-back"),
     }
 }
 
@@ -1834,7 +1823,6 @@ fn clock_overview(topology: &Topology) -> Page {
         } else {
             vec![(fl!("netmap-needs-attention"), unsynced)]
         },
-        help: with_domain_help(topology, fl!("netmap-help-clock")),
     }
 }
 
@@ -1894,7 +1882,6 @@ fn clock_details(triib: &Triib, topology: &Topology, node: NodeId) -> Page {
                 (fl!("netmap-not-synced"), unsynced.to_string()),
             ],
             sections: vec![(heading, items)],
-            help: fl!("netmap-help-back"),
         };
     }
     if topology.runs_lite(node) {
@@ -1902,16 +1889,9 @@ fn clock_details(triib: &Triib, topology: &Topology, node: NodeId) -> Page {
     }
     let mut facts = Vec::new();
     if entry.apart.is_none() {
-        let mut path = vec![node_name(topology, node)];
-        let mut at = entry.parent;
-        while let Some(parent) = at {
-            path.push(node_name(topology, parent));
-            at = topology.nodes[parent].parent;
-        }
-        path.reverse();
-        let arrow = format!(" {} ", crate::i18n::arrow(&path[0]));
-        facts.push((fl!("netmap-clock-path"), path.join(&arrow)));
-        facts.push((fl!("netmap-hops"), (path.len() - 1).to_string()));
+        let (path, hops) = clock_path(topology, node);
+        facts.push((fl!("netmap-clock-path"), path));
+        facts.push((fl!("netmap-hops"), hops.to_string()));
     }
     facts.extend(wireless_facts(triib, topology, node));
     if let Some(delay) = entry.link.delay {
@@ -1989,8 +1969,73 @@ fn clock_details(triib: &Triib, topology: &Topology, node: NodeId) -> Page {
                     .collect(),
             )]
         },
-        help: fl!("netmap-help-back"),
     }
+}
+
+/// A node's clock path by name, from the grandmaster down to it, and how
+/// many hops it takes.
+fn clock_path(topology: &Topology, node: NodeId) -> (String, usize) {
+    let mut path = vec![node_name(topology, node)];
+    let mut at = topology.nodes[node].parent;
+    while let Some(parent) = at {
+        path.push(node_name(topology, parent));
+        at = topology.nodes[parent].parent;
+    }
+    path.reverse();
+    let arrow = format!(" {} ", crate::i18n::arrow(&path[0]));
+    (path.join(&arrow), path.len() - 1)
+}
+
+/// What the map knows of an entity's AVB interfaces' clocks, for the
+/// inspector, by interface: whether each is in sync and why not, its clock
+/// path by name and the bridge port it hangs on; and in the network view,
+/// where clicking one brings it forward, the nodes below it.
+pub fn interface_clocks<'a>(
+    triib: &Triib,
+    entity_id: EntityId,
+) -> Vec<(u16, Vec<Element<'a, Message>>)> {
+    let topology = topology_of(triib);
+    let lists = triib.settings.view == crate::settings::View::Network;
+    (0..topology.nodes.len())
+        .filter_map(|node| match topology.nodes[node].kind {
+            NodeKind::Entity {
+                entity_id: id,
+                interface,
+            } if id == entity_id => Some((interface, clock_rows(triib, &topology, node, lists))),
+            _ => None,
+        })
+        .collect()
+}
+
+fn clock_rows<'a>(
+    triib: &Triib,
+    topology: &Topology,
+    node: NodeId,
+    lists: bool,
+) -> Vec<Element<'a, Message>> {
+    let entry = &topology.nodes[node];
+    let page = clock_details(triib, topology, node);
+    let mut rows = vec![crate::view::property(fl!("netmap-sync"), page.state)];
+    if entry.apart.is_none() && entry.parent.is_some() && !topology.runs_lite(node) {
+        rows.push(crate::view::property(
+            fl!("netmap-clock-path"),
+            clock_path(topology, node).0,
+        ));
+    }
+    if let Some(port) = entry.link.port {
+        rows.push(crate::view::property(
+            fl!("netmap-bridge-port"),
+            port.to_string(),
+        ));
+    }
+    if lists {
+        rows.extend(
+            page.sections
+                .into_iter()
+                .map(|(title, items)| item_list(title, items)),
+        );
+    }
+    rows
 }
 
 /// The switches that take no part in AVB in front of devices that fell back
@@ -2033,16 +2078,10 @@ fn switch_details(
                 .map(|&child| clock_item(topology, child))
                 .collect(),
         )],
-        help: fl!("netmap-help-back"),
     }
 }
 
-fn stream_overview(
-    topology: &Topology,
-    shows: NetworkShows,
-    streams: &[Stream],
-    paints: &[Paint],
-) -> Page {
+fn stream_overview(shows: NetworkShows, streams: &[Stream], paints: &[Paint]) -> Page {
     let bound = || streams.iter().filter(|stream| stream.input.is_some());
     let count = |status: Status| bound().filter(|stream| stream.status == status).count();
     let attention: Vec<Item> = streams
@@ -2096,19 +2135,12 @@ fn stream_overview(
         .into_iter()
         .filter(|(_, items)| !items.is_empty())
         .collect(),
-        help: with_domain_help(
-            topology,
-            if media_clock {
-                fl!("netmap-help-media-clock")
-            } else {
-                fl!("netmap-help-audio")
-            },
-        ),
     }
 }
 
-fn stream_details(topology: &Topology, shows: NetworkShows, stream: &Stream, paint: Paint) -> Page {
-    // The talker, then the far end of each link the stream crosses.
+/// The nodes a stream crosses by name: its talker, then the far end of
+/// each link, as far as it gets.
+fn route_names(topology: &Topology, stream: &Stream) -> String {
     let mut names = vec![stream.talker_name.clone()];
     for &(node, up) in &stream.route.hops {
         let next = if up {
@@ -2120,77 +2152,74 @@ fn stream_details(topology: &Topology, shows: NetworkShows, stream: &Stream, pai
             names.push(node_name(topology, next));
         }
     }
-    let (state_icon, state_filled, state_paint) = state_look(stream.status);
-    Page {
-        kicker: stream_kicker(shows),
-        title: stream.name.clone(),
-        swatch: Some(paint),
-        state: stream.reason.clone(),
-        state_icon,
-        state_filled,
-        state_paint,
-        facts: vec![
-            (fl!("advert-talker"), stream.talker_name.clone()),
-            (fl!("advert-listener"), stream.listener_name.clone()),
-            (
-                if stream.status == Status::Flowing {
+    names.join(&format!(" {} ", crate::i18n::arrow(&names[0])))
+}
+
+/// What the map knows of an entity's streams, for the inspector's Streams
+/// tab: each bound stream input's path, and where the entity bridges
+/// others, as an access point does, the streams passing through it.
+pub struct EntityStreams {
+    /// By listener's stream input: "Path" or, for a stream not flowing,
+    /// "Reaches", and the nodes by name.
+    routes: Vec<((EntityId, u16), (String, String))>,
+    through: Vec<Item>,
+}
+
+impl EntityStreams {
+    pub fn of(triib: &Triib, entity_id: EntityId) -> Self {
+        let topology = topology_of(triib);
+        let streams = streams(triib, &topology);
+        let routes = streams
+            .iter()
+            .filter_map(|stream| {
+                let input = stream.input?;
+                let label = if stream.status == Status::Flowing {
                     fl!("avb-interface-path")
                 } else {
                     fl!("netmap-reaches")
-                },
-                names.join(&format!(" {} ", crate::i18n::arrow(&names[0]))),
-            ),
-        ],
-        sections: Vec::new(),
-        help: fl!("netmap-help-back"),
+                };
+                Some((input, (label, route_names(&topology, stream))))
+            })
+            .collect();
+        // The streams of what the map shows, as its items name them.
+        let shows = triib.settings.network_shows;
+        let shown: Vec<Stream> = streams
+            .into_iter()
+            .filter(|stream| {
+                shows != NetworkShows::Clock
+                    && stream.media_clock == (shows == NetworkShows::MediaClock)
+            })
+            .collect();
+        let paints = paints(
+            &shown
+                .iter()
+                .map(|stream| (stream.key(), stream.status))
+                .collect::<Vec<_>>(),
+        );
+        let through = match topology.placed(entity_id) {
+            Some(node) if !topology.nodes[node].children.is_empty() => {
+                grouped(&shown, &paints, &|stream| {
+                    via(&topology, &stream.route).contains(&node)
+                })
+            }
+            _ => Vec::new(),
+        };
+        Self { routes, through }
     }
-}
 
-/// The icon a stream's state shows with, whether filled, and its paint.
-fn state_look(status: Status) -> (Icon, bool, Paint) {
-    match status {
-        Status::Flowing | Status::Unsynced => (Icon::Link, true, Paint::Soft),
-        Status::Advertised => (Icon::Pending, false, Paint::Soft),
-        Status::Failed => (Icon::Error, true, Paint::Failed),
+    /// The path of the stream bound to a listener's stream input, with
+    /// its label.
+    pub fn route(&self, input: (EntityId, u16)) -> Option<(String, String)> {
+        self.routes
+            .iter()
+            .find(|(bound, _)| *bound == input)
+            .map(|(_, route)| route.clone())
     }
-}
 
-fn stream_kicker(shows: NetworkShows) -> String {
-    if shows == NetworkShows::MediaClock {
-        fl!("netmap-media-clock-stream")
-    } else {
-        fl!("netmap-audio-stream")
-    }
-}
-
-/// A talker's stream with its listeners, each brought forward on its own
-/// from the list; or one it sends with no listener known.
-fn output_details(shows: NetworkShows, group: &[(&Stream, Paint)]) -> Page {
-    let (stream, paint) = lead(group);
-    let listeners: Vec<Item> = group
-        .iter()
-        .filter(|(stream, _)| stream.input.is_some())
-        .map(|&(stream, paint)| stream_item(stream, paint))
-        .collect();
-    let (state_icon, state_filled, state_paint) = state_look(stream.status);
-    Page {
-        kicker: stream_kicker(shows),
-        title: stream.output_name.clone(),
-        swatch: Some(paint),
-        state: stream.reason.clone(),
-        state_icon,
-        state_filled,
-        state_paint,
-        facts: vec![
-            (fl!("advert-talker"), stream.talker_name.clone()),
-            (fl!("stream-listeners"), listeners.len().to_string()),
-        ],
-        sections: if listeners.is_empty() {
-            Vec::new()
-        } else {
-            vec![(fl!("stream-listeners"), listeners)]
-        },
-        help: fl!("netmap-help-back"),
+    /// The streams passing through the entity, under their heading, each
+    /// bringing its stream forward.
+    pub fn through<'a>(self) -> Option<Element<'a, Message>> {
+        (!self.through.is_empty()).then(|| item_list(fl!("netmap-passing-through"), self.through))
     }
 }
 
@@ -2225,7 +2254,6 @@ fn node_details(topology: &Topology, streams: &[Stream], paints: &[Paint], node:
             } else {
                 vec![(fl!("netmap-passing-through"), through)]
             },
-            help: fl!("netmap-help-stream"),
         };
     }
     let sending = items(&|stream| entity.is_some() && entity == Some(stream.talker));
@@ -2270,23 +2298,115 @@ fn node_details(topology: &Topology, streams: &[Stream], paints: &[Paint], node:
         .into_iter()
         .filter(|(_, items)| !items.is_empty())
         .collect(),
-        help: fl!("netmap-help-stream"),
     }
 }
 
+/// What the inspector shows in the network view where what the map brings
+/// forward is no entity: a bridge, a switch, a clock or this computer, or
+/// with nothing brought forward an overview.
+pub struct Inspected<'a> {
+    pub title: String,
+    pub body: Element<'a, Message>,
+}
+
+/// What the inspector shows of the map, none where what it brings forward
+/// is an entity, a stream or a talker's stream, which the inspector shows
+/// as it shows any entity.
+pub fn inspected(triib: &Triib) -> Option<Inspected<'static>> {
+    if matches!(
+        triib.network_focus,
+        Some(Focus::Node(NodeKey::Entity(_)) | Focus::Stream(..) | Focus::Output(..))
+    ) {
+        return None;
+    }
+    let drawn = Drawn::of(triib);
+    let node = match drawn.focus(triib.network_focus) {
+        Some(Focus::Node(key)) => find(&drawn.topology, key),
+        _ => None,
+    };
+    let page = match (drawn.shows, node) {
+        (NetworkShows::Clock, Some(node)) => clock_details(triib, &drawn.topology, node),
+        (NetworkShows::Clock, None) => clock_overview(&drawn.topology),
+        (_, Some(node)) => node_details(&drawn.topology, &drawn.streams, &drawn.paints, node),
+        (shows, None) => stream_overview(shows, &drawn.streams, &drawn.paints),
+    };
+    Some(Inspected {
+        title: page.title.clone(),
+        body: page.body(),
+    })
+}
+
+/// A paint's bar beside what it colors, none leaving its room empty.
+fn swatch<'a>(paint: Option<Paint>) -> Element<'a, Message> {
+    container(space())
+        .width(5)
+        .height(Fill)
+        .style(move |theme: &Theme| container::Style {
+            background: paint.map(|paint| map::paint_color(&Scheme::of(theme), paint).into()),
+            border: iced::border::rounded(3),
+            ..container::Style::default()
+        })
+        .into()
+}
+
+/// An item of a list, which brings forward what it names.
+fn item_button<'a>(item: Item) -> Element<'a, Message> {
+    let detail_paint = item.detail_paint;
+    let content = row![
+        swatch(Some(item.swatch)),
+        column![
+            styled(item.name, Type::LabelLarge).align_x(dir::text_start()),
+            styled(item.detail, Type::BodySmall)
+                .align_x(dir::text_start())
+                .style(move |theme: &Theme| iced::widget::text::Style {
+                    color: Some(map::text_color(&Scheme::of(theme), detail_paint)),
+                }),
+        ]
+        .spacing(2)
+        .width(Fill),
+    ]
+    .spacing(10)
+    .height(Length::Shrink);
+    plain_button(content)
+        .padding([8, 10])
+        .width(Fill)
+        .style(|theme: &Theme, status| {
+            let scheme = Scheme::of(theme);
+            plain_button::Style {
+                background: Some(
+                    match status {
+                        plain_button::Status::Hovered | plain_button::Status::Pressed => {
+                            scheme.surface_container_high
+                        }
+                        _ => scheme.surface_container,
+                    }
+                    .into(),
+                ),
+                text_color: scheme.on_surface,
+                border: iced::Border {
+                    color: scheme.outline_variant,
+                    width: 1.0,
+                    radius: 10.0.into(),
+                },
+                ..plain_button::Style::default()
+            }
+        })
+        .on_press(Message::NetworkFocused(Some(item.focus)))
+        .into()
+}
+
+/// A list of items under its heading, for the inspector.
+fn item_list<'a>(title: String, items: Vec<Item>) -> Element<'a, Message> {
+    column![styled(title, Type::LabelLarge).style(style::on_surface_variant)]
+        .push(dir::column(items.into_iter().map(item_button)).spacing(6))
+        .spacing(6)
+        .into()
+}
+
 impl Page {
-    fn view<'a>(self, width: Length) -> Element<'a, Message> {
-        let swatch = |paint: Option<Paint>| {
-            container(space())
-                .width(5)
-                .height(Fill)
-                .style(move |theme: &Theme| container::Style {
-                    background: paint
-                        .map(|paint| map::paint_color(&Scheme::of(theme), paint).into()),
-                    border: iced::border::rounded(3),
-                    ..container::Style::default()
-                })
-        };
+    /// The page in the inspector, under its title: what it is and its
+    /// state, its facts, and its lists.
+    fn body<'a>(self) -> Element<'a, Message> {
         let state_paint = self.state_paint;
         let state_icon = if self.state_filled {
             icon::filled(self.state_icon, 16)
@@ -2296,120 +2416,45 @@ impl Page {
         let tinted = move |theme: &Theme| iced::widget::text::Style {
             color: Some(map::text_color(&Scheme::of(theme), state_paint)),
         };
-        let mut body = column![
+        let heading = column![
             styled(crate::i18n::uppercase(&self.kicker), Type::LabelSmall)
                 .style(style::on_surface_variant),
             row![
-                swatch(self.swatch),
-                column![
-                    styled(self.title, Type::TitleMedium).align_x(dir::text_start()),
-                    row![
-                        container(state_icon.style(tinted)).padding(iced::Padding {
-                            top: 2.0,
-                            ..iced::Padding::ZERO
-                        }),
-                        styled(self.state, Type::BodyMedium)
-                            .style(tinted)
-                            .align_x(dir::text_start()),
-                    ]
-                    .spacing(4),
-                ]
-                .spacing(2)
-                .width(Fill),
+                container(state_icon.style(tinted)).padding(iced::Padding {
+                    top: 2.0,
+                    ..iced::Padding::ZERO
+                }),
+                styled(self.state, Type::BodyMedium)
+                    .style(tinted)
+                    .align_x(dir::text_start()),
             ]
-            .spacing(10)
-            .height(Length::Shrink),
+            .spacing(4),
         ]
-        .spacing(14);
+        .spacing(4)
+        .width(Fill);
+        // Beside the paint it is drawn in on the map, where it has one.
+        let heading: Element<'a, Message> = match self.swatch {
+            Some(paint) => row![swatch(Some(paint)), heading]
+                .spacing(10)
+                .height(Length::Shrink)
+                .into(),
+            None => heading.into(),
+        };
+        let mut body = column![heading].spacing(16);
         if !self.facts.is_empty() {
             body = body.push(
-                dir::column(self.facts.into_iter().map(|(label, value)| {
-                    row![
-                        styled(label, Type::BodyMedium)
-                            .style(style::on_surface_variant)
-                            .width(Length::Fixed(112.0))
-                            .align_x(dir::text_start()),
-                        styled(value, Type::BodyMedium)
-                            .width(Fill)
-                            .align_x(dir::text_start()),
-                    ]
-                    .spacing(12)
-                    .into()
-                }))
-                .spacing(8),
+                dir::column(
+                    self.facts
+                        .into_iter()
+                        .map(|(label, value)| crate::view::property(label, value)),
+                )
+                .spacing(6),
             );
         }
         for (title, items) in self.sections {
-            let items = items.into_iter().map(|item| {
-                let detail_paint = item.detail_paint;
-                let content = row![
-                    swatch(Some(item.swatch)),
-                    column![
-                        styled(item.name, Type::LabelLarge).align_x(dir::text_start()),
-                        styled(item.detail, Type::BodySmall)
-                            .align_x(dir::text_start())
-                            .style(move |theme: &Theme| iced::widget::text::Style {
-                                color: Some(map::text_color(&Scheme::of(theme), detail_paint)),
-                            }),
-                    ]
-                    .spacing(2)
-                    .width(Fill),
-                ]
-                .spacing(10)
-                .height(Length::Shrink);
-                plain_button(content)
-                    .padding([8, 10])
-                    .width(Fill)
-                    .style(|theme: &Theme, status| {
-                        let scheme = Scheme::of(theme);
-                        plain_button::Style {
-                            background: Some(
-                                match status {
-                                    plain_button::Status::Hovered
-                                    | plain_button::Status::Pressed => {
-                                        scheme.surface_container_high
-                                    }
-                                    _ => scheme.surface_container,
-                                }
-                                .into(),
-                            ),
-                            text_color: scheme.on_surface,
-                            border: iced::Border {
-                                color: scheme.outline_variant,
-                                width: 1.0,
-                                radius: 10.0.into(),
-                            },
-                            ..plain_button::Style::default()
-                        }
-                    })
-                    .on_press(Message::NetworkFocused(Some(item.focus)))
-                    .into()
-            });
-            body = body.push(
-                column![styled(title, Type::LabelLarge).style(style::on_surface_variant)]
-                    .push(dir::column(items).spacing(6))
-                    .spacing(6),
-            );
+            body = body.push(item_list(title, items));
         }
-        body = body.push(
-            styled(self.help, Type::BodySmall)
-                .style(style::on_surface_variant)
-                .align_x(dir::text_start()),
-        );
-        container(
-            scrollable(body.padding(16))
-                .direction(scrollable::Direction::Vertical(component::thin_scrollbar()))
-                .style(style::scrollbar)
-                .height(Fill),
-        )
-        .width(width)
-        .height(Fill)
-        .style(|theme: &Theme| container::Style {
-            background: Some(Scheme::of(theme).surface_container_low.into()),
-            border: iced::border::rounded(shape::LARGE),
-            ..container::Style::default()
-        })
-        .into()
+        body.into()
     }
 }
 
@@ -2482,12 +2527,13 @@ mod tests {
         (topology, streams)
     }
 
-    /// Writes pictures of the header and the details panel to the PNG files
-    /// the variable `NETWORK_PANEL_PICTURE` names, with what each shows added.
+    /// Writes pictures of the header and the inspector's pages of the map
+    /// to the PNG files the variable `NETWORK_PAGE_PICTURE` names, with
+    /// what each shows added.
     #[test]
     #[ignore = "writes pictures to look at"]
     fn pictures() {
-        let Ok(path) = std::env::var("NETWORK_PANEL_PICTURE") else {
+        let Ok(path) = std::env::var("NETWORK_PAGE_PICTURE") else {
             return;
         };
         let theme = crate::view::tests::picture_theme();
@@ -2498,21 +2544,17 @@ mod tests {
                 .map(|stream| (stream.key(), stream.status))
                 .collect::<Vec<_>>(),
         );
-        let console = find(&topology, NodeKey::Entity(EntityId(2))).unwrap();
+        let bridge = topology.roots[0];
         // How to build each page, by the name its picture takes.
         type Build<'a> = Box<dyn Fn() -> Page + 'a>;
-        let pages: [(&str, Build<'_>); 4] = [
+        let pages: [(&str, Build<'_>); 3] = [
             (
                 "overview",
-                Box::new(|| stream_overview(&topology, NetworkShows::Audio, &streams, &paints)),
+                Box::new(|| stream_overview(NetworkShows::Audio, &streams, &paints)),
             ),
             (
-                "stream",
-                Box::new(|| stream_details(&topology, NetworkShows::Audio, &streams[2], paints[2])),
-            ),
-            (
-                "device",
-                Box::new(|| node_details(&topology, &streams, &paints, console)),
+                "bridge",
+                Box::new(|| node_details(&topology, &streams, &paints, bridge)),
             ),
             ("clock", Box::new(|| clock_overview(&topology))),
         ];
@@ -2528,6 +2570,7 @@ mod tests {
                 ..iced::Settings::default()
             };
             let focus = Some(streams[2].focus());
+            let page = page();
             let content: Element<'_, Message> = iced::widget::column![
                 header(
                     &topology,
@@ -2535,16 +2578,21 @@ mod tests {
                     &streams,
                     focus,
                     1280.0,
-                    false
+                    true
                 )
                 .0,
-                page().view(Length::Fixed(PANEL_WIDTH)),
+                component::side_sheet_sized(
+                    page.title.clone(),
+                    Message::InspectorToggled,
+                    page.body(),
+                    component::SIDE_SHEET_WIDTH,
+                ),
             ]
             .spacing(16)
             .padding(16)
             .into();
             let mut simulator =
-                iced_test::Simulator::with_size(settings, Size::new(1280.0, 640.0), content);
+                iced_test::Simulator::with_size(settings, Size::new(1280.0, 720.0), content);
             let snapshot = simulator.snapshot(&theme).expect("draws");
             assert!(snapshot.matches_image(&file).expect("writes"));
         }

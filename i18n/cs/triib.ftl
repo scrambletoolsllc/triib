@@ -402,8 +402,7 @@ netmap-bridges = { $count ->
     [many] { $count } přepínače
    *[other] { $count } přepínačů
 }
-netmap-show-map = Zobrazit mapu
-netmap-show-details = Zobrazit podrobnosti
+netmap-help-toggle = Jak číst mapu
 stream-numbered = Stream { $index }
 netmap-bridge = Přepínač
 netmap-access-point = Přístupový bod
@@ -481,8 +480,6 @@ netmap-passing-through = Průchozí
 netmap-sending = Odesílá
 netmap-receiving = Přijímá
 netmap-problems = Problémy
-netmap-help-back = Kliknutím na pozadí se vrátíte na přehled.
-netmap-help-stream = Kliknutím na stream ho otevřete v inspektoru, kliknutím na pozadí se vrátíte na přehled.
 netmap-help-clock = Hodiny vycházejí z grandmasteru přes každý přepínač ke všem uzlům stromu. Přerušovaná šedá čára je linka, na které neběží gPTP. Kliknutím na zařízení nebo jeho vodič otevřete v inspektoru jeho cestu hodin; kliknutím na pozadí výběr zrušíte.
 netmap-help-domains = Každá oblast je doménou hodin. V doméně gPTP hodiny sestupují z grandmasteru přes přepínače AVB. V doméně PTP běží na zařízeních AVB Lite a řídí se svým grandmasterem od konce ke konci, synchronizována v rozmezí 50 µs; přerušovaná karta zastupuje přepínače bez účasti v AVB, za nimiž některá z nich přešla na AVB Lite. Zařízení, které svou doménu nesdílí s žádným jiným, má vlastní oblast.
 netmap-help-media-clock = Pouze streamy mediálních hodin (CRF), kreslené stejně jako audio: jeden vodič pro rámce každého streamu na každé lince, barva podle talkeru. Kliknutím na vodič otevřete jeho stream v inspektoru, kliknutím na zařízení zobrazíte jeho streamy; kliknutím na pozadí výběr zrušíte.

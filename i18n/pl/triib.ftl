@@ -402,8 +402,7 @@ netmap-bridges = { $count ->
     [many] { $count } przełączników
    *[other] { $count } przełącznika
 }
-netmap-show-map = Pokaż mapę
-netmap-show-details = Pokaż szczegóły
+netmap-help-toggle = Jak czytać mapę
 stream-numbered = Strumień { $index }
 netmap-bridge = Przełącznik
 netmap-access-point = Punkt dostępowy
@@ -481,8 +480,6 @@ netmap-passing-through = Tranzyt
 netmap-sending = Wysyła
 netmap-receiving = Odbiera
 netmap-problems = Problemy
-netmap-help-back = Kliknij tło, aby wrócić do przeglądu.
-netmap-help-stream = Kliknij strumień, aby otworzyć go w inspektorze, lub tło, aby wrócić do przeglądu.
 netmap-help-clock = Zegar płynie od grandmastera przez każdy przełącznik do każdego węzła drzewa. Przerywana szara linia to łącze, na którym nie działa gPTP. Kliknij urządzenie lub jego przewód, aby otworzyć jego ścieżkę zegara w inspektorze; kliknij tło, aby wyczyścić zaznaczenie.
 netmap-help-domains = Każdy obszar to domena zegara. W domenie gPTP zegar płynie od grandmastera w dół przez przełączniki AVB. W domenie PTP urządzenia działają w AVB Lite i podążają za swoim grandmasterem od końca do końca, zsynchronizowane w granicach 50 µs; przerywana karta oznacza przełączniki niebiorące udziału w AVB, za którymi część z nich przeszła na AVB Lite. Urządzenie, które nie dzieli swojej domeny z żadnym innym, ma własny obszar.
 netmap-help-media-clock = Tylko strumienie zegara mediów (CRF), rysowane tak samo jak audio: jeden przewód dla ramek każdego strumienia na każdym łączu, kolor według talkera. Kliknij przewód, aby otworzyć jego strumień w inspektorze, lub urządzenie, aby zobaczyć jego strumienie; kliknij tło, aby wyczyścić zaznaczenie.

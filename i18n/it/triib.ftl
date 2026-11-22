@@ -405,8 +405,7 @@ netmap-bridges = { $count ->
     [many] { $count } switch
    *[other] { $count } switch
 }
-netmap-show-map = Mostra la mappa
-netmap-show-details = Mostra i dettagli
+netmap-help-toggle = Come leggere la mappa
 stream-numbered = Flusso { $index }
 netmap-bridge = Switch
 netmap-access-point = Access point
@@ -499,8 +498,6 @@ netmap-passing-through = In transito
 netmap-sending = Invio
 netmap-receiving = Ricezione
 netmap-problems = Problemi
-netmap-help-back = Fai clic sullo sfondo per tornare alla panoramica.
-netmap-help-stream = Fai clic su un flusso per ispezionarlo, o sullo sfondo per tornare alla panoramica.
 netmap-help-clock = Il clock parte dal grandmaster e attraversa ogni switch fino a ogni nodo dell’albero. Una linea grigia tratteggiata è un collegamento su cui gPTP non è attivo. Fai clic su un dispositivo o sul suo filo per ispezionarne il percorso del clock; fai clic sullo sfondo per annullare la selezione.
 netmap-help-domains = Ogni area è un dominio di clock. In un dominio gPTP il clock scende dal grandmaster attraverso gli switch AVB. In un dominio PTP i dispositivi eseguono AVB Lite e seguono il loro grandmaster da un capo all’altro, sincronizzati entro 50 µs; una scheda tratteggiata rappresenta gli switch non AVB dietro cui alcuni hanno ripiegato su AVB Lite. Un dispositivo che non condivide il proprio dominio con nessun altro ha un’area a sé.
 netmap-help-media-clock = Solo flussi di media clock (CRF), disegnati come l’audio: un filo per i frame di ogni flusso su ogni collegamento, colorato in base al talker. Fai clic su un filo per ispezionarne il flusso, o su un dispositivo per vederne i flussi; fai clic sullo sfondo per annullare la selezione.

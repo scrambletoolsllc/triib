@@ -388,8 +388,7 @@ netmap-bridges = { $count ->
     [one] { $count } köprü
    *[other] { $count } köprü
 }
-netmap-show-map = Haritayı göster
-netmap-show-details = Ayrıntıları göster
+netmap-help-toggle = Harita nasıl okunur
 stream-numbered = Akış { $index }
 netmap-bridge = Köprü
 netmap-access-point = Erişim noktası
@@ -465,8 +464,6 @@ netmap-passing-through = Geçtiği köprüler
 netmap-sending = Gönderilen
 netmap-receiving = Alınan
 netmap-problems = Sorunlar
-netmap-help-back = Genel görünüme dönmek için arka plana tıklayın.
-netmap-help-stream = İncelemek için bir akışa, genel görünüme dönmek için arka plana tıklayın.
 netmap-help-clock = Saat, grandmaster'dan her köprü üzerinden ağaçtaki her düğüme akar. Kesik gri çizgi, gPTP çalışmayan bir linktir. Saat yolunu incelemek için bir cihaza veya kablosuna tıklayın; seçimi temizlemek için arka plana tıklayın.
 netmap-help-domains = Her bölge bir saat alanıdır. Bir gPTP alanında saat, grandmaster'dan AVB köprüleri üzerinden aşağı iner. Bir PTP alanında cihazlar AVB Lite çalıştırır ve grandmaster'larını uçtan uca izler; 50 µs içinde senkronize sayılır. Kesik çizgili kart, bazı cihazların arkasında AVB Lite'a geçtiği, AVB'ye katılmayan switch'leri temsil eder. Alanını başka hiçbir cihazla paylaşmayan bir cihazın kendi bölgesi vardır.
 netmap-help-media-clock = Yalnızca medya saati (CRF) akışları, ses gibi çizilir: her linkte her akışın çerçeveleri için bir kablo, talker'a göre renklendirilmiş. Akışını incelemek için bir kabloya, akışlarını görmek için bir cihaza tıklayın; seçimi temizlemek için arka plana tıklayın.

@@ -405,8 +405,7 @@ netmap-bridges = { $count ->
     [many] { $count } commutateurs
    *[other] { $count } commutateurs
 }
-netmap-show-map = Afficher la carte
-netmap-show-details = Afficher les détails
+netmap-help-toggle = Comment lire la carte
 stream-numbered = Flux { $index }
 netmap-bridge = Commutateur
 netmap-access-point = Point d’accès
@@ -491,8 +490,6 @@ netmap-passing-through = En transit
 netmap-sending = Envoi
 netmap-receiving = Réception
 netmap-problems = Problèmes
-netmap-help-back = Cliquez sur l’arrière-plan pour revenir à la vue d’ensemble.
-netmap-help-stream = Cliquez sur un flux pour l’inspecter, ou sur l’arrière-plan pour revenir à la vue d’ensemble.
 netmap-help-clock = L’horloge part du grandmaster et passe par chaque commutateur jusqu’à chaque nœud de l’arbre. Une ligne grise discontinue est une liaison sur laquelle gPTP ne fonctionne pas. Cliquez sur un appareil ou sur son fil pour inspecter son chemin d’horloge ; cliquez sur l’arrière-plan pour désélectionner.
 netmap-help-domains = Chaque zone est un domaine d’horloge. Dans un domaine gPTP, l’horloge descend du grandmaster par les commutateurs AVB. Dans un domaine PTP, les appareils exécutent AVB Lite et suivent leur grandmaster de bout en bout, synchronisés à 50 µs près ; une carte en pointillés représente les commutateurs non AVB derrière lesquels certains se sont repliés sur AVB Lite. Un appareil qui ne partage son domaine avec aucun autre occupe une zone à part.
 netmap-help-media-clock = Flux d’horloge média (CRF) uniquement, dessinés comme l’audio : un fil pour les trames de chaque flux sur chaque liaison, coloré selon le talker. Cliquez sur un fil pour inspecter son flux, ou sur un appareil pour voir ses flux ; cliquez sur l’arrière-plan pour désélectionner.

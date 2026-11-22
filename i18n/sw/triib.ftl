@@ -386,8 +386,7 @@ netmap-bridges = { $count ->
     [one] swichi { $count }
    *[other] swichi { $count }
 }
-netmap-show-map = Onyesha ramani
-netmap-show-details = Onyesha maelezo
+netmap-help-toggle = Jinsi ya kusoma ramani
 stream-numbered = Mtiririko { $index }
 netmap-bridge = Swichi
 netmap-access-point = Access point
@@ -463,8 +462,6 @@ netmap-passing-through = Mitiririko inayopita
 netmap-sending = Inatuma
 netmap-receiving = Inapokea
 netmap-problems = Matatizo
-netmap-help-back = Bofya mandharinyuma ili kurudi kwenye muhtasari.
-netmap-help-stream = Bofya mtiririko ili kuukagua, au mandharinyuma ili kurudi kwenye muhtasari.
 netmap-help-clock = Saa inatiririka kutoka kwa grandmaster kupitia kila swichi hadi kila nodi kwenye mti. Mstari wa kijivu uliokatikakatika ni kiungo kisichoendesha gPTP. Bofya kifaa au waya wake ili kukagua njia yake ya saa; bofya mandharinyuma ili kufuta uteuzi.
 netmap-help-domains = Kila eneo ni kikoa cha saa. Katika kikoa cha gPTP, saa inashuka kutoka kwa grandmaster kupitia swichi za AVB. Katika kikoa cha PTP, vifaa vinaendesha AVB Lite na kumfuata grandmaster wao kutoka mwanzo hadi mwisho, vikiwa vimesawazishwa ndani ya 50 µs; kadi yenye mistari iliyokatikakatika inawakilisha swichi zisizoshiriki katika AVB ambazo nyuma yake baadhi ya vifaa vilirudi kwenye AVB Lite. Kifaa kisichoshiriki kikoa chake na kingine chochote kina eneo lake chenyewe.
 netmap-help-media-clock = Mitiririko ya saa ya media (CRF) pekee, imechorwa kama ya sauti: waya mmoja kwa fremu za kila mtiririko kwenye kila kiungo, rangi kulingana na talker. Bofya waya ili kukagua mtiririko wake, au kifaa ili kuona mitiririko yake; bofya mandharinyuma ili kufuta uteuzi.

@@ -401,8 +401,7 @@ netmap-bridges = { $count ->
     [many] { $count } commutadors
    *[other] { $count } commutadors
 }
-netmap-show-map = Mostra el mapa
-netmap-show-details = Mostra els detalls
+netmap-help-toggle = Com es llegeix el mapa
 stream-numbered = Flux { $index }
 netmap-bridge = Commutador
 netmap-access-point = Punt d’accés
@@ -491,8 +490,6 @@ netmap-passing-through = En trànsit
 netmap-sending = Enviament
 netmap-receiving = Recepció
 netmap-problems = Problemes
-netmap-help-back = Feu clic al fons per tornar a la vista general.
-netmap-help-stream = Feu clic en un flux per inspeccionar-lo, o al fons per tornar a la vista general.
 netmap-help-clock = El rellotge surt del grandmaster i passa per cada commutador fins a cada node de l’arbre. Una línia grisa discontínua és un enllaç on no funciona gPTP. Feu clic en un dispositiu o en el seu fil per inspeccionar-ne el camí del rellotge; feu clic al fons per esborrar la selecció.
 netmap-help-domains = Cada zona és un domini de rellotge. En un domini gPTP, el rellotge baixa del grandmaster a través dels commutadors AVB. En un domini PTP, els dispositius executen AVB Lite i segueixen el grandmaster d’extrem a extrem, sincronitzats dins de 50 µs; una targeta discontínua representa els commutadors que no participen en AVB darrere dels quals alguns han recorregut a AVB Lite. Un dispositiu que no comparteix el domini amb cap altre té una zona pròpia.
 netmap-help-media-clock = Només fluxos de rellotge de mitjans (CRF), dibuixats igual que l’àudio: un fil per a les trames de cada flux en cada enllaç, acolorit segons el talker. Feu clic en un fil per inspeccionar-ne el flux, o en un dispositiu per veure’n els fluxos; feu clic al fons per esborrar la selecció.

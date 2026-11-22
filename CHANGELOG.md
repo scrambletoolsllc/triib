@@ -3,6 +3,21 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## Unreleased
+
+### Changed
+
+- The network view's panel beside the map is gone, the inspector taking
+  its place: a click on the map opens what it picks there, a stream on
+  its listener's Streams tab, a device on its Streams tab or, on the Sync
+  map, under Diagnostics, and a bridge or a switch taking no part in AVB
+  on a page of its own, with the streams passing through it or what is
+  in sync below it. With nothing picked, the inspector gives the map's
+  overview. Each AVB interface says whether it is in sync and why not,
+  and its clock path by name; a bound stream input shows the path the
+  network takes it by, and an output each listener's. How to read the
+  map is behind a button over it.
+
 ## [1.5.3] - 2026-11-22
 
 triib reads a device's log and crash dump itself, in the app, in

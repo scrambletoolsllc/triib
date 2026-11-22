@@ -655,6 +655,25 @@ const INSPECTOR_TITLE_ROOM: f32 = 24.0 + 12.0 + 40.0 + 8.0;
 
 /// The inspector, `across` pixels wide.
 fn inspector(triib: &Triib, width: Length, across: f32) -> Element<'_, Message> {
+    // In the network view, what the map brings forward that is no entity,
+    // or with nothing brought forward its overview.
+    if triib.settings.view == View::Network
+        && matches!(
+            triib.network_state,
+            NetworkState::Running { .. } | NetworkState::Starting
+        )
+        && let Some(page) = crate::netmap::inspected(triib)
+    {
+        let (size, _) = Type::TitleLarge.metrics();
+        let title = crate::text::fit(
+            &page.title,
+            Type::TitleLarge.font(false),
+            size,
+            across - INSPECTOR_TITLE_ROOM,
+        )
+        .name;
+        return component::side_sheet_sized(title, Message::InspectorToggled, page.body, width);
+    }
     let open = triib.inspector_tab;
     let body: Element<'_, Message> = match triib.selected {
         None => note(fl!("inspector-select")),
@@ -1265,7 +1284,7 @@ fn entity_details<'a>(
         ),
         InspectorTab::Diagnostics => {
             let mut items = crate::lite_view::entity_alarms(triib, entity_id);
-            items.extend(interface_sections(model));
+            items.extend(interface_sections(triib, entity_id, model));
             items.extend(crate::lite_view::bandwidth(model));
             items.extend(crate::diagnostics_view::diagnostics(model));
             or_note(items, fl!("inspector-no-diagnostics"))
@@ -1457,13 +1476,19 @@ fn stream_sections<'a>(
         items.extend(crate::host_view::add_buttons(triib, entity_id));
     }
     let picked = picked.and_then(|at| streams.get(at));
+    let on_map = crate::netmap::EntityStreams::of(triib, entity_id);
     if let Some(stream) = picked {
-        items.extend(stream_details(triib, entity_id, model, stream));
+        items.extend(stream_details(triib, entity_id, model, stream, &on_map));
     }
     // A media clock stream carries no channels, so the audio's mappings
     // are not its.
     if !picked.is_some_and(StreamDescriptor::is_media_clock) {
         items.extend(mapping_view::mapping_details(triib, entity_id, model));
+    }
+    // Where it bridges others, as an access point does, in the network
+    // view, whose map they are brought forward on.
+    if triib.settings.view == View::Network {
+        items.extend(on_map.through());
     }
     items
 }
@@ -1665,6 +1690,7 @@ fn stream_details<'a>(
     entity_id: EntityId,
     model: &'a EntityModel,
     stream: &StreamDescriptor<'a>,
+    on_map: &crate::netmap::EntityStreams,
 ) -> Vec<Element<'a, Message>> {
     let input = stream.is_input();
     let target = NameTarget {
@@ -1698,6 +1724,13 @@ fn stream_details<'a>(
     if let Some(state) = describe::stream_state(triib, entity_id, model, stream) {
         items.push(property(fl!("host-state"), state));
     }
+    // The way the network takes it here, as the network view draws it.
+    if let Some((label, path)) = input
+        .then(|| on_map.route((entity_id, stream.index)))
+        .flatten()
+    {
+        items.push(property(label, path));
+    }
     items.extend(stream_addressing(model, stream));
     if let Some(nanoseconds) = (!input)
         .then(|| model.max_transit_time(stream.index))
@@ -1709,7 +1742,7 @@ fn stream_details<'a>(
         ));
     }
     if !input {
-        items.extend(listener_rows(triib, entity_id, model, stream.index));
+        items.extend(listener_rows(triib, entity_id, model, stream.index, on_map));
     }
     items.extend(crate::host_view::remove_stream(
         triib,
@@ -1722,14 +1755,15 @@ fn stream_details<'a>(
 
 /// Who listens to a stream output, as its talker keeps them: each by its
 /// input's name, or marked where it is not online, as a talker outside
-/// Milan counts one that left without saying, with a button that
-/// disconnects it: one online is unbound, one gone is let go of at the
-/// talker.
+/// Milan counts one that left without saying, under it the way the
+/// network takes the stream there, with a button that disconnects it: one
+/// online is unbound, one gone is let go of at the talker.
 fn listener_rows<'a>(
     triib: &'a Triib,
     talker: EntityId,
     model: &EntityModel,
     output: u16,
+    on_map: &crate::netmap::EntityStreams,
 ) -> Vec<Element<'a, Message>> {
     let listeners: Vec<(EntityId, u16)> = model.tx_connections(output).collect();
     if listeners.is_empty() {
@@ -1757,6 +1791,14 @@ fn listener_rows<'a>(
             } else {
                 name
             };
+            let name = scramble_ui::column![name]
+                .push(on_map.route(listener).map(|(_, path)| {
+                    styled(path, Type::BodySmall)
+                        .style(style::on_surface_variant)
+                        .align_x(dir::text_start())
+                }))
+                .spacing(2)
+                .width(Fill);
             scramble_ui::row![
                 name,
                 button::button(Kind::Outlined, fl!("stream-disconnect-listener"))
@@ -1773,24 +1815,37 @@ fn listener_rows<'a>(
     )]
 }
 
-/// Each AVB interface with what it reports of gPTP and its counters.
-fn interface_sections<'a>(model: &'a EntityModel) -> Vec<Element<'a, Message>> {
+/// Each AVB interface with what it reports of gPTP and its counters, and
+/// what the network view makes of its clock.
+fn interface_sections<'a>(
+    triib: &Triib,
+    entity_id: EntityId,
+    model: &'a EntityModel,
+) -> Vec<Element<'a, Message>> {
     let mut items = Vec::new();
     let interfaces: Vec<_> = model.avb_interfaces().collect();
     if !interfaces.is_empty() {
         items.push(component::section(fl!("avb-interfaces")));
+        let mut clocks = crate::netmap::interface_clocks(triib, entity_id);
         for interface in interfaces {
-            items.extend(interface_details(model, &interface));
+            let clock = clocks
+                .iter()
+                .position(|(index, _)| *index == interface.index)
+                .map(|at| clocks.swap_remove(at).1)
+                .unwrap_or_default();
+            items.extend(interface_details(model, &interface, clock));
         }
     }
     items
 }
 
 /// An AVB interface: its address, and what it reports of gPTP, its path
-/// to the grandmaster and its link.
+/// to the grandmaster, followed by `clock`, what the network view makes of
+/// it, and its link.
 fn interface_details<'a>(
     model: &EntityModel,
     interface: &AvbInterfaceDescriptor<'_>,
+    clock: Vec<Element<'a, Message>>,
 ) -> Vec<Element<'a, Message>> {
     let name = model
         .name_of(DescriptorType::AVB_INTERFACE, interface.index)
@@ -1844,6 +1899,7 @@ fn interface_details<'a>(
             },
         ));
     }
+    items.extend(clock);
     if let Some(counters) = model
         .counters(DescriptorType::AVB_INTERFACE, interface.index)
         .and_then(|counters| counters.avb_interface())
@@ -3175,6 +3231,14 @@ pub(crate) mod tests {
                 Size::new(804.0, 520.0),
             ),
             ("network-focus-desktop", View::Network, false, desktop),
+            // The map's overview in the inspector, nothing brought forward;
+            // an entity brought forward with its streams; and on the clock
+            // map with its clock path, under Diagnostics.
+            ("network-inspector", View::Network, true, desktop),
+            ("network-focus-inspector", View::Network, true, desktop),
+            ("network-clock-host-inspector", View::Network, true, desktop),
+            // How to read the map, over it.
+            ("network-help", View::Network, false, desktop),
             // This computer's entity's logo and its vendor's, read through
             // Address Access, in the list's columns and the inspector.
             (
@@ -3421,10 +3485,23 @@ pub(crate) mod tests {
                 triib.log.add(frames);
                 triib.settings.log = true;
             }
-            if suffix.starts_with("network-focus") {
+            if suffix.starts_with("network-clock") {
+                triib.settings.network_shows = crate::settings::NetworkShows::Clock;
+            }
+            triib.network_help = suffix == "network-help";
+            if suffix.starts_with("network-focus") || suffix.starts_with("network-clock") {
+                // This computer's entity where there is one, under the
+                // bench's grandmaster.
+                let focused = host.unwrap_or(MAC_MINI);
                 triib.network_focus = Some(crate::netmap::Focus::Node(
-                    crate::netmap::NodeKey::Entity(MAC_MINI),
+                    crate::netmap::NodeKey::Entity(focused),
                 ));
+                triib.selected = Some(focused);
+                triib.inspector_tab = if suffix.starts_with("network-clock") {
+                    InspectorTab::Diagnostics
+                } else {
+                    InspectorTab::Streams
+                };
             }
             if suffix.contains("narrow") {
                 // Columns dragged narrower than their text.
@@ -3769,7 +3846,11 @@ pub(crate) mod tests {
             ..Settings::default()
         };
         let mut triib = Triib::sample(settings, interface, entities, models);
+        // Selected as a click does, which brings it forward on the map.
         triib.selected = Some(WIRED_ESP);
+        triib.network_focus = Some(crate::netmap::Focus::Node(crate::netmap::NodeKey::Entity(
+            WIRED_ESP,
+        )));
         let frames = crate::log_view::tests::bench_frames(&triib);
         triib.log.add(frames);
         triib
@@ -4236,6 +4317,79 @@ pub(crate) mod tests {
                 .any(|message| matches!(message, Message::EntitySelected(id) if *id == entity_id)),
             "{messages:?}"
         );
+    }
+
+    /// In the network view the inspector follows the map, opening as it
+    /// is clicked: with nothing brought forward, the map's overview; an
+    /// entity, on the clock map, with its clock path by name under
+    /// Diagnostics; a bridge, with what is in sync below it; a stream, on
+    /// its listener's Streams tab.
+    #[test]
+    fn the_inspector_follows_the_network_map() {
+        use atdecc::ClockIdentity;
+
+        use crate::netmap::{Focus, NodeKey};
+        use crate::settings::NetworkShows;
+
+        let (mut entities, mut models) = bench();
+        let (host, model) = host_entity_taking("Host entity 1", &["Out 1"], &["In 1"], None);
+        let host_id = host.entity_id();
+        entities.insert(host_id, host);
+        models.insert(host_id, model);
+        let interface = Interface {
+            name: "enp6s0".to_owned(),
+            mac: MacAddress(HOST_MAC),
+            up: true,
+            speed: Some(2500),
+            physical: true,
+            wireless: false,
+            hardware_clock: Some(0),
+        };
+        let settings = Settings {
+            interface: Some(interface.name.clone()),
+            view: View::Network,
+            network_shows: NetworkShows::Clock,
+            inspector: false,
+            ..Settings::default()
+        };
+        let mut triib = Triib::sample(settings, interface, entities, models);
+        let desktop = Size::new(1280.0, 800.0);
+        let shows = |triib: &Triib, text: &str| simulate(triib, desktop).find(text).is_ok();
+
+        let _ = triib.update(Message::InspectorToggled);
+        assert!(shows(&triib, "Clock tree"), "the overview");
+
+        let _ = triib.update(Message::InspectorToggled);
+        let _ = triib.update(Message::NetworkFocused(Some(Focus::Node(NodeKey::Entity(
+            host_id,
+        )))));
+        assert!(triib.settings.inspector, "opened by the click");
+        assert_eq!(triib.selected, Some(host_id));
+        assert_eq!(triib.inspector_tab, InspectorTab::Diagnostics);
+        assert!(shows(&triib, "Clock path"));
+        assert!(shows(&triib, "Mark of the Unicorn → Host entity 1"));
+
+        let grandmaster = ClockIdentity(0x0001_f2ff_feff_3b14);
+        let _ = triib.update(Message::NetworkFocused(Some(Focus::Node(NodeKey::Clock(
+            grandmaster,
+        )))));
+        assert!(shows(&triib, "Mark of the Unicorn"), "the bridge's page");
+        assert!(shows(&triib, "Nodes below"));
+        assert!(shows(&triib, "Host entity 1"));
+
+        // Brought forward still on the audio map, the entity's streams.
+        let _ = triib.update(Message::NetworkFocused(Some(Focus::Node(NodeKey::Entity(
+            host_id,
+        )))));
+        let _ = triib.update(Message::NetworkShows(NetworkShows::Audio));
+        assert_eq!(triib.inspector_tab, InspectorTab::Streams);
+
+        let _ = triib.update(Message::NetworkFocused(Some(Focus::Stream(host_id, 0))));
+        assert_eq!(triib.selected, Some(host_id));
+        assert_eq!(triib.stream_selected, Some((host_id, true, 0)));
+
+        let _ = triib.update(Message::SelectionCleared);
+        assert!(shows(&triib, "Audio streams"), "the overview again");
     }
 
     #[test]
