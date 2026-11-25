@@ -20,7 +20,7 @@ env:
   # gptpd's release, from the gptp repository, which keeps the network's
   # time for host entities. Every Linux package carries it, built from its
   # tag, as no distribution has gptpd, so one package is all it takes.
-  GPTPD_VERSION: 0.2.1
+  GPTPD_VERSION: 0.2.3
   # avb-endpointd's release, from Linux-AVB-Endpoint, which runs host
   # entities and goes in triib's Linux packages until it has its own.
   AVB_ENDPOINTD_VERSION: 0.3.5

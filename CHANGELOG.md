@@ -3,6 +3,22 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Changed
+
+- The Linux packages carry gptpd 0.2.3. When the grandmaster's Syncs
+  stop for a moment, it keeps the time it followed for up to five
+  seconds, standing in as grandmaster on it, so their return no longer
+  gives the time a new base, nor steps it out and back when the first
+  Sync back was stamped late. It holds back a time creeping later, as
+  it did one jumping earlier, and its status socket goes on serving
+  after a client it could not start. Its other changes are for Wi-Fi
+  ports and bridges: a radio's clock is compared by a rule of its own,
+  and settings, off by default, let an access point answer FTM from
+  every station and a bridge wait for its last grandmaster as it
+  starts.
+
 ## [1.5.4] - 2026-11-22
 
 The network view's panel beside the map gives way to the inspector: a
