@@ -3,7 +3,13 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.5.5] - 2026-11-25
+
+`triib-cli firmware` reads the firmware an entity runs once the entity
+has restarted, so it no longer says an entity went back to the firmware
+it had when it kept the new one. The Linux packages carry gptpd 0.2.3,
+which keeps the grandmaster's time through a short gap in its Syncs,
+and avb-endpointd 0.3.5, as in 1.5.4.
 
 ### Changed
 
