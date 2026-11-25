@@ -3123,6 +3123,7 @@ fn firmware(
         }
     }
     println!("sending {file} to {entity}'s \"{}\"", object.object_name);
+    let sending = Instant::now();
     let now = driver.now();
     let mut upload = Upload::start(
         driver.controller_mut(),
@@ -3132,11 +3133,18 @@ fn firmware(
         image,
         update.restart,
     );
+    // Whether it has restarted yet: an upload can end on the entity going
+    // as it restarts, or on its word that it stored the image, before it
+    // goes.
+    let mut restart = Restart::new(entity);
     let mut shown = String::new();
     loop {
         driver.turn(Duration::from_millis(100)).map_err(fail)?;
         let now = driver.now();
         while let Some(event) = driver.controller_mut().poll_event() {
+            if restart.take(&event) == Comeback::Gone {
+                println!("  {entity} went down at {}", seconds(sending));
+            }
             match event {
                 Event::CommandFinished(command, outcome) => {
                     upload.handle_finished(driver.controller_mut(), now, command, outcome);
@@ -3180,7 +3188,7 @@ fn firmware(
     }
     let result = match upload.stage() {
         Stage::Done if update.restart => {
-            println!("stored; {entity} restarts on it");
+            println!("stored at {}; {entity} restarts on it", seconds(sending));
             // What it runs once back: the new firmware, the one it had, or
             // something else, by the ELF hash its version ends with.
             let verdict = |version: &str| {
@@ -3189,7 +3197,7 @@ fn firmware(
                     .filter(|_| !coprocessor)
                     .map(|described| esp_image::running(described, &before, version))
             };
-            let after = back(&mut driver, entity, RESTART).map_err(fail)?;
+            let after = back(&mut driver, &mut restart, sending, RESTART).map_err(fail)?;
             match (after, verdict) {
                 (None, _) => Err(format!(
                     "{entity} was not back within {} seconds",
@@ -3209,7 +3217,9 @@ fn firmware(
                             "{entity} is back, running {after}; watching {} s for it going back",
                             update.settle.as_secs()
                         );
-                        match back(&mut driver, entity, update.settle).map_err(fail)? {
+                        // Going back takes another restart.
+                        let mut again = Restart::new(entity);
+                        match back(&mut driver, &mut again, sending, update.settle).map_err(fail)? {
                             None => {
                                 println!("{entity} kept {after}");
                                 Ok(())
@@ -3253,26 +3263,78 @@ fn firmware(
     result
 }
 
-/// Waits up to `within` for `entity` to be read in full again, as after a
-/// restart, and gives its firmware version then.
+/// What an event says of an entity coming back from a restart.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Comeback {
+    Nothing,
+    /// It went offline or restarted.
+    Gone,
+    /// It was read in full once gone.
+    Read,
+}
+
+/// Watches the events of `entity` for it read in full after a restart.
+/// A read that ends before it goes is of the firmware it had: one under
+/// way as it stores an image and restarts ends all the same, the reads
+/// left timing out, with the version it had.
+#[derive(Debug, Clone, Copy)]
+struct Restart {
+    entity: EntityId,
+    gone: bool,
+}
+
+impl Restart {
+    fn new(entity: EntityId) -> Self {
+        Self {
+            entity,
+            gone: false,
+        }
+    }
+
+    fn take(&mut self, event: &Event) -> Comeback {
+        match *event {
+            Event::EntityOffline(gone, _) | Event::EntityRestarted(gone) if gone == self.entity => {
+                self.gone = true;
+                Comeback::Gone
+            }
+            Event::EntityEnumerated(read) if read == self.entity && self.gone => Comeback::Read,
+            _ => Comeback::Nothing,
+        }
+    }
+}
+
+/// Seconds since `since`, for the steps of an update.
+fn seconds(since: Instant) -> String {
+    format!("{:.1} s", since.elapsed().as_secs_f64())
+}
+
+/// Waits up to `within` for the entity `restart` watches to be read in
+/// full once restarted, and gives its firmware version then.
 fn back(
     driver: &mut Driver,
-    entity: EntityId,
+    restart: &mut Restart,
+    sending: Instant,
     within: Duration,
 ) -> std::io::Result<Option<String>> {
+    let entity = restart.entity;
     let started = Instant::now();
     while started.elapsed() < within {
         driver.turn(Duration::from_millis(250))?;
-        let read = std::iter::from_fn(|| driver.controller_mut().poll_event())
-            .any(|event| event == Event::EntityEnumerated(entity));
-        if read {
-            return Ok(Some(
-                driver
-                    .controller()
-                    .model(entity)
-                    .and_then(EntityModel::entity)
-                    .map_or_else(String::new, |entity| entity.firmware_version.to_owned()),
-            ));
+        while let Some(event) = driver.controller_mut().poll_event() {
+            match restart.take(&event) {
+                Comeback::Nothing => {}
+                Comeback::Gone => println!("  {entity} went down at {}", seconds(sending)),
+                Comeback::Read => {
+                    println!("  {entity} read again at {}", seconds(sending));
+                    return Ok(Some(
+                        driver
+                            .controller()
+                            .model(entity)
+                            .and_then(EntityModel::entity)
+                            .map_or_else(String::new, |entity| entity.firmware_version.to_owned()),
+                    ));
+                }
+            }
         }
     }
     Ok(None)
@@ -3293,5 +3355,72 @@ fn upload_failure(failure: UploadFailure) -> String {
         }
         UploadFailure::Gone => "the entity went offline".to_owned(),
         UploadFailure::NoStatus => "the entity did not say whether it stored the image".to_owned(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const DEVICE: EntityId = EntityId(0x8c1f_6436_c170_0000);
+    const OTHER: EntityId = EntityId(0x8c1f_6436_c120_0000);
+
+    #[test]
+    fn a_read_before_the_restart_is_not_back() {
+        // Stored, then a read under way ends as the entity goes down, with
+        // the version it had: not the read after its restart.
+        let mut restart = Restart::new(DEVICE);
+        assert_eq!(
+            restart.take(&Event::EntityEnumerated(DEVICE)),
+            Comeback::Nothing
+        );
+        assert_eq!(
+            restart.take(&Event::EntityRestarted(DEVICE)),
+            Comeback::Gone
+        );
+        assert_eq!(
+            restart.take(&Event::EntityEnumerated(DEVICE)),
+            Comeback::Read
+        );
+    }
+
+    #[test]
+    fn going_offline_is_going() {
+        let mut restart = Restart::new(DEVICE);
+        let gone = Event::EntityOffline(DEVICE, OfflineReason::TimedOut);
+        assert_eq!(restart.take(&gone), Comeback::Gone);
+        assert_eq!(
+            restart.take(&Event::EntityOnline(DEVICE)),
+            Comeback::Nothing
+        );
+        assert_eq!(
+            restart.take(&Event::EntityEnumerated(DEVICE)),
+            Comeback::Read
+        );
+    }
+
+    #[test]
+    fn other_entities_do_not_count() {
+        let mut restart = Restart::new(DEVICE);
+        assert_eq!(
+            restart.take(&Event::EntityRestarted(OTHER)),
+            Comeback::Nothing
+        );
+        assert_eq!(
+            restart.take(&Event::EntityEnumerated(DEVICE)),
+            Comeback::Nothing
+        );
+        assert_eq!(
+            restart.take(&Event::EntityRestarted(DEVICE)),
+            Comeback::Gone
+        );
+        assert_eq!(
+            restart.take(&Event::EntityEnumerated(OTHER)),
+            Comeback::Nothing
+        );
+        assert_eq!(
+            restart.take(&Event::EntityEnumerated(DEVICE)),
+            Comeback::Read
+        );
     }
 }

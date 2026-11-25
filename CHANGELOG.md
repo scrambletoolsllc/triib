@@ -19,6 +19,15 @@ All notable changes to triib. Versions follow
   every station and a bridge wait for its last grandmaster as it
   starts.
 
+### Fixed
+
+- `triib-cli firmware` waits for the entity to restart before it reads
+  the firmware it runs. A read of the entity under way as it stored the
+  image ended as it went down, with the firmware it had, so triib-cli
+  said it went back to that firmware when it had kept the new one. The
+  update's steps now say when the entity stored the image, went down
+  and was read again.
+
 ## [1.5.4] - 2026-11-22
 
 The network view's panel beside the map gives way to the inspector: a
