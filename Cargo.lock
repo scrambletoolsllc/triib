@@ -4109,7 +4109,7 @@ dependencies = [
 
 [[package]]
 name = "triib"
-version = "1.5.5"
+version = "1.5.6"
 dependencies = [
  "ashpd",
  "atdecc",
@@ -4147,7 +4147,7 @@ dependencies = [
 
 [[package]]
 name = "triib-cli"
-version = "1.5.5"
+version = "1.5.6"
 dependencies = [
  "atdecc",
  "avb-net",
@@ -4157,7 +4157,7 @@ dependencies = [
 
 [[package]]
 name = "triib-devicelog"
-version = "1.5.5"
+version = "1.5.6"
 dependencies = [
  "atdecc",
  "avb-net",
@@ -4165,11 +4165,11 @@ dependencies = [
 
 [[package]]
 name = "triib-firmware"
-version = "1.5.5"
+version = "1.5.6"
 
 [[package]]
 name = "triib-store"
-version = "1.5.5"
+version = "1.5.6"
 dependencies = [
  "serde",
  "tempfile",

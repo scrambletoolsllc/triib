@@ -3,7 +3,13 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.5.6] - 2026-11-26
+
+The app and `triib-cli firmware` read an entity's firmware once it has
+restarted on the image, not in the moments after it says it departs,
+so neither says an ESP32 went back to the firmware it had when it kept
+the new one. The Linux packages carry gptpd 0.2.3 and avb-endpointd
+0.3.5, as in 1.5.5.
 
 ### Fixed
 

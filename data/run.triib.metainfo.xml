@@ -67,6 +67,11 @@
   <content_rating type="oars-1.1" />
 
   <releases>
+    <release version="1.5.6" date="2026-11-26">
+      <description>
+        <p>The app and triib-cli firmware read an entity's firmware once it has restarted on the image, not in the moments after it says it departs, so neither says an ESP32 went back to the firmware it had when it kept the new one. The Linux packages carry gptpd 0.2.3 and avb-endpointd 0.3.5, as in 1.5.5.</p>
+      </description>
+    </release>
     <release version="1.5.5" date="2026-11-25">
       <description>
         <p>triib-cli firmware reads the firmware an entity runs once the entity has restarted, so it no longer says an entity went back to the firmware it had when it kept the new one. The Linux packages carry gptpd 0.2.3, which keeps the grandmaster's time through a short gap in its Syncs, and avb-endpointd 0.3.5, as in 1.5.4.</p>
