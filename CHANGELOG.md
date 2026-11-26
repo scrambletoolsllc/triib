@@ -3,6 +3,19 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Fixed
+
+- An entity that says it departs once it stores new firmware, then
+  answers and advertises a while longer before it restarts, as an
+  ESP32 does for 300 ms, is no longer taken as back from its restart:
+  the app and `triib-cli firmware` wait for it to advertise again with
+  a lower available_index, as a restarted entity does, before they
+  read its version. Read sooner, the firmware it had made them say it
+  went back to it. `triib-cli firmware` says whether the entity
+  departed, stopped advertising or restarted.
+
 ## [1.5.5] - 2026-11-25
 
 `triib-cli firmware` reads the firmware an entity runs once the entity

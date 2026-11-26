@@ -3139,12 +3139,12 @@ fn firmware(
     let mut restart = Restart::new(entity);
     let mut shown = String::new();
     loop {
+        restart.see(advertised_index(&driver, entity));
         driver.turn(Duration::from_millis(100)).map_err(fail)?;
         let now = driver.now();
         while let Some(event) = driver.controller_mut().poll_event() {
-            if restart.take(&event) == Comeback::Gone {
-                println!("  {entity} went down at {}", seconds(sending));
-            }
+            let comeback = restart.take(&event, advertised_index(&driver, entity));
+            tell(entity, comeback, sending);
             match event {
                 Event::CommandFinished(command, outcome) => {
                     upload.handle_finished(driver.controller_mut(), now, command, outcome);
@@ -3267,39 +3267,107 @@ fn firmware(
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Comeback {
     Nothing,
-    /// It went offline or restarted.
-    Gone,
-    /// It was read in full once gone.
+    /// It departed or stopped advertising, as said.
+    Went(&'static str),
+    /// It advertised again without having restarted.
+    Stayed,
+    /// It advertised, restarted.
+    Restarted,
+    /// It was read in full once restarted.
     Read,
 }
 
 /// Watches the events of `entity` for it read in full after a restart.
-/// A read that ends before it goes is of the firmware it had: one under
-/// way as it stores an image and restarts ends all the same, the reads
-/// left timing out, with the version it had.
+/// A read of it before it restarts is of the firmware it had: one under
+/// way as it stores an image ends all the same, the reads left timing
+/// out, and an ESP32 says it departs, then answers and advertises for
+/// 300 ms more before it restarts. A restarted entity counts its
+/// advertisements again from zero, below the last one before it went.
 #[derive(Debug, Clone, Copy)]
 struct Restart {
     entity: EntityId,
+    /// Its latest available_index before it went.
+    last: Option<u32>,
     gone: bool,
+    /// Whether it has advertised, restarted, since it went.
+    restarted: bool,
 }
 
 impl Restart {
     fn new(entity: EntityId) -> Self {
         Self {
             entity,
+            last: None,
             gone: false,
+            restarted: false,
         }
     }
 
-    fn take(&mut self, event: &Event) -> Comeback {
+    /// Takes the available_index the entity advertises now, until it
+    /// goes.
+    fn see(&mut self, index: Option<u32>) {
+        if !self.gone && index.is_some() {
+            self.last = index;
+        }
+    }
+
+    /// Whether `index` is of the entity restarted: below its last one
+    /// before it went, or its first.
+    fn fresh(&self, index: Option<u32>) -> bool {
+        match (self.last, index) {
+            (Some(last), Some(index)) => index < last || index == 0,
+            _ => true,
+        }
+    }
+
+    /// Takes `event`, `index` being the entity's available_index then.
+    fn take(&mut self, event: &Event, index: Option<u32>) -> Comeback {
         match *event {
-            Event::EntityOffline(gone, _) | Event::EntityRestarted(gone) if gone == self.entity => {
+            Event::EntityOffline(gone, reason) if gone == self.entity => {
                 self.gone = true;
-                Comeback::Gone
+                self.restarted = false;
+                Comeback::Went(match reason {
+                    OfflineReason::Departed => "departed",
+                    OfflineReason::TimedOut => "stopped advertising",
+                })
             }
-            Event::EntityEnumerated(read) if read == self.entity && self.gone => Comeback::Read,
+            Event::EntityRestarted(back) | Event::EntityOnline(back)
+                if back == self.entity
+                    && (self.gone || matches!(*event, Event::EntityRestarted(_))) =>
+            {
+                self.gone = true;
+                self.restarted = self.fresh(index);
+                if self.restarted {
+                    Comeback::Restarted
+                } else {
+                    Comeback::Stayed
+                }
+            }
+            Event::EntityEnumerated(read) if read == self.entity && self.restarted => {
+                Comeback::Read
+            }
             _ => Comeback::Nothing,
         }
+    }
+}
+
+/// The available_index `entity` last advertised.
+fn advertised_index(driver: &Driver, entity: EntityId) -> Option<u32> {
+    driver
+        .controller()
+        .entity(entity)
+        .map(|known| known.adp.available_index)
+}
+
+/// Says what `comeback` tells of `entity`, `sending` the update's start.
+fn tell(entity: EntityId, comeback: Comeback, sending: Instant) {
+    let at = seconds(sending);
+    match comeback {
+        Comeback::Nothing => {}
+        Comeback::Went(how) => println!("  {entity} {how} at {at}"),
+        Comeback::Stayed => println!("  {entity} advertised again at {at}, not restarted yet"),
+        Comeback::Restarted => println!("  {entity} restarted at {at}"),
+        Comeback::Read => println!("  {entity} read again at {at}"),
     }
 }
 
@@ -3319,21 +3387,19 @@ fn back(
     let entity = restart.entity;
     let started = Instant::now();
     while started.elapsed() < within {
+        restart.see(advertised_index(driver, entity));
         driver.turn(Duration::from_millis(250))?;
         while let Some(event) = driver.controller_mut().poll_event() {
-            match restart.take(&event) {
-                Comeback::Nothing => {}
-                Comeback::Gone => println!("  {entity} went down at {}", seconds(sending)),
-                Comeback::Read => {
-                    println!("  {entity} read again at {}", seconds(sending));
-                    return Ok(Some(
-                        driver
-                            .controller()
-                            .model(entity)
-                            .and_then(EntityModel::entity)
-                            .map_or_else(String::new, |entity| entity.firmware_version.to_owned()),
-                    ));
-                }
+            let comeback = restart.take(&event, advertised_index(driver, entity));
+            tell(entity, comeback, sending);
+            if comeback == Comeback::Read {
+                return Ok(Some(
+                    driver
+                        .controller()
+                        .model(entity)
+                        .and_then(EntityModel::entity)
+                        .map_or_else(String::new, |entity| entity.firmware_version.to_owned()),
+                ));
             }
         }
     }
@@ -3370,16 +3436,44 @@ mod tests {
         // Stored, then a read under way ends as the entity goes down, with
         // the version it had: not the read after its restart.
         let mut restart = Restart::new(DEVICE);
+        restart.see(Some(300));
         assert_eq!(
-            restart.take(&Event::EntityEnumerated(DEVICE)),
+            restart.take(&Event::EntityEnumerated(DEVICE), Some(300)),
             Comeback::Nothing
         );
         assert_eq!(
-            restart.take(&Event::EntityRestarted(DEVICE)),
-            Comeback::Gone
+            restart.take(&Event::EntityRestarted(DEVICE), Some(0)),
+            Comeback::Restarted
         );
         assert_eq!(
-            restart.take(&Event::EntityEnumerated(DEVICE)),
+            restart.take(&Event::EntityEnumerated(DEVICE), Some(0)),
+            Comeback::Read
+        );
+    }
+
+    #[test]
+    fn advertising_again_after_departing_is_not_back() {
+        // An ESP32 that stored an image departs, then advertises and
+        // answers for 300 ms more, counting on, before it restarts.
+        let mut restart = Restart::new(DEVICE);
+        restart.see(Some(18_000));
+        let departed = Event::EntityOffline(DEVICE, OfflineReason::Departed);
+        assert_eq!(restart.take(&departed, None), Comeback::Went("departed"));
+        restart.see(Some(18_001));
+        assert_eq!(
+            restart.take(&Event::EntityOnline(DEVICE), Some(18_001)),
+            Comeback::Stayed
+        );
+        assert_eq!(
+            restart.take(&Event::EntityEnumerated(DEVICE), Some(18_001)),
+            Comeback::Nothing
+        );
+        assert_eq!(
+            restart.take(&Event::EntityRestarted(DEVICE), Some(0)),
+            Comeback::Restarted
+        );
+        assert_eq!(
+            restart.take(&Event::EntityEnumerated(DEVICE), Some(1)),
             Comeback::Read
         );
     }
@@ -3387,14 +3481,33 @@ mod tests {
     #[test]
     fn going_offline_is_going() {
         let mut restart = Restart::new(DEVICE);
+        restart.see(Some(40));
         let gone = Event::EntityOffline(DEVICE, OfflineReason::TimedOut);
-        assert_eq!(restart.take(&gone), Comeback::Gone);
         assert_eq!(
-            restart.take(&Event::EntityOnline(DEVICE)),
-            Comeback::Nothing
+            restart.take(&gone, None),
+            Comeback::Went("stopped advertising")
         );
         assert_eq!(
-            restart.take(&Event::EntityEnumerated(DEVICE)),
+            restart.take(&Event::EntityOnline(DEVICE), Some(0)),
+            Comeback::Restarted
+        );
+        assert_eq!(
+            restart.take(&Event::EntityEnumerated(DEVICE), Some(0)),
+            Comeback::Read
+        );
+    }
+
+    #[test]
+    fn an_entity_without_an_index_comes_back_as_before() {
+        let mut restart = Restart::new(DEVICE);
+        let gone = Event::EntityOffline(DEVICE, OfflineReason::Departed);
+        assert_eq!(restart.take(&gone, None), Comeback::Went("departed"));
+        assert_eq!(
+            restart.take(&Event::EntityOnline(DEVICE), Some(7)),
+            Comeback::Restarted
+        );
+        assert_eq!(
+            restart.take(&Event::EntityEnumerated(DEVICE), Some(7)),
             Comeback::Read
         );
     }
@@ -3402,24 +3515,29 @@ mod tests {
     #[test]
     fn other_entities_do_not_count() {
         let mut restart = Restart::new(DEVICE);
+        restart.see(Some(300));
         assert_eq!(
-            restart.take(&Event::EntityRestarted(OTHER)),
+            restart.take(&Event::EntityRestarted(OTHER), Some(300)),
             Comeback::Nothing
         );
         assert_eq!(
-            restart.take(&Event::EntityEnumerated(DEVICE)),
+            restart.take(&Event::EntityOnline(DEVICE), Some(300)),
             Comeback::Nothing
         );
         assert_eq!(
-            restart.take(&Event::EntityRestarted(DEVICE)),
-            Comeback::Gone
-        );
-        assert_eq!(
-            restart.take(&Event::EntityEnumerated(OTHER)),
+            restart.take(&Event::EntityEnumerated(DEVICE), Some(300)),
             Comeback::Nothing
         );
         assert_eq!(
-            restart.take(&Event::EntityEnumerated(DEVICE)),
+            restart.take(&Event::EntityRestarted(DEVICE), Some(0)),
+            Comeback::Restarted
+        );
+        assert_eq!(
+            restart.take(&Event::EntityEnumerated(OTHER), Some(0)),
+            Comeback::Nothing
+        );
+        assert_eq!(
+            restart.take(&Event::EntityEnumerated(DEVICE), Some(0)),
             Comeback::Read
         );
     }

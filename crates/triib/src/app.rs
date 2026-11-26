@@ -1576,7 +1576,8 @@ impl Triib {
                 let entity_id = entity.entity_id();
                 // Back, as after restarting on new firmware.
                 if restarted || !self.entities.contains_key(&entity_id) {
-                    self.firmware.entity_back(entity_id);
+                    self.firmware
+                        .entity_back(entity_id, entity.adp.available_index);
                 }
                 if !self.entities.contains_key(&entity_id) {
                     self.device_logs.away(entity_id, false);
@@ -1619,8 +1620,9 @@ impl Triib {
                 entity,
                 index,
                 stage,
+                advertised,
             } => {
-                crate::firmware::reported(self, entity, index, stage);
+                crate::firmware::reported(self, entity, index, stage, advertised);
             }
             ReportKind::DeviceLog(entity, entries) => self.device_logs.read(entity, entries),
             ReportKind::CrashDump(entity, report) => {

@@ -76,6 +76,10 @@ pub enum ReportKind {
         entity: EntityId,
         index: u16,
         stage: Stage,
+        /// The available_index the entity advertised then, unknown as it
+        /// goes: an entity back from restarting on the image advertises
+        /// a lower one.
+        advertised: Option<u32>,
     },
     /// What reading a followed entity's log brought.
     DeviceLog(EntityId, Vec<Entry>),
@@ -1109,6 +1113,7 @@ impl Uploads {
                     entity,
                     index,
                     stage,
+                    advertised: None,
                 },
             );
             return;
@@ -1152,7 +1157,7 @@ impl Uploads {
                 }
                 // Before the entity's own report, which the app reads as
                 // the entity back from its restart.
-                self.report_moved();
+                self.report_moved(None);
                 false
             }
             _ => false,
@@ -1179,15 +1184,16 @@ impl Uploads {
                 going.upload.handle_timeout(driver.controller_mut(), now);
             }
         }
-        self.report_moved();
+        self.report_moved(Some(driver.controller()));
         self.going.retain(|going| {
             !(going.upload.is_over() && going.reported == Some(going.upload.stage()))
         });
     }
 
     /// Reports the uploads that moved on, a few times a second at most
-    /// while they write.
-    fn report_moved(&mut self) {
+    /// while they write, with the available_index each entity advertises
+    /// as `controller` knows it, none while one goes.
+    fn report_moved(&mut self, controller: Option<&Controller>) {
         let clock = std::time::Instant::now();
         for going in &mut self.going {
             let stage = going.upload.stage();
@@ -1205,6 +1211,9 @@ impl Uploads {
                         entity: going.upload.entity_id(),
                         index: going.upload.index(),
                         stage,
+                        advertised: controller
+                            .and_then(|controller| controller.entity(going.upload.entity_id()))
+                            .map(|entity| entity.adp.available_index),
                     },
                 );
                 going.reported = Some(stage);

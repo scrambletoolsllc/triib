@@ -103,6 +103,9 @@ pub struct Update {
     pub stage: Stage,
     /// The entity is back, restarted on the image.
     pub back: bool,
+    /// The available_index the entity last advertised as the image went
+    /// to it: back from restarting, it advertises a lower one.
+    pub advertised: Option<u32>,
     pub kind: Option<FileKind>,
     /// The image is a coprocessor's, whose firmware the entity's version
     /// does not name.
@@ -124,6 +127,7 @@ impl Update {
             file: file.into(),
             stage: Stage::Locking,
             back: false,
+            advertised: None,
             kind: None,
             coprocessor: false,
             before: String::new(),
@@ -232,10 +236,19 @@ impl Firmware {
             .any(|(&(updated, _), update)| updated == entity && !ended(update))
     }
 
-    /// An entity back online, as after restarting on new firmware.
-    pub fn entity_back(&mut self, entity: EntityId) {
+    /// An entity back online advertising `index`, as after restarting on
+    /// new firmware. One that has not restarted advertises on from the
+    /// index it had: an ESP32 that stored an image says it departs, then
+    /// answers and advertises for 300 ms more before it restarts, and
+    /// what is read of it then is the firmware it had.
+    pub fn entity_back(&mut self, entity: EntityId, index: u32) {
         for (&(updated, _), update) in &mut self.updates {
-            if updated == entity && update.stage == Stage::Done {
+            if updated == entity
+                && update.stage == Stage::Done
+                && update
+                    .advertised
+                    .is_none_or(|last| index < last || index == 0)
+            {
                 update.back = true;
             }
         }
@@ -536,11 +549,20 @@ pub fn send(
 
 /// Where an upload has got to, as the network reported it, answering the
 /// agents that wait on it once it ends.
-pub fn reported(triib: &mut Triib, entity: EntityId, index: u16, stage: Stage) {
+pub fn reported(
+    triib: &mut Triib,
+    entity: EntityId,
+    index: u16,
+    stage: Stage,
+    advertised: Option<u32>,
+) {
     let Some(update) = triib.firmware.updates.get_mut(&(entity, index)) else {
         return;
     };
     update.stage = stage;
+    if advertised.is_some() {
+        update.advertised = advertised;
+    }
     if !matches!(stage, Stage::Done | Stage::Aborted | Stage::Failed(_)) {
         return;
     }
@@ -842,8 +864,30 @@ mod tests {
         assert!(firmware.updating(entity));
         firmware.updates.get_mut(&(entity, 3)).unwrap().stage = Stage::Done;
         assert!(firmware.updating(entity));
-        firmware.entity_back(entity);
+        firmware.entity_back(entity, 0);
         assert!(!firmware.updating(entity));
+    }
+
+    /// An entity that says it departs and advertises again on the index it
+    /// had has not restarted yet: what is read of it then is the firmware
+    /// it had, and it is back once it advertises from a lower index.
+    #[test]
+    fn advertising_on_after_departing_is_not_back() {
+        let mut firmware = Firmware::default();
+        let entity = EntityId(1);
+        let mut done = update(Stage::Done, false);
+        done.before = "1.4.0".to_owned();
+        done.advertised = Some(18_000);
+        firmware.updates.insert((entity, 3), done);
+        firmware.entity_back(entity, 18_001);
+        firmware.version_read(entity, "1.4.0");
+        let stayed = &firmware.updates[&(entity, 3)];
+        assert!(!stayed.back && !stayed.went_back && stayed.after.is_none());
+        firmware.entity_back(entity, 1);
+        firmware.version_read(entity, "1.5.0");
+        let back = &firmware.updates[&(entity, 3)];
+        assert!(back.back && !back.went_back);
+        assert_eq!(back.after.as_deref(), Some("1.5.0"));
     }
 
     #[test]
@@ -901,7 +945,7 @@ mod tests {
         let mut done = update(Stage::Done, false);
         done.before = "1.4.0".to_owned();
         firmware.updates.insert((entity, 3), done.clone());
-        firmware.entity_back(entity);
+        firmware.entity_back(entity, 0);
         firmware.version_read(entity, "1.5.0");
         assert!(firmware.updates[&(entity, 3)].watching());
         assert!(firmware.updating(entity), "still watching");
@@ -918,7 +962,7 @@ mod tests {
             let mut done = done.clone();
             done.coprocessor = coprocessor;
             firmware.updates.insert((entity, 3), done);
-            firmware.entity_back(entity);
+            firmware.entity_back(entity, 0);
             firmware.version_read(entity, after);
             assert!(!firmware.updates[&(entity, 3)].watching());
             assert!(!firmware.updating(entity));
@@ -938,7 +982,7 @@ mod tests {
             done.before = before.to_owned();
             done.kind = Some(kind.clone());
             firmware.updates.insert((entity, 3), done);
-            firmware.entity_back(entity);
+            firmware.entity_back(entity, 0);
         };
         // On the new firmware, then back on the old one.
         let mut firmware = Firmware::default();
