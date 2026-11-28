@@ -134,6 +134,11 @@ for setting in tx-0/xps_cpus limit_min 'parent 1:1 fq_codel' set-eee; do
     grep -q "$setting" /usr/lib/systemd/system/avb-link@.service ||
         fail "avb-link@.service does not set $setting"
 done
+# Interrupt moderation is opt-in: avb-link@ reads a file in
+# /etc/avb-link where one is put there, and the package puts none.
+grep -qx 'EnvironmentFile=-/etc/avb-link/%i.conf' /usr/lib/systemd/system/avb-link@.service ||
+    fail "avb-link@.service reads no /etc/avb-link file"
+[ ! -e /etc/avb-link ] || fail "the package puts /etc/avb-link in place"
 grep -q '^ExecStart=/usr/bin/avb-endpointd --interface %i$' /usr/lib/systemd/user/avb-endpointd@.service ||
     fail "avb-endpointd@.service does not run /usr/bin/avb-endpointd"
 /usr/bin/avb-endpointd --version || fail "avb-endpointd does not run"

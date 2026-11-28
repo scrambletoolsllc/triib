@@ -3,7 +3,19 @@
 All notable changes to triib. Versions follow
 [Semantic Versioning](https://semver.org).
 
-## [1.5.6] - 2026-11-26
+## [Unreleased]
+
+### Changed
+
+- The Linux packages carry avb-endpointd 0.3.6. Its avb-link@ can set
+  an AVB port's interrupt moderation, off by default: where
+  /etc/avb-link/INTERFACE.conf sets `RX_USECS`, the port's rx-usecs is
+  set to it, `RX_USECS=0` for none, and without the file nothing about
+  it changes. The Intel I226's default moderation spaces its
+  interrupts some 245 µs apart under bulk traffic. A network stream's
+  audio device counts as in use while a PipeWire link ends at it, and
+  triib's edits of a host entity's file keep the settings in it that
+  they do not know, as a later avb-endpointd may write.
 
 The app and `triib-cli firmware` read an entity's firmware once it has
 restarted on the image, not in the moments after it says it departs,

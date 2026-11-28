@@ -20,7 +20,7 @@ avb-stream = "0.4.0"
 gptp = "0.3"
 # This computer's entities run in avb-endpointd, shared with plaa: its
 # files, status and meters, from crates.io.
-avb-endpointd = "0.3.5"
+avb-endpointd = "0.3.6"
 triib-store = { path = "crates/triib-store", version = "1.5.6" }
 triib-firmware = { path = "crates/triib-firmware", version = "1.5.6" }
 triib-devicelog = { path = "crates/triib-devicelog", version = "1.5.6" }
